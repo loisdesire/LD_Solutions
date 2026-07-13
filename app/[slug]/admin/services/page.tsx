@@ -1,5 +1,4 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
-import AdminNav from '@/components/AdminNav';
 import ServicesManager from '@/components/ServicesManager';
 
 export default async function ServicesPage({
@@ -16,22 +15,24 @@ export default async function ServicesPage({
     .eq('business_id', business.id)
     .order('name');
 
+  const activeCount = (services ?? []).filter((s) => s.active).length;
+  const hiddenCount = (services ?? []).length - activeCount;
+
   return (
-    <main className="min-h-screen bg-canvas bg-grid">
-      <div className="max-w-3xl mx-auto px-6 py-16 sm:py-24 animate-rise">
-        <AdminNav slug={slug} />
-
-        <header className="mb-10">
-          <h1 className="text-4xl font-extrabold tracking-tight leading-[1.1]">
-            Services
-          </h1>
-          <p className="text-muted mt-3">
-            What customers can book, and how long each one takes.
+    <div>
+      <div className="mb-6">
+        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+          Manage · Services
+        </div>
+        <h1 className="font-display text-[26px] text-ink">Services</h1>
+        {(services ?? []).length > 0 && (
+          <p className="font-mono text-[11px] text-ink-faint mt-1.5">
+            {activeCount} active{hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ''}
           </p>
-        </header>
-
-        <ServicesManager businessId={business.id} initialServices={services ?? []} />
+        )}
       </div>
-    </main>
+
+      <ServicesManager businessId={business.id} initialServices={services ?? []} />
+    </div>
   );
 }

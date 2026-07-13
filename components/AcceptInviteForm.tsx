@@ -61,32 +61,31 @@ export default function AcceptInviteForm({ token }: { token: string }) {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   if (checking) {
-    return <p className="text-muted text-sm">Checking invite…</p>;
+    return <p className="text-ink-soft text-[13.5px]">Checking invite…</p>;
   }
 
   if (!info) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-soft">
+      <div className="border border-line rounded-md p-5">
         <p className="text-sm text-red-600">{error || 'This invite is invalid or already used'}</p>
       </div>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5 rounded-2xl border border-line bg-white p-6 shadow-soft"
-    >
-      <div>
-        <p className="text-sm font-medium text-ink">{info.email}</p>
-        <p className="text-muted text-sm">Joining {info.businessName}</p>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="border border-line rounded-md p-4 mb-2">
+        <p className="text-[14px] font-semibold">{info.email}</p>
+        <p className="text-ink-faint font-mono text-[11.5px] mt-1">Joining {info.businessName}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">Set a password</label>
+        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+          Set a password
+        </label>
         <input
           required
           type="password"
@@ -101,9 +100,9 @@ export default function AcceptInviteForm({ token }: { token: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0"
+        className="w-full rounded-md bg-accent py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {loading ? 'Joining…' : 'Accept invite →'}
+        {loading ? 'Joining…' : 'Accept invite'}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

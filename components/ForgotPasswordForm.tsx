@@ -30,13 +30,13 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   if (sent) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-soft text-center">
-        <p className="font-semibold">Check your email</p>
-        <p className="text-muted text-sm mt-1">
+      <div className="border border-line rounded-md p-5 text-center">
+        <p className="font-semibold text-[14px]">Check your email</p>
+        <p className="text-ink-soft text-[13px] mt-1">
           If an account exists for {email}, a reset link is on its way.
         </p>
       </div>
@@ -44,12 +44,11 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5 rounded-2xl border border-line bg-white p-6 shadow-soft"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-ink mb-1.5">Email</label>
+        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+          Email
+        </label>
         <input
           required
           type="email"
@@ -63,9 +62,9 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50"
+        className="w-full rounded-md bg-accent py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {loading ? 'Sending…' : 'Send reset link →'}
+        {loading ? 'Sending…' : 'Send reset link'}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

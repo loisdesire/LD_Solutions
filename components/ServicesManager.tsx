@@ -11,6 +11,13 @@ type Service = {
   active: boolean;
 };
 
+function formatDuration(min: number): string {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const rest = min % 60;
+  return rest === 0 ? `${h} hr` : `${h} hr ${rest} min`;
+}
+
 export default function ServicesManager({
   businessId,
   initialServices,
@@ -19,6 +26,7 @@ export default function ServicesManager({
   initialServices: Service[];
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
+  const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [duration, setDuration] = useState(30);
   const [price, setPrice] = useState('');
@@ -58,6 +66,7 @@ export default function ServicesManager({
     setName('');
     setDuration(30);
     setPrice('');
+    setShowAdd(false);
   }
 
   async function handleToggleActive(service: Service) {
@@ -125,73 +134,109 @@ export default function ServicesManager({
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const smallInputClass =
-    'rounded-lg border border-line bg-white px-3 py-1.5 text-sm text-ink shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
-  const labelClass = 'block text-sm font-medium text-ink mb-1.5';
+    'rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
+  const iconBtnClass =
+    'h-8 w-8 flex items-center justify-center rounded-md border border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
 
   return (
-    <div className="space-y-8">
-      <form
-        onSubmit={handleAdd}
-        className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end rounded-2xl border border-line bg-white p-6 shadow-soft"
-      >
-        <div>
-          <label className={labelClass}>Service name</label>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-            placeholder="Haircut"
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Duration (min)</label>
-          <input
-            required
-            type="number"
-            min={5}
-            step={5}
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Price</label>
-          <input
-            type="number"
-            min={0}
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className={inputClass}
-            placeholder="Optional"
-          />
-        </div>
+    <div>
+      <div className="flex justify-end mb-4">
         <button
-          type="submit"
-          disabled={saving}
-          className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50 whitespace-nowrap"
+          onClick={() => setShowAdd((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
         >
-          {saving ? 'Adding…' : 'Add service'}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {showAdd ? 'Cancel' : 'Add service'}
         </button>
-      </form>
+      </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {showAdd && (
+        <form
+          onSubmit={handleAdd}
+          className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end border border-line-strong rounded-md p-5 mb-4 bg-paper"
+        >
+          <div>
+            <label className={labelClass}>Service name</label>
+            <input
+              required
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="Haircut"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Duration (min)</label>
+            <input
+              required
+              type="number"
+              min={5}
+              step={5}
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value))}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Price</label>
+            <input
+              type="number"
+              min={0}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={inputClass}
+              placeholder="Optional"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </form>
+      )}
+
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
       {services.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl border border-dashed border-line bg-white/50">
-          <p className="text-lg font-semibold">No services yet</p>
-          <p className="text-muted text-sm mt-1">Add your first one above.</p>
+        <div className="border border-dashed border-line-strong rounded-md p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-12 w-12 rounded-md bg-accent-soft flex items-center justify-center text-accent">
+            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+              <path
+                d="M12 3L14.4 9.2L21 9.9L16 14.3L17.5 21L12 17.6L6.5 21L8 14.3L3 9.9L9.6 9.2L12 3Z"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="font-display text-[20px]">No services yet</h2>
+          <p className="text-ink-soft text-[13.5px] mt-1.5">Add your first one above.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {services.map((s) =>
+        <div className="border border-line rounded-md overflow-hidden">
+          <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_90px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            <div>Service</div>
+            <div>Duration</div>
+            <div>Price</div>
+            <div>Status</div>
+            <div />
+          </div>
+          {services.map((s, i) =>
             editingId === s.id ? (
-              <li
+              <div
                 key={s.id}
-                className="flex flex-col gap-3 rounded-2xl border border-accent bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:gap-3"
+                className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-3 bg-accent-soft/40 ${
+                  i !== services.length - 1 ? 'border-b border-line' : ''
+                }`}
               >
                 <input
                   value={editDraft.name}
@@ -220,55 +265,96 @@ export default function ServicesManager({
                   <button
                     onClick={() => saveEdit(s.id)}
                     disabled={editSaving}
-                    className="rounded-full bg-brand px-4 py-1.5 text-xs font-semibold text-white shadow-glow disabled:opacity-50"
+                    className="rounded-md bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
                   >
                     {editSaving ? 'Saving…' : 'Save'}
                   </button>
                   <button
                     onClick={() => setEditingId('')}
-                    className="rounded-full border border-line px-4 py-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
+                    className="rounded-md border border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
-              </li>
+              </div>
             ) : (
-              <li
+              <div
                 key={s.id}
-                className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+                className={`flex flex-col gap-2.5 sm:grid sm:grid-cols-[1.6fr_1fr_1fr_1fr_90px] sm:gap-4 sm:items-center px-5 py-4 ${
+                  i !== services.length - 1 ? 'border-b border-line' : ''
+                } ${!s.active ? 'opacity-60' : ''}`}
               >
-                <div className="min-w-0">
-                  <p className="font-semibold">{s.name}</p>
-                  <p className="text-muted text-sm">
-                    {s.duration_minutes} min{s.price ? ` · ₦${s.price}` : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <button
-                    onClick={() => handleToggleActive(s)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                      s.active ? 'bg-accent/10 text-accent' : 'bg-ink/5 text-muted'
+                <div className="flex items-center justify-between sm:block">
+                  <p className="font-semibold text-[14.5px]">{s.name}</p>
+                  <span
+                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
+                      s.active ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-ink-faint'
                     }`}
                   >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {s.active ? 'Active' : 'Hidden'}
-                  </button>
+                  </span>
+                </div>
+                <div className="font-mono text-[13px] text-ink-soft">
+                  {formatDuration(s.duration_minutes)}
+                  {s.price != null && <span className="sm:hidden"> · ₦{s.price.toLocaleString()}</span>}
+                </div>
+                <div className="hidden sm:block font-mono text-[13px]">
+                  {s.price != null ? `₦${s.price.toLocaleString()}` : '—'}
+                </div>
+                <div className="hidden sm:block">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
+                      s.active ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-ink-faint'
+                    }`}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {s.active ? 'Active' : 'Hidden'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => startEdit(s)}
-                    className="text-sm text-muted hover:text-ink transition-colors"
+                    aria-label="Edit"
+                    className={iconBtnClass}
                   >
-                    Edit
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                      <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleToggleActive(s)}
+                    aria-label={s.active ? 'Hide' : 'Show'}
+                    className={iconBtnClass}
+                  >
+                    {s.active ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                        <path d="M3 3l18 18" />
+                        <path d="M10.6 5.1A9.9 9.9 0 0112 5c6.5 0 10 7 10 7a17.3 17.3 0 01-3.4 4.6M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a10 10 0 004.4-1" />
+                        <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+                      </svg>
+                    )}
                   </button>
                   <button
                     onClick={() => handleDelete(s.id)}
-                    className="text-sm text-muted hover:text-red-600 transition-colors"
+                    aria-label="Delete"
+                    className={`${iconBtnClass} hover:border-red-300 hover:text-red-600`}
                   >
-                    Delete
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+                    </svg>
                   </button>
                 </div>
-              </li>
+              </div>
             )
           )}
-        </ul>
+        </div>
       )}
     </div>
   );

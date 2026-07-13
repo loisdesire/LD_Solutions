@@ -75,26 +75,28 @@ export default function ManageBooking({
 
   if (status === 'cancelled') {
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-soft text-center">
-        <p className="font-semibold">This booking has been cancelled.</p>
+      <div className="border border-line rounded-md p-5 text-center">
+        <p className="font-semibold text-[14px]">This booking has been cancelled.</p>
       </div>
     );
   }
 
   if (rescheduled) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-soft text-center">
-        <p className="font-semibold">Your booking has been rescheduled.</p>
-        <p className="text-muted text-sm mt-1">Refresh this page to see the new time.</p>
+      <div className="border border-line rounded-md p-5 text-center">
+        <p className="font-semibold text-[14px]">Your booking has been rescheduled.</p>
+        <p className="text-ink-soft text-[13px] mt-1">Refresh this page to see the new time.</p>
       </div>
     );
   }
 
   if (rescheduling) {
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-soft space-y-5">
+      <div className="border border-line rounded-md p-5 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">New date</label>
+          <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+            New date
+          </label>
           <input
             type="date"
             value={date}
@@ -103,17 +105,19 @@ export default function ManageBooking({
               setDate(e.target.value);
               setSelectedSlot('');
             }}
-            className="w-full rounded-xl border border-line bg-white px-4 py-3 text-ink shadow-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
+            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
         </div>
 
         {date && (
           <div>
-            <label className="block text-sm font-medium text-ink mb-2">Available times</label>
+            <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
+              Available times
+            </label>
             {slots.length === 0 ? (
-              <p className="text-sm text-muted">No open slots this day. Try another date.</p>
+              <p className="text-sm text-ink-soft">No open slots this day. Try another date.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {slots.map((slot) => {
                   const time = new Date(slot).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -125,10 +129,13 @@ export default function ManageBooking({
                       type="button"
                       key={slot}
                       onClick={() => setSelectedSlot(slot)}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      style={
                         isSelected
-                          ? 'bg-brand text-white shadow-glow'
-                          : 'border border-line bg-white text-ink hover:border-accent hover:text-accent'
+                          ? { background: 'var(--accent)', color: 'var(--accent-contrast)', borderColor: 'var(--accent)' }
+                          : undefined
+                      }
+                      className={`py-2.5 text-[13px] font-mono border rounded-md transition-all ${
+                        isSelected ? '' : 'border-line-strong bg-surface hover:border-accent'
                       }`}
                     >
                       {time}
@@ -144,13 +151,14 @@ export default function ManageBooking({
           <button
             onClick={handleReschedule}
             disabled={loading || !selectedSlot}
-            className="flex-1 rounded-xl bg-brand py-3 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-40"
+            style={{ background: 'var(--accent)' }}
+            className="flex-1 rounded-md py-2.5 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
           >
             {loading ? 'Saving…' : 'Confirm new time'}
           </button>
           <button
             onClick={() => setRescheduling(false)}
-            className="rounded-xl border border-line px-4 py-3 text-sm font-medium text-muted hover:text-ink transition-colors"
+            className="rounded-md border border-line-strong px-4 py-2.5 text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
           >
             Cancel
           </button>
@@ -162,21 +170,21 @@ export default function ManageBooking({
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-6 shadow-soft space-y-3">
+    <div className="border border-line rounded-md p-5 flex flex-col sm:flex-row gap-3">
       <button
         onClick={() => setRescheduling(true)}
-        className="w-full rounded-xl border border-line py-3.5 text-sm font-semibold text-ink transition-all hover:border-accent hover:text-accent"
+        className="flex-1 rounded-md border border-line-strong py-2.5 text-[13.5px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
       >
         Reschedule
       </button>
       <button
         onClick={handleCancel}
         disabled={loading}
-        className="w-full rounded-xl border border-red-200 bg-red-50 py-3.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50"
+        className="flex-1 rounded-md border border-red-200 bg-red-50 py-2.5 text-[13.5px] font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
       >
-        {loading ? 'Cancelling…' : 'Cancel this booking'}
+        {loading ? 'Cancelling…' : 'Cancel booking'}
       </button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 w-full">{error}</p>}
     </div>
   );
 }

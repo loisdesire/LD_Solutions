@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import CheckIcon from './CheckIcon';
+
+const PRESETS = ['#B5502F', '#2F5D42', '#38416B', '#A8792B', '#6B3450', '#2F6F62', '#8A3FB8', '#1A1917'];
 
 export default function BusinessProfileManager({
   businessId,
@@ -45,25 +48,30 @@ export default function BusinessProfileManager({
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
-  const labelClass = 'block text-sm font-medium text-ink mb-1.5';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   return (
-    <form
-      onSubmit={handleSave}
-      className="space-y-5 rounded-2xl border border-line bg-white p-6 shadow-soft"
-    >
-      <div>
-        <label className={labelClass}>Business name</label>
-        <input
-          required
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setSaved(false);
-          }}
-          className={inputClass}
-        />
+    <form onSubmit={handleSave} className="space-y-5">
+      <div className="flex items-center gap-4">
+        <div
+          className="h-12 w-12 rounded-md flex items-center justify-center text-white font-display text-[20px] shrink-0"
+          style={{ background: accentColor }}
+        >
+          {name?.[0]?.toUpperCase()}
+        </div>
+        <div className="flex-1">
+          <label className={labelClass}>Business name</label>
+          <input
+            required
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setSaved(false);
+            }}
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <div>
@@ -82,6 +90,25 @@ export default function BusinessProfileManager({
 
       <div>
         <label className={labelClass}>Accent color</label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {PRESETS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
+                setAccentColor(c);
+                setSaved(false);
+              }}
+              style={{ background: c }}
+              className={`h-8 w-8 rounded-md transition-all ${
+                accentColor.toLowerCase() === c.toLowerCase()
+                  ? 'ring-2 ring-offset-2 ring-ink'
+                  : ''
+              }`}
+              aria-label={c}
+            />
+          ))}
+        </div>
         <div className="flex items-center gap-3">
           <input
             type="color"
@@ -90,28 +117,29 @@ export default function BusinessProfileManager({
               setAccentColor(e.target.value);
               setSaved(false);
             }}
-            className="h-11 w-14 rounded-lg border border-line shadow-sm cursor-pointer"
+            className="h-9 w-12 rounded-md border border-line-strong cursor-pointer"
           />
-          <input
-            value={accentColor}
-            onChange={(e) => {
-              setAccentColor(e.target.value);
-              setSaved(false);
-            }}
-            className={`${inputClass} flex-1`}
-          />
+          <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
         </div>
-        <p className="text-muted text-xs mt-2">
-          Used as a highlight color on your public booking page.
+        <p className="text-ink-faint text-[12px] mt-2">
+          Flows through your whole booking page — buttons, selected dates, times.
         </p>
       </div>
 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+        {saving ? (
+          'Saving…'
+        ) : saved ? (
+          <>
+            Saved <CheckIcon className="h-3.5 w-3.5" />
+          </>
+        ) : (
+          'Save'
+        )}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -4,31 +4,31 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        display: ['var(--font-display)', 'serif'],
         body: ['var(--font-body)', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
       colors: {
-        ink: '#0B0B14',
-        canvas: '#FAFAFC',
-        muted: '#6B7280',
-        line: '#E7E7EF',
-        accent: '#5B4CF0',
-        accent2: '#B347EA',
-      },
-      backgroundImage: {
-        brand: 'linear-gradient(135deg, #5B4CF0 0%, #B347EA 100%)',
+        paper: '#F7F4EE',
+        surface: '#FFFFFF',
+        ink: '#1A1917',
+        'ink-soft': '#55534A',
+        'ink-faint': '#8B887C',
+        line: '#E3DDD0',
+        'line-strong': '#C7C0AC',
+        accent: '#B5502F',
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(11,11,20,0.04), 0 8px 24px rgba(11,11,20,0.06)',
-        glow: '0 8px 30px rgba(91,76,240,0.25)',
+        soft: '0 1px 2px rgba(26,25,23,0.04), 0 4px 14px rgba(26,25,23,0.05)',
       },
       keyframes: {
         rise: {
-          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
       animation: {
-        rise: 'rise 0.5s ease-out both',
+        rise: 'rise 0.4s ease-out both',
       },
     },
   },

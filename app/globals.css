@@ -3,29 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --ink: #0b0b14;
-  --canvas: #fafafc;
-  --muted: #6b7280;
-  --line: #e7e7ef;
-  --accent: #5b4cf0;
-  --accent2: #b347ea;
+  --paper: #f7f4ee;
+  --surface: #ffffff;
+  --ink: #1a1917;
+  --ink-soft: #55534a;
+  --ink-faint: #8b887c;
+  --line: #e3ddd0;
+  --line-strong: #c7c0ac;
+  /* Platform default accent — overridden per-business via AccentScope on
+     customer-facing pages, stays the platform's own terracotta in admin. */
+  --accent: #b5502f;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(181, 80, 47, 0.1);
 }
 
 body {
-  background: var(--canvas);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body), sans-serif;
 }
 
-.text-gradient {
-  background-image: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.font-display {
+  font-family: var(--font-display), serif;
 }
 
-.bg-grid {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(11, 11, 20, 0.06) 1px, transparent 0);
-  background-size: 24px 24px;
+.font-mono {
+  font-family: var(--font-mono), monospace;
 }

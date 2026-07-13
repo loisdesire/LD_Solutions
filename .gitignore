@@ -29,3 +29,8 @@ next-env.d.ts
 
 # testing
 /coverage
+
+# design reference projects (not part of the app, kept for design review only)
+/landing page
+/marigold (with customer side)
+/slate(nice dashboard)

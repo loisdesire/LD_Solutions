@@ -1,6 +1,11 @@
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { notFound } from 'next/navigation';
 import LoginForm from '@/components/LoginForm';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function LoginPage({
   params,
@@ -15,24 +20,33 @@ export default async function LoginPage({
   const { business } = data;
 
   return (
-    <main className="min-h-screen bg-canvas bg-grid relative overflow-hidden">
+    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-paper">
       <div
-        className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-brand opacity-20 blur-3xl"
-        aria-hidden
-      />
-      <div className="relative max-w-md mx-auto px-6 py-16 sm:py-24 animate-rise">
-        <header className="mb-10">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-muted shadow-sm mb-6">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            {business.name}
-          </div>
-          <h1 className="text-4xl font-extrabold tracking-tight leading-[1.1]">
-            Welcome <span className="text-gradient">back</span>
+        className="hidden lg:flex flex-col justify-between p-14 border-r border-line"
+        style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 65%)' }}
+      >
+        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">
+          {business.name}
+        </div>
+        <div>
+          <h1 className="font-display text-[40px] leading-[1.08] max-w-md">
+            Welcome back.
+            <br />
+            Your day's <span className="italic">waiting.</span>
           </h1>
-          <p className="text-muted mt-3">Sign in to manage your bookings.</p>
-        </header>
+          <p className="text-ink-soft text-[14px] mt-5 max-w-sm">
+            Check today's schedule, manage your services, and keep your calendar tidy — all
+            in one place.
+          </p>
+        </div>
+        <div className="font-mono text-[11px] text-ink-faint">/{slug}</div>
+      </div>
 
-        <LoginForm slug={slug} />
+      <div className="flex items-center justify-center p-6 sm:p-14">
+        <div className="w-full max-w-sm animate-rise">
+          <h2 className="font-display text-[26px] mb-7">Log in</h2>
+          <LoginForm slug={slug} />
+        </div>
       </div>
     </main>
   );

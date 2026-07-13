@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import CheckIcon from './CheckIcon';
 
 type Hours = { start: string; end: string; open: boolean };
 
@@ -73,52 +74,70 @@ export default function HoursManager({
   }
 
   return (
-    <div className="space-y-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {days.map((day, index) => (
-        <div
-          key={index}
-          className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-6"
-        >
-          <label className="flex items-center gap-3 w-32 shrink-0 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={day.open}
-              onChange={(e) => updateDay(index, { open: e.target.checked })}
-              className="h-4 w-4 rounded accent-accent"
-            />
-            <span className="font-semibold text-sm">{DAY_NAMES[index]}</span>
-          </label>
-
-          {day.open ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                value={day.start}
-                onChange={(e) => updateDay(index, { start: e.target.value })}
-                className="rounded-xl border border-line bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
-              />
-              <span className="text-muted text-sm">to</span>
-              <input
-                type="time"
-                value={day.end}
-                onChange={(e) => updateDay(index, { end: e.target.value })}
-                className="rounded-xl border border-line bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
-              />
-            </div>
-          ) : (
-            <p className="text-muted text-sm">Closed</p>
-          )}
-
-          <button
-            onClick={() => saveDay(index)}
-            disabled={savingDay === index}
-            className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50 sm:ml-auto"
+    <div>
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      <div className="border border-line rounded-md overflow-hidden">
+        {days.map((day, index) => (
+          <div
+            key={index}
+            className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6 ${
+              index !== days.length - 1 ? 'border-b border-line' : ''
+            }`}
           >
-            {savingDay === index ? 'Saving…' : savedDay === index ? 'Saved ✓' : 'Save'}
-          </button>
-        </div>
-      ))}
+            <div
+              className="flex items-center gap-3 w-32 shrink-0 cursor-pointer select-none"
+              onClick={() => updateDay(index, { open: !day.open })}
+            >
+              <span
+                role="checkbox"
+                aria-checked={day.open}
+                className={`h-5 w-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                  day.open ? 'bg-accent border-accent' : 'border-line-strong bg-surface'
+                }`}
+              >
+                {day.open && <CheckIcon className="h-3 w-3 text-white" />}
+              </span>
+              <span className="font-semibold text-[14px]">{DAY_NAMES[index]}</span>
+            </div>
+
+            {day.open ? (
+              <div className="flex items-center gap-2.5">
+                <input
+                  type="time"
+                  value={day.start}
+                  onChange={(e) => updateDay(index, { start: e.target.value })}
+                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                />
+                <span className="font-mono text-[12px] text-ink-faint">to</span>
+                <input
+                  type="time"
+                  value={day.end}
+                  onChange={(e) => updateDay(index, { end: e.target.value })}
+                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                />
+              </div>
+            ) : (
+              <p className="font-mono text-[12px] text-ink-faint tracking-[0.03em]">Closed</p>
+            )}
+
+            <button
+              onClick={() => saveDay(index)}
+              disabled={savingDay === index}
+              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 sm:ml-auto"
+            >
+              {savingDay === index ? (
+                'Saving…'
+              ) : savedDay === index ? (
+                <>
+                  Saved <CheckIcon className="h-3 w-3" />
+                </>
+              ) : (
+                'Save'
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

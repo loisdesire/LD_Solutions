@@ -1,5 +1,4 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
-import AdminNav from '@/components/AdminNav';
 import StaffManager from '@/components/StaffManager';
 
 export default async function StaffPage({
@@ -23,28 +22,25 @@ export default async function StaffPage({
     .eq('accepted', false);
 
   return (
-    <main className="min-h-screen bg-canvas bg-grid">
-      <div className="max-w-3xl mx-auto px-6 py-16 sm:py-24 animate-rise">
-        <AdminNav slug={slug} />
-
-        <header className="mb-10">
-          <h1 className="text-4xl font-extrabold tracking-tight leading-[1.1]">
-            Staff
-          </h1>
-          <p className="text-muted mt-3">
-            Invite teammates to help manage bookings for {business.name}.
-          </p>
-        </header>
-
-        <StaffManager
-          businessId={business.id}
-          businessName={business.name}
-          slug={slug}
-          currentUserId={user.id}
-          initialStaff={staff ?? []}
-          initialInvites={invites ?? []}
-        />
+    <div>
+      <div className="mb-6">
+        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+          Manage
+        </div>
+        <h1 className="font-display text-[26px] text-ink">Your team</h1>
+        <p className="text-ink-soft text-[13.5px] mt-1">
+          Invite people to help manage bookings for {business.name}.
+        </p>
       </div>
-    </main>
+
+      <StaffManager
+        businessId={business.id}
+        businessName={business.name}
+        slug={slug}
+        currentUserId={user.id}
+        initialStaff={staff ?? []}
+        initialInvites={invites ?? []}
+      />
+    </div>
   );
 }

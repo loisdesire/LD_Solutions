@@ -34,15 +34,11 @@ export default function LoginForm({ slug }: { slug: string }) {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
-
-  const labelClass = 'block text-sm font-medium text-ink mb-1.5';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5 rounded-2xl border border-line bg-white p-6 shadow-soft"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className={labelClass}>Email</label>
         <input
@@ -58,11 +54,8 @@ export default function LoginForm({ slug }: { slug: string }) {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className={labelClass}>Password</label>
-          <Link
-            href={`/${slug}/forgot-password`}
-            className="text-xs font-medium text-accent hover:underline"
-          >
-            Forgot password?
+          <Link href={`/${slug}/forgot-password`} className="text-[12px] font-medium text-accent hover:underline">
+            Forgot?
           </Link>
         </div>
         <input
@@ -78,9 +71,9 @@ export default function LoginForm({ slug }: { slug: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0"
+        className="w-full rounded-md bg-accent py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 mt-2"
       >
-        {loading ? 'Signing in…' : 'Sign in →'}
+        {loading ? 'Signing in…' : 'Log in'}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

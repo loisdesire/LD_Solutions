@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import CheckIcon from './CheckIcon';
 
 export default function SettingsManager({
   businessId,
@@ -54,65 +55,50 @@ export default function SettingsManager({
     setSaved(true);
   }
 
-  const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
-  const labelClass = 'block text-sm font-medium text-ink mb-1.5';
+  const numInputClass =
+    'w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+
+  const rule = (
+    label: string,
+    hint: string,
+    value: number,
+    onChange: (n: number) => void
+  ) => (
+    <div className="flex items-center justify-between gap-4 py-3 border-b border-dashed border-line last:border-0">
+      <div>
+        <div className="text-[14px]">{label}</div>
+        <div className="text-ink-faint text-[12px] mt-0.5">{hint}</div>
+      </div>
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => {
+          onChange(Number(e.target.value));
+          setSaved(false);
+        }}
+        className={`${numInputClass} w-24 shrink-0`}
+      />
+    </div>
+  );
 
   return (
-    <form
-      onSubmit={handleSave}
-      className="space-y-5 rounded-2xl border border-line bg-white p-6 shadow-soft"
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label className={labelClass}>Buffer (min)</label>
-          <input
-            type="number"
-            min={0}
-            step={5}
-            value={bufferMinutes}
-            onChange={(e) => {
-              setBufferMinutes(Number(e.target.value));
-              setSaved(false);
-            }}
-            className={inputClass}
-          />
-          <p className="text-muted text-xs mt-2">Gap kept free around every booking.</p>
-        </div>
-        <div>
-          <label className={labelClass}>Booking window (days)</label>
-          <input
-            type="number"
-            min={1}
-            value={maxAdvanceDays}
-            onChange={(e) => {
-              setMaxAdvanceDays(Number(e.target.value));
-              setSaved(false);
-            }}
-            className={inputClass}
-          />
-          <p className="text-muted text-xs mt-2">How far ahead customers can book.</p>
-        </div>
-        <div>
-          <label className={labelClass}>Cancel/reschedule cutoff (hrs)</label>
-          <input
-            type="number"
-            min={0}
-            value={cancellationWindowHours}
-            onChange={(e) => {
-              setCancellationWindowHours(Number(e.target.value));
-              setSaved(false);
-            }}
-            className={inputClass}
-          />
-          <p className="text-muted text-xs mt-2">Minimum notice required to change a booking.</p>
-        </div>
+    <form onSubmit={handleSave} className="space-y-6">
+      <div>
+        {rule('Buffer time', 'Gap kept free around every booking (minutes)', bufferMinutes, setBufferMinutes)}
+        {rule('Advance booking', 'How far ahead customers can book (days)', maxAdvanceDays, setMaxAdvanceDays)}
+        {rule(
+          'Cancellation window',
+          'Minimum notice to cancel or reschedule (hours)',
+          cancellationWindowHours,
+          setCancellationWindowHours
+        )}
       </div>
 
-      <div className="h-px bg-line" />
-
       <div>
-        <label className={labelClass}>Webhook URL</label>
+        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+          Webhook URL
+        </label>
         <input
           type="url"
           value={webhookUrl}
@@ -120,21 +106,28 @@ export default function SettingsManager({
             setWebhookUrl(e.target.value);
             setSaved(false);
           }}
-          className={inputClass}
+          className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           placeholder="https://hooks.zapier.com/..."
         />
-        <p className="text-muted text-xs mt-2">
-          We'll POST a JSON payload here every time a new booking comes in — connect it to
-          Zapier, Make, or your own CRM.
+        <p className="text-ink-faint text-[12px] mt-2">
+          Send every booking to Zapier, Make, or your own CRM.
         </p>
       </div>
 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+        {saving ? (
+          'Saving…'
+        ) : saved ? (
+          <>
+            Saved <CheckIcon className="h-3.5 w-3.5" />
+          </>
+        ) : (
+          'Save'
+        )}
       </button>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

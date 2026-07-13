@@ -2,9 +2,18 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import CheckIcon from './CheckIcon';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
+
+const AVATAR_COLORS = ['#B5502F', '#2F5D42', '#38416B', '#A8792B', '#6B3450', '#2F6F62'];
+
+function avatarColor(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 export default function StaffManager({
   businessId,
@@ -80,16 +89,16 @@ export default function StaffManager({
   }
 
   const inputClass =
-    'w-full rounded-xl border border-line bg-white px-4 py-3 text-ink placeholder-muted/60 shadow-sm outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10';
+    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   return (
-    <div className="space-y-8">
+    <div>
       <form
         onSubmit={handleInvite}
-        className="flex flex-col sm:flex-row gap-4 items-end rounded-2xl border border-line bg-white p-6 shadow-soft"
+        className="flex flex-col sm:flex-row gap-3 items-end border border-dashed border-line-strong rounded-md p-5 mb-8"
       >
         <div className="flex-1 w-full">
-          <label className="block text-sm font-medium text-ink mb-1.5">
+          <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
             Invite by email
           </label>
           <input
@@ -98,76 +107,83 @@ export default function StaffManager({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
-            placeholder="teammate@example.com"
+            placeholder="colleague@example.com"
           />
         </div>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white shadow-glow transition-all hover:brightness-110 disabled:opacity-50 whitespace-nowrap"
+          className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
         >
           {saving ? 'Sending…' : 'Send invite'}
         </button>
       </form>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
-      <div>
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
-          Team
-        </h2>
-        <ul className="space-y-3">
-          {staff.map((s) => (
-            <li
-              key={s.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-white p-5 shadow-sm"
+      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-3">
+        Team
+      </div>
+      <div className="space-y-2 mb-8">
+        {staff.map((s) => (
+          <div
+            key={s.id}
+            className="flex items-center gap-3.5 border border-line rounded-md p-4"
+          >
+            <div
+              className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white text-[14px] font-semibold"
+              style={{ background: avatarColor(s.email) }}
             >
-              <div className="h-9 w-9 shrink-0 rounded-full bg-brand flex items-center justify-center text-white text-sm font-semibold">
-                {s.email[0]?.toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold truncate">{s.email}</p>
-              </div>
-              <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-xs font-medium capitalize text-muted">
-                {s.role}
-              </span>
-              {s.auth_id !== currentUserId && (
-                <button
-                  onClick={() => handleRemove(s.id)}
-                  className="text-sm text-muted hover:text-red-600 transition-colors shrink-0"
-                >
-                  Remove
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+              {s.email[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[14px] truncate">{s.email}</p>
+            </div>
+            <span className="font-mono rounded-full bg-ink/5 px-2.5 py-0.5 text-[10.5px] uppercase tracking-[0.05em] text-ink-faint">
+              {s.role}
+            </span>
+            {s.auth_id !== currentUserId && (
+              <button
+                onClick={() => handleRemove(s.id)}
+                className="text-[13px] text-ink-faint hover:text-red-600 transition-colors shrink-0"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
       </div>
 
       {invites.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
+          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-3">
             Pending invites
-          </h2>
-          <ul className="space-y-3">
+          </div>
+          <div className="space-y-2">
             {invites.map((inv) => (
-              <li
+              <div
                 key={inv.id}
-                className="flex items-center gap-3 rounded-2xl border border-dashed border-line bg-white/50 p-5"
+                className="flex items-center gap-3 border border-dashed border-line-strong rounded-md p-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{inv.email}</p>
-                  <p className="text-muted text-xs">Waiting to accept</p>
+                  <p className="font-medium text-[14px] truncate">{inv.email}</p>
+                  <p className="font-mono text-ink-faint text-[11px] mt-0.5">Waiting to accept</p>
                 </div>
                 <button
                   onClick={() => handleCopy(inv.token, inv.id)}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
                 >
-                  {copiedId === inv.id ? 'Copied ✓' : 'Copy link'}
+                  {copiedId === inv.id ? (
+                    <>
+                      Copied <CheckIcon className="h-3 w-3" />
+                    </>
+                  ) : (
+                    'Copy link'
+                  )}
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>
