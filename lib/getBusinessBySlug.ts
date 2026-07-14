@@ -15,7 +15,8 @@ export async function getBusinessBySlug(slug: string) {
     .from('services')
     .select('id, name, duration_minutes, price')
     .eq('business_id', business.id)
-    .eq('active', true);
+    .eq('active', true)
+    .order('name');
 
   return { business, services: services ?? [] };
 }
