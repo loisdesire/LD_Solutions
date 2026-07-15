@@ -3,31 +3,8 @@ import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import HeroTabs from '@/components/HeroTabs';
 import { SITE_URL } from '@/lib/site';
-import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
-import { getAvailableSlots } from '@/lib/getAvailableSlots';
 
 const DEMO_SLUG = 'glow-salon';
-
-// Pulls real data from the actual demo business so this section shows what
-// the platform genuinely does, not a made-up mockup. Searches forward a
-// week for the first day with real open slots, so this never goes stale.
-async function getDemoPreview() {
-  const data = await getBusinessBySlug(DEMO_SLUG);
-  if (!data || data.services.length === 0) return null;
-
-  const service = data.services[0];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const dateISO = d.toISOString().split('T')[0];
-    const slots = await getAvailableSlots(data.business.id, service.id, dateISO);
-    if (slots.length > 0) {
-      return { business: data.business, service, date: d, slots: slots.slice(0, 6) };
-    }
-  }
-  return null;
-}
 
 export const metadata: Metadata = {
   title: 'Booking pages for small businesses',
@@ -121,9 +98,7 @@ const businessTypes = [
   'Music teachers',
 ];
 
-export default async function LandingPage() {
-  const preview = await getDemoPreview();
-
+export default function LandingPage() {
   return (
     <div className="min-h-screen bg-paper">
       {/* Nav */}
@@ -204,50 +179,45 @@ export default async function LandingPage() {
       <section className="border-y border-line bg-surface/50">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {preview && (
-              <Reveal>
-                <a
-                  href={`/${DEMO_SLUG}`}
-                  className="block bg-surface border border-line rounded-md overflow-hidden shadow-soft hover:border-line-strong transition-colors"
-                >
-                  <div className="px-5 py-4 border-b border-line flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-white font-display text-[13px]">
-                      {preview.business.name[0]?.toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-semibold text-ink">{preview.business.name}</p>
-                      <p className="font-mono text-[10.5px] text-ink-faint">Book an appointment</p>
-                    </div>
+            <Reveal>
+              <div className="bg-surface border border-line rounded-md overflow-hidden shadow-soft">
+                <div className="px-5 py-4 border-b border-line flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-white font-display text-[13px]">
+                    M
                   </div>
-                  <div className="p-5">
-                    <p className="text-[13px] text-ink mb-0.5">{preview.service.name}</p>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint mb-3">
-                      Open times ·{' '}
-                      {preview.date.toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {preview.slots.map((slot, i) => (
-                        <div
-                          key={slot}
-                          className={`py-2.5 text-center text-[13px] font-mono rounded-md border tabular-nums ${
-                            i === 0 ? 'bg-accent text-white border-accent' : 'border-line-strong text-ink'
-                          }`}
-                        >
-                          {new Date(slot).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                        </div>
-                      ))}
-                    </div>
+                  <div>
+                    <p className="text-[14px] font-semibold text-ink">Maren Studio</p>
+                    <p className="font-mono text-[10.5px] text-ink-faint">Book an appointment</p>
                   </div>
-                  <div className="px-5 py-3 border-t border-line bg-paper font-mono text-[10.5px] text-ink-faint">
-                    Live data from a real booking page →
+                </div>
+                <div className="p-5">
+                  <p className="text-[13px] text-ink mb-0.5">Cut &amp; Finish</p>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint mb-3">
+                    Open times ·{' '}
+                    {new Date().toLocaleDateString(undefined, {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['9:00 AM', '9:20 AM', '9:40 AM', '10:00 AM', '10:20 AM', '10:40 AM'].map((time, i) => (
+                      <div
+                        key={time}
+                        className={`py-2.5 text-center text-[13px] font-mono rounded-md border tabular-nums ${
+                          i === 0 ? 'bg-accent text-white border-accent' : 'border-line-strong text-ink'
+                        }`}
+                      >
+                        {time}
+                      </div>
+                    ))}
                   </div>
-                </a>
-              </Reveal>
-            )}
+                </div>
+                <div className="px-5 py-3 border-t border-line bg-paper font-mono text-[10.5px] text-ink-faint">
+                  This is what your customers see
+                </div>
+              </div>
+            </Reveal>
 
             <Reveal delay={100}>
               <h2 className="font-display text-3xl text-ink mb-4 leading-snug">
