@@ -141,3 +141,84 @@ create policy "anyone can view availability"
 create policy "anyone can create a booking"
   on bookings for insert
   with check (true);
+
+-- ============================================
+-- WhatsApp AI agent
+-- ============================================
+
+-- The WhatsApp number Twilio routes inbound messages to for this business.
+-- In production each business gets its own Twilio WhatsApp number; during
+-- sandbox testing, one test business is pointed at Twilio's shared sandbox
+-- number so a real end-to-end flow can be tested before going live.
+alter table businesses add column if not exists whatsapp_number text unique;
+
+-- Rolling chat history per (business, customer phone), so the agent has
+-- context across turns ("book that one" referring to a slot offered two
+-- messages ago). Only ever touched by the webhook route via the service
+-- role key, so no public policies are defined here — RLS-enabled with zero
+-- policies means everyone but the service role is denied by default.
+create table if not exists whatsapp_conversations (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  customer_phone text not null,
+  messages jsonb not null default '[]'::jsonb,
+  updated_at timestamptz default now(),
+  unique (business_id, customer_phone)
+);
+
+alter table whatsapp_conversations enable row level security;
+
+-- Telegram bots are free and instant to create (no business verification,
+-- unlike WhatsApp), so unlike whatsapp_number, every business can realistically
+-- get its own bot token. The webhook URL itself is per-bot
+-- (/api/telegram/webhook/[token]), so this column is how that path segment
+-- resolves back to a business. whatsapp_conversations is reused as-is for
+-- Telegram history too (customer_phone holds 'telegram:<chatId>' there).
+alter table businesses add column if not exists telegram_bot_token text unique;
+-- Cosmetic only (shown in Settings as "Connected as @x") — never used for
+-- auth/routing, telegram_bot_token is the only thing that matters for that.
+alter table businesses add column if not exists telegram_bot_username text;
+
+-- ============================================
+-- Appointment reminders
+-- ============================================
+
+-- Null until a reminder email has actually been sent for this booking.
+-- The cron job (app/api/cron/send-reminders) uses this to send each
+-- reminder exactly once, regardless of how often the job runs — a booking
+-- becomes eligible once it's within the reminder window and stays eligible
+-- until this gets set, so an infrequent cron schedule (e.g. hourly, or
+-- daily on cheaper Vercel plans) still catches every booking correctly.
+alter table bookings add column if not exists reminder_sent_at timestamptz;
+
+-- ============================================
+-- Products (AI-assisted product discovery, web only for now — no
+-- checkout/payment/inventory-decrement yet, that's a deliberately deferred
+-- later phase). Mirrors the services table shape/RLS exactly.
+-- ============================================
+
+create table if not exists products (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  name text not null,
+  description text,
+  price numeric(10,2),
+  stock_quantity int,
+  image_url text,
+  active boolean default true,
+  created_at timestamptz default now()
+);
+
+alter table products enable row level security;
+
+create policy "staff can manage own products"
+  on products for all
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid()
+    )
+  );
+
+create policy "anyone can view active products"
+  on products for select
+  using (active = true);
