@@ -1,6 +1,7 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import BusinessProfileManager from '@/components/BusinessProfileManager';
 import SettingsManager from '@/components/SettingsManager';
+import BotIntegrationsSettings from '@/components/BotIntegrationsSettings';
 
 export default async function SettingsPage({
   params,
@@ -10,11 +11,18 @@ export default async function SettingsPage({
   const { slug } = await params;
   const { business, supabase } = await requireStaffSession(slug);
 
-  const { data: rules } = await supabase
-    .from('booking_rules')
-    .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours')
-    .eq('business_id', business.id)
-    .maybeSingle();
+  const [{ data: rules }, { data: bizRow }] = await Promise.all([
+    supabase
+      .from('booking_rules')
+      .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours')
+      .eq('business_id', business.id)
+      .maybeSingle(),
+    supabase
+      .from('businesses')
+      .select('telegram_bot_username, whatsapp_number')
+      .eq('id', business.id)
+      .single(),
+  ]);
 
   return (
     <div>
@@ -44,7 +52,7 @@ export default async function SettingsPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7">
+        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7 border-b border-line">
           <div>
             <h2 className="font-display text-[17px]">Booking rules</h2>
             <p className="text-ink-soft text-[13px] mt-1.5">
@@ -57,6 +65,20 @@ export default async function SettingsPage({
             initialBufferMinutes={rules?.buffer_minutes ?? 0}
             initialMaxAdvanceDays={rules?.max_advance_days ?? 30}
             initialCancellationWindowHours={rules?.cancellation_window_hours ?? 24}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7">
+          <div>
+            <h2 className="font-display text-[17px]">AI booking assistant</h2>
+            <p className="text-ink-soft text-[13px] mt-1.5">
+              Let customers check availability and book straight from a chat.
+            </p>
+          </div>
+          <BotIntegrationsSettings
+            slug={slug}
+            initialTelegramUsername={bizRow?.telegram_bot_username ?? null}
+            initialWhatsappNumber={bizRow?.whatsapp_number ?? null}
           />
         </div>
       </div>
