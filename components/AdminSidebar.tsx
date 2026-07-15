@@ -92,7 +92,7 @@ export default function AdminSidebar({
   }
 
   return (
-    <aside className="hidden md:flex md:w-[240px] shrink-0 border-r border-line flex-col py-6 px-4">
+    <aside className="hidden md:flex md:w-[240px] shrink-0 border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
       <div className="flex items-center gap-2.5 pb-5 mb-4 border-b border-line px-1">
         <div className="h-9 w-9 rounded-full border border-line-strong text-ink flex items-center justify-center font-display text-[15px] shrink-0">
           {businessName?.[0]?.toUpperCase()}
