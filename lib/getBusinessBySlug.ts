@@ -11,12 +11,19 @@ export async function getBusinessBySlug(slug: string) {
 
   if (error || !business) return null;
 
-  const { data: services } = await supabasePublic
-    .from('services')
-    .select('id, name, duration_minutes, price')
-    .eq('business_id', business.id)
-    .eq('active', true)
-    .order('name');
+  const [{ data: services }, { count: productCount }] = await Promise.all([
+    supabasePublic
+      .from('services')
+      .select('id, name, duration_minutes, price')
+      .eq('business_id', business.id)
+      .eq('active', true)
+      .order('name'),
+    supabasePublic
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', business.id)
+      .eq('active', true),
+  ]);
 
-  return { business, services: services ?? [] };
+  return { business, services: services ?? [], hasProducts: (productCount ?? 0) > 0 };
 }

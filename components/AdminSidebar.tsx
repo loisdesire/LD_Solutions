@@ -18,6 +18,11 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M4 6h16M4 12h16M4 18h10" />
     </svg>
   ),
+  products: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  ),
   hours: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <circle cx="12" cy="12" r="9" />
@@ -58,6 +63,7 @@ export default function AdminSidebar({
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
     { href: `/${slug}/admin/services`, label: 'Services', key: 'services' },
+    { href: `/${slug}/admin/products`, label: 'Products', key: 'products' },
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
   ];

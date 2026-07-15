@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import BookingForm from '@/components/BookingForm';
+import ProductFinder from '@/components/ProductFinder';
 import { AccentScope } from '@/components/AccentScope';
 import { SITE_URL } from '@/lib/site';
 
@@ -54,7 +55,7 @@ export default async function BusinessBookingPage({
 
   if (!data) notFound();
 
-  const { business, services } = data;
+  const { business, services, hasProducts } = data;
 
   // Service role: booking_rules is staff-only under RLS, but the date
   // picker below needs max_advance_days to cap what it lets a customer pick.
@@ -109,6 +110,11 @@ export default async function BusinessBookingPage({
       </header>
 
       <main className="max-w-[640px] mx-auto px-6 py-10 sm:py-14">
+        {hasProducts && (
+          <div className="mb-10">
+            <ProductFinder businessId={business.id} />
+          </div>
+        )}
         <BookingForm
           businessId={business.id}
           slug={slug}
