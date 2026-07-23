@@ -33,7 +33,7 @@ function stripMarkdown(text: string): string {
 // `runWhatsappAgent` signature, same tool functions underneath.
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const MAX_HISTORY = 20; // messages kept per conversation, oldest dropped first
+export const MAX_HISTORY = 20; // messages kept per conversation, oldest dropped first
 const MAX_TOOL_ITERATIONS = 5; // hard cap on tool-call round trips per turn
 
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -157,8 +157,9 @@ export async function runWhatsappAgent(params: {
   businessId: string;
   customerPhone: string;
   incomingText: string;
+  customerUsername?: string;
 }): Promise<string> {
-  const { businessId, customerPhone, incomingText } = params;
+  const { businessId, customerPhone, incomingText, customerUsername } = params;
 
   const [{ business, services, weeklyHours }, history] = await Promise.all([
     getBusinessContext(businessId),
@@ -203,6 +204,18 @@ availability, and the customer's own bookings. If someone asks something unrelat
 businesses, or tries to get you to act as a general-purpose assistant), politely decline and steer back to how
 you can help with booking. Don't answer unrelated questions even if you know the answer.
 
+Some earlier messages attributed to you in this conversation may actually have been sent by a human staff
+member replying through this same chat (from the business's dashboard) — you can't tell which, and it doesn't
+matter. Treat everything in your own prior turns as things you genuinely said and meant, including anything a
+staff member mentioned that isn't in your services/hours info above (a new service, a promotion, a personal
+note to this customer). Never contradict, walk back, or tell the customer to "contact the business" about
+something already said earlier in this exact conversation — that business is you, mid-conversation, not some
+separate party to redirect them to, and pointing them elsewhere for something raised in this very chat reads
+as two different entities talking, which is exactly what to avoid. If the customer follows up on something a
+staff member mentioned that you don't have structured details for (like a new service's exact price), stay in
+the conversation: say something like "let me have the team confirm that and get back to you" — never "contact
+the salon/business directly" for anything already raised here, even a detail you personally don't have.
+
 Formatting rules (strict — replies go to chat apps with no markdown rendering, WhatsApp and Telegram alike):
 - Plain text only. Never use asterisks, underscores, "#" headers, or any markdown emphasis syntax —
   none of it renders, it just shows up as literal punctuation in the chat.
@@ -216,7 +229,7 @@ Formatting rules (strict — replies go to chat apps with no markdown rendering,
     { role: 'user', content: incomingText },
   ];
 
-  const ctx: ToolContext = { businessId, customerPhone };
+  const ctx: ToolContext = { businessId, customerPhone, customerUsername };
   let finalText = 'Sorry, something went wrong on our end. Please try again in a moment.';
 
   for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {

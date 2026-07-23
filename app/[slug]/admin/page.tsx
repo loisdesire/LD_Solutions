@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import DashboardHeaderActions from '@/components/DashboardHeaderActions';
 import BookingsList from '@/components/BookingsList';
+import { formatContactForExport } from '@/lib/contact';
 
 // Server-side only: bookings contain customer PII, so this uses the service
 // role key rather than opening a public RLS policy on the table.
@@ -31,17 +32,6 @@ function relativeDay(date: Date, today: Date): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// customer_phone doubles as an opaque per-channel identifier for chat
-// bookings (see lib/whatsappTools.ts) — 'whatsapp:+234...' is a real,
-// callable number so just strip the prefix, but 'telegram:<chatId>' is
-// not contactable outside Telegram at all, so showing it raw as if it
-// were a phone number is actively misleading, not just ugly.
-function formatContact(phone: string): string {
-  if (phone.startsWith('whatsapp:')) return phone.slice('whatsapp:'.length);
-  if (phone.startsWith('telegram:')) return 'via Telegram';
-  return phone;
-}
-
 export default async function AdminDashboard({
   params,
 }: {
@@ -53,7 +43,7 @@ export default async function AdminDashboard({
   const { data: bookings } = await supabaseAdmin
     .from('bookings')
     .select(
-      'id, customer_name, customer_phone, customer_email, start_time, status, services(name, price, duration_minutes)'
+      'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
     )
     .eq('business_id', business.id)
     .order('start_time', { ascending: true });
@@ -91,7 +81,7 @@ export default async function AdminDashboard({
   const exportRows = all.map((b: any) => ({
     customer_name: b.customer_name,
     customer_email: b.customer_email,
-    customer_phone: formatContact(b.customer_phone),
+    customer_phone: formatContactForExport(b.customer_phone, b.customer_telegram_username),
     start_time: b.start_time,
     status: b.status,
     service_name: b.services?.name ?? null,
@@ -200,7 +190,7 @@ export default async function AdminDashboard({
           </div>
         </div>
       ) : (
-        <BookingsList bookings={all} />
+        <BookingsList slug={slug} bookings={all} />
       )}
     </div>
   );

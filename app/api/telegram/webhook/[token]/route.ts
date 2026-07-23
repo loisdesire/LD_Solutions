@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBusinessByTelegramToken } from '@/lib/whatsappTools';
 import { runWhatsappAgent } from '@/lib/whatsappAgent';
+import { sendTelegramMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
@@ -8,16 +9,9 @@ type TelegramUpdate = {
   message?: {
     chat: { id: number };
     text?: string;
+    from?: { username?: string };
   };
 };
-
-async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
-  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  });
-}
 
 // POST /api/telegram/webhook/[token] — Telegram calls this per-bot URL for
 // every update (each business's bot is registered against its own URL, so
@@ -38,6 +32,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const update: TelegramUpdate = await req.json();
   const chatId = update.message?.chat.id;
   const text = update.message?.text?.trim();
+  // Not every Telegram user has a public username set — when present, it's
+  // the only thing that makes this customer actually reachable outside the
+  // bot (t.me/<username> opens a real chat with them; the numeric chat id
+  // alone can't be turned into a link a business owner could click).
+  const username = update.message?.from?.username;
 
   // Ack with 200 even when there's nothing actionable (non-text messages,
   // edited messages, etc.) — a non-200 makes Telegram retry the same update.
@@ -61,6 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       businessId: business.id,
       customerPhone: `telegram:${chatId}`,
       incomingText: text,
+      customerUsername: username,
     });
     await sendTelegramMessage(token, chatId, reply);
   } catch (err) {

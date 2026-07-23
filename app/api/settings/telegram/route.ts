@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createServerSupabase } from '@/lib/supabase-server';
-import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
+import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
 import { SITE_URL } from '@/lib/site';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
@@ -10,31 +9,6 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-// Same staff-membership check as requireStaffSession, but returns JSON
-// instead of redirecting — requireStaffSession is built for page rendering
-// (next/navigation's redirect()/notFound()), which doesn't make sense for a
-// fetch()-consumed API route.
-async function authorize(slug: string) {
-  const data = await getBusinessBySlug(slug);
-  if (!data) return { error: NextResponse.json({ error: 'Business not found' }, { status: 404 }) };
-
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Not authenticated' }, { status: 401 }) };
-
-  const { data: staffRow } = await supabase
-    .from('staff')
-    .select('id')
-    .eq('business_id', data.business.id)
-    .eq('auth_id', user.id)
-    .maybeSingle();
-  if (!staffRow) return { error: NextResponse.json({ error: 'Not authorized' }, { status: 403 }) };
-
-  return { business: data.business };
-}
 
 // POST /api/settings/telegram — a business owner pastes their own BotFather
 // token; we validate it's real, register our webhook against it directly
@@ -50,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing slug or bot token' }, { status: 400 });
   }
 
-  const auth = await authorize(slug);
+  const auth = await requireStaffApiSession(slug);
   if (auth.error) return auth.error;
   const { business } = auth;
 
@@ -102,18 +76,12 @@ export async function DELETE(req: NextRequest) {
   const { slug } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
-  const auth = await authorize(slug);
+  const auth = await requireStaffApiSession(slug, 'id, telegram_bot_token');
   if (auth.error) return auth.error;
   const { business } = auth;
 
-  const { data: current } = await supabaseAdmin
-    .from('businesses')
-    .select('telegram_bot_token')
-    .eq('id', business.id)
-    .single();
-
-  if (current?.telegram_bot_token) {
-    await fetch(`https://api.telegram.org/bot${current.telegram_bot_token}/deleteWebhook`).catch(() => {});
+  if (business.telegram_bot_token) {
+    await fetch(`https://api.telegram.org/bot${business.telegram_bot_token}/deleteWebhook`).catch(() => {});
   }
 
   await supabaseAdmin

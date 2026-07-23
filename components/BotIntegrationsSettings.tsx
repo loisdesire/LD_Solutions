@@ -1,26 +1,129 @@
 'use client';
 
-import { useState } from 'react';
-import { SITE_URL } from '@/lib/site';
-import CheckIcon from './CheckIcon';
+import { useEffect, useRef, useState } from 'react';
 
 const inputClass =
   'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] font-mono text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+
+declare global {
+  interface Window {
+    FB?: { init: (opts: Record<string, unknown>) => void; login: (cb: (res: unknown) => void, opts: Record<string, unknown>) => void };
+    fbAsyncInit?: () => void;
+  }
+}
 
 export default function BotIntegrationsSettings({
   slug,
   initialTelegramUsername,
   initialWhatsappNumber,
+  initialMessengerPageName,
 }: {
   slug: string;
   initialTelegramUsername: string | null;
   initialWhatsappNumber: string | null;
+  initialMessengerPageName: string | null;
 }) {
   return (
     <div className="space-y-8">
       <TelegramSection slug={slug} initialUsername={initialTelegramUsername} />
       <div className="border-t border-dashed border-line" />
+      <MessengerSection slug={slug} initialPageName={initialMessengerPageName} />
+      <div className="border-t border-dashed border-line" />
       <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} />
+    </div>
+  );
+}
+
+function MessengerSection({ slug, initialPageName }: { slug: string; initialPageName: string | null }) {
+  const [pageName, setPageName] = useState(initialPageName);
+  const [token, setToken] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleConnect(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    const res = await fetch('/api/settings/messenger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, pageAccessToken: token }),
+    });
+    const data = await res.json();
+    setSaving(false);
+
+    if (!res.ok) {
+      setError(data.error ?? 'Something went wrong.');
+      return;
+    }
+
+    setPageName(data.pageName);
+    setToken('');
+  }
+
+  async function handleDisconnect() {
+    setSaving(true);
+    setError('');
+    const res = await fetch('/api/settings/messenger', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+    setSaving(false);
+    if (res.ok) setPageName(null);
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <p className="text-[14px] font-semibold text-ink">Facebook Messenger</p>
+        {pageName && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            Connected
+          </span>
+        )}
+      </div>
+
+      {pageName ? (
+        <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
+          <p className="text-[13.5px] text-ink-soft">
+            Connected as <span className="font-mono text-ink">{pageName}</span>
+          </p>
+          <button
+            onClick={handleDisconnect}
+            disabled={saving}
+            className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+          >
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleConnect} className="space-y-2.5">
+          <p className="text-ink-faint text-[12px]">
+            In your Meta App dashboard, add the Messenger product, generate a Page Access Token for your
+            Facebook Page, and paste it below.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="EAAG..."
+              className={inputClass}
+              required
+            />
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? 'Connecting…' : 'Connect'}
+            </button>
+          </div>
+        </form>
+      )}
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>
   );
 }
@@ -121,33 +224,96 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
 
 function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber: string | null }) {
   const [number, setNumber] = useState(initialNumber);
-  const [input, setInput] = useState('');
+  const [connecting, setConnecting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [sdkReady, setSdkReady] = useState(false);
+  const signupData = useRef<{ wabaId?: string; phoneNumberId?: string }>({});
 
-  const webhookUrl = `${SITE_URL}/api/whatsapp/webhook`;
+  // Meta posts a WA_EMBEDDED_SIGNUP message to the window as the owner
+  // completes the popup — this is how we learn which WABA/number they
+  // picked, since FB.login's own callback only ever hands back the auth code.
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (!event.origin.endsWith('facebook.com')) return;
+      let data: { type?: string; event?: string; data?: { waba_id?: string; phone_number_id?: string } };
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (data.type === 'WA_EMBEDDED_SIGNUP' && data.event === 'FINISH' && data.data) {
+        signupData.current = { wabaId: data.data.waba_id, phoneNumberId: data.data.phone_number_id };
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    if (window.FB) {
+      setSdkReady(true);
+      return;
+    }
+    window.fbAsyncInit = () => {
+      window.FB!.init({ appId: process.env.NEXT_PUBLIC_META_APP_ID, xfbml: false, version: 'v21.0' });
+      setSdkReady(true);
+    };
+    if (document.getElementById('facebook-jssdk')) return;
+    const script = document.createElement('script');
+    script.id = 'facebook-jssdk';
+    script.src = 'https://connect.facebook.net/en_US/sdk.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
+
+  async function finishConnect(code: string) {
     setSaving(true);
-    setError('');
-
     const res = await fetch('/api/settings/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, whatsappNumber: input }),
+      body: JSON.stringify({ slug, code, ...signupData.current }),
     });
     const data = await res.json();
     setSaving(false);
+    setConnecting(false);
 
     if (!res.ok) {
       setError(data.error ?? 'Something went wrong.');
       return;
     }
+    setNumber(data.displayNumber);
+  }
 
-    setNumber(input.trim());
-    setInput('');
+  function handleConnect() {
+    if (!window.FB) return;
+    setError('');
+    signupData.current = {};
+    setConnecting(true);
+
+    // FB's SDK rejects an async function here (it type-checks the callback
+    // itself), so this stays a plain function and hands off to a separate
+    // async one instead of awaiting inline.
+    window.FB.login(
+      (response: unknown) => {
+        const authResponse = (response as { authResponse?: { code?: string } })?.authResponse;
+        const code = authResponse?.code;
+
+        if (!code || !signupData.current.wabaId || !signupData.current.phoneNumberId) {
+          setConnecting(false);
+          return; // cancelled or closed without finishing — not an error to surface
+        }
+
+        finishConnect(code);
+      },
+      {
+        config_id: process.env.NEXT_PUBLIC_META_CONFIG_ID,
+        response_type: 'code',
+        override_default_response_type: true,
+        extras: { setup: {} },
+      }
+    );
   }
 
   async function handleDisconnect() {
@@ -160,12 +326,6 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
     });
     setSaving(false);
     if (res.ok) setNumber(null);
-  }
-
-  function copyWebhookUrl() {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
   }
 
   return (
@@ -181,58 +341,30 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
       </div>
 
       {number ? (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
-            <p className="font-mono text-[13.5px] text-ink">{number}</p>
-            <button
-              onClick={handleDisconnect}
-              disabled={saving}
-              className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
-            >
-              Disconnect
-            </button>
-          </div>
-          <div>
-            <p className="text-ink-faint text-[12px] mb-1.5">
-              In your Twilio Console, set this number&apos;s &quot;When a message comes in&quot; webhook to:
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-md border border-line-strong bg-paper px-3 py-2 text-[12px] font-mono text-ink-soft truncate">
-                {webhookUrl}
-              </code>
-              <button
-                onClick={copyWebhookUrl}
-                type="button"
-                className="shrink-0 rounded-md border border-line-strong px-3 py-2 text-[12px] font-medium text-ink-soft hover:text-ink transition-colors"
-              >
-                {copied ? <CheckIcon className="h-3.5 w-3.5" /> : 'Copy'}
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
+          <p className="font-mono text-[13.5px] text-ink">{number}</p>
+          <button
+            onClick={handleDisconnect}
+            disabled={saving}
+            className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+          >
+            Disconnect
+          </button>
         </div>
       ) : (
-        <form onSubmit={handleSave} className="space-y-2.5">
+        <div className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
-            Requires your own Twilio WhatsApp-enabled number (not the shared sandbox). Enter it below, then
-            paste the webhook URL we give you into that number&apos;s settings in your Twilio Console.
+            Connect the WhatsApp number you already message customers from. Heads up: linking it here
+            deactivates the regular WhatsApp app on that number's phone — the bot takes over replying there.
           </p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="whatsapp:+2348012345678"
-              className={inputClass}
-              required
-            />
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </form>
+          <button
+            onClick={handleConnect}
+            disabled={!sdkReady || connecting}
+            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+          >
+            {connecting ? 'Connecting…' : 'Connect WhatsApp'}
+          </button>
+        </div>
       )}
       {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>

@@ -1,27 +1,59 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import CalendarPicker from './CalendarPicker';
+
+type Period = 'Morning' | 'Afternoon' | 'Evening';
+
+function toDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function groupSlots(slots: string[]): [Period, string[]][] {
+  const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
+  const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
+  for (const s of slots) {
+    const h = new Date(s).getHours();
+    const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+    groups[period].push(s);
+  }
+  return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
+}
 
 export default function ManageBooking({
   bookingId,
   businessId,
   serviceId,
   initialStatus,
+  maxAdvanceDays = 30,
 }: {
   bookingId: string;
   businessId: string;
   serviceId: string;
   initialStatus: string;
+  maxAdvanceDays?: number;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [rescheduling, setRescheduling] = useState(false);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(toDateStr(new Date()));
   const [slots, setSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [rescheduled, setRescheduled] = useState(false);
+
+  const today = toDateStr(new Date());
+  const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
+
+  const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
   useEffect(() => {
     if (!date) {
@@ -92,82 +124,98 @@ export default function ManageBooking({
 
   if (rescheduling) {
     return (
-      <div className="border border-line rounded-md p-5 space-y-4">
+      <div className="border-2 border-line-strong bg-surface rounded-2xl p-6 space-y-5 animate-rise shadow-soft">
         <div>
-          <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+          <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
             New date
           </label>
-          <input
-            type="date"
-            value={date}
-            min={new Date().toISOString().split('T')[0]}
-            onChange={(e) => {
-              setDate(e.target.value);
+          <CalendarPicker
+            selectedDate={date}
+            onChange={(d) => {
+              setDate(toDateStr(d));
               setSelectedSlot('');
             }}
-            className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            today={today}
+            maxDate={maxDate}
           />
         </div>
 
         {date && (
-          <div>
-            <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
-              Available times
-            </label>
+          <div className="pt-2 animate-rise">
+            <div className="flex items-center justify-between mb-3">
+              <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+                Available times
+              </label>
+              <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>
+            </div>
             {slots.length === 0 ? (
-              <p className="text-sm text-ink-soft">No open slots this day. Try another date.</p>
+              <div className="border-2 border-dashed border-line-strong rounded-xl py-6 flex flex-col items-center text-center px-4">
+                <p className="text-ink-soft text-[13px]">No openings this day. Try another date.</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {slots.map((slot) => {
-                  const time = new Date(slot).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
-                  const isSelected = selectedSlot === slot;
-                  return (
-                    <button
-                      type="button"
-                      key={slot}
-                      onClick={() => setSelectedSlot(slot)}
-                      style={
-                        isSelected
-                          ? { background: 'var(--accent)', color: 'var(--accent-contrast)', borderColor: 'var(--accent)' }
-                          : undefined
-                      }
-                      className={`py-2.5 text-[13px] font-mono border rounded-md transition-all ${
-                        isSelected ? '' : 'border-line-strong bg-surface hover:border-accent'
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  );
-                })}
+              <div className="space-y-4 mb-4">
+                {slotGroups.map(([period, times]) => (
+                  <div key={period}>
+                    <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-faint mb-2">
+                      {period}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {times.map((t) => {
+                        const isSel = t === selectedSlot;
+                        return (
+                          <button
+                            type="button"
+                            key={t}
+                            onClick={() => setSelectedSlot(t)}
+                            style={
+                              isSel
+                                ? {
+                                    background: 'var(--accent)',
+                                    borderColor: 'var(--accent)',
+                                    color: 'var(--accent-contrast)',
+                                  }
+                                : undefined
+                            }
+                            className={`min-w-[80px] py-2 px-3 text-[13px] font-mono font-semibold tabular-nums border-2 rounded-full transition-all active:scale-95 ${
+                              isSel
+                                ? 'shadow-[0_4px_12px_-2px_var(--accent)]'
+                                : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
+                            }`}
+                          >
+                            {formatTime(t)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={handleReschedule}
             disabled={loading || !selectedSlot}
-            style={{ background: 'var(--accent)' }}
-            className="flex-1 rounded-md py-2.5 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
+            style={selectedSlot ? { background: 'var(--accent)' } : undefined}
+            className="flex-1 rounded-lg py-3 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
           >
             {loading ? 'Saving…' : 'Confirm new time'}
           </button>
           <button
             onClick={() => setRescheduling(false)}
-            className="rounded-md border border-line-strong px-4 py-2.5 text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+            className="rounded-lg border border-line-strong px-4 py-3 text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
           >
             Cancel
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
       </div>
     );
   }
+
 
   return (
     <div className="border border-line rounded-md p-5 flex flex-col sm:flex-row gap-3">

@@ -64,11 +64,9 @@ export default function SettingsManager({
     value: number,
     onChange: (n: number) => void
   ) => (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-dashed border-line last:border-0">
-      <div>
-        <div className="text-[14px]">{label}</div>
-        <div className="text-ink-faint text-[12px] mt-0.5">{hint}</div>
-      </div>
+    <div className="py-3 border-b border-dashed border-line last:border-0">
+      <div className="text-[14px]">{label}</div>
+      <div className="text-ink-faint text-[12px] mt-0.5 mb-2.5">{hint}</div>
       <input
         type="number"
         min={0}
@@ -77,7 +75,7 @@ export default function SettingsManager({
           onChange(Number(e.target.value));
           setSaved(false);
         }}
-        className={`${numInputClass} w-24 shrink-0`}
+        className={`${numInputClass} w-24`}
       />
     </div>
   );

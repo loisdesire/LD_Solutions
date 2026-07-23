@@ -11,14 +11,20 @@ export default function BusinessProfileManager({
   initialName,
   initialLogoUrl,
   initialAccentColor,
+  initialCoverImageUrl,
+  initialDescription,
 }: {
   businessId: string;
   initialName: string;
   initialLogoUrl: string | null;
   initialAccentColor: string;
+  initialCoverImageUrl: string | null;
+  initialDescription: string | null;
 }) {
   const [name, setName] = useState(initialName);
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? '');
+  const [coverImageUrl, setCoverImageUrl] = useState(initialCoverImageUrl ?? '');
+  const [description, setDescription] = useState(initialDescription ?? '');
   const [accentColor, setAccentColor] = useState(initialAccentColor);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -34,7 +40,13 @@ export default function BusinessProfileManager({
 
     const { error: updateError } = await supabase
       .from('businesses')
-      .update({ name, logo_url: logoUrl || null, accent_color: accentColor })
+      .update({
+        name,
+        logo_url: logoUrl || null,
+        cover_image_url: coverImageUrl || null,
+        description: description.trim() || null,
+        accent_color: accentColor,
+      })
       .eq('id', businessId);
 
     setSaving(false);
@@ -86,6 +98,46 @@ export default function BusinessProfileManager({
           className={inputClass}
           placeholder="https://…"
         />
+      </div>
+
+      <div>
+        <label className={labelClass}>Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            setSaved(false);
+          }}
+          maxLength={160}
+          rows={2}
+          placeholder="Lagos's go-to for natural hair care since 2019."
+          className={inputClass}
+        />
+        <p className="text-ink-faint text-[12px] mt-2">
+          One or two lines, shown at the top of your booking page. {160 - description.length} left.
+        </p>
+      </div>
+
+      <div>
+        <label className={labelClass}>Cover photo URL</label>
+        <input
+          type="url"
+          value={coverImageUrl}
+          onChange={(e) => {
+            setCoverImageUrl(e.target.value);
+            setSaved(false);
+          }}
+          className={inputClass}
+          placeholder="https://…"
+        />
+        <p className="text-ink-faint text-[12px] mt-2">
+          Wide banner across the top of your booking page. Without one, we use your accent color instead.
+        </p>
+        {coverImageUrl && (
+          <div className="mt-3 h-28 rounded-md overflow-hidden border border-line-strong">
+            <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        )}
       </div>
 
       <div>

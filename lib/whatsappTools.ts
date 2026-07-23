@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAvailableSlots } from './getAvailableSlots';
 import { todayInTimezone, daysBetween, zonedTimeToUtc } from './timezone';
-import { logError } from './logger';
+import { sendEmail } from './email';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
 // Twilio — it's the same booking logic the web app already uses (services,
@@ -21,6 +21,11 @@ export type ToolContext = {
   // schema change; it's just a stable "who to reply to" key, not validated
   // as an actual phone number anywhere in this codebase.
   customerPhone: string;
+  // Telegram-only, and only when the customer has a public username set —
+  // it's the one thing that makes a Telegram customer actually contactable
+  // outside the bot (t.me/<username> opens a real chat; the numeric chat id
+  // in customerPhone can't be turned into a clickable link on its own).
+  customerUsername?: string;
 };
 
 export async function getBusinessByWhatsappNumber(whatsappNumber: string) {
@@ -28,6 +33,28 @@ export async function getBusinessByWhatsappNumber(whatsappNumber: string) {
     .from('businesses')
     .select('id, name, timezone')
     .eq('whatsapp_number', whatsappNumber)
+    .maybeSingle();
+  return data;
+}
+
+// Meta's Cloud API webhook is shared across every number registered to the
+// same App/WABA — unlike Telegram's per-bot URL, there's no per-business
+// webhook to route by, so the business is identified by matching the
+// phone_number_id Meta includes in every inbound payload instead.
+export async function getBusinessByMetaPhoneNumberId(phoneNumberId: string) {
+  const { data } = await supabaseAdmin
+    .from('businesses')
+    .select('id, name, timezone, whatsapp_access_token')
+    .eq('whatsapp_phone_number_id', phoneNumberId)
+    .maybeSingle();
+  return data;
+}
+
+export async function getBusinessByMessengerPageId(pageId: string) {
+  const { data } = await supabaseAdmin
+    .from('businesses')
+    .select('id, name, timezone, messenger_access_token')
+    .eq('messenger_page_id', pageId)
     .maybeSingle();
   return data;
 }
@@ -170,6 +197,7 @@ export async function createBooking(
       customer_name: args.customerName,
       customer_phone: ctx.customerPhone,
       customer_email: args.customerEmail || null,
+      customer_telegram_username: ctx.customerUsername || null,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
     })
@@ -184,26 +212,17 @@ export async function createBooking(
   }
 
   // Same fire-and-forget confirmation email as the web booking flow
-  // (app/api/bookings/route.ts) — only fires if the customer gave an email
-  // and RESEND_API_KEY is configured; failure here never blocks the booking.
-  if (args.customerEmail && process.env.RESEND_API_KEY) {
-    try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'bookings@yourplatform.com',
-          to: args.customerEmail,
-          subject: 'Your appointment is confirmed',
-          html: `<p>Hi ${args.customerName}, your ${service.name} appointment is confirmed for ${start.toLocaleString()}.</p>`,
-        }),
-      });
-    } catch (err) {
-      logError('whatsappTools:createBooking:confirmation-email', err, { businessId: ctx.businessId });
-    }
+  // (app/api/bookings/route.ts) — failure here never blocks the booking.
+  if (args.customerEmail) {
+    await sendEmail(
+      {
+        to: args.customerEmail,
+        subject: 'Your appointment is confirmed',
+        html: `<p>Hi ${args.customerName}, your ${service.name} appointment is confirmed for ${start.toLocaleString()}.</p>`,
+      },
+      'whatsappTools:createBooking:confirmation-email',
+      { businessId: ctx.businessId }
+    );
   }
 
   return {

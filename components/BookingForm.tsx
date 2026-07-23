@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import CheckIcon from './CheckIcon';
+import CalendarPicker from './CalendarPicker';
 
 type Service = {
   id: string;
@@ -12,6 +12,7 @@ type Service = {
 };
 
 type Step = 'service' | 'datetime' | 'details' | 'confirmed';
+type Period = 'Morning' | 'Afternoon' | 'Evening';
 
 function toDateStr(d: Date): string {
   const y = d.getFullYear();
@@ -20,17 +21,76 @@ function toDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function addDays(d: Date, n: number): Date {
-  const copy = new Date(d);
-  copy.setDate(copy.getDate() + n);
-  return copy;
-}
-
 function formatDuration(min: number): string {
   if (min < 60) return `${min} min`;
   const h = Math.floor(min / 60);
   const rest = min % 60;
   return rest === 0 ? `${h} hr` : `${h} hr ${rest} min`;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function groupSlots(slots: string[]): [Period, string[]][] {
+  const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
+  const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
+  for (const s of slots) {
+    const h = new Date(s).getHours();
+    const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+    groups[period].push(s);
+  }
+  return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
+}
+
+// Numbered circle + connecting line, matching a considered reservation
+// flow rather than a generic multi-step SaaS form.
+function StepIndicator({ step }: { step: number }) {
+  const steps = ['Service', 'Time', 'Details'];
+  return (
+    <div className="flex items-center justify-between max-w-[280px] mx-auto mb-10 relative">
+      <div className="absolute top-5 left-5 right-5 h-px bg-line -z-0" />
+      {steps.map((label, i) => {
+        const n = i + 1;
+        const done = step > n;
+        const active = step === n;
+        return (
+          <div key={label} className="flex flex-col items-center gap-2 relative z-10">
+            <div
+              className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold text-[14px] transition-all duration-300 ${
+                done || active ? 'text-white' : 'border-2 border-line-strong bg-paper text-ink-faint'
+              }`}
+              style={
+                done || active
+                  ? { background: 'var(--progress)', boxShadow: '0 0 0 4px rgba(80, 99, 84, 0.1)' }
+                  : undefined
+              }
+            >
+              {done ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              ) : (
+                n
+              )}
+            </div>
+            <span className={`text-[12px] font-medium ${active || done ? 'text-ink' : 'text-ink-faint'}`}>
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConfirmationRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-dashed border-line last:border-0">
+      <span className="text-[13px] text-ink-faint">{label}</span>
+      <span className="text-[14px] font-semibold text-ink">{value}</span>
+    </div>
+  );
 }
 
 export default function BookingForm({
@@ -46,7 +106,6 @@ export default function BookingForm({
 }) {
   const [step, setStep] = useState<Step>('service');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [weekStart, setWeekStart] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(toDateStr(new Date()));
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -60,11 +119,18 @@ export default function BookingForm({
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
 
-  const weekDays = useMemo(() => {
-    const start = new Date(weekStart);
-    start.setDate(start.getDate() - start.getDay());
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }, [weekStart]);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem('ld-booking-name');
+      const savedEmail = localStorage.getItem('ld-booking-email');
+      const savedPhone = localStorage.getItem('ld-booking-phone');
+      if (savedName) setName(savedName);
+      if (savedEmail) setEmail(savedEmail);
+      if (savedPhone) setPhone(savedPhone);
+    }
+  }, []);
+
+  const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
   useEffect(() => {
     if (!selectedService || !selectedDate) return;
@@ -79,13 +145,6 @@ export default function BookingForm({
     setSelectedService(s);
     setSelectedSlot('');
     setStep('datetime');
-  }
-
-  function pickDate(d: Date) {
-    const ds = toDateStr(d);
-    if (ds < today || ds > maxDate) return;
-    setSelectedDate(ds);
-    setSelectedSlot('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -109,6 +168,11 @@ export default function BookingForm({
 
     const data = await res.json();
     if (res.ok) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ld-booking-name', name);
+        localStorage.setItem('ld-booking-email', email);
+        localStorage.setItem('ld-booking-phone', phone);
+      }
       setBookingId(data.booking.id);
       setStatus('idle');
       setStep('confirmed');
@@ -117,313 +181,347 @@ export default function BookingForm({
     }
   }
 
-  const stepIndex = { service: 0, datetime: 1, details: 2, confirmed: 3 }[step];
-
-  const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
+  const stepNum = step === 'service' ? 1 : step === 'datetime' ? 2 : step === 'details' ? 3 : 4;
 
   if (step === 'confirmed') {
     return (
-      <div className="animate-rise text-center py-6">
-        <div
-          className="mx-auto mb-5 h-14 w-14 rounded-full flex items-center justify-center text-white"
-          style={{ background: 'var(--accent)' }}
-        >
-          <CheckIcon className="h-6 w-6" />
-        </div>
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-2">
-          Booking confirmed
-        </div>
-        <h2 className="font-display text-[26px] mb-2">You're all set, {name.split(' ')[0]}.</h2>
-        <p className="text-ink-soft text-[14px] max-w-xs mx-auto">
-          A confirmation has been sent to {email}.
-        </p>
-
-        <div className="border border-line rounded-md mt-8 text-left overflow-hidden">
-          <div className="p-5 border-b border-dashed border-line-strong">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-faint">
-              {selectedService?.name}
+      <div className="animate-rise max-w-xl mx-auto">
+        <div className="rounded-2xl bg-surface border border-line shadow-card overflow-hidden">
+          <div
+            className="px-6 sm:px-8 pt-8 pb-6 text-center"
+            style={{ background: 'linear-gradient(135deg, var(--accent-soft), transparent)' }}
+          >
+            <div
+              className="inline-flex items-center justify-center h-14 w-14 rounded-full mb-4"
+              style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
             </div>
-            <div className="font-display text-[19px] mt-1">
-              {selectedSlot &&
-                new Date(selectedSlot).toLocaleString(undefined, {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-            </div>
-            <div className="font-mono text-[13px] text-ink-soft mt-1.5">
-              {selectedSlot &&
-                new Date(selectedSlot).toLocaleTimeString(undefined, {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-            </div>
+            <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink">
+              You&rsquo;re all set, {name.split(' ')[0]}!
+            </h2>
+            <p className="text-ink-soft text-[14px] mt-1.5">A confirmation has been sent to {email}</p>
           </div>
-          <div className="p-4 flex items-center justify-between bg-paper">
-            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              Confirmed
-            </span>
-            <span className="font-mono text-[11px] text-ink-faint">
-              #{bookingId.slice(0, 8).toUpperCase()}
+
+          <div className="px-6 sm:px-8 py-4">
+            <ConfirmationRow label="Service" value={selectedService?.name ?? ''} />
+            <ConfirmationRow
+              label="Date"
+              value={
+                selectedSlot
+                  ? new Date(selectedSlot).toLocaleDateString(undefined, {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : ''
+              }
+            />
+            <ConfirmationRow label="Time" value={selectedSlot ? formatTime(selectedSlot) : ''} />
+            {selectedService?.price != null && (
+              <ConfirmationRow label="Price" value={`₦${selectedService.price.toLocaleString()}`} />
+            )}
+          </div>
+
+          <div className="mx-6 sm:mx-8 border-t border-dashed border-line-strong" />
+          <div className="px-6 sm:px-8 py-4 flex items-center justify-between">
+            <span className="text-[12px] text-ink-faint font-medium">Booking code</span>
+            <span className="font-mono text-[15px] tracking-[0.2em] font-bold text-ink">
+              {bookingId.slice(0, 8).toUpperCase()}
             </span>
           </div>
         </div>
 
-        <Link
-          href={`/${slug}/manage/${bookingId}`}
-          className="inline-block mt-6 text-[13.5px] font-medium hover:underline"
-          style={{ color: 'var(--accent)' }}
-        >
-          Manage this booking →
-        </Link>
+        <div className="text-center mt-5">
+          <Link
+            href={`/${slug}/manage/${bookingId}`}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors hover:opacity-80"
+            style={{ color: 'var(--accent)' }}
+          >
+            Manage this booking
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      {step !== 'service' && (
-        <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] text-ink-faint mb-8">
-          <span className={stepIndex >= 0 ? 'text-ink' : ''}>01 Service</span>
-          <span>—</span>
-          <span className={stepIndex >= 1 ? 'text-ink' : ''}>02 Time</span>
-          <span>—</span>
-          <span className={stepIndex >= 2 ? 'text-ink' : ''}>03 Details</span>
+      <StepIndicator step={stepNum} />
+
+      {step !== 'service' && selectedService && (
+        <div className="max-w-xl mx-auto rounded-xl bg-surface border border-line overflow-hidden mb-6 animate-rise">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-[12px] font-bold shrink-0"
+                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
+                {selectedSlot && (
+                  <span className="text-[12px] text-ink-faint">
+                    {new Date(selectedSlot).toLocaleDateString(undefined, {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                    {' · '}
+                    {formatTime(selectedSlot)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setStep('service')}
+              className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-colors hover:bg-paper"
+              style={{ color: 'var(--accent)' }}
+            >
+              Change
+            </button>
+          </div>
         </div>
       )}
 
       {step === 'service' && (
         <div className="animate-rise">
+          <h2 className="font-display text-[28px] sm:text-[32px] font-semibold text-ink mb-1.5 text-center">Select a service</h2>
+          <p className="text-[15px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
-            <p className="text-ink-soft text-[14px]">This business hasn't listed any services yet.</p>
+            <div className="max-w-xl mx-auto rounded-xl border border-dashed border-line-strong py-12 text-center">
+              <p className="text-ink-soft text-[14px]">This business hasn&apos;t listed any services yet.</p>
+            </div>
           ) : (
-            <div className="border-t border-line">
-              {services.map((s, i) => (
-                <button
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              {services.map((s) => (
+                <div
                   key={s.id}
-                  onClick={() => selectService(s)}
-                  className="w-full flex items-center gap-4 py-4 border-b border-line text-left group hover:bg-paper transition-colors"
+                  className="group rounded-xl bg-surface border border-line p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
+                  style={{ boxShadow: 'none' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 12px 24px -10px var(--accent-soft)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
                 >
-                  <span className="font-mono text-[12px] text-ink-faint tabular-nums w-6 shrink-0">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className="font-display text-[17px] text-ink transition-colors group-hover:text-[var(--accent)]"
-                    >
-                      {s.name}
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="min-w-0">
+                      <h3 className="font-display text-[21px] font-semibold text-ink mb-1">{s.name}</h3>
+                      <div className="flex items-center gap-1.5 text-ink-faint">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 6v6l4 2" />
+                        </svg>
+                        <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
+                      </div>
                     </div>
-                    <div className="text-[12.5px] text-ink-faint mt-0.5 font-mono">
-                      {formatDuration(s.duration_minutes)}
-                    </div>
+                    {s.price != null && (
+                      <div className="font-display text-[21px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>
+                        ₦{s.price.toLocaleString()}
+                      </div>
+                    )}
                   </div>
-                  {s.price != null && (
-                    <div className="font-mono text-[15px] shrink-0">₦{s.price.toLocaleString()}</div>
-                  )}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="text-ink-faint group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0">
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
-                </button>
+                  <button
+                    onClick={() => selectService(s)}
+                    className="w-full py-3 rounded-full border-2 text-[13.5px] font-semibold transition-all duration-300"
+                    style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--accent)';
+                      e.currentTarget.style.color = 'var(--accent-contrast)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--accent)';
+                    }}
+                  >
+                    Select service
+                  </button>
+                </div>
               ))}
+            </div>
+          )}
+
+          {services.length > 0 && (
+            <div className="mt-10 text-center">
+              <p className="text-[14px] text-ink-faint">
+                Not sure what to pick?{' '}
+                <span className="font-semibold underline underline-offset-4" style={{ color: 'var(--accent)' }}>
+                  Message us and we&apos;ll help you choose
+                </span>
+              </p>
             </div>
           )}
         </div>
       )}
 
       {step === 'datetime' && selectedService && (
-        <div className="animate-rise">
-          <button
-            onClick={() => setStep('service')}
-            className="flex items-center gap-1 text-[13px] text-ink-faint hover:text-ink mb-6 transition-colors"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M15 6l-6 6 6 6" /></svg>
-            Change service
-          </button>
+        <div className="animate-rise max-w-xl mx-auto">
+          <h2 className="font-display text-[24px] font-semibold text-ink mb-1 text-center">Pick a time</h2>
+          <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
 
-          <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-            <h2 className="font-display text-[22px]">Choose a time</h2>
-            <div className="text-right text-[13px] text-ink-soft">
-              <div className="font-display text-[16px] text-ink">{selectedService.name}</div>
-              <div className="font-mono text-[11.5px]">
-                {formatDuration(selectedService.duration_minutes)}
-                {selectedService.price != null ? ` · ₦${selectedService.price.toLocaleString()}` : ''}
-              </div>
-            </div>
+          <div className="rounded-xl bg-surface border border-line p-4 mb-6">
+            <CalendarPicker
+              selectedDate={selectedDate}
+              onChange={(d) => {
+                setSelectedDate(toDateStr(d));
+                setSelectedSlot('');
+              }}
+              today={today}
+              maxDate={maxDate}
+            />
           </div>
 
           <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setWeekStart(addDays(weekStart, -7))}
-              className="p-1.5 text-ink-faint hover:text-ink transition-colors"
-              aria-label="Previous week"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M15 6l-6 6 6 6" /></svg>
-            </button>
-            <div className="flex items-center gap-1.5 font-mono text-[12.5px] text-ink-soft">
-              {weekDays[0].toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-            </div>
-            <button
-              onClick={() => setWeekStart(addDays(weekStart, 7))}
-              className="p-1.5 text-ink-faint hover:text-ink transition-colors"
-              aria-label="Next week"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M9 6l6 6-6 6" /></svg>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 border-t border-l border-line mb-8">
-            {weekDays.map((d) => {
-              const ds = toDateStr(d);
-              const disabled = ds < today || ds > maxDate;
-              const isSelected = ds === selectedDate;
-              return (
-                <button
-                  key={ds}
-                  disabled={disabled}
-                  onClick={() => pickDate(d)}
-                  style={isSelected ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
-                  className={`relative flex flex-col items-center justify-center gap-1 py-3.5 border-r border-b border-line transition-colors ${
-                    disabled
-                      ? 'text-ink-faint/40 cursor-not-allowed'
-                      : isSelected
-                      ? ''
-                      : 'text-ink hover:bg-paper'
-                  }`}
-                >
-                  <span className="text-[9.5px] font-semibold uppercase tracking-[0.08em] opacity-70">
-                    {d.toLocaleDateString(undefined, { weekday: 'short' })}
-                  </span>
-                  <span className="font-display text-[16px]">{d.getDate()}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-[17px]">
+            <h3 className="text-[15px] font-semibold text-ink">
               {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
               })}
             </h3>
-            {!loadingSlots && <span className="font-mono text-[11.5px] text-ink-faint">{slots.length} open</span>}
+            {!loadingSlots && (
+              <span className="text-[12px] font-medium text-ink-faint px-2 py-0.5 rounded-md bg-paper border border-line">
+                {slots.length} available
+              </span>
+            )}
           </div>
 
           {loadingSlots ? (
-            <p className="text-ink-faint text-[13.5px] py-6 text-center">Loading…</p>
-          ) : slots.length === 0 ? (
-            <div className="border border-dashed border-line-strong py-12 flex flex-col items-center text-center px-6">
-              <p className="text-ink-soft text-[13.5px]">No openings this day. Try another date above.</p>
+            <div className="space-y-5 mb-6">
+              {[0, 1].map((i) => (
+                <div key={i}>
+                  <div className="h-3 w-20 rounded bg-line/60 mb-3 animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%' }} />
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 1, 2].map((j) => (
+                      <div key={j} className="w-[80px] h-[40px] rounded-full bg-line/40 animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%', animationDelay: `${j * 0.15}s` }} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : slotGroups.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-line-strong py-10 flex flex-col items-center text-center px-6 mb-6">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-faint mb-3">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              <p className="text-ink-soft text-[14px]">No openings on this day</p>
+              <p className="text-ink-faint text-[12px] mt-1">Try selecting a different date</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-8">
-              {slots.map((t) => {
-                const isSel = t === selectedSlot;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => setSelectedSlot(t)}
-                    style={isSel ? { background: 'var(--accent)', color: 'var(--accent-contrast)', borderColor: 'var(--accent)' } : undefined}
-                    className={`py-2.5 text-[13px] font-mono border rounded-md transition-all ${
-                      isSel ? '' : 'border-line-strong bg-surface hover:border-[var(--accent)]'
-                    }`}
-                  >
-                    {new Date(t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                  </button>
-                );
-              })}
+            <div className="space-y-5 mb-6">
+              {slotGroups.map(([period, times]) => (
+                <div key={period}>
+                  <div className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint mb-2.5">
+                    {period}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                    {times.map((t) => {
+                      const isSel = t === selectedSlot;
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => setSelectedSlot(t)}
+                          style={
+                            isSel
+                              ? {
+                                  background: 'var(--accent)',
+                                  borderColor: 'var(--accent)',
+                                  color: 'var(--accent-contrast)',
+                                }
+                              : undefined
+                          }
+                          className={`py-3.5 px-2 text-[13.5px] font-semibold tabular-nums border-2 rounded-xl transition-all duration-150 ${
+                            isSel
+                              ? ''
+                              : 'border-line-strong bg-surface hover:border-[var(--accent)] active:scale-95'
+                          }`}
+                        >
+                          {formatTime(t)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
-          <button
-            onClick={() => setStep('details')}
-            disabled={!selectedSlot}
-            style={selectedSlot ? { background: 'var(--accent)' } : undefined}
-            className="w-full py-3 text-[14px] font-semibold text-white rounded-md transition-opacity disabled:opacity-30"
-          >
-            Continue →
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setStep('service')}
+              className="flex items-center gap-1.5 text-[13.5px] font-medium text-ink-faint hover:text-ink transition-colors"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <button
+              onClick={() => setStep('details')}
+              disabled={!selectedSlot}
+              style={selectedSlot ? { background: 'var(--accent)' } : undefined}
+              className="px-8 py-3 text-[14px] font-semibold text-white rounded-full transition-all disabled:opacity-25 disabled:bg-line-strong hover:opacity-90 active:scale-[0.98]"
+            >
+              Continue to details
+            </button>
+          </div>
         </div>
       )}
 
       {step === 'details' && selectedService && selectedSlot && (
-        <form onSubmit={handleSubmit} className="animate-rise">
-          <button
-            type="button"
-            onClick={() => setStep('datetime')}
-            className="flex items-center gap-1 text-[13px] text-ink-faint hover:text-ink mb-6 transition-colors"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M15 6l-6 6 6 6" /></svg>
-            Change time
-          </button>
-
-          <h2 className="font-display text-[22px] mb-6">Your details</h2>
-
-          <div className="border border-line rounded-md p-4 mb-6 bg-paper">
-            {[
-              ['Service', selectedService.name],
-              [
-                'When',
-                new Date(selectedSlot).toLocaleString(undefined, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                }),
-              ],
-              ...(selectedService.price != null
-                ? [['Price', `₦${selectedService.price.toLocaleString()}`]]
-                : []),
-            ].map(([k, v]) => (
-              <div
-                key={k}
-                className="flex justify-between py-2 text-[13.5px] border-b border-dashed border-line last:border-0"
-              >
-                <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
-                  {k}
-                </span>
-                <span className="font-semibold">{v}</span>
-              </div>
-            ))}
-          </div>
+        <form onSubmit={handleSubmit} className="animate-rise max-w-xl mx-auto">
+          <h2 className="font-display text-[24px] font-semibold text-ink mb-1 text-center">Your details</h2>
+          <p className="text-[14px] text-ink-faint mb-6 text-center">We&apos;ll send your confirmation here</p>
 
           <div className="space-y-4 mb-6">
-            <div>
-              <label className={labelClass}>Full name</label>
-              <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Email</label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Phone</label>
-              <input required value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
-            </div>
+            {[
+              { label: 'Full name', value: name, onChange: setName, type: 'text' },
+              { label: 'Email', value: email, onChange: setEmail, type: 'email' },
+              { label: 'Phone', value: phone, onChange: setPhone, type: 'tel' },
+            ].map((field) => (
+              <div key={field.label}>
+                <label className="block text-[13px] font-medium text-ink-soft mb-1.5">{field.label}</label>
+                <input
+                  required
+                  type={field.type}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className="w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+                />
+              </div>
+            ))}
           </div>
 
           <button
             type="submit"
             disabled={status === 'saving'}
             style={{ background: 'var(--accent)' }}
-            className="w-full py-3 text-[14px] font-semibold text-white rounded-md transition-opacity disabled:opacity-50"
+            className="w-full py-3.5 text-[14px] font-semibold text-white rounded-full transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
           >
-            {status === 'saving' ? 'Confirming…' : 'Confirm booking'}
+            {status === 'saving' ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" />
+                </svg>
+                Confirming…
+              </span>
+            ) : (
+              'Confirm booking'
+            )}
           </button>
 
           {status === 'error' && (
-            <p className="text-sm text-red-600 mt-3 text-center">Something went wrong. Please try again.</p>
+            <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-100">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" /></svg>
+              <p className="text-[13px] text-red-600">Something went wrong. Please try again.</p>
+            </div>
           )}
         </form>
       )}

@@ -1,5 +1,6 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import BusinessProfileManager from '@/components/BusinessProfileManager';
+import SiteContentManager from '@/components/SiteContentManager';
 import SettingsManager from '@/components/SettingsManager';
 import BotIntegrationsSettings from '@/components/BotIntegrationsSettings';
 
@@ -19,7 +20,9 @@ export default async function SettingsPage({
       .maybeSingle(),
     supabase
       .from('businesses')
-      .select('telegram_bot_username, whatsapp_number')
+      .select(
+        'telegram_bot_username, whatsapp_display_number, messenger_page_name, about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url'
+      )
       .eq('id', business.id)
       .single(),
   ]);
@@ -37,8 +40,8 @@ export default async function SettingsPage({
       </div>
 
       <div className="border-t border-line">
-        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7 border-b border-line">
-          <div>
+        <div className="py-7 border-b border-line">
+          <div className="mb-5">
             <h2 className="font-display text-[17px]">Business profile</h2>
             <p className="text-ink-soft text-[13px] mt-1.5">
               Your name, logo, and color appear on your booking page.
@@ -49,11 +52,31 @@ export default async function SettingsPage({
             initialName={business.name}
             initialLogoUrl={business.logo_url}
             initialAccentColor={business.accent_color}
+            initialCoverImageUrl={business.cover_image_url}
+            initialDescription={business.description}
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7 border-b border-line">
-          <div>
+        <div className="py-7 border-b border-line">
+          <div className="mb-5">
+            <h2 className="font-display text-[17px]">Website content</h2>
+            <p className="text-ink-soft text-[13px] mt-1.5">
+              About, gallery, and contact info shown on your booking page.
+            </p>
+          </div>
+          <SiteContentManager
+            businessId={business.id}
+            initialAboutText={bizRow?.about_text ?? null}
+            initialGalleryUrls={bizRow?.gallery_urls ?? null}
+            initialContactPhone={bizRow?.contact_phone ?? null}
+            initialContactEmail={bizRow?.contact_email ?? null}
+            initialInstagramUrl={bizRow?.instagram_url ?? null}
+            initialFacebookUrl={bizRow?.facebook_url ?? null}
+          />
+        </div>
+
+        <div className="py-7 border-b border-line">
+          <div className="mb-5">
             <h2 className="font-display text-[17px]">Booking rules</h2>
             <p className="text-ink-soft text-[13px] mt-1.5">
               Keep your schedule sane with buffers and limits.
@@ -68,8 +91,8 @@ export default async function SettingsPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[240px_1fr] gap-5 sm:gap-10 py-7">
-          <div>
+        <div className="py-7">
+          <div className="mb-5">
             <h2 className="font-display text-[17px]">AI booking assistant</h2>
             <p className="text-ink-soft text-[13px] mt-1.5">
               Let customers check availability and book straight from a chat.
@@ -78,7 +101,8 @@ export default async function SettingsPage({
           <BotIntegrationsSettings
             slug={slug}
             initialTelegramUsername={bizRow?.telegram_bot_username ?? null}
-            initialWhatsappNumber={bizRow?.whatsapp_number ?? null}
+            initialWhatsappNumber={bizRow?.whatsapp_display_number ?? null}
+            initialMessengerPageName={bizRow?.messenger_page_name ?? null}
           />
         </div>
       </div>

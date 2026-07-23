@@ -83,10 +83,25 @@ alter table availability enable row level security;
 alter table booking_rules enable row level security;
 alter table bookings enable row level security;
 
--- Business owners/staff can only see their own business's data
-create policy "staff can view own business"
+-- Customer-facing booking pages read business data while signed out
+-- (name, logo, services shown to anyone), so this has to allow anonymous
+-- reads — it's not sensitive data, unlike the tables below.
+create policy "anyone can view businesses"
   on businesses for select
-  using (owner_auth_id = auth.uid());
+  using (true);
+
+-- Staff (any role, not just the owner) can update their own business's
+-- profile — settings/branding fields, matching the same staff-membership
+-- check used for services/availability/booking_rules below. Missing this
+-- was a real bug: BusinessProfileManager's save always failed silently
+-- with no policy permitting the update at all.
+create policy "staff can update own business"
+  on businesses for update
+  using (
+    id in (
+      select business_id from staff where auth_id = auth.uid()
+    )
+  );
 
 create policy "staff can view own business staff"
   on staff for select
@@ -147,10 +162,62 @@ create policy "anyone can create a booking"
 -- ============================================
 
 -- The WhatsApp number Twilio routes inbound messages to for this business.
--- In production each business gets its own Twilio WhatsApp number; during
--- sandbox testing, one test business is pointed at Twilio's shared sandbox
--- number so a real end-to-end flow can be tested before going live.
+-- Superseded by Meta's Cloud API below (whatsapp_phone_number_id) — kept
+-- for now rather than dropped, in case of rollback.
 alter table businesses add column if not exists whatsapp_number text unique;
+
+-- Meta's own WhatsApp Cloud API, replacing Twilio as the WhatsApp
+-- middleman. Unlike whatsapp_number (a human-readable phone string), this
+-- is the numeric phone_number_id Meta assigns when a number is registered
+-- to a WhatsApp Business Account — required for both the outbound Graph
+-- API send call and for routing inbound webhook payloads to the right
+-- business (see lib/whatsappTools.ts getBusinessByMetaPhoneNumberId).
+alter table businesses add column if not exists whatsapp_phone_number_id text unique;
+
+-- The WhatsApp Business Account this phone number lives under — not used
+-- for routing (phone_number_id already does that) but required to fetch
+-- phone number details and subscribe the app to that WABA's webhooks
+-- during Embedded Signup.
+alter table businesses add column if not exists whatsapp_business_account_id text;
+
+-- Human-readable number (e.g. +234...) for showing in the settings UI —
+-- whatsapp_phone_number_id is an opaque numeric id, not something an
+-- owner would recognize as "their number".
+alter table businesses add column if not exists whatsapp_display_number text;
+
+-- Each business connects its own WhatsApp Business Account via Embedded
+-- Signup, so each needs its own access token scoped to their number — a
+-- single shared env-var token (the pre-Embedded-Signup approach, used only
+-- for the one hardcoded test business) doesn't work once multiple real
+-- businesses are connected.
+alter table businesses add column if not exists whatsapp_access_token text;
+
+-- Wide banner shown across the top of the public booking page. Separate
+-- from logo_url (a small square mark) — this is what gives the booking
+-- page visual presence instead of reading as a bare form.
+alter table businesses add column if not exists cover_image_url text;
+
+-- One or two lines shown on the public booking page so a customer lands
+-- on something that reads as a real place, not just a name and a list.
+alter table businesses add column if not exists description text;
+
+-- Longer-form "About" section body for the public booking page — separate
+-- from `description` (a short tagline shown in the hero), this is the
+-- fuller story shown in its own section, only rendered if set.
+alter table businesses add column if not exists about_text text;
+
+-- Photo gallery for the public booking page. Stored as one URL per line
+-- rather than a separate table/upload flow — same "paste a URL" pattern
+-- already used for logo_url/cover_image_url, just multiple lines.
+alter table businesses add column if not exists gallery_urls text;
+
+-- Real contact details for the public booking page's Contact section —
+-- all optional, all independent (a business might have a phone but no
+-- Instagram, etc.), each only rendered if actually set.
+alter table businesses add column if not exists contact_phone text;
+alter table businesses add column if not exists contact_email text;
+alter table businesses add column if not exists instagram_url text;
+alter table businesses add column if not exists facebook_url text;
 
 -- Rolling chat history per (business, customer phone), so the agent has
 -- context across turns ("book that one" referring to a slot offered two
@@ -175,6 +242,15 @@ alter table whatsapp_conversations enable row level security;
 -- resolves back to a business. whatsapp_conversations is reused as-is for
 -- Telegram history too (customer_phone holds 'telegram:<chatId>' there).
 alter table businesses add column if not exists telegram_bot_token text unique;
+
+-- Facebook Messenger, connected via a Page rather than a phone number —
+-- no OTP, no business-verification wait, and connecting it never logs the
+-- owner out of anything (unlike WhatsApp's Cloud API). Like whatsapp_phone_
+-- number_id, page id is how a shared webhook routes an inbound message
+-- back to the right business; the access token is Page-scoped, not shared.
+alter table businesses add column if not exists messenger_page_id text unique;
+alter table businesses add column if not exists messenger_access_token text;
+alter table businesses add column if not exists messenger_page_name text;
 -- Cosmetic only (shown in Settings as "Connected as @x") — never used for
 -- auth/routing, telegram_bot_token is the only thing that matters for that.
 alter table businesses add column if not exists telegram_bot_username text;
@@ -190,6 +266,12 @@ alter table businesses add column if not exists telegram_bot_username text;
 -- until this gets set, so an infrequent cron schedule (e.g. hourly, or
 -- daily on cheaper Vercel plans) still catches every booking correctly.
 alter table bookings add column if not exists reminder_sent_at timestamptz;
+
+-- Telegram-only, only set when the customer has a public username. It's
+-- the one thing that makes a Telegram-originated booking's contact actually
+-- useful to the business owner — customer_phone stores 'telegram:<chatId>'
+-- for these, which has no clickable/callable meaning on its own.
+alter table bookings add column if not exists customer_telegram_username text;
 
 -- ============================================
 -- Products (AI-assisted product discovery, web only for now — no

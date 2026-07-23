@@ -34,6 +34,14 @@ export default async function ManageBookingPage({
 
   if (!booking) notFound();
 
+  const { data: rules } = await supabaseAdmin
+    .from('booking_rules')
+    .select('max_advance_days')
+    .eq('business_id', booking.business_id)
+    .maybeSingle();
+
+  const maxAdvanceDays = rules?.max_advance_days ?? 30;
+
   const business = booking.businesses as any;
   const service = booking.services as any;
   const statusLabel: Record<string, string> = {
@@ -109,6 +117,7 @@ export default async function ManageBookingPage({
               businessId={booking.business_id}
               serviceId={booking.service_id}
               initialStatus={booking.status}
+              maxAdvanceDays={maxAdvanceDays}
             />
           </div>
         </div>

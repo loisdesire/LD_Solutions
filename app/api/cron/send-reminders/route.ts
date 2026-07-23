@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logError } from '@/lib/logger';
+import { sendEmail } from '@/lib/email';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,7 @@ const supabaseAdmin = createClient(
 );
 
 const REMINDER_WINDOW_HOURS = 24;
+const BATCH_SIZE = 10; // concurrent sends — bounded so a large backlog doesn't all hit Resend at once
 
 // GET /api/cron/send-reminders — triggered by Vercel Cron (see vercel.json).
 // Channel-agnostic on purpose: it doesn't care whether the booking came
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   let failed = 0;
 
-  for (const booking of bookings ?? []) {
+  async function remindOne(booking: NonNullable<typeof bookings>[number]) {
     const service = booking.services as unknown as { name: string } | null;
     const business = booking.businesses as unknown as { name: string; timezone: string } | null;
     const startLabel = new Date(booking.start_time).toLocaleString(undefined, {
@@ -57,27 +59,33 @@ export async function GET(req: NextRequest) {
       timeStyle: 'short',
     });
 
-    try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'bookings@yourplatform.com',
-          to: booking.customer_email,
-          subject: `Reminder: your appointment at ${business?.name ?? 'the business'}`,
-          html: `<p>Hi ${booking.customer_name}, just a reminder that your ${service?.name ?? 'appointment'} at ${business?.name ?? ''} is coming up on ${startLabel}.</p>`,
-        }),
-      });
+    // A rejected send (bad address, restricted recipient, rate limit) is
+    // treated as a failure so reminder_sent_at stays unset and the next
+    // run retries it, instead of silently marking a failed send as sent.
+    const ok = await sendEmail(
+      {
+        to: booking.customer_email!,
+        subject: `Reminder: your appointment at ${business?.name ?? 'the business'}`,
+        html: `<p>Hi ${booking.customer_name}, just a reminder that your ${service?.name ?? 'appointment'} at ${business?.name ?? ''} is coming up on ${startLabel}.</p>`,
+      },
+      'cron/send-reminders:send',
+      { bookingId: booking.id }
+    );
 
+    if (ok) {
       await supabaseAdmin.from('bookings').update({ reminder_sent_at: new Date().toISOString() }).eq('id', booking.id);
       sent += 1;
-    } catch (err) {
+    } else {
       failed += 1;
-      logError('cron/send-reminders:send', err, { bookingId: booking.id });
     }
+  }
+
+  // Each booking's send+update is independent of the others, so process in
+  // parallel batches rather than one at a time — bounded so a large
+  // backlog doesn't fire 100 concurrent requests at Resend at once.
+  const rows = bookings ?? [];
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    await Promise.all(rows.slice(i, i + BATCH_SIZE).map(remindOne));
   }
 
   return NextResponse.json({ checked: bookings?.length ?? 0, sent, failed });

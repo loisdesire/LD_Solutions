@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { todayInTimezone, daysBetween } from '@/lib/timezone';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { sendEmail } from '@/lib/email';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`
@@ -100,28 +101,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fire-and-forget confirmation email. Swap in Resend/SendGrid here —
-  // this is the one place a notification gets triggered, so adding
-  // SMS/WhatsApp later just means adding another call in this same spot.
-  if (customerEmail && process.env.RESEND_API_KEY) {
-    try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'bookings@yourplatform.com',
-          to: customerEmail,
-          subject: 'Your appointment is confirmed',
-          html: `<p>Hi ${customerName}, your appointment is confirmed for ${start.toLocaleString()}.</p>`,
-        }),
-      });
-    } catch (err) {
-      // Don't fail the booking just because the email failed — log it instead.
-      logError('api/bookings:confirmation-email', err, { businessId });
-    }
+  // Fire-and-forget confirmation email — never fails the booking itself.
+  if (customerEmail) {
+    await sendEmail(
+      {
+        to: customerEmail,
+        subject: 'Your appointment is confirmed',
+        html: `<p>Hi ${customerName}, your appointment is confirmed for ${start.toLocaleString()}.</p>`,
+      },
+      'api/bookings:confirmation-email',
+      { businessId }
+    );
   }
 
   return NextResponse.json({ booking });
