@@ -24,6 +24,10 @@
      buttons, selection) so "this step is active" reads as a distinct
      signal rather than just another shade of the brand color. */
   --progress: #506354;
+  /* Fixed dusty blue — used alongside --progress and --accent to give
+     admin dashboard stat cards distinct icon colors instead of every
+     card using the same accent shade. */
+  --tertiary: #4c6079;
 }
 
 body {

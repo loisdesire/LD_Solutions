@@ -2,10 +2,9 @@ import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import DashboardHeaderActions from '@/components/DashboardHeaderActions';
-import BookingsList from '@/components/BookingsList';
+import AdminDashboardBody from '@/components/AdminDashboardBody';
 import { formatContactForExport } from '@/lib/contact';
+import { todayInTimezone, zonedTimeToUtc } from '@/lib/timezone';
 
 // Server-side only: bookings contain customer PII, so this uses the service
 // role key rather than opening a public RLS policy on the table.
@@ -24,14 +23,6 @@ export async function generateMetadata({
   return { title: data ? `${data.business.name} — Dashboard` : 'Dashboard' };
 }
 
-function relativeDay(date: Date, today: Date): string {
-  const days = Math.round((date.getTime() - today.getTime()) / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Tomorrow';
-  if (days === -1) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
 export default async function AdminDashboard({
   params,
 }: {
@@ -40,17 +31,34 @@ export default async function AdminDashboard({
   const { slug } = await params;
   const { business } = await requireStaffSession(slug);
 
-  const { data: bookings } = await supabaseAdmin
-    .from('bookings')
-    .select(
-      'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
-    )
-    .eq('business_id', business.id)
-    .order('start_time', { ascending: true });
+  const LOW_STOCK_THRESHOLD = 3;
+
+  const [{ data: bookings }, { data: lowStockProducts }] = await Promise.all([
+    supabaseAdmin
+      .from('bookings')
+      .select(
+        'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
+      )
+      .eq('business_id', business.id)
+      .order('start_time', { ascending: true }),
+    supabaseAdmin
+      .from('products')
+      .select('id, name, stock_quantity')
+      .eq('business_id', business.id)
+      .eq('active', true)
+      .lte('stock_quantity', LOW_STOCK_THRESHOLD)
+      .order('stock_quantity', { ascending: true }),
+  ]);
 
   const all = bookings ?? [];
+  const lowStock = lowStockProducts ?? [];
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // "Today"/"this week" boundaries in the business's own timezone, not the
+  // server's — otherwise a business in Lagos gets its stats flipping over
+  // at server-local midnight (UTC on most hosts), miscounting bookings for
+  // anyone within a few hours of that boundary.
+  const timeZone = business.timezone || 'UTC';
+  const startOfToday = zonedTimeToUtc(todayInTimezone(timeZone), '00:00', timeZone);
   const startOfWeek = new Date(startOfToday);
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   const endOfWeek = new Date(startOfWeek);
@@ -78,6 +86,22 @@ export default async function AdminDashboard({
     prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : null;
   const nextSlot = active.find((b) => new Date(b.start_time) >= now);
 
+  // Real booking counts per day, not the fake fixed-height bars a mockup
+  // would use — last 7 days ending today.
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfToday);
+    d.setDate(d.getDate() - 6 + i);
+    return d;
+  });
+  const dayCounts = last7Days.map((day) => {
+    const nextDay = new Date(day.getTime() + 86400000);
+    return active.filter((b) => {
+      const t = new Date(b.start_time);
+      return t >= day && t < nextDay;
+    }).length;
+  });
+  const maxDayCount = Math.max(1, ...dayCounts);
+
   const exportRows = all.map((b: any) => ({
     customer_name: b.customer_name,
     customer_email: b.customer_email,
@@ -88,110 +112,21 @@ export default async function AdminDashboard({
   }));
 
   return (
-    <div>
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-            Manage
-          </div>
-          <h1 className="font-display text-[26px] text-ink">Dashboard</h1>
-        </div>
-        <DashboardHeaderActions slug={slug} rows={exportRows} />
-      </div>
-
-      {all.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 border border-line rounded-md mb-8 overflow-hidden">
-          <div className="p-4 sm:p-5 border-r border-b sm:border-b-0 border-line">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2">
-              Today
-            </div>
-            <div className="font-display text-[26px] leading-none">{todayCount}</div>
-            <div className="text-[11px] text-ink-faint mt-1.5">bookings</div>
-          </div>
-          <div className="p-4 sm:p-5 border-r border-b sm:border-b-0 border-line">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2">
-              This week
-            </div>
-            <div className="font-display text-[26px] leading-none">{thisWeek.length}</div>
-            <div className={`text-[11px] mt-1.5 ${weekCountDelta >= 0 ? 'text-accent' : 'text-ink-faint'}`}>
-              {weekCountDelta >= 0 ? '+' : ''}
-              {weekCountDelta} vs last week
-            </div>
-          </div>
-          <div className="p-4 sm:p-5 border-r border-line">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2">
-              Week revenue
-            </div>
-            <div className="font-display text-[26px] leading-none">
-              {weekRevenue ? `₦${weekRevenue.toLocaleString()}` : '—'}
-            </div>
-            <div className="text-[11px] text-ink-faint mt-1.5">
-              {revenuePctDelta === null
-                ? '—'
-                : `${revenuePctDelta >= 0 ? '+' : ''}${revenuePctDelta}% vs last week`}
-            </div>
-          </div>
-          <div className="p-4 sm:p-5">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2">
-              Next slot
-            </div>
-            {nextSlot ? (
-              <>
-                <div className="font-display text-[19px] leading-tight">
-                  {relativeDay(new Date(nextSlot.start_time), startOfToday)}
-                </div>
-                <div className="font-mono text-[13px] text-accent mt-0.5">
-                  {new Date(nextSlot.start_time).toLocaleTimeString(undefined, {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
-                </div>
-                <div className="text-[11px] text-ink-faint mt-1 truncate">
-                  {nextSlot.customer_name} · {(nextSlot as any).services?.name}
-                </div>
-              </>
-            ) : (
-              <div className="font-display text-[26px] leading-none text-ink-faint">—</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {all.length === 0 ? (
-        <div className="border border-dashed border-line-strong rounded-md p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-md bg-accent-soft flex items-center justify-center text-accent">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </div>
-          <h2 className="font-display text-[20px]">No bookings yet — that's normal</h2>
-          <p className="text-ink-soft text-[13.5px] mt-1.5 max-w-sm mx-auto">
-            The moment someone books through your page, they'll show up right here with
-            all their details.
-          </p>
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <Link
-              href={`/${slug}/admin/services`}
-              className="rounded-md border border-line-strong px-4 py-2 text-[13.5px] font-medium hover:border-accent hover:text-accent transition-colors"
-            >
-              Add a service
-            </Link>
-            <Link
-              href={`/${slug}/admin/hours`}
-              className="rounded-md border border-line-strong px-4 py-2 text-[13.5px] font-medium hover:border-accent hover:text-accent transition-colors"
-            >
-              Set your hours
-            </Link>
-          </div>
-          <div className="font-mono text-[10.5px] text-ink-faint mt-6 tracking-[0.05em]">
-            /{slug}
-          </div>
-        </div>
-      ) : (
-        <BookingsList slug={slug} bookings={all} />
-      )}
-    </div>
+    <AdminDashboardBody
+      slug={slug}
+      exportRows={exportRows}
+      all={all}
+      todayCount={todayCount}
+      thisWeekCount={thisWeek.length}
+      weekCountDelta={weekCountDelta}
+      weekRevenue={weekRevenue}
+      revenuePctDelta={revenuePctDelta}
+      nextSlot={nextSlot}
+      startOfToday={startOfToday}
+      last7Days={last7Days}
+      dayCounts={dayCounts}
+      maxDayCount={maxDayCount}
+      lowStock={lowStock}
+    />
   );
 }

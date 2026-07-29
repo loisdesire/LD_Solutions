@@ -102,12 +102,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Fire-and-forget confirmation email — never fails the booking itself.
+  // Formatted in the business's own timezone, not the server's — a real
+  // bug this was hitting before: a booking confirmed for "8:00 AM" Lagos
+  // time could show a different hour in the email if the server (e.g. a
+  // US-region Vercel deploy) runs in a different zone.
   if (customerEmail) {
     await sendEmail(
       {
         to: customerEmail,
         subject: 'Your appointment is confirmed',
-        html: `<p>Hi ${customerName}, your appointment is confirmed for ${start.toLocaleString()}.</p>`,
+        html: `<p>Hi ${customerName}, your appointment is confirmed for ${start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' })}.</p>`,
       },
       'api/bookings:confirmation-email',
       { businessId }

@@ -9,30 +9,61 @@ export default async function ServicesPage({
   const { slug } = await params;
   const { business, supabase } = await requireStaffSession(slug);
 
-  const { data: services } = await supabase
-    .from('services')
-    .select('id, name, duration_minutes, price, active')
-    .eq('business_id', business.id)
-    .order('name');
+  const [{ data: services }, { data: bookings }] = await Promise.all([
+    supabase
+      .from('services')
+      .select('id, name, duration_minutes, price, active, category')
+      .eq('business_id', business.id)
+      .order('name'),
+    // Feeds the real "most booked" / "highest revenue" stats below —
+    // computed from actual bookings, not the fixed numbers a mockup uses.
+    supabase
+      .from('bookings')
+      .select('service_id, services(price)')
+      .eq('business_id', business.id)
+      .neq('status', 'cancelled'),
+  ]);
+
+  const bookingStats = new Map<string, { count: number; revenue: number }>();
+  for (const b of bookings ?? []) {
+    if (!b.service_id) continue;
+    const entry = bookingStats.get(b.service_id) ?? { count: 0, revenue: 0 };
+    entry.count += 1;
+    entry.revenue += (b.services as any)?.price ?? 0;
+    bookingStats.set(b.service_id, entry);
+  }
 
   const activeCount = (services ?? []).filter((s) => s.active).length;
   const hiddenCount = (services ?? []).length - activeCount;
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage · Services
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[28px] text-ink mb-1.5">Service catalog</h1>
+          <p className="text-ink-soft text-[14px]">What customers can book, and what it costs.</p>
         </div>
-        <h1 className="font-display text-[26px] text-ink">Services</h1>
         {(services ?? []).length > 0 && (
-          <p className="font-mono text-[11px] text-ink-faint mt-1.5">
-            {activeCount} active{hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ''}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="bg-surface px-4 py-2 rounded-lg border border-line flex items-center gap-2">
+              <span className="text-[12px] text-ink-faint">Active</span>
+              <span className="text-[13.5px] font-semibold text-accent">{activeCount}</span>
+            </div>
+            {hiddenCount > 0 && (
+              <div className="bg-surface px-4 py-2 rounded-lg border border-line flex items-center gap-2">
+                <span className="text-[12px] text-ink-faint">Hidden</span>
+                <span className="text-[13.5px] font-semibold text-ink">{hiddenCount}</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <ServicesManager businessId={business.id} initialServices={services ?? []} />
+      <ServicesManager
+        businessId={business.id}
+        initialServices={services ?? []}
+        bookingStats={Object.fromEntries(bookingStats)}
+      />
     </div>
   );
 }

@@ -70,5 +70,15 @@ export async function POST(req: NextRequest) {
     business_id: business.id,
   });
 
+  // 6. Start their 14-day trial — this is what the access gate
+  // (requireStaffSession) checks to decide whether they're let into the
+  // admin area, so every business needs one of these from day one.
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+  await supabaseAdmin.from('subscriptions').insert({
+    business_id: business.id,
+    status: 'trialing',
+    trial_ends_at: trialEndsAt.toISOString(),
+  });
+
   return NextResponse.json({ business });
 }

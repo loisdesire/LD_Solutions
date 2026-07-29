@@ -19,6 +19,7 @@ export default function AdminMobileNav({
     { href: `/${slug}/admin/services`, label: 'Services' },
     { href: `/${slug}/admin/hours`, label: 'Hours' },
     { href: `/${slug}/admin/staff`, label: 'Team' },
+    { href: `/${slug}/admin/billing`, label: 'Billing' },
     { href: `/${slug}/admin/settings`, label: 'Settings' },
   ];
 

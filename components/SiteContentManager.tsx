@@ -4,6 +4,28 @@ import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
 
+function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!on)}
+      aria-pressed={on}
+      className="flex items-center gap-2 shrink-0"
+    >
+      <span
+        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-line-strong'}`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+            on ? 'translate-x-[18px]' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+      <span className="text-[12px] font-medium text-ink-soft">{on ? `${label} on` : `${label} off`}</span>
+    </button>
+  );
+}
+
 export default function SiteContentManager({
   businessId,
   initialAboutText,
@@ -12,6 +34,9 @@ export default function SiteContentManager({
   initialContactEmail,
   initialInstagramUrl,
   initialFacebookUrl,
+  initialShowAbout,
+  initialShowGallery,
+  initialShowContact,
 }: {
   businessId: string;
   initialAboutText: string | null;
@@ -20,6 +45,9 @@ export default function SiteContentManager({
   initialContactEmail: string | null;
   initialInstagramUrl: string | null;
   initialFacebookUrl: string | null;
+  initialShowAbout: boolean;
+  initialShowGallery: boolean;
+  initialShowContact: boolean;
 }) {
   const [aboutText, setAboutText] = useState(initialAboutText ?? '');
   const [galleryUrls, setGalleryUrls] = useState(initialGalleryUrls ?? '');
@@ -27,6 +55,9 @@ export default function SiteContentManager({
   const [contactEmail, setContactEmail] = useState(initialContactEmail ?? '');
   const [instagramUrl, setInstagramUrl] = useState(initialInstagramUrl ?? '');
   const [facebookUrl, setFacebookUrl] = useState(initialFacebookUrl ?? '');
+  const [showAbout, setShowAbout] = useState(initialShowAbout);
+  const [showGallery, setShowGallery] = useState(initialShowGallery);
+  const [showContact, setShowContact] = useState(initialShowContact);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +79,9 @@ export default function SiteContentManager({
         contact_email: contactEmail.trim() || null,
         instagram_url: instagramUrl.trim() || null,
         facebook_url: facebookUrl.trim() || null,
+        show_about: showAbout,
+        show_gallery: showGallery,
+        show_contact: showContact,
       })
       .eq('id', businessId);
 
@@ -68,7 +102,17 @@ export default function SiteContentManager({
   return (
     <form onSubmit={handleSave} className="space-y-6">
       <div>
-        <label className={labelClass}>About</label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={labelClass}>About</label>
+          <Toggle
+            on={showAbout}
+            onChange={(v) => {
+              setShowAbout(v);
+              setSaved(false);
+            }}
+            label="About page"
+          />
+        </div>
         <textarea
           value={aboutText}
           onChange={(e) => {
@@ -80,12 +124,22 @@ export default function SiteContentManager({
           className={inputClass}
         />
         <p className="text-ink-faint text-[12px] mt-2">
-          Shown in its own section on your booking page. Leave blank to hide it.
+          Gets its own page, linked from your nav. Needs both the toggle on and text filled in to show up.
         </p>
       </div>
 
       <div>
-        <label className={labelClass}>Gallery photos</label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={labelClass}>Gallery photos</label>
+          <Toggle
+            on={showGallery}
+            onChange={(v) => {
+              setShowGallery(v);
+              setSaved(false);
+            }}
+            label="Gallery page"
+          />
+        </div>
         <textarea
           value={galleryUrls}
           onChange={(e) => {
@@ -96,13 +150,21 @@ export default function SiteContentManager({
           placeholder={'https://…\nhttps://…\nhttps://…'}
           className={inputClass}
         />
-        <p className="text-ink-faint text-[12px] mt-2">
-          One photo URL per line. Shown as a gallery on your booking page.
-        </p>
+        <p className="text-ink-faint text-[12px] mt-2">One photo URL per line. Also gets its own page.</p>
       </div>
 
       <div>
-        <label className={labelClass}>Contact</label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={labelClass}>Contact</label>
+          <Toggle
+            on={showContact}
+            onChange={(v) => {
+              setShowContact(v);
+              setSaved(false);
+            }}
+            label="Contact page"
+          />
+        </div>
         <div className="space-y-2.5">
           <input
             type="tel"
@@ -146,7 +208,7 @@ export default function SiteContentManager({
           />
         </div>
         <p className="text-ink-faint text-[12px] mt-2">
-          All optional — only the ones you fill in show up on your booking page.
+          All optional — only the ones you fill in show up, and only if the toggle above is on.
         </p>
       </div>
 

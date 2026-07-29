@@ -38,6 +38,12 @@ create table services (
   created_at timestamptz default now()
 );
 
+-- Optional grouping label ("Hair", "Nails", ...) — free text the owner
+-- sets themselves, not a fixed enum, since categories vary wildly by
+-- business type. Filter tabs on the services page only appear once real
+-- categories exist, never a fixed placeholder set.
+alter table services add column if not exists category text;
+
 -- Availability (working hours, per staff or business-wide if staff_id is null)
 create table availability (
   id uuid primary key default gen_random_uuid(),
@@ -219,6 +225,14 @@ alter table businesses add column if not exists contact_email text;
 alter table businesses add column if not exists instagram_url text;
 alter table businesses add column if not exists facebook_url text;
 
+-- Explicit per-section on/off switches, independent of whether content is
+-- filled in — a business might have gallery photos ready but not want the
+-- tab live yet. Default true so existing businesses' nav behavior doesn't
+-- change (a section still only ever shows when it also has real content).
+alter table businesses add column if not exists show_about boolean not null default true;
+alter table businesses add column if not exists show_gallery boolean not null default true;
+alter table businesses add column if not exists show_contact boolean not null default true;
+
 -- Rolling chat history per (business, customer phone), so the agent has
 -- context across turns ("book that one" referring to a slot offered two
 -- messages ago). Only ever touched by the webhook route via the service
@@ -304,3 +318,57 @@ create policy "staff can manage own products"
 create policy "anyone can view active products"
   on products for select
   using (active = true);
+
+-- ============================================
+-- Subscriptions — the platform's OWN monthly billing (businesses paying
+-- YOU to use this), via Flutterwave. Not customer-facing payments.
+-- One row per business; status changes only ever come from the checkout
+-- route or the Flutterwave webhook (both service-role), never directly
+-- from the client, so staff can read their own status but not edit it —
+-- editing it themselves would mean anyone could just mark their own
+-- account "active" for free.
+-- ============================================
+
+create table if not exists subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null unique,
+  status text not null default 'trialing', -- 'trialing' | 'active' | 'past_due' | 'cancelled'
+  trial_ends_at timestamptz,
+  current_period_end timestamptz,
+  flw_tx_ref text,
+  flw_subscription_id text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table subscriptions enable row level security;
+
+create policy "staff can view own subscription"
+  on subscriptions for select
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid()
+    )
+  );
+
+-- One row per webhook event, so the billing page can show real payment
+-- history — the subscriptions table only ever holds current status, it
+-- has no memory of past charges once overwritten.
+create table if not exists payment_history (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  amount numeric(10,2),
+  status text not null, -- 'successful' | 'failed'
+  flw_tx_ref text,
+  created_at timestamptz default now()
+);
+
+alter table payment_history enable row level security;
+
+create policy "staff can view own payment history"
+  on payment_history for select
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid()
+    )
+  );

@@ -75,44 +75,96 @@ function ContactCell({
   );
 }
 
-export default function BookingsList({ slug, bookings }: { slug: string; bookings: Booking[] }) {
+export default function BookingsList({
+  slug,
+  bookings,
+  search = '',
+}: {
+  slug: string;
+  bookings: Booking[];
+  search?: string;
+}) {
+  const [scope, setScope] = useState<'upcoming' | 'past'>('upcoming');
   const [filter, setFilter] = useState('all');
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const counts = bookings.reduce<Record<string, number>>((acc, b) => {
+  // Same "upcoming vs past" rule used on the customer account page — a
+  // booking is only genuinely upcoming if it hasn't happened yet AND
+  // hasn't been cancelled; everything else (elapsed, or cancelled at any
+  // date) is history. This was the actual bug: the list never filtered by
+  // time at all, so a booking from 12 days ago just sat at the top under
+  // an "Upcoming" label that had nothing to do with what was shown.
+  const scoped = bookings.filter((b) =>
+    scope === 'upcoming'
+      ? b.status !== 'cancelled' && new Date(b.start_time) >= now
+      : b.status === 'cancelled' || new Date(b.start_time) < now
+  );
+
+  const counts = scoped.reduce<Record<string, number>>((acc, b) => {
     acc[b.status] = (acc[b.status] ?? 0) + 1;
     return acc;
   }, {});
 
   const visibleStatuses = Object.keys(STATUS_LABELS).filter((s) => counts[s] > 0);
-  const filtered = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
+  const statusFiltered = filter === 'all' ? scoped : scoped.filter((b) => b.status === filter);
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? statusFiltered.filter(
+        (b) =>
+          b.customer_name.toLowerCase().includes(query) ||
+          (b.services?.name ?? '').toLowerCase().includes(query)
+      )
+    : statusFiltered;
 
   const pillClass = (active: boolean) =>
-    `px-2.5 py-1 rounded-full transition-colors ${
-      active ? 'bg-ink text-white' : 'text-ink-faint hover:text-ink'
+    `px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${
+      active ? 'text-white' : 'text-ink-faint hover:text-ink'
     }`;
 
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
-        <h2 className="font-display text-[18px]">Upcoming bookings</h2>
-        <div className="flex items-center gap-1 font-mono text-[11px]">
-          <button onClick={() => setFilter('all')} className={pillClass(filter === 'all')}>
-            All {bookings.length}
+      <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <h2 className="font-display text-[19px] font-semibold text-ink">
+            {scope === 'upcoming' ? 'Upcoming bookings' : 'Past bookings'}
+          </h2>
+          <button
+            onClick={() => {
+              setScope((s) => (s === 'upcoming' ? 'past' : 'upcoming'));
+              setFilter('all');
+            }}
+            className="text-[12.5px] font-medium hover:underline"
+            style={{ color: 'var(--accent)' }}
+          >
+            {scope === 'upcoming' ? 'View past →' : '← Back to upcoming'}
+          </button>
+        </div>
+        <div className="flex items-center gap-1 bg-paper rounded-full p-1">
+          <button
+            onClick={() => setFilter('all')}
+            className={pillClass(filter === 'all')}
+            style={filter === 'all' ? { background: 'var(--accent)' } : undefined}
+          >
+            All {scoped.length}
           </button>
           {visibleStatuses.map((s) => (
-            <button key={s} onClick={() => setFilter(s)} className={pillClass(filter === s)}>
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={pillClass(filter === s)}
+              style={filter === s ? { background: 'var(--accent)' } : undefined}
+            >
               {STATUS_LABELS[s]} {counts[s]}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="border border-line rounded-md overflow-hidden">
-        <div className="hidden sm:grid grid-cols-[70px_1.4fr_1.3fr_1fr_120px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+      <div className="border border-line rounded-xl overflow-hidden bg-surface">
+        <div className="hidden sm:grid grid-cols-[70px_1.4fr_1.3fr_1fr_120px] gap-4 px-5 py-3 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
           <div>When</div>
           <div>Customer</div>
           <div>Service</div>
@@ -122,13 +174,13 @@ export default function BookingsList({ slug, bookings }: { slug: string; booking
 
         {filtered.length === 0 ? (
           <div className="px-5 py-10 text-center text-[13.5px] text-ink-faint">
-            No {STATUS_LABELS[filter]?.toLowerCase() ?? ''} bookings.
+            No {filter === 'all' ? scope : STATUS_LABELS[filter]?.toLowerCase()} bookings.
           </div>
         ) : (
           filtered.map((b, i) => (
             <div
               key={b.id}
-              className={`px-5 py-4 hover:bg-accent-soft/40 transition-colors ${
+              className={`px-5 py-5 hover:bg-accent-soft/40 transition-colors ${
                 i !== filtered.length - 1 ? 'border-b border-line' : ''
               } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
             >
@@ -138,7 +190,10 @@ export default function BookingsList({ slug, bookings }: { slug: string; booking
                     <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
                       {relativeDay(new Date(b.start_time), startOfToday)}
                     </span>
-                    <span className="font-mono text-[14px] text-accent ml-2 sm:ml-0 sm:block sm:mt-0.5">
+                    <span
+                      className="font-display text-[16px] font-semibold ml-2 sm:ml-0 sm:block sm:mt-0.5"
+                      style={{ color: 'var(--accent)' }}
+                    >
                       {new Date(b.start_time).toLocaleTimeString(undefined, {
                         hour: 'numeric',
                         minute: '2-digit',

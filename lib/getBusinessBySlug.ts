@@ -7,7 +7,7 @@ export async function getBusinessBySlug(slug: string) {
   const { data: business, error } = await supabasePublic
     .from('businesses')
     .select(
-      'id, slug, name, business_type, description, about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, logo_url, cover_image_url, accent_color, timezone'
+      'id, slug, name, business_type, description, about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, logo_url, cover_image_url, accent_color, timezone'
     )
     .eq('slug', slug)
     .single();

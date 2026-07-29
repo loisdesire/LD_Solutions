@@ -42,6 +42,12 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.51 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.51-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34h0a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.51 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87v0a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1z" />
     </svg>
   ),
+  billing: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+    </svg>
+  ),
 };
 
 export default function AdminSidebar({
@@ -67,7 +73,10 @@ export default function AdminSidebar({
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
   ];
-  const account = [{ href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' }];
+  const account = [
+    { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
+    { href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' },
+  ];
 
   async function handleSignOut() {
     const supabase = createBrowserSupabase();
@@ -81,31 +90,29 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
-        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13.5px] transition-colors ${
-          active ? 'bg-surface border border-line font-medium text-ink shadow-soft' : 'text-ink-soft hover:bg-surface hover:text-ink'
+        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-md text-[13.5px] transition-colors ${
+          active ? 'bg-paper font-semibold text-ink' : 'text-ink-soft hover:bg-paper hover:text-ink'
         }`}
       >
         {icons[iconKey]}
         {label}
+        {active && (
+          <span className="absolute right-0 top-1/2 -translate-y-1/2 h-[60%] w-[2px] rounded-full bg-accent" />
+        )}
       </Link>
     );
   }
 
   return (
-    <aside className="hidden md:flex md:w-[240px] shrink-0 border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
-      <div className="flex items-center gap-2.5 pb-5 mb-4 border-b border-line px-1">
-        <div className="h-9 w-9 rounded-full border border-line-strong text-ink flex items-center justify-center font-display text-[15px] shrink-0">
-          {businessName?.[0]?.toUpperCase()}
-        </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-[14px] truncate">{businessName}</div>
-          <div className="font-mono text-[10.5px] text-ink-faint truncate">
-            {businessType ? `${businessType} · ` : ''}/{slug}
-          </div>
+    <aside className="hidden md:flex md:w-[240px] shrink-0 bg-surface border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
+      <div className="mb-8 px-1">
+        <div className="font-display text-[19px] font-semibold text-ink tracking-tight">{businessName}</div>
+        <div className="font-mono text-[10.5px] text-ink-faint mt-0.5">
+          {businessType ? `${businessType} · ` : ''}/{slug}
         </div>
       </div>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-2.5 mb-1.5">
+      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
         Manage
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
@@ -114,7 +121,7 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-2.5 mb-1.5">
+      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
         Account
       </div>
       <nav className="flex flex-col gap-0.5">
@@ -123,8 +130,11 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-line flex items-center gap-2.5 px-1">
-        <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-display text-[13px] shrink-0">
+      <div className="mt-auto pt-5 border-t border-line flex items-center gap-2.5 px-1">
+        <div
+          className="h-9 w-9 rounded-full text-white flex items-center justify-center font-display text-[14px] shrink-0"
+          style={{ background: 'var(--accent)' }}
+        >
           {userEmail?.[0]?.toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
