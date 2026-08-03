@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
 
 export default function SignupPage() {
@@ -178,8 +179,10 @@ export default function SignupPage() {
           </form>
 
           <p className="text-ink-faint text-[12px] mt-5">
-            Already have an account? Log in at your business's own{' '}
-            <span className="font-mono">/login</span> page.
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-accent hover:underline">
+              Log in
+            </Link>
           </p>
         </div>
       </div>
