@@ -303,46 +303,41 @@ export default function BookingForm({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
               {services.map((s) => (
-                <div
+                <button
                   key={s.id}
-                  className="group rounded-xl bg-surface border border-line p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
-                  style={{ boxShadow: 'none' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 12px 24px -10px var(--accent-soft)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
+                  onClick={() => selectService(s)}
+                  className="group text-left rounded-xl bg-surface border border-line overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-[0_4px_16px_-10px_var(--accent-soft)] hover:shadow-[0_16px_32px_-12px_var(--accent-soft)] hover:border-[var(--accent)]"
                 >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="min-w-0">
-                      <h3 className="font-display text-[21px] font-semibold text-ink mb-1">{s.name}</h3>
-                      <div className="flex items-center gap-1.5 text-ink-faint">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                          <circle cx="12" cy="12" r="10" />
-                          <path d="M12 6v6l4 2" />
-                        </svg>
-                        <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
-                      </div>
+                  <div className="h-[3px]" style={{ background: 'var(--accent)' }} />
+                  <div className="p-6">
+                    <div className="flex justify-between items-start gap-3 mb-1">
+                      <h3 className="font-display text-[20px] font-semibold text-ink">{s.name}</h3>
+                      {s.price != null && (
+                        <div className="font-display text-[20px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>
+                          ₦{s.price.toLocaleString()}
+                        </div>
+                      )}
                     </div>
-                    {s.price != null && (
-                      <div className="font-display text-[21px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>
-                        ₦{s.price.toLocaleString()}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 text-ink-faint mb-5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                      </svg>
+                      <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-dashed border-line">
+                      <span className="text-[12.5px] font-medium text-ink-faint">Tap to book</span>
+                      <span
+                        className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 group-hover:translate-x-0.5"
+                        style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => selectService(s)}
-                    className="w-full py-3 rounded-full border-2 text-[13.5px] font-semibold transition-all duration-300"
-                    style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--accent)';
-                      e.currentTarget.style.color = 'var(--accent-contrast)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--accent)';
-                    }}
-                  >
-                    Select service
-                  </button>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -439,7 +434,7 @@ export default function BookingForm({
                           }
                           className={`py-3.5 px-2 text-[13.5px] font-semibold tabular-nums border-2 rounded-xl transition-all duration-150 ${
                             isSel
-                              ? ''
+                              ? 'animate-punch shadow-[0_6px_16px_-6px_var(--accent)]'
                               : 'border-line-strong bg-surface hover:border-[var(--accent)] active:scale-95'
                           }`}
                         >

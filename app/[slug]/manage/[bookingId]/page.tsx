@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import ManageBooking from '@/components/ManageBooking';
+import TicketPerforation from '@/components/TicketPerforation';
 import { AccentScope } from '@/components/AccentScope';
 import type { Metadata } from 'next';
 
@@ -61,10 +62,13 @@ export default async function ManageBookingPage({
             </div>
           </div>
 
-          <div className="border border-line rounded-md overflow-hidden">
+          {/* Same ticket identity as the booking confirmation (BookingForm's
+              confirmed step) — a customer's booking should look like the same
+              object when they come back to it, not a different card. */}
+          <div className="rounded-2xl border-2 border-line-strong bg-surface shadow-[0_24px_60px_-30px_rgba(28,23,18,0.4)] overflow-hidden">
             <div
-              className="p-5 border-b border-dashed border-line-strong"
-              style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 70%)' }}
+              className="p-5 sm:p-6"
+              style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), transparent 70%)' }}
             >
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em]"
@@ -73,13 +77,10 @@ export default async function ManageBookingPage({
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {statusLabel[booking.status] ?? booking.status}
               </span>
-              <h1 className="font-display text-[22px] mt-3">{service?.name}</h1>
-              <div className="font-mono text-[12px] text-ink-soft mt-1">
-                Booking #{booking.id.slice(0, 8).toUpperCase()}
-              </div>
+              <h1 className="font-display text-[24px] mt-3">{service?.name}</h1>
             </div>
-            <div className="p-5">
-              <div className="flex justify-between py-2 text-[13.5px] border-b border-dashed border-line">
+            <div className="px-5 sm:px-6">
+              <div className="flex justify-between py-2.5 text-[13.5px] border-b border-dashed border-line">
                 <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
                   Date
                 </span>
@@ -91,7 +92,7 @@ export default async function ManageBookingPage({
                   })}
                 </span>
               </div>
-              <div className="flex justify-between py-2 text-[13.5px] border-b border-dashed border-line">
+              <div className="flex justify-between py-2.5 text-[13.5px] border-b border-dashed border-line">
                 <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
                   Time
                 </span>
@@ -102,12 +103,25 @@ export default async function ManageBookingPage({
                   })}
                 </span>
               </div>
-              <div className="flex justify-between py-2 text-[13.5px]">
+              <div className="flex justify-between py-2.5 text-[13.5px]">
                 <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
                   Booked for
                 </span>
                 <span className="font-semibold">{booking.customer_name}</span>
               </div>
+            </div>
+
+            <div className="px-5 sm:px-6 mt-2">
+              <TicketPerforation notchColor="var(--paper)" />
+            </div>
+
+            <div className="px-5 sm:px-6 py-4 flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">
+                Booking code
+              </span>
+              <span className="font-mono text-[15px] tracking-[0.25em] font-semibold text-ink">
+                {booking.id.slice(0, 8).toUpperCase()}
+              </span>
             </div>
           </div>
 

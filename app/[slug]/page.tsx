@@ -6,8 +6,10 @@ import type { Metadata } from 'next';
 import BookingForm from '@/components/BookingForm';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
 import { SITE_URL } from '@/lib/site';
+import { canAcceptBookings } from '@/lib/subscription';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,6 +71,7 @@ export default async function BusinessBookingPage({
 
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
   const { showAbout, showGallery, showContact } = getSiteContentFlags(business);
+  const acceptingBookings = await canAcceptBookings(business.id);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -146,15 +149,26 @@ export default async function BusinessBookingPage({
       </section>
 
       <main id="book" className="relative max-w-5xl mx-auto px-6 sm:px-10 py-16 sm:py-20 scroll-mt-20">
-        <BookingForm
-          businessId={business.id}
-          slug={slug}
-          services={services}
-          maxAdvanceDays={maxAdvanceDays}
-        />
+        {acceptingBookings ? (
+          <BookingForm
+            businessId={business.id}
+            slug={slug}
+            services={services}
+            maxAdvanceDays={maxAdvanceDays}
+          />
+        ) : (
+          <div className="max-w-lg mx-auto text-center rounded-xl border border-dashed border-line-strong py-14 px-6">
+            <p className="font-display text-[20px] text-ink mb-2">Not currently taking bookings</p>
+            <p className="text-ink-soft text-[14px]">
+              {business.name} isn&apos;t accepting online bookings right now. Please check back later or
+              contact them directly.
+            </p>
+          </div>
+        )}
       </main>
 
       <SiteFooter business={business} hoursSummary={hoursSummary} />
+      <WebChatWidget businessId={business.id} />
     </AccentScope>
   );
 }

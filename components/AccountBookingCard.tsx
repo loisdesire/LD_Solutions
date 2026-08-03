@@ -25,6 +25,13 @@ const STATUS_LABEL: Record<string, string> = {
   no_show: 'No-show',
 };
 
+const STATUS_STYLE: Record<string, string> = {
+  confirmed: 'bg-accent-soft text-accent',
+  completed: 'bg-ink/5 text-ink-faint',
+  cancelled: 'bg-ink/5 text-ink-faint line-through',
+  no_show: 'bg-red-50 text-red-600',
+};
+
 export default function AccountBookingCard({
   booking,
   messages,
@@ -37,13 +44,15 @@ export default function AccountBookingCard({
   const service = Array.isArray(booking.services) ? booking.services[0] : booking.services;
 
   return (
-    <div className="rounded-xl border border-line bg-surface overflow-hidden">
-      <div className="p-4 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint">
+    <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-[0_2px_10px_-6px_rgba(0,0,0,0.08)]">
+      <div className="p-4 flex items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">
             {business?.name ?? 'Business'}
           </div>
-          <div className="font-display text-[16px] text-ink truncate mt-0.5">{service?.name ?? 'Service'}</div>
+          <div className={`font-display text-[16.5px] text-ink truncate mt-0.5 ${booking.status === 'cancelled' ? 'line-through' : ''}`}>
+            {service?.name ?? 'Service'}
+          </div>
           <div className="text-[12.5px] text-ink-soft mt-0.5">
             {new Date(booking.start_time).toLocaleDateString(undefined, {
               weekday: 'short',
@@ -55,7 +64,10 @@ export default function AccountBookingCard({
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
-          <span className="text-[11px] font-mono uppercase tracking-wide text-ink-faint">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${STATUS_STYLE[booking.status] ?? 'bg-ink/5 text-ink-faint'}`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {STATUS_LABEL[booking.status] ?? booking.status}
           </span>
           {business?.slug && (

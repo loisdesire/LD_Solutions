@@ -2,6 +2,10 @@ type Business = {
   name: string;
   logo_url: string | null;
   description: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
 };
 
 export default function SiteFooter({
@@ -11,6 +15,8 @@ export default function SiteFooter({
   business: Business;
   hoursSummary: string | null;
 }) {
+  const hasSocial = business.contact_phone || business.contact_email || business.instagram_url || business.facebook_url;
+
   return (
     <footer className="bg-[#ebe8e3] border-t border-line mt-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full px-6 sm:px-10 py-12 max-w-5xl mx-auto text-center sm:text-left">
@@ -34,7 +40,47 @@ export default function SiteFooter({
             <p className="text-[13.5px] text-ink-soft max-w-sm mx-auto sm:mx-0">{business.description}</p>
           )}
         </div>
-        <div className="flex flex-col items-center sm:items-end justify-center gap-2">
+        <div className="flex flex-col items-center sm:items-end justify-center gap-3">
+          {hasSocial && (
+            <div className="flex items-center gap-4">
+              {business.instagram_url && (
+                <a
+                  href={business.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                >
+                  Instagram
+                </a>
+              )}
+              {business.facebook_url && (
+                <a
+                  href={business.facebook_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                >
+                  Facebook
+                </a>
+              )}
+              {business.contact_phone && (
+                <a
+                  href={`tel:${business.contact_phone}`}
+                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                >
+                  Call
+                </a>
+              )}
+              {business.contact_email && (
+                <a
+                  href={`mailto:${business.contact_email}`}
+                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                >
+                  Email
+                </a>
+              )}
+            </div>
+          )}
           {hoursSummary && <p className="text-[12.5px] text-ink-faint">{hoursSummary}</p>}
           <p className="text-[11.5px] text-ink-faint">
             © {new Date().getFullYear()} {business.name}

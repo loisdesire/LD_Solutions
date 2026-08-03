@@ -178,7 +178,7 @@ export default function ManageBooking({
                             }
                             className={`min-w-[80px] py-2 px-3 text-[13px] font-mono font-semibold tabular-nums border-2 rounded-full transition-all active:scale-95 ${
                               isSel
-                                ? 'shadow-[0_4px_12px_-2px_var(--accent)]'
+                                ? 'animate-punch shadow-[0_4px_12px_-2px_var(--accent)]'
                                 : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
                             }`}
                           >

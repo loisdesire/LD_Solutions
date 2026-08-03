@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// No nav here on purpose — there's nothing to navigate to before you're
+// logged in, this is a single-purpose entry gate, not a page in a site.
 export default function CustomerLoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-6 bg-paper">

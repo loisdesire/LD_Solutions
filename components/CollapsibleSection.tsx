@@ -6,29 +6,43 @@ import { useState, type ReactNode } from 'react';
 // — that stacked height, not any single section's content, is what made it
 // feel overwhelming. Collapsing to just the header by default lets someone
 // see everything that's configurable at a glance, then open only the one
-// thing they actually came to change.
+// thing they actually came to change. A colored icon per section (rotating
+// through the platform's fixed accent/sage/blue trio — this is admin
+// chrome, not a customer-branded page, so multi-color variety is fine
+// here unlike the booking flow) makes the four sections scannable as
+// distinct things instead of four identical gray rows.
 export default function CollapsibleSection({
   title,
   description,
+  icon,
+  color,
   defaultOpen = false,
   children,
 }: {
   title: string;
   description: string;
+  icon: ReactNode;
+  color: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-b border-line">
+    <div className="border-b border-line last:border-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 py-6 text-left"
+        className="group w-full flex items-center gap-4 py-5 text-left"
       >
-        <div>
-          <h2 className="font-display text-[17px] text-ink">{title}</h2>
-          <p className="text-ink-soft text-[13px] mt-1.5">{description}</p>
+        <div
+          className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105"
+          style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+        >
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-display text-[16.5px] text-ink">{title}</h2>
+          <p className="text-ink-soft text-[13px] mt-0.5">{description}</p>
         </div>
         <svg
           width="18"
@@ -44,7 +58,11 @@ export default function CollapsibleSection({
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
-      {open && <div className="pb-7">{children}</div>}
+      {open && (
+        <div className="pb-7 pl-4 ml-[22px] border-l-2" style={{ borderColor: color }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }

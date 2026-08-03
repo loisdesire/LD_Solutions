@@ -4,6 +4,7 @@ import { todayInTimezone, daysBetween } from '@/lib/timezone';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { sendEmail } from '@/lib/email';
+import { canAcceptBookings } from '@/lib/subscription';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`
@@ -33,6 +34,13 @@ export async function POST(req: NextRequest) {
     startTime,
     durationMinutes,
   } = body;
+
+  if (!businessId || !(await canAcceptBookings(businessId))) {
+    return NextResponse.json(
+      { error: 'This business isn\'t currently accepting online bookings. Please contact them directly.' },
+      { status: 403 }
+    );
+  }
 
   const start = new Date(startTime);
   const end = new Date(start.getTime() + durationMinutes * 60000);

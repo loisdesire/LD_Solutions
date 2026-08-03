@@ -32,10 +32,19 @@ module.exports = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        // Quick compress-and-release on the pill a customer just selected —
+        // the "ticket punch" that makes picking a time feel like the act it
+        // represents, not a checkbox toggle.
+        punch: {
+          '0%': { transform: 'scale(1)' },
+          '40%': { transform: 'scale(0.9)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         rise: 'rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
         shimmer: 'shimmer 1.5s ease-in-out infinite',
+        punch: 'punch 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
     },
   },

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
 
 export async function generateMetadata({
@@ -44,6 +45,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
         </div>
       </main>
       <SiteFooter business={business} hoursSummary={hoursSummary} />
+      <WebChatWidget businessId={business.id} />
     </AccentScope>
   );
 }
