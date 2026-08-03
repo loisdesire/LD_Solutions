@@ -34,3 +34,6 @@ next-env.d.ts
 /landing page
 /marigold (with customer side)
 /slate(nice dashboard)
+
+.vercel
+.env*

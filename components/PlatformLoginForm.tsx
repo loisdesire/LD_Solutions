@@ -7,9 +7,8 @@ import { createBrowserSupabase } from '@/lib/supabase';
 // Unlike LoginForm (which already knows which business's /admin to send
 // you to, because the URL itself is /[slug]/login), this is the generic
 // entry point for someone who doesn't remember their own booking page's
-// URL — signs in first, then looks up which business the account actually
-// belongs to (via the staff table, RLS-scoped to their own rows) and
-// redirects there.
+// URL — signs in first, then asks the server which business the account
+// actually belongs to, and redirects there.
 export default function PlatformLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -31,24 +30,23 @@ export default function PlatformLoginForm() {
       return;
     }
 
-    const { data: staffRow } = await supabase
-      .from('staff')
-      .select('business_id, businesses(slug)')
-      .limit(1)
-      .maybeSingle();
+    // A server-side lookup, not a client-side query run immediately after
+    // sign-in — the client-side version was unreliable, coming back empty
+    // even for accounts that genuinely have a staff row (see route comment
+    // for why). Reading the session from cookies server-side, the same way
+    // requireStaffSession already does successfully everywhere else, avoids
+    // that race entirely.
+    const res = await fetch('/api/my-business');
+    const data = await res.json();
 
-    // Supabase's join typing returns the related row array-shaped even for
-    // this to-one relation (business_id -> businesses.id).
-    const slug = (staffRow?.businesses as { slug: string }[] | null)?.[0]?.slug;
-
-    if (!slug) {
-      setError("We couldn't find a business linked to this account.");
+    if (!res.ok) {
+      setError(data.error ?? 'Something went wrong.');
       await supabase.auth.signOut();
       setLoading(false);
       return;
     }
 
-    router.push(`/${slug}/admin`);
+    router.push(`/${data.slug}/admin`);
     router.refresh();
   }
 
