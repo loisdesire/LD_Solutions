@@ -10,21 +10,29 @@ import { createServerSupabase } from '@/lib/supabase-server';
 // genuinely has a staff row. Reading the session from cookies server-side
 // (the same mechanism requireStaffSession already uses successfully on
 // every admin page) sidesteps that race entirely.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const supabase = await createServerSupabase();
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  // TEMP diagnostic logging — remove once the login issue is confirmed fixed.
+  console.log('[my-business] user:', user?.id, user?.email, 'userError:', userError?.message);
 
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { data: staffRow } = await supabase
+  const { data: staffRow, error: staffError } = await supabase
     .from('staff')
     .select('business_id, businesses(slug)')
     .limit(1)
     .maybeSingle();
+
+  console.log('[my-business] staffRow:', JSON.stringify(staffRow), 'staffError:', staffError?.message);
 
   const slug = (staffRow?.businesses as { slug: string }[] | null)?.[0]?.slug;
 

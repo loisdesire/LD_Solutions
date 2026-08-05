@@ -36,7 +36,7 @@ export default function PlatformLoginForm() {
     // for why). Reading the session from cookies server-side, the same way
     // requireStaffSession already does successfully everywhere else, avoids
     // that race entirely.
-    const res = await fetch('/api/my-business');
+    const res = await fetch('/api/my-business', { cache: 'no-store' });
     const data = await res.json();
 
     if (!res.ok) {
