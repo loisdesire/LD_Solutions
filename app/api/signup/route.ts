@@ -40,45 +40,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: authError?.message ?? 'Signup failed' }, { status: 400 });
   }
 
-  // 3. Create the business, tied to that owner
-  const { data: business, error: bizError } = await supabaseAdmin
-    .from('businesses')
-    .insert({
-      slug,
-      name: businessName,
-      owner_auth_id: authUser.user.id,
-    })
-    .select()
-    .single();
+  // Every step below used to be fire-and-forget (insert, ignore whether it
+  // actually succeeded) — a silent failure on the staff row specifically
+  // left real accounts with a real business but no link between them:
+  // login works, but "we couldn't find a business linked to this account"
+  // forever. Now every step is checked, and a failure anywhere unwinds
+  // whatever was already created instead of leaving a half-built account.
+  try {
+    // 3. Create the business, tied to that owner
+    const { data: business, error: bizError } = await supabaseAdmin
+      .from('businesses')
+      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id })
+      .select()
+      .single();
 
-  if (bizError) {
-    logError('api/signup:business-insert', bizError, { slug });
-    return NextResponse.json({ error: bizError.message }, { status: 400 });
+    if (bizError || !business) throw new Error(bizError?.message ?? 'Failed to create business');
+
+    try {
+      // 4. Create the owner's staff row, tagged to this business
+      const { error: staffError } = await supabaseAdmin.from('staff').insert({
+        business_id: business.id,
+        auth_id: authUser.user.id,
+        name: businessName,
+        email: ownerEmail,
+        role: 'owner',
+      });
+      if (staffError) throw new Error(`Failed to link account to business: ${staffError.message}`);
+
+      // 5. Default booking rules so the business works out of the box
+      const { error: rulesError } = await supabaseAdmin
+        .from('booking_rules')
+        .insert({ business_id: business.id });
+      if (rulesError) throw new Error(`Failed to create booking rules: ${rulesError.message}`);
+
+      // 6. Start their 14-day trial — this is what the access gate
+      // (requireStaffSession) checks to decide whether they're let into the
+      // admin area, so every business needs one of these from day one.
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      const { error: subError } = await supabaseAdmin.from('subscriptions').insert({
+        business_id: business.id,
+        status: 'trialing',
+        trial_ends_at: trialEndsAt.toISOString(),
+      });
+      if (subError) throw new Error(`Failed to start trial: ${subError.message}`);
+    } catch (err) {
+      // business row cascades to staff/booking_rules/subscriptions on delete
+      await supabaseAdmin.from('businesses').delete().eq('id', business.id);
+      throw err;
+    }
+
+    return NextResponse.json({ business });
+  } catch (err) {
+    await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+    logError('api/signup', err, { slug, ownerEmail });
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Signup failed partway through. Please try again.' },
+      { status: 500 }
+    );
   }
-
-  // 4. Create the owner's staff row, tagged to this business
-  await supabaseAdmin.from('staff').insert({
-    business_id: business.id,
-    auth_id: authUser.user.id,
-    name: businessName,
-    email: ownerEmail,
-    role: 'owner',
-  });
-
-  // 5. Default booking rules so the business works out of the box
-  await supabaseAdmin.from('booking_rules').insert({
-    business_id: business.id,
-  });
-
-  // 6. Start their 14-day trial — this is what the access gate
-  // (requireStaffSession) checks to decide whether they're let into the
-  // admin area, so every business needs one of these from day one.
-  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  await supabaseAdmin.from('subscriptions').insert({
-    business_id: business.id,
-    status: 'trialing',
-    trial_ends_at: trialEndsAt.toISOString(),
-  });
-
-  return NextResponse.json({ business });
 }
