@@ -79,7 +79,7 @@ export async function getAvailableSlots(
 
   // 5. Generate candidate slots and filter out anything that overlaps an
   // existing booking (expanded by the buffer on each side).
-  return generateSlots({
+  const slots = generateSlots({
     dateISO,
     timeZone,
     hours,
@@ -87,4 +87,12 @@ export async function getAvailableSlots(
     bufferMinutes,
     booked: existingBookings ?? [],
   });
+
+  // generateSlots only knows about the calendar date, not the clock — it'll
+  // happily hand back 9am as "available" at 8pm the same day, since nothing
+  // upstream excludes a date-that's-today from also being time-that's-past.
+  // Slot start times are already real UTC instants, so this comparison is
+  // correct regardless of the business's timezone.
+  const now = Date.now();
+  return slots.filter((iso) => new Date(iso).getTime() > now);
 }
