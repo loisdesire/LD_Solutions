@@ -22,8 +22,18 @@ function getSessionId(businessId: string): string {
   return id;
 }
 
-export default function WebChatWidget({ businessId }: { businessId: string }) {
-  const [open, setOpen] = useState(false);
+export default function WebChatWidget({
+  businessId,
+  defaultOpen = false,
+}: {
+  businessId: string;
+  // Set when this widget is mounted on demand from somewhere that already
+  // represents "open the chat" as its own action (e.g. clicking a chat
+  // icon on /account) — skips relying on the #chat hash trick, which is
+  // really meant for deep-linking in from a different page.
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [value, setValue] = useState('');

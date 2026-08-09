@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import WebChatWidget from './WebChatWidget';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -40,6 +41,7 @@ export default function AccountBookingCard({
   messages?: ChatMessage[];
 }) {
   const [showChat, setShowChat] = useState(false);
+  const [widgetOpen, setWidgetOpen] = useState(false);
   const business = Array.isArray(booking.businesses) ? booking.businesses[0] : booking.businesses;
   const service = Array.isArray(booking.services) ? booking.services[0] : booking.services;
 
@@ -70,14 +72,29 @@ export default function AccountBookingCard({
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {STATUS_LABEL[booking.status] ?? booking.status}
           </span>
-          {business?.slug && (
-            <Link
-              href={`/${business.slug}/manage/${booking.id}`}
-              className="text-[12.5px] font-semibold text-accent hover:underline"
-            >
-              Manage
-            </Link>
-          )}
+          <div className="flex items-center gap-2.5">
+            {business?.id && (
+              <button
+                onClick={() => setWidgetOpen(true)}
+                aria-label={`Message ${business.name}`}
+                title={`Message ${business.name}`}
+                className="h-7 w-7 rounded-full flex items-center justify-center text-ink-faint hover:text-accent hover:bg-accent-soft transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16v12H8l-4 4V4z" />
+                  <path d="M8 9h8M8 12h5" />
+                </svg>
+              </button>
+            )}
+            {business?.slug && (
+              <Link
+                href={`/${business.slug}/manage/${booking.id}`}
+                className="text-[12.5px] font-semibold text-accent hover:underline"
+              >
+                Manage
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -107,22 +124,10 @@ export default function AccountBookingCard({
         </>
       )}
 
-      {/* Deliberately a full, solid, impossible-to-miss button — this is
-          the main way a customer reaches the AI agent from their account,
-          not a minor utility, so it doesn't get to look like one. */}
-      {business?.slug && (
-        <Link
-          href={`/${business.slug}#chat`}
-          className="flex items-center justify-center gap-2 w-full py-3.5 text-[13.5px] font-semibold text-white border-t border-line transition-opacity hover:opacity-90"
-          style={{ background: 'var(--accent)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16v12H8l-4 4V4z" />
-            <path d="M8 9h8M8 12h5" />
-          </svg>
-          Message {business.name}
-        </Link>
-      )}
+      {/* Opens in place — clicking the chat icon above shouldn't navigate
+          you off /account, it should just open the same widget used on
+          the business's own page, right here. */}
+      {widgetOpen && business?.id && <WebChatWidget businessId={business.id} defaultOpen />}
     </div>
   );
 }
