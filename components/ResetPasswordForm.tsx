@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 
 export default function ResetPasswordForm({ slug }: { slug: string }) {
   const router = useRouter();
@@ -34,18 +35,23 @@ export default function ResetPasswordForm({ slug }: { slug: string }) {
     setLoading(true);
     setError('');
 
-    const supabase = createBrowserSupabase();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: updateError } = await supabase.auth.updateUser({ password });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (updateError) {
-      setError(updateError.message);
-      return;
+      if (updateError) {
+        setError(friendlyError(updateError, "Couldn't set your new password. Please try again."));
+        return;
+      }
+
+      router.push(`/${slug}/admin`);
+      router.refresh();
+    } catch (err) {
+      setLoading(false);
+      setError(friendlyError(err, "Couldn't set your new password. Please try again."));
     }
-
-    router.push(`/${slug}/admin`);
-    router.refresh();
   }
 
   const inputClass =

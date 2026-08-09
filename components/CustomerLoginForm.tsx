@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createCustomerBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 import { SITE_URL } from '@/lib/site';
 
 export default function CustomerLoginForm() {
@@ -16,18 +17,23 @@ export default function CustomerLoginForm() {
     setStatus('sending');
     setError('');
 
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${SITE_URL}/account/callback` },
-    });
+    try {
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${SITE_URL}/account/callback` },
+      });
 
-    if (signInError) {
+      if (signInError) {
+        setStatus('error');
+        setError(friendlyError(signInError, "Couldn't send that link. Please try again in a moment."));
+        return;
+      }
+
+      setStatus('sent');
+    } catch (err) {
       setStatus('error');
-      setError(signInError.message);
-      return;
+      setError(friendlyError(err, "Couldn't send that link. Please try again in a moment."));
     }
-
-    setStatus('sent');
   }
 
   if (status === 'sent') {

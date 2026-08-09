@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 
 export default function LoginForm({ slug }: { slug: string }) {
   const router = useRouter();
@@ -17,20 +18,25 @@ export default function LoginForm({ slug }: { slug: string }) {
     setLoading(true);
     setError('');
 
-    const supabase = createBrowserSupabase();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (signInError) {
-      setError(signInError.message);
+      if (signInError) {
+        setError(friendlyError(signInError, 'Could not log you in. Please check your email and password.'));
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/${slug}/admin`);
+      router.refresh();
+    } catch (err) {
+      setError(friendlyError(err, 'Something went wrong. Please try again.'));
       setLoading(false);
-      return;
     }
-
-    router.push(`/${slug}/admin`);
-    router.refresh();
   }
 
   const inputClass =

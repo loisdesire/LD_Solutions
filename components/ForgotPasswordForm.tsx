@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 
 export default function ForgotPasswordForm({ slug }: { slug: string }) {
   const [email, setEmail] = useState('');
@@ -14,19 +15,24 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
     setLoading(true);
     setError('');
 
-    const supabase = createBrowserSupabase();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/${slug}/reset-password`,
-    });
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/${slug}/reset-password`,
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (resetError) {
-      setError(resetError.message);
-      return;
+      if (resetError) {
+        setError(friendlyError(resetError, "Couldn't send that link. Please try again in a moment."));
+        return;
+      }
+
+      setSent(true);
+    } catch (err) {
+      setLoading(false);
+      setError(friendlyError(err, "Couldn't send that link. Please try again in a moment."));
     }
-
-    setSent(true);
   }
 
   const inputClass =

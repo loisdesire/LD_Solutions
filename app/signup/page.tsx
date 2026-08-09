@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -34,39 +35,44 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        businessName,
-        slug,
-        ownerEmail: email,
-        ownerPassword: password,
-      }),
-    });
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName,
+          slug,
+          ownerEmail: email,
+          ownerPassword: password,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong');
+      if (!res.ok) {
+        setError(data.error ?? 'Something went wrong. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const supabase = createBrowserSupabase();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(friendlyError(signInError, 'Account created, but could not log you in automatically — try logging in.'));
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/${slug}/admin`);
+      router.refresh();
+    } catch (err) {
+      setError(friendlyError(err, 'Something went wrong. Please try again.'));
       setLoading(false);
-      return;
     }
-
-    const supabase = createBrowserSupabase();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push(`/${slug}/admin`);
-    router.refresh();
   }
 
   const inputClass =
