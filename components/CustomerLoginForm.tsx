@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserSupabase } from '@/lib/supabase';
+import { createCustomerBrowserSupabase } from '@/lib/supabase';
 import { SITE_URL } from '@/lib/site';
 
 export default function CustomerLoginForm() {
@@ -9,7 +9,7 @@ export default function CustomerLoginForm() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [error, setError] = useState('');
 
-  const supabase = createBrowserSupabase();
+  const supabase = createCustomerBrowserSupabase();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

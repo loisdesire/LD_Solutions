@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { createServerSupabase } from '@/lib/supabase-server';
+import { createCustomerServerSupabase } from '@/lib/supabase-server';
 import AccountBookingCard from '@/components/AccountBookingCard';
 import LogoutButton from '@/components/LogoutButton';
 import type { Metadata } from 'next';
@@ -33,7 +33,7 @@ function StatCard({ label, value, iconPath, color }: { label: string; value: str
 }
 
 export default async function AccountPage() {
-  const supabase = await createServerSupabase();
+  const supabase = await createCustomerServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
