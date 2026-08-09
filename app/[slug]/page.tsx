@@ -144,6 +144,30 @@ export default async function BusinessBookingPage({
                 <span className="text-[14px]">{hoursSummary}</span>
               </div>
             )}
+
+            {/* Chatting with the AI agent is a first-class way to book,
+                not a minor extra — it gets equal billing with "Book now"
+                here in the hero, not just a small corner bubble someone
+                has to notice on their own. */}
+            <div className="flex flex-wrap items-center gap-3 mt-8">
+              <a
+                href="#book"
+                className="px-6 py-3 rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                style={{ background: 'var(--accent-contrast)', color: 'var(--accent)' }}
+              >
+                Book now
+              </a>
+              <a
+                href="#chat"
+                className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-[14px] text-white border-2 border-white/70 transition-colors hover:bg-white/10 active:scale-95"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16v12H8l-4 4V4z" />
+                  <path d="M8 9h8M8 12h5" />
+                </svg>
+                Chat with us
+              </a>
+            </div>
           </div>
         </div>
       </section>

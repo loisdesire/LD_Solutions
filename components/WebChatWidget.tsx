@@ -37,6 +37,18 @@ export default function WebChatWidget({ businessId }: { businessId: string }) {
   }, [businessId]);
 
   useEffect(() => {
+    // Lets other pages (e.g. /account's "Message them" button) deep-link
+    // straight into an open chat, and lets an on-page CTA in the hero do
+    // the same thing without a full navigation — both just set the hash.
+    const checkHash = () => {
+      if (window.location.hash === '#chat') setOpen(true);
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
+
+  useEffect(() => {
     if (!open || !sessionId || loaded) return;
     fetch(`/api/web-chat?businessId=${businessId}&sessionId=${sessionId}`)
       .then((r) => r.json())

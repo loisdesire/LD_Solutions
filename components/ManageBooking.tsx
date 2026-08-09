@@ -32,12 +32,14 @@ export default function ManageBooking({
   businessId,
   serviceId,
   initialStatus,
+  startTime,
   maxAdvanceDays = 30,
 }: {
   bookingId: string;
   businessId: string;
   serviceId: string;
   initialStatus: string;
+  startTime: string;
   maxAdvanceDays?: number;
 }) {
   const [status, setStatus] = useState(initialStatus);
@@ -109,6 +111,18 @@ export default function ManageBooking({
     return (
       <div className="border border-line rounded-md p-5 text-center">
         <p className="font-semibold text-[14px]">This booking has been cancelled.</p>
+      </div>
+    );
+  }
+
+  // Reschedule/cancel only make sense for something that hasn't happened
+  // yet — this used to show both buttons unconditionally, so a booking
+  // from last week still looked fully actionable.
+  if (new Date(startTime).getTime() < Date.now()) {
+    return (
+      <div className="border border-line rounded-md p-5 text-center">
+        <p className="font-semibold text-[14px]">This appointment has already happened.</p>
+        <p className="text-ink-soft text-[13px] mt-1">Nothing to manage here anymore.</p>
       </div>
     );
   }

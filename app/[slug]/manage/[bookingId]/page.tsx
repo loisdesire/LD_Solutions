@@ -23,7 +23,7 @@ export default async function ManageBookingPage({
 }: {
   params: Promise<{ slug: string; bookingId: string }>;
 }) {
-  const { bookingId } = await params;
+  const { slug, bookingId } = await params;
 
   const { data: booking } = await supabaseAdmin
     .from('bookings')
@@ -56,9 +56,21 @@ export default async function ManageBookingPage({
     <AccentScope color={business?.accent_color ?? '#B5502F'} className="min-h-screen bg-paper">
       <main className="flex items-center justify-center px-6 py-16 min-h-screen">
         <div className="w-full max-w-md animate-rise">
+          <div className="flex items-center justify-between mb-6">
+            <a
+              href={`/${slug}`}
+              className="flex items-center gap-1 text-[13px] font-medium text-ink-faint hover:text-ink transition-colors"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              {business?.name}
+            </a>
+            <a href="/account" className="text-[13px] font-medium text-ink-faint hover:text-ink transition-colors">
+              My bookings
+            </a>
+          </div>
           <div className="text-center mb-6">
             <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">
-              Manage your booking · {business?.name}
+              Manage your booking
             </div>
           </div>
 
@@ -131,6 +143,7 @@ export default async function ManageBookingPage({
               businessId={booking.business_id}
               serviceId={booking.service_id}
               initialStatus={booking.status}
+              startTime={booking.start_time}
               maxAdvanceDays={maxAdvanceDays}
             />
           </div>
