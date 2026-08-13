@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NewAppointmentModal from './NewAppointmentModal';
 
 type ExportRow = {
   customer_name: string;
@@ -11,14 +12,23 @@ type ExportRow = {
   service_name: string | null;
 };
 
+type Service = { id: string; name: string; duration_minutes: number; price: number | null };
+
 export default function DashboardHeaderActions({
   slug,
   rows = [],
+  businessId,
+  services,
+  maxAdvanceDays,
 }: {
   slug: string;
   rows?: ExportRow[];
+  businessId: string;
+  services: Service[];
+  maxAdvanceDays: number;
 }) {
   const [copied, setCopied] = useState(false);
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
 
   function handleCopy() {
     navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
@@ -79,16 +89,23 @@ export default function DashboardHeaderActions({
           </svg>
         </button>
       )}
-      <a
-        href={`/${slug}`}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={() => setShowNewAppointment(true)}
         className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         style={{ background: 'var(--accent)' }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
         New appointment
-      </a>
+      </button>
+
+      {showNewAppointment && (
+        <NewAppointmentModal
+          businessId={businessId}
+          services={services}
+          maxAdvanceDays={maxAdvanceDays}
+          onClose={() => setShowNewAppointment(false)}
+        />
+      )}
     </div>
   );
 }

@@ -33,22 +33,36 @@ export default async function AdminDashboard({
 
   const LOW_STOCK_THRESHOLD = 3;
 
-  const [{ data: bookings }, { data: lowStockProducts }] = await Promise.all([
-    supabaseAdmin
-      .from('bookings')
-      .select(
-        'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
-      )
-      .eq('business_id', business.id)
-      .order('start_time', { ascending: true }),
-    supabaseAdmin
-      .from('products')
-      .select('id, name, stock_quantity')
-      .eq('business_id', business.id)
-      .eq('active', true)
-      .lte('stock_quantity', LOW_STOCK_THRESHOLD)
-      .order('stock_quantity', { ascending: true }),
-  ]);
+  const [{ data: bookings }, { data: lowStockProducts }, { data: bookableServices }, { data: rules }] =
+    await Promise.all([
+      supabaseAdmin
+        .from('bookings')
+        .select(
+          'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
+        )
+        .eq('business_id', business.id)
+        .order('start_time', { ascending: true }),
+      supabaseAdmin
+        .from('products')
+        .select('id, name, stock_quantity')
+        .eq('business_id', business.id)
+        .eq('active', true)
+        .lte('stock_quantity', LOW_STOCK_THRESHOLD)
+        .order('stock_quantity', { ascending: true }),
+      // For the "New appointment" modal — staff picking a service to book a
+      // walk-in/phone customer into, same set a customer would see.
+      supabaseAdmin
+        .from('services')
+        .select('id, name, duration_minutes, price')
+        .eq('business_id', business.id)
+        .eq('active', true)
+        .order('name'),
+      supabaseAdmin
+        .from('booking_rules')
+        .select('max_advance_days')
+        .eq('business_id', business.id)
+        .maybeSingle(),
+    ]);
 
   const all = bookings ?? [];
   const lowStock = lowStockProducts ?? [];
@@ -114,6 +128,9 @@ export default async function AdminDashboard({
   return (
     <AdminDashboardBody
       slug={slug}
+      businessId={business.id}
+      services={bookableServices ?? []}
+      maxAdvanceDays={rules?.max_advance_days ?? 30}
       exportRows={exportRows}
       all={all}
       todayCount={todayCount}

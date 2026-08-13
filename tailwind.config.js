@@ -17,6 +17,18 @@ module.exports = {
         line: 'var(--line)',
         'line-strong': 'var(--line-strong)',
         accent: 'var(--accent)',
+        // These three were only ever consumed via inline `style={{...}}` /
+        // arbitrary-value classes (`shadow-[...var(--progress)...]`)
+        // elsewhere, but `accent-soft` was used as a plain Tailwind class
+        // (`bg-accent-soft`, `text-accent-soft`) in 8 components — since
+        // Tailwind v3 only generates utilities for colors registered here,
+        // every one of those was silently producing no CSS at all. Adding
+        // all four (not just accent-soft) so the same mistake can't recur
+        // with `bg-progress`/`bg-tertiary` later.
+        'accent-soft': 'var(--accent-soft)',
+        'accent-contrast': 'var(--accent-contrast)',
+        progress: 'var(--progress)',
+        tertiary: 'var(--tertiary)',
       },
       boxShadow: {
         soft: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
@@ -48,12 +60,20 @@ module.exports = {
           '60%': { transform: 'scale(1.08)', opacity: '1' },
           '100%': { transform: 'scale(1)' },
         },
+        // Modal backdrop — a plain opacity fade, no movement, so it reads
+        // as the page dimming behind the modal rather than another
+        // element arriving on stage.
+        fade: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         rise: 'rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
         shimmer: 'shimmer 1.5s ease-in-out infinite',
         punch: 'punch 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         popIn: 'popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        fade: 'fade 0.2s ease-out both',
       },
     },
   },

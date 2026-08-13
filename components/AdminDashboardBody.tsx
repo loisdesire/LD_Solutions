@@ -115,16 +115,16 @@ function StatCard({
           : undefined
       }
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between gap-2 mb-4">
         <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center"
+          className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
           style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             {icon}
           </svg>
         </div>
-        {trend ? <TrendPill trend={trend} /> : badge}
+        <div className="shrink-0 whitespace-nowrap">{trend ? <TrendPill trend={trend} /> : badge}</div>
       </div>
       <div className="mt-auto">
         <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">{label}</div>
@@ -139,6 +139,9 @@ function StatCard({
 
 export default function AdminDashboardBody({
   slug,
+  businessId,
+  services,
+  maxAdvanceDays,
   exportRows,
   all,
   todayCount,
@@ -154,6 +157,9 @@ export default function AdminDashboardBody({
   lowStock,
 }: {
   slug: string;
+  businessId: string;
+  services: { id: string; name: string; duration_minutes: number; price: number | null }[];
+  maxAdvanceDays: number;
   exportRows: ExportRow[];
   all: Booking[];
   todayCount: number;
@@ -200,7 +206,13 @@ export default function AdminDashboardBody({
             className="bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint w-full"
           />
         </div>
-        <DashboardHeaderActions slug={slug} rows={exportRows} />
+        <DashboardHeaderActions
+          slug={slug}
+          rows={exportRows}
+          businessId={businessId}
+          services={services}
+          maxAdvanceDays={maxAdvanceDays}
+        />
       </div>
 
       <div className="mb-6">
@@ -240,30 +252,29 @@ export default function AdminDashboardBody({
           <StatCard
             label="Next slot"
             icon={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>}
-            value={nextSlot ? relativeDay(new Date(nextSlot.start_time), startOfToday) : '—'}
+            // The time itself is the number someone actually scans for here
+            // — "Tomorrow" alone wasn't a useful headline. Day + customer
+            // move down into the subtext line, same weight as every other
+            // card's supporting context instead of competing with it.
+            value={nextSlot ? new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '—'}
             trend={null}
             color="var(--progress)"
             badge={
               nextSlotSoon ? (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em]"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em]"
                   style={{ background: 'color-mix(in srgb, var(--progress) 14%, transparent)', color: 'var(--progress)' }}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                  {minutesUntilNext! < 60 ? `In ${Math.max(minutesUntilNext!, 1)}m` : `In ${Math.floor(minutesUntilNext! / 60)}h ${minutesUntilNext! % 60}m`}
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current animate-pulse" />
+                  {minutesUntilNext! < 60 ? `${Math.max(minutesUntilNext!, 1)}m` : `${Math.floor(minutesUntilNext! / 60)}h ${minutesUntilNext! % 60}m`}
                 </span>
               ) : undefined
             }
             footer={
               nextSlot && (
-                <>
-                  <div className="text-[12px] font-semibold mt-1 text-ink-soft">
-                    {new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                  </div>
-                  <div className="text-[11px] text-ink-faint mt-0.5 truncate">
-                    {nextSlot.customer_name} · {(nextSlot as any).services?.name}
-                  </div>
-                </>
+                <div className="text-[11px] text-ink-faint mt-1.5 truncate">
+                  {relativeDay(new Date(nextSlot.start_time), startOfToday)} · {nextSlot.customer_name} ({(nextSlot as any).services?.name})
+                </div>
               )
             }
           />
