@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
-import { Manrope, Playfair_Display, IBM_Plex_Mono } from 'next/font/google';
+import { Inter, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['400', '500', '600', '700'],
 });
 
-const playfair = Playfair_Display({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['500', '600'],
+  weight: ['500', '600', '700'],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${playfair.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );
