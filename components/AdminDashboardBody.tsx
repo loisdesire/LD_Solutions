@@ -59,7 +59,7 @@ function TrendPill({ trend }: { trend: { value: number; positive: boolean; suffi
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1);
   return (
-    <div className="flex items-end gap-[3px] h-6 mt-2.5" aria-hidden="true">
+    <div className="flex items-end gap-[3px] h-5 mt-2" aria-hidden="true">
       {data.map((v, i) => (
         <div
           key={i}
@@ -75,11 +75,14 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-// `h-full` + the grid's `auto-rows-fr` (below) is what actually keeps
-// these level — every card anchors its icon/trend row at the top and its
-// label/value/footer block at the bottom via `mt-auto`, so a card with
-// extra footer content (Next slot) grows from the middle instead of
-// pushing its bottom edge past the others.
+// `auto-rows-fr` on the grid (below) still keeps all four cards the same
+// height, but content here flows top-down now instead of bottom-anchoring
+// the label/value block with `mt-auto` — that pattern was the actual
+// cause of the last round of "overly spaced" feedback: on the two cards
+// with no footer line, the slack from matching a taller sibling collected
+// as a dead gap between the icon row and the label, instead of just
+// sitting as ordinary trailing padding below the content, where extra
+// space reads as normal breathing room instead of a layout glitch.
 //
 // `featured` marks the one metric that matters most at a glance (revenue)
 // with a slightly larger number — that alone, not a tinted background too.
@@ -107,25 +110,23 @@ function StatCard({
   featured?: boolean;
 }) {
   return (
-    <div className="h-full flex flex-col rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
-      <div className="flex items-start justify-between gap-2 mb-4">
+    <div className="h-full rounded-2xl bg-surface border-2 border-line p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div
-          className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
+          className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center"
           style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             {icon}
           </svg>
         </div>
         <div className="shrink-0 whitespace-nowrap">{trend ? <TrendPill trend={trend} /> : badge}</div>
       </div>
-      <div className="mt-auto">
-        <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">{label}</div>
-        <div className={`font-display font-bold leading-none ${featured ? 'text-[26px]' : 'text-[21px]'}`} style={{ color }}>
-          {value}
-        </div>
-        {footer}
+      <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1">{label}</div>
+      <div className={`font-display font-bold leading-none ${featured ? 'text-[22px]' : 'text-[19px]'}`} style={{ color }}>
+        {value}
       </div>
+      {footer}
     </div>
   );
 }
@@ -221,7 +222,7 @@ export default function AdminDashboardBody({
       </div>
 
       {all.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 auto-rows-fr">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 auto-rows-fr">
           <StatCard
             label="Today"
             icon={<path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />}
@@ -272,7 +273,7 @@ export default function AdminDashboardBody({
             }
             footer={
               nextSlot && (
-                <div className="text-[11px] text-ink-faint mt-1.5 truncate">
+                <div className="text-[11px] text-ink-faint mt-1 truncate">
                   {relativeDay(new Date(nextSlot.start_time), startOfToday)} · {nextSlot.customer_name} ({(nextSlot as any).services?.name})
                 </div>
               )
