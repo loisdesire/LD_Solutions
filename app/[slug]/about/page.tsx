@@ -44,7 +44,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
           </p>
         </div>
       </main>
-      <SiteFooter business={business} hoursSummary={hoursSummary} />
+      <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />
       <WebChatWidget businessId={business.id} />
     </AccentScope>
   );

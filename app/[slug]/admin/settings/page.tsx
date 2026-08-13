@@ -65,6 +65,7 @@ export default async function SettingsPage({
           defaultOpen
         >
           <BusinessProfileManager
+            slug={slug}
             businessId={business.id}
             initialName={business.name}
             initialLogoUrl={business.logo_url}
@@ -87,6 +88,7 @@ export default async function SettingsPage({
           }
         >
           <SiteContentManager
+            slug={slug}
             businessId={business.id}
             initialAboutText={bizRow?.about_text ?? null}
             initialGalleryUrls={bizRow?.gallery_urls ?? null}

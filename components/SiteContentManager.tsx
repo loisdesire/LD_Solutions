@@ -1,8 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
+
+// A grid of real photo uploads instead of a textarea where you paste
+// URLs blind and only find out something's broken when you check the
+// live Gallery page. Stored the same way as before under the hood (the
+// `gallery_urls` column is still just newline-joined URLs, no schema
+// change) — this only changes how a URL gets into that list.
+function GalleryUploader({
+  slug,
+  urls,
+  onChange,
+}: {
+  slug: string;
+  urls: string[];
+  onChange: (urls: string[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleFiles(files: FileList) {
+    setError('');
+    setUploading(true);
+
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'One or more uploads failed.');
+        continue;
+      }
+      uploaded.push(data.url);
+    }
+
+    setUploading(false);
+    if (uploaded.length > 0) onChange([...urls, ...uploaded]);
+  }
+
+  function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    e.target.value = '';
+    if (files && files.length > 0) handleFiles(files);
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+        {urls.map((url, i) => (
+          <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-line-strong bg-paper group">
+            <img src={url} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onChange(urls.filter((_, idx) => idx !== i))}
+              aria-label="Remove photo"
+              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-ink/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="aspect-square rounded-xl border-2 border-dashed border-line-strong flex flex-col items-center justify-center gap-1 text-ink-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
+        >
+          {uploading ? (
+            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" />
+            </svg>
+          ) : (
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <span className="text-[10.5px] font-medium">Add photo</span>
+            </>
+          )}
+        </button>
+      </div>
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleSelect} className="hidden" />
+      {error && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
+    </div>
+  );
+}
 
 function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -27,6 +112,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
 }
 
 export default function SiteContentManager({
+  slug,
   businessId,
   initialAboutText,
   initialGalleryUrls,
@@ -38,6 +124,7 @@ export default function SiteContentManager({
   initialShowGallery,
   initialShowContact,
 }: {
+  slug: string;
   businessId: string;
   initialAboutText: string | null;
   initialGalleryUrls: string | null;
@@ -50,7 +137,9 @@ export default function SiteContentManager({
   initialShowContact: boolean;
 }) {
   const [aboutText, setAboutText] = useState(initialAboutText ?? '');
-  const [galleryUrls, setGalleryUrls] = useState(initialGalleryUrls ?? '');
+  const [galleryUrls, setGalleryUrls] = useState<string[]>(
+    (initialGalleryUrls ?? '').split('\n').map((u) => u.trim()).filter(Boolean)
+  );
   const [contactPhone, setContactPhone] = useState(initialContactPhone ?? '');
   const [contactEmail, setContactEmail] = useState(initialContactEmail ?? '');
   const [instagramUrl, setInstagramUrl] = useState(initialInstagramUrl ?? '');
@@ -74,7 +163,7 @@ export default function SiteContentManager({
       .from('businesses')
       .update({
         about_text: aboutText.trim() || null,
-        gallery_urls: galleryUrls.trim() || null,
+        gallery_urls: galleryUrls.length > 0 ? galleryUrls.join('\n') : null,
         contact_phone: contactPhone.trim() || null,
         contact_email: contactEmail.trim() || null,
         instagram_url: instagramUrl.trim() || null,
@@ -140,17 +229,15 @@ export default function SiteContentManager({
             label="Gallery page"
           />
         </div>
-        <textarea
-          value={galleryUrls}
-          onChange={(e) => {
-            setGalleryUrls(e.target.value);
+        <GalleryUploader
+          slug={slug}
+          urls={galleryUrls}
+          onChange={(urls) => {
+            setGalleryUrls(urls);
             setSaved(false);
           }}
-          rows={4}
-          placeholder={'https://…\nhttps://…\nhttps://…'}
-          className={inputClass}
         />
-        <p className="text-ink-faint text-[12px] mt-2">One photo URL per line. Also gets its own page.</p>
+        <p className="text-ink-faint text-[12px] mt-2">Upload as many as you like. Also gets its own page.</p>
       </div>
 
       <div>

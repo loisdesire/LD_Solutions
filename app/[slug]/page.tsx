@@ -191,7 +191,7 @@ export default async function BusinessBookingPage({
         )}
       </main>
 
-      <SiteFooter business={business} hoursSummary={hoursSummary} />
+      <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />
       <WebChatWidget businessId={business.id} />
     </AccentScope>
   );

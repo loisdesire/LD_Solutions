@@ -63,6 +63,9 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
   }
 
   async function handleDisconnect() {
+    if (!confirm('Disconnect Facebook Messenger? Customers messaging your page will stop reaching the AI assistant until you reconnect.')) {
+      return;
+    }
     setSaving(true);
     setError('');
     const res = await fetch('/api/settings/messenger', {
@@ -157,6 +160,9 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
   }
 
   async function handleDisconnect() {
+    if (!confirm('Disconnect this Telegram bot? Customers messaging it will stop reaching the AI assistant until you reconnect.')) {
+      return;
+    }
     setSaving(true);
     setError('');
     const res = await fetch('/api/settings/telegram', {
@@ -317,6 +323,9 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
   }
 
   async function handleDisconnect() {
+    if (!confirm(`Disconnect ${number}? Customers messaging this number will stop reaching the AI assistant, and you'll need to redo Embedded Signup to reconnect it.`)) {
+      return;
+    }
     setSaving(true);
     setError('');
     const res = await fetch('/api/settings/whatsapp', {

@@ -3,10 +3,16 @@
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
+import ImageUploadField from './ImageUploadField';
 
-const PRESETS = ['#B5502F', '#2F5D42', '#38416B', '#A8792B', '#6B3450', '#2F6F62', '#8A3FB8', '#1A1917'];
+// The platform's own bright/airy trio plus a handful of others real
+// businesses might actually want as their own brand color — this is
+// customer-facing branding a business picks for itself, not platform
+// chrome, so it isn't limited to the admin dashboard's fixed palette.
+const PRESETS = ['#FF6B4A', '#0D9488', '#0284C7', '#B5502F', '#2F5D42', '#A8792B', '#6B3450', '#1A1917'];
 
 export default function BusinessProfileManager({
+  slug,
   businessId,
   initialName,
   initialLogoUrl,
@@ -14,6 +20,7 @@ export default function BusinessProfileManager({
   initialCoverImageUrl,
   initialDescription,
 }: {
+  slug: string;
   businessId: string;
   initialName: string;
   initialLogoUrl: string | null;
@@ -22,8 +29,8 @@ export default function BusinessProfileManager({
   initialDescription: string | null;
 }) {
   const [name, setName] = useState(initialName);
-  const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? '');
-  const [coverImageUrl, setCoverImageUrl] = useState(initialCoverImageUrl ?? '');
+  const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
+  const [coverImageUrl, setCoverImageUrl] = useState(initialCoverImageUrl);
   const [description, setDescription] = useState(initialDescription ?? '');
   const [accentColor, setAccentColor] = useState(initialAccentColor);
   const [saving, setSaving] = useState(false);
@@ -42,8 +49,8 @@ export default function BusinessProfileManager({
       .from('businesses')
       .update({
         name,
-        logo_url: logoUrl || null,
-        cover_image_url: coverImageUrl || null,
+        logo_url: logoUrl,
+        cover_image_url: coverImageUrl,
         description: description.trim() || null,
         accent_color: accentColor,
       })
@@ -65,39 +72,22 @@ export default function BusinessProfileManager({
 
   return (
     <form onSubmit={handleSave} className="space-y-5">
-      <div className="flex items-center gap-4">
-        <div
-          className="h-12 w-12 rounded-2xl flex items-center justify-center text-white font-display text-[20px] shrink-0"
-          style={{ background: accentColor }}
-        >
-          {name?.[0]?.toUpperCase()}
-        </div>
-        <div className="flex-1">
-          <label className={labelClass}>Business name</label>
-          <input
-            required
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setSaved(false);
-            }}
-            className={inputClass}
-          />
-        </div>
-      </div>
-
       <div>
-        <label className={labelClass}>Logo URL</label>
+        <label className={labelClass}>Business name</label>
         <input
-          type="url"
-          value={logoUrl}
+          required
+          value={name}
           onChange={(e) => {
-            setLogoUrl(e.target.value);
+            setName(e.target.value);
             setSaved(false);
           }}
           className={inputClass}
-          placeholder="https://…"
         />
+      </div>
+
+      <div>
+        <label className={labelClass}>Logo</label>
+        <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
       </div>
 
       <div>
@@ -119,25 +109,11 @@ export default function BusinessProfileManager({
       </div>
 
       <div>
-        <label className={labelClass}>Cover photo URL</label>
-        <input
-          type="url"
-          value={coverImageUrl}
-          onChange={(e) => {
-            setCoverImageUrl(e.target.value);
-            setSaved(false);
-          }}
-          className={inputClass}
-          placeholder="https://…"
-        />
+        <label className={labelClass}>Cover photo</label>
+        <ImageUploadField slug={slug} value={coverImageUrl} onChange={(url) => { setCoverImageUrl(url); setSaved(false); }} shape="banner" label="cover photo" />
         <p className="text-ink-faint text-[12px] mt-2">
           Wide banner across the top of your booking page. Without one, we use your accent color instead.
         </p>
-        {coverImageUrl && (
-          <div className="mt-3 h-28 rounded-xl overflow-hidden border-2 border-line-strong">
-            <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
-          </div>
-        )}
       </div>
 
       <div>

@@ -11,11 +11,21 @@ type Business = {
 export default function SiteFooter({
   business,
   hoursSummary,
+  showContact,
 }: {
   business: Business;
   hoursSummary: string | null;
+  // Settings' "Contact page" toggle promises these fields only show up
+  // "if the toggle above is on" — that was only ever true for the
+  // dedicated /contact page; this footer rendered them unconditionally on
+  // every page regardless of the toggle. Defaults true so pages that
+  // don't pass it (there shouldn't be any left) keep the old behavior
+  // rather than silently hiding contact info.
+  showContact?: boolean;
 }) {
-  const hasSocial = business.contact_phone || business.contact_email || business.instagram_url || business.facebook_url;
+  const hasSocial =
+    showContact !== false &&
+    (business.contact_phone || business.contact_email || business.instagram_url || business.facebook_url);
 
   return (
     <footer className="bg-[var(--line)] border-t border-line mt-8">

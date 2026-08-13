@@ -158,7 +158,7 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
       </main>
-      <SiteFooter business={business} hoursSummary={hoursSummary} />
+      <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />
       <WebChatWidget businessId={business.id} />
     </AccentScope>
   );

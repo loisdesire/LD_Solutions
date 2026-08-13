@@ -47,10 +47,17 @@ export async function POST(req: NextRequest) {
   // forever. Now every step is checked, and a failure anywhere unwinds
   // whatever was already created instead of leaving a half-built account.
   try {
-    // 3. Create the business, tied to that owner
+    // 3. Create the business, tied to that owner. accent_color is set
+    // explicitly rather than left to the businesses table's column
+    // default — that default is still the platform's old dark-navy
+    // scheme (#0B1E33) from before the bright/airy redesign, and it isn't
+    // one of the Settings page's own preset swatches, so a brand-new
+    // business would open Settings and see no swatch selected despite
+    // already having a real color. Setting it here means every new
+    // business starts on-brand regardless of what the DB default says.
     const { data: business, error: bizError } = await supabaseAdmin
       .from('businesses')
-      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id })
+      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id, accent_color: '#FF6B4A' })
       .select()
       .single();
 
