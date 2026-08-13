@@ -43,7 +43,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
           </h1>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {galleryImages.map((url, i) => (
-              <div key={i} className="aspect-square rounded-xl overflow-hidden bg-surface">
+              <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-surface border-2 border-line">
                 <img src={url} alt="" className="h-full w-full object-cover" />
               </div>
             ))}

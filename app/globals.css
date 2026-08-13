@@ -3,31 +3,36 @@
 @tailwind utilities;
 
 :root {
-  --paper: #fcf9f4;
-  --surface: #f6f3ee;
-  --ink: #1c1c19;
-  --ink-soft: #4e453b;
-  /* #6b6055 computes to ~5.3:1 against --paper and ~4.9:1 against --surface
-     — comfortable AA margin for the small labels/metadata this is used at
-     (10-12px, well under the "large text" size that would only need 3:1). */
-  --ink-faint: #6b6055;
-  --line: #d1c4b7;
-  --line-strong: #80756a;
-  /* Platform default accent (warm bronze) — overridden per-business via
+  /* Bright/airy palette — warm near-white rather than stark white, so
+     large light areas don't feel clinical, paired with a vivid coral
+     accent used generously rather than timidly. Replaces an earlier,
+     darker "precision instrument" attempt that read as gloomy. */
+  --paper: #fffcf9;
+  --surface: #ffffff;
+  --ink: #241c18;
+  --ink-soft: #5c4f47;
+  /* #7a6d64 computes to ~4.9:1 against --paper and ~4.6:1 against
+     --surface — clears WCAG AA's 4.5:1 for normal text, which matters
+     since this is used at 10-12px for labels/metadata. */
+  --ink-faint: #7a6d64;
+  --line: #f0e4de;
+  --line-strong: #e0cfc6;
+  /* Platform default accent (vivid coral) — overridden per-business via
      AccentScope on customer-facing pages, stays the platform's own
      default in admin. */
-  --accent: #755a34;
+  --accent: #ff6b4a;
   --accent-contrast: #ffffff;
-  --accent-soft: rgba(117, 90, 52, 0.08);
-  /* Fixed sage green for progress/step indicators specifically — kept
+  --accent-soft: rgba(255, 107, 74, 0.1);
+  /* Fixed teal for progress/step indicators specifically — kept
      separate from --accent (which businesses customize for pricing,
      buttons, selection) so "this step is active" reads as a distinct
      signal rather than just another shade of the brand color. */
-  --progress: #506354;
-  /* Fixed dusty blue — used alongside --progress and --accent to give
+  --progress: #0d9488;
+  /* Fixed sky blue (deliberately not indigo/violet — that's off-limits
+     for this platform) — used alongside --progress and --accent to give
      admin dashboard stat cards distinct icon colors instead of every
      card using the same accent shade. */
-  --tertiary: #4c6079;
+  --tertiary: #0284c7;
 }
 
 body {

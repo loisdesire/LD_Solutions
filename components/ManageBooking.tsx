@@ -109,7 +109,7 @@ export default function ManageBooking({
 
   if (status === 'cancelled') {
     return (
-      <div className="border border-line rounded-md p-5 text-center">
+      <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">This booking has been cancelled.</p>
       </div>
     );
@@ -120,7 +120,7 @@ export default function ManageBooking({
   // from last week still looked fully actionable.
   if (new Date(startTime).getTime() < Date.now()) {
     return (
-      <div className="border border-line rounded-md p-5 text-center">
+      <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">This appointment has already happened.</p>
         <p className="text-ink-soft text-[13px] mt-1">Nothing to manage here anymore.</p>
       </div>
@@ -129,7 +129,7 @@ export default function ManageBooking({
 
   if (rescheduled) {
     return (
-      <div className="border border-line rounded-md p-5 text-center">
+      <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">Your booking has been rescheduled.</p>
         <p className="text-ink-soft text-[13px] mt-1">Refresh this page to see the new time.</p>
       </div>
@@ -213,13 +213,13 @@ export default function ManageBooking({
             onClick={handleReschedule}
             disabled={loading || !selectedSlot}
             style={selectedSlot ? { background: 'var(--accent)' } : undefined}
-            className="flex-1 rounded-lg py-3 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
+            className="flex-1 rounded-xl py-3 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
           >
             {loading ? 'Saving…' : 'Confirm new time'}
           </button>
           <button
             onClick={() => setRescheduling(false)}
-            className="rounded-lg border border-line-strong px-4 py-3 text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+            className="rounded-xl border-2 border-line-strong px-4 py-3 text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
           >
             Cancel
           </button>
@@ -232,17 +232,17 @@ export default function ManageBooking({
 
 
   return (
-    <div className="border border-line rounded-md p-5 flex flex-col sm:flex-row gap-3">
+    <div className="border-2 border-line rounded-2xl p-5 flex flex-col sm:flex-row gap-3 bg-surface">
       <button
         onClick={() => setRescheduling(true)}
-        className="flex-1 rounded-md border border-line-strong py-2.5 text-[13.5px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+        className="flex-1 rounded-xl border-2 border-line-strong py-2.5 text-[13.5px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
       >
         Reschedule
       </button>
       <button
         onClick={handleCancel}
         disabled={loading}
-        className="flex-1 rounded-md border border-red-200 bg-red-50 py-2.5 text-[13.5px] font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+        className="flex-1 rounded-xl border-2 border-red-200 bg-red-50 py-2.5 text-[13.5px] font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
       >
         {loading ? 'Cancelling…' : 'Cancel booking'}
       </button>

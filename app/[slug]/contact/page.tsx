@@ -125,7 +125,7 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
                   href={m.href}
                   target={m.external ? '_blank' : undefined}
                   rel={m.external ? 'noopener noreferrer' : undefined}
-                  className="group flex items-center gap-4 rounded-xl bg-surface border border-line p-5 transition-all duration-300 hover:-translate-y-1 shadow-[0_4px_16px_-10px_var(--accent-soft)] hover:shadow-[0_16px_32px_-12px_var(--accent-soft)] hover:border-[var(--accent)]"
+                  className="group flex items-center gap-4 rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 shadow-[0_4px_16px_-10px_var(--accent-soft)] hover:shadow-[0_16px_32px_-12px_var(--accent-soft)] hover:border-[var(--accent)]"
                 >
                   <div
                     className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"

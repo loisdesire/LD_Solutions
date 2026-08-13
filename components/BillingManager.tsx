@@ -84,7 +84,7 @@ export default function BillingManager({
 
   return (
     <div className="max-w-lg">
-      <div className="border border-line rounded-xl overflow-hidden bg-surface">
+      <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
         <div className="p-6 border-b border-dashed border-line">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${copy.pill}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -144,7 +144,7 @@ export default function BillingManager({
             <button
               onClick={handleSubscribe}
               disabled={loading}
-              className="w-full rounded-md bg-accent px-5 py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
             >
               {loading ? 'Redirecting…' : 'Subscribe with Flutterwave'}
             </button>
@@ -165,7 +165,7 @@ export default function BillingManager({
           <h3 className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">
             Payment history
           </h3>
-          <div className="border border-line rounded-xl overflow-hidden bg-surface">
+          <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
             {history.map((h, i) => (
               <div
                 key={h.id}

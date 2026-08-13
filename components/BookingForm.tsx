@@ -186,26 +186,26 @@ export default function BookingForm({
   if (step === 'confirmed') {
     return (
       <div className="animate-rise max-w-xl mx-auto">
-        <div className="rounded-2xl bg-surface border border-line shadow-card overflow-hidden">
+        <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
           <div
-            className="px-6 sm:px-8 pt-8 pb-6 text-center"
-            style={{ background: 'linear-gradient(135deg, var(--accent-soft), transparent)' }}
+            className="px-6 sm:px-8 pt-10 pb-7 text-center"
+            style={{ background: 'linear-gradient(160deg, var(--accent-soft), transparent 75%)' }}
           >
             <div
-              className="inline-flex items-center justify-center h-14 w-14 rounded-full mb-4"
+              className="animate-popIn inline-flex items-center justify-center h-16 w-16 rounded-full mb-5 shadow-[0_10px_24px_-6px_var(--accent)]"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
-            <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink">
+            <h2 className="font-display text-[28px] sm:text-[32px] font-bold text-ink">
               You&rsquo;re all set, {name.split(' ')[0]}!
             </h2>
-            <p className="text-ink-soft text-[14px] mt-1.5">A confirmation has been sent to {email}</p>
+            <p className="text-ink-soft text-[14px] mt-2">A confirmation has been sent to {email}</p>
           </div>
 
-          <div className="px-6 sm:px-8 py-4">
+          <div className="px-6 sm:px-8 py-5">
             <ConfirmationRow label="Service" value={selectedService?.name ?? ''} />
             <ConfirmationRow
               label="Date"
@@ -225,10 +225,10 @@ export default function BookingForm({
             )}
           </div>
 
-          <div className="mx-6 sm:mx-8 border-t border-dashed border-line-strong" />
-          <div className="px-6 sm:px-8 py-4 flex items-center justify-between">
+          <div className="mx-6 sm:mx-8 border-t-2 border-dashed border-line" />
+          <div className="px-6 sm:px-8 py-5 flex items-center justify-between">
             <span className="text-[12px] text-ink-faint font-medium">Booking code</span>
-            <span className="font-mono text-[15px] tracking-[0.2em] font-bold text-ink">
+            <span className="font-mono text-[15px] tracking-[0.2em] font-bold" style={{ color: 'var(--accent)' }}>
               {bookingId.slice(0, 8).toUpperCase()}
             </span>
           </div>
@@ -255,7 +255,7 @@ export default function BookingForm({
       <StepIndicator step={stepNum} />
 
       {step !== 'service' && selectedService && (
-        <div className="max-w-xl mx-auto rounded-xl bg-surface border border-line overflow-hidden mb-6 animate-rise">
+        <div className="max-w-xl mx-auto rounded-2xl bg-surface border-2 border-line overflow-hidden mb-6 animate-rise">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <div
@@ -306,30 +306,38 @@ export default function BookingForm({
                 <button
                   key={s.id}
                   onClick={() => selectService(s)}
-                  className="group text-left rounded-xl bg-surface border border-line overflow-hidden transition-all duration-300 hover:-translate-y-1 shadow-[0_4px_16px_-10px_var(--accent-soft)] hover:shadow-[0_16px_32px_-12px_var(--accent-soft)] hover:border-[var(--accent)]"
+                  className="group text-left rounded-3xl bg-surface border-2 border-line overflow-hidden transition-all duration-300 hover:-translate-y-1.5 shadow-[0_6px_20px_-14px_rgba(36,28,24,0.15)] hover:shadow-[0_20px_40px_-16px_var(--accent-soft)] hover:border-[var(--accent)]"
                 >
-                  <div className="h-[3px]" style={{ background: 'var(--accent)' }} />
                   <div className="p-6">
-                    <div className="flex justify-between items-start gap-3 mb-1">
-                      <h3 className="font-display text-[20px] font-semibold text-ink">{s.name}</h3>
-                      {s.price != null && (
-                        <div className="font-display text-[20px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>
-                          ₦{s.price.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-ink-faint mb-5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 6v6l4 2" />
-                      </svg>
-                      <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-dashed border-line">
-                      <span className="text-[12.5px] font-medium text-ink-faint">Tap to book</span>
-                      <span
-                        className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 group-hover:translate-x-0.5"
+                    <div className="flex items-start gap-4 mb-5">
+                      <div
+                        className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 font-display text-[18px] font-bold transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
                         style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                      >
+                        {s.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <h3 className="font-display text-[19px] font-semibold text-ink leading-tight">{s.name}</h3>
+                        <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                          <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-line">
+                      {s.price != null ? (
+                        <span className="font-display text-[19px] font-bold" style={{ color: 'var(--accent)' }}>
+                          ₦{s.price.toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-[12.5px] font-medium text-ink-faint">Tap to book</span>
+                      )}
+                      <span
+                        className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-white transition-all duration-300 group-hover:translate-x-1"
+                        style={{ background: 'var(--accent)' }}
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M9 6l6 6-6 6" />
@@ -360,7 +368,7 @@ export default function BookingForm({
           <h2 className="font-display text-[24px] font-semibold text-ink mb-1 text-center">Pick a time</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
 
-          <div className="rounded-xl bg-surface border border-line p-4 mb-6">
+          <div className="rounded-2xl bg-surface border-2 border-line p-4 mb-6">
             <CalendarPicker
               selectedDate={selectedDate}
               onChange={(d) => {

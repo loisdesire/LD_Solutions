@@ -56,7 +56,7 @@ export default function SettingsManager({
   }
 
   const numInputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   const rule = (
     label: string,
@@ -104,7 +104,7 @@ export default function SettingsManager({
             setWebhookUrl(e.target.value);
             setSaved(false);
           }}
-          className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          className="w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[13px] font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           placeholder="https://hooks.zapier.com/..."
         />
         <p className="text-ink-faint text-[12px] mt-2">
@@ -115,7 +115,7 @@ export default function SettingsManager({
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {saving ? (
           'Saving…'

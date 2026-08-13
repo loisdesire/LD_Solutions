@@ -46,7 +46,7 @@ export default function AccountBookingCard({
   const service = Array.isArray(booking.services) ? booking.services[0] : booking.services;
 
   return (
-    <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-[0_2px_10px_-6px_rgba(0,0,0,0.08)]">
+    <div className="rounded-2xl border-2 border-line bg-surface overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-20px_rgba(36,28,24,0.25)]">
       <div className="p-4 flex items-center gap-4">
         <div className="min-w-0 flex-1">
           <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">

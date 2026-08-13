@@ -45,12 +45,12 @@ export default async function ServicesPage({
         </div>
         {(services ?? []).length > 0 && (
           <div className="flex items-center gap-2.5">
-            <div className="bg-surface px-4 py-2 rounded-lg border border-line flex items-center gap-2">
+            <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
               <span className="text-[12px] text-ink-faint">Active</span>
               <span className="text-[13.5px] font-semibold text-accent">{activeCount}</span>
             </div>
             {hiddenCount > 0 && (
-              <div className="bg-surface px-4 py-2 rounded-lg border border-line flex items-center gap-2">
+              <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
                 <span className="text-[12px] text-ink-faint">Hidden</span>
                 <span className="text-[13.5px] font-semibold text-ink">{hiddenCount}</span>
               </div>

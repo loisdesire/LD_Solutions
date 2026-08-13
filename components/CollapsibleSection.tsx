@@ -36,7 +36,7 @@ export default function CollapsibleSection({
       >
         <div
           className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105"
-          style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+          style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
           {icon}
         </div>

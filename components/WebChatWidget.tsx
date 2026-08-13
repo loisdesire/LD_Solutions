@@ -115,7 +115,7 @@ export default function WebChatWidget({
       </button>
 
       {open && (
-        <div className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] rounded-2xl bg-surface border border-line shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden animate-rise">
+        <div className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] rounded-2xl bg-surface border-2 border-line shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden animate-rise">
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-2.5" style={{ background: 'var(--accent-soft)' }}>
             <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v12H8l-4 4V4z" /></svg>

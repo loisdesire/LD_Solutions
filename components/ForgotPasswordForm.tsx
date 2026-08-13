@@ -36,11 +36,11 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   if (sent) {
     return (
-      <div className="border border-line rounded-md p-5 text-center">
+      <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">Check your email</p>
         <p className="text-ink-soft text-[13px] mt-1">
           If an account exists for {email}, a reset link is on its way.
@@ -68,7 +68,7 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-accent py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {loading ? 'Sending…' : 'Send reset link'}
       </button>

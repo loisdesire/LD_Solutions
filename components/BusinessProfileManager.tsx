@@ -60,14 +60,14 @@ export default function BusinessProfileManager({
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   return (
     <form onSubmit={handleSave} className="space-y-5">
       <div className="flex items-center gap-4">
         <div
-          className="h-12 w-12 rounded-md flex items-center justify-center text-white font-display text-[20px] shrink-0"
+          className="h-12 w-12 rounded-2xl flex items-center justify-center text-white font-display text-[20px] shrink-0"
           style={{ background: accentColor }}
         >
           {name?.[0]?.toUpperCase()}
@@ -134,7 +134,7 @@ export default function BusinessProfileManager({
           Wide banner across the top of your booking page. Without one, we use your accent color instead.
         </p>
         {coverImageUrl && (
-          <div className="mt-3 h-28 rounded-md overflow-hidden border border-line-strong">
+          <div className="mt-3 h-28 rounded-xl overflow-hidden border-2 border-line-strong">
             <img src={coverImageUrl} alt="" className="h-full w-full object-cover" />
           </div>
         )}
@@ -152,7 +152,7 @@ export default function BusinessProfileManager({
                 setSaved(false);
               }}
               style={{ background: c }}
-              className={`h-8 w-8 rounded-md transition-all ${
+              className={`h-8 w-8 rounded-xl transition-all ${
                 accentColor.toLowerCase() === c.toLowerCase()
                   ? 'ring-2 ring-offset-2 ring-ink'
                   : ''
@@ -169,7 +169,7 @@ export default function BusinessProfileManager({
               setAccentColor(e.target.value);
               setSaved(false);
             }}
-            className="h-9 w-12 rounded-md border border-line-strong cursor-pointer"
+            className="h-9 w-12 rounded-xl border-2 border-line-strong cursor-pointer"
           />
           <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
         </div>
@@ -181,7 +181,7 @@ export default function BusinessProfileManager({
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {saving ? (
           'Saving…'

@@ -17,10 +17,10 @@ const supabaseAdmin = createClient(
 
 function StatCard({ label, value, iconPath, color }: { label: string; value: string; iconPath: string; color: string }) {
   return (
-    <div className="rounded-xl bg-surface border border-line p-5">
+    <div className="rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
       <div
-        className="h-9 w-9 rounded-lg flex items-center justify-center mb-4"
-        style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+        className="h-9 w-9 rounded-xl flex items-center justify-center mb-4"
+        style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath} />
@@ -84,7 +84,7 @@ export default async function AccountPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="h-11 w-11 rounded-full text-white flex items-center justify-center font-display text-[16px] shrink-0"
+              className="h-11 w-11 rounded-2xl text-white flex items-center justify-center font-display text-[16px] font-bold shrink-0"
               style={{ background: 'var(--accent)' }}
             >
               {user.email[0]?.toUpperCase()}
@@ -121,7 +121,7 @@ export default async function AccountPage() {
         )}
 
         {rows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-line-strong py-16 text-center">
+          <div className="rounded-3xl border-2 border-dashed border-line-strong py-16 text-center">
             <p className="text-ink-soft text-[14px]">
               No bookings found for this email yet — once you book somewhere, it'll show up here.
             </p>

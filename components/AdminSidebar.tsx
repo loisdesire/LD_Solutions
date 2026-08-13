@@ -90,15 +90,13 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
-        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-md text-[13.5px] transition-colors ${
-          active ? 'bg-paper font-semibold text-ink' : 'text-ink-soft hover:bg-paper hover:text-ink'
+        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13.5px] transition-colors ${
+          active ? 'font-semibold' : 'text-ink-soft hover:bg-paper hover:text-ink'
         }`}
+        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
         {icons[iconKey]}
         {label}
-        {active && (
-          <span className="absolute right-0 top-1/2 -translate-y-1/2 h-[60%] w-[2px] rounded-full bg-accent" />
-        )}
       </Link>
     );
   }
@@ -132,7 +130,7 @@ export default function AdminSidebar({
 
       <div className="mt-auto pt-5 border-t border-line flex items-center gap-2.5 px-1">
         <div
-          className="h-9 w-9 rounded-full text-white flex items-center justify-center font-display text-[14px] shrink-0"
+          className="h-10 w-10 rounded-2xl text-white flex items-center justify-center font-display text-[15px] font-bold shrink-0"
           style={{ background: 'var(--accent)' }}
         >
           {userEmail?.[0]?.toUpperCase()}

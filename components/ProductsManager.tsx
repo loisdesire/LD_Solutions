@@ -134,19 +134,19 @@ export default function ProductsManager({
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const smallInputClass =
-    'rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
   const iconBtnClass =
-    'h-8 w-8 flex items-center justify-center rounded-md border border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
+    'h-8 w-8 flex items-center justify-center rounded-full border-2 border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
 
   return (
     <div>
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
@@ -158,7 +158,7 @@ export default function ProductsManager({
       {showAdd && (
         <form
           onSubmit={handleAdd}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 border border-line-strong rounded-md p-5 mb-4 bg-paper"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-2 border-line rounded-2xl p-5 mb-4 bg-surface"
         >
           <div className="sm:col-span-2">
             <label className={labelClass}>Product name</label>
@@ -206,7 +206,7 @@ export default function ProductsManager({
           <button
             type="submit"
             disabled={saving}
-            className="sm:col-span-2 rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="sm:col-span-2 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -216,8 +216,8 @@ export default function ProductsManager({
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
       {products.length === 0 ? (
-        <div className="border border-dashed border-line-strong rounded-md p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-md bg-accent-soft flex items-center justify-center text-accent">
+        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-12 w-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
             <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
               <path
                 d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
@@ -232,7 +232,7 @@ export default function ProductsManager({
           <p className="text-ink-soft text-[13.5px] mt-1.5">Add your first one above.</p>
         </div>
       ) : (
-        <div className="border border-line rounded-md overflow-hidden">
+        <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
           <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_90px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
             <div>Product</div>
             <div>Price</div>
@@ -282,13 +282,13 @@ export default function ProductsManager({
                     <button
                       onClick={() => saveEdit(p.id)}
                       disabled={editSaving}
-                      className="rounded-md bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                      className="rounded-xl bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
                     >
                       {editSaving ? 'Saving…' : 'Save'}
                     </button>
                     <button
                       onClick={() => setEditingId('')}
-                      className="rounded-md border border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+                      className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
                     >
                       Cancel
                     </button>

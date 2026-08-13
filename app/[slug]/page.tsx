@@ -181,7 +181,7 @@ export default async function BusinessBookingPage({
             maxAdvanceDays={maxAdvanceDays}
           />
         ) : (
-          <div className="max-w-lg mx-auto text-center rounded-xl border border-dashed border-line-strong py-14 px-6">
+          <div className="max-w-lg mx-auto text-center rounded-3xl border-2 border-dashed border-line-strong py-14 px-6">
             <p className="font-display text-[20px] text-ink mb-2">Not currently taking bookings</p>
             <p className="text-ink-soft text-[14px]">
               {business.name} isn&apos;t accepting online bookings right now. Please check back later or

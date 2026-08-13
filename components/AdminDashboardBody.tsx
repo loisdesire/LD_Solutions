@@ -47,13 +47,13 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="rounded-xl bg-surface border border-line p-5 transition-transform duration-300 hover:-translate-y-0.5">
+    <div className="rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
       <div className="flex items-start justify-between mb-4">
         <div
-          className="h-9 w-9 rounded-lg flex items-center justify-center"
-          style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+          className="h-10 w-10 rounded-xl flex items-center justify-center"
+          style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d={iconPath} />
           </svg>
         </div>
@@ -66,7 +66,7 @@ function StatCard({
         )}
       </div>
       <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">{label}</div>
-      <div className="font-display text-[20px] leading-none" style={{ color }}>{value}</div>
+      <div className="font-display text-[21px] font-bold leading-none" style={{ color }}>{value}</div>
     </div>
   );
 }
@@ -107,7 +107,7 @@ export default function AdminDashboardBody({
   return (
     <div>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-paper rounded-full px-4 py-2.5 w-full sm:w-96">
+        <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 w-full sm:w-96 transition-colors focus-within:border-[var(--accent)]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
@@ -154,12 +154,12 @@ export default function AdminDashboardBody({
             }
             color="var(--accent)"
           />
-          <div className="rounded-xl bg-surface border border-line p-5 transition-transform duration-300 hover:-translate-y-0.5">
+          <div className="rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
             <div
-              className="h-9 w-9 rounded-lg flex items-center justify-center mb-4"
-              style={{ background: 'color-mix(in srgb, var(--progress) 12%, transparent)', color: 'var(--progress)' }}
+              className="h-10 w-10 rounded-xl flex items-center justify-center mb-4"
+              style={{ background: 'color-mix(in srgb, var(--progress) 14%, transparent)', color: 'var(--progress)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
             </div>
             <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">Next slot</div>
             {nextSlot ? (
@@ -182,8 +182,8 @@ export default function AdminDashboardBody({
       )}
 
       {all.length === 0 ? (
-        <div className="border border-dashed border-line-strong rounded-md p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-md bg-accent-soft flex items-center justify-center text-accent">
+        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
             <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
               <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
               <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
@@ -216,8 +216,8 @@ export default function AdminDashboardBody({
           <BookingsList slug={slug} bookings={all} search={search} />
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8 rounded-xl bg-surface border border-line p-5">
-              <h3 className="font-display text-[16px] font-semibold text-ink mb-5">Bookings this week</h3>
+            <div className="lg:col-span-8 rounded-2xl bg-surface border-2 border-line p-5">
+              <h3 className="font-display text-[17px] font-semibold text-ink mb-5">Bookings this week</h3>
               <div className="h-48 flex items-end justify-between gap-2 px-1">
                 {last7Days.map((day, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-2">
@@ -240,7 +240,7 @@ export default function AdminDashboardBody({
             </div>
 
             {lowStock.length > 0 && (
-              <div className="lg:col-span-4 rounded-xl p-5" style={{ background: 'var(--accent-soft)' }}>
+              <div className="lg:col-span-4 rounded-2xl p-5" style={{ background: 'var(--accent-soft)' }}>
                 <p className="font-semibold text-[14px] text-ink mb-2">Low stock</p>
                 <div className="space-y-1.5">
                   {lowStock.slice(0, 4).map((p) => (

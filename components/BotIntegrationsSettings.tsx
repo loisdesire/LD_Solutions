@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 const inputClass =
-  'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] font-mono text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+  'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] font-mono text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
 declare global {
   interface Window {
@@ -87,7 +87,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
       </div>
 
       {pageName ? (
-        <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
+        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
           <p className="text-[13.5px] text-ink-soft">
             Connected as <span className="font-mono text-ink">{pageName}</span>
           </p>
@@ -116,7 +116,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -181,7 +181,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
       </div>
 
       {username ? (
-        <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
+        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
           <p className="text-[13.5px] text-ink-soft">
             Connected as <span className="font-mono text-ink">@{username}</span>
           </p>
@@ -210,7 +210,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -341,7 +341,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
       </div>
 
       {number ? (
-        <div className="flex items-center justify-between gap-4 border border-line rounded-md px-4 py-3">
+        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
           <p className="font-mono text-[13.5px] text-ink">{number}</p>
           <button
             onClick={handleDisconnect}
@@ -360,7 +360,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
           <button
             onClick={handleConnect}
             disabled={!sdkReady || connecting}
-            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {connecting ? 'Connecting…' : 'Connect WhatsApp'}
           </button>

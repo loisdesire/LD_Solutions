@@ -18,7 +18,7 @@ export default function SiteFooter({
   const hasSocial = business.contact_phone || business.contact_email || business.instagram_url || business.facebook_url;
 
   return (
-    <footer className="bg-[#ebe8e3] border-t border-line mt-8">
+    <footer className="bg-[var(--line)] border-t border-line mt-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full px-6 sm:px-10 py-12 max-w-5xl mx-auto text-center sm:text-left">
         <div>
           <div className="flex items-center gap-2.5 mb-3 justify-center sm:justify-start">

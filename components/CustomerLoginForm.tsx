@@ -60,7 +60,7 @@ export default function CustomerLoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+          className="w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
         <p className="text-ink-faint text-[12px] mt-2">
           The same email you used when booking. We'll send a one-click login link — no password.
@@ -70,7 +70,7 @@ export default function CustomerLoginForm() {
       <button
         type="submit"
         disabled={status === 'sending'}
-        className="w-full rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {status === 'sending' ? 'Sending…' : 'Send login link'}
       </button>

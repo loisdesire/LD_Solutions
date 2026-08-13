@@ -40,11 +40,20 @@ module.exports = {
           '40%': { transform: 'scale(0.9)' },
           '100%': { transform: 'scale(1)' },
         },
+        // A little overshoot-and-settle for the confirmation screen's
+        // success icon — makes the moment feel like a genuine payoff,
+        // not just another state change.
+        popIn: {
+          '0%': { transform: 'scale(0.5)', opacity: '0' },
+          '60%': { transform: 'scale(1.08)', opacity: '1' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         rise: 'rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both',
         shimmer: 'shimmer 1.5s ease-in-out infinite',
         punch: 'punch 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        popIn: 'popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       },
     },
   },

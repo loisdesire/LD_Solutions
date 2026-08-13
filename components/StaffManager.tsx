@@ -89,13 +89,13 @@ export default function StaffManager({
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   return (
     <div>
       <form
         onSubmit={handleInvite}
-        className="flex flex-col sm:flex-row gap-3 items-end border border-dashed border-line-strong rounded-md p-5 mb-8"
+        className="flex flex-col sm:flex-row gap-3 items-end border-2 border-dashed border-line-strong rounded-2xl p-5 mb-8 bg-surface"
       >
         <div className="flex-1 w-full">
           <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
@@ -113,7 +113,7 @@ export default function StaffManager({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+          className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
         >
           {saving ? 'Sending…' : 'Send invite'}
         </button>
@@ -128,7 +128,7 @@ export default function StaffManager({
         {staff.map((s) => (
           <div
             key={s.id}
-            className="flex items-center gap-3.5 border border-line rounded-md p-4"
+            className="flex items-center gap-3.5 border-2 border-line rounded-2xl p-4 bg-surface"
           >
             <div
               className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white text-[14px] font-semibold"
@@ -163,7 +163,7 @@ export default function StaffManager({
             {invites.map((inv) => (
               <div
                 key={inv.id}
-                className="flex items-center gap-3 border border-dashed border-line-strong rounded-md p-4"
+                className="flex items-center gap-3 border-2 border-dashed border-line-strong rounded-2xl p-4"
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-[14px] truncate">{inv.email}</p>
@@ -171,7 +171,7 @@ export default function StaffManager({
                 </div>
                 <button
                   onClick={() => handleCopy(inv.token, inv.id)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-line-strong px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
                 >
                   {copiedId === inv.id ? (
                     <>

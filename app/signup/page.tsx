@@ -76,7 +76,7 @@ export default function SignupPage() {
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   const features = [
@@ -135,7 +135,7 @@ export default function SignupPage() {
 
             <div>
               <label className={labelClass}>Choose your link</label>
-              <div className="flex items-stretch border border-line-strong rounded-md overflow-hidden focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+              <div className="flex items-stretch border-2 border-line-strong rounded-xl overflow-hidden focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
                 <span className="bg-paper font-mono text-[12.5px] text-ink-faint px-3 flex items-center border-r border-line whitespace-nowrap">
                   {host || ' '}/
                 </span>
@@ -176,7 +176,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-accent py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 mt-2"
+              className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 mt-2"
             >
               {loading ? 'Creating…' : 'Create booking page →'}
             </button>

@@ -217,12 +217,12 @@ export default function ServicesManager({
   }
 
   const inputClass =
-    'w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const smallInputClass =
-    'rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+    'rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
   const iconBtnClass =
-    'h-8 w-8 flex items-center justify-center rounded-full border border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
+    'h-8 w-8 flex items-center justify-center rounded-full border-2 border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
   const pillClass = (active: boolean) =>
     `px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${
       active ? 'text-white' : 'text-ink-faint hover:text-ink'
@@ -245,7 +245,7 @@ export default function ServicesManager({
       {showAdd && (
         <form
           onSubmit={handleAdd}
-          className="grid grid-cols-1 sm:grid-cols-[1.6fr_1fr_1fr_1fr_auto] gap-4 items-end border border-line rounded-xl p-5 mb-4 bg-surface no-print"
+          className="grid grid-cols-1 sm:grid-cols-[1.6fr_1fr_1fr_1fr_auto] gap-4 items-end border-2 border-line rounded-2xl p-5 mb-4 bg-surface no-print"
         >
           <div>
             <label className={labelClass}>Service name</label>
@@ -299,7 +299,7 @@ export default function ServicesManager({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -309,8 +309,8 @@ export default function ServicesManager({
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
       {services.length === 0 ? (
-        <div className="border border-dashed border-line-strong rounded-md p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-md bg-accent-soft flex items-center justify-center text-accent">
+        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-12 w-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
             <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
               <path
                 d="M12 3L14.4 9.2L21 9.9L16 14.3L17.5 21L12 17.6L6.5 21L8 14.3L3 9.9L9.6 9.2L12 3Z"
@@ -324,7 +324,7 @@ export default function ServicesManager({
           <p className="text-ink-soft text-[13.5px] mt-1.5">Add your first one above.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-line overflow-hidden bg-surface">
+        <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3 no-print">
             <div className="flex items-center gap-1 bg-paper rounded-full p-1">
               <button
@@ -443,13 +443,13 @@ export default function ServicesManager({
                   <button
                     onClick={() => saveEdit(s.id)}
                     disabled={editSaving}
-                    className="rounded-md bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                    className="rounded-xl bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
                   >
                     {editSaving ? 'Saving…' : 'Save'}
                   </button>
                   <button
                     onClick={() => setEditingId('')}
-                    className="rounded-md border border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+                    className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
                   >
                     Cancel
                   </button>
@@ -465,7 +465,7 @@ export default function ServicesManager({
                 <div className="flex items-center justify-between sm:justify-start gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="hidden sm:flex h-8 w-8 rounded-lg items-center justify-center shrink-0"
+                      className="hidden sm:flex h-8 w-8 rounded-xl items-center justify-center shrink-0"
                       style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -560,7 +560,7 @@ export default function ServicesManager({
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
-                  className="h-7 w-7 flex items-center justify-center rounded-md border border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
                 </button>
@@ -568,7 +568,7 @@ export default function ServicesManager({
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage >= totalPages - 1}
-                  className="h-7 w-7 flex items-center justify-center rounded-md border border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
                 </button>
@@ -580,7 +580,7 @@ export default function ServicesManager({
 
       {services.length > 0 && (mostPopular || highestRevenue || avgDuration != null) && (
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
-          <div className="rounded-xl p-5 flex items-center gap-4" style={{ background: 'var(--accent-soft)' }}>
+          <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'var(--accent-soft)' }}>
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
@@ -594,7 +594,7 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border border-line">
+          <div className="rounded-2xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
@@ -608,7 +608,7 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border border-line">
+          <div className="rounded-2xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}

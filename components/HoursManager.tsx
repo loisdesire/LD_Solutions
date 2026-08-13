@@ -76,7 +76,7 @@ export default function HoursManager({
   return (
     <div>
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-      <div className="border border-line rounded-md overflow-hidden">
+      <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
         {days.map((day, index) => (
           <div
             key={index}
@@ -91,7 +91,7 @@ export default function HoursManager({
               <span
                 role="checkbox"
                 aria-checked={day.open}
-                className={`h-5 w-5 shrink-0 rounded border flex items-center justify-center transition-colors ${
+                className={`h-5 w-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors ${
                   day.open ? 'bg-accent border-accent' : 'border-line-strong bg-surface'
                 }`}
               >
@@ -106,14 +106,14 @@ export default function HoursManager({
                   type="time"
                   value={day.start}
                   onChange={(e) => updateDay(index, { start: e.target.value })}
-                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                  className="rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
                 />
                 <span className="font-mono text-[12px] text-ink-faint">to</span>
                 <input
                   type="time"
                   value={day.end}
                   onChange={(e) => updateDay(index, { end: e.target.value })}
-                  className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                  className="rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
                 />
               </div>
             ) : (
@@ -123,7 +123,7 @@ export default function HoursManager({
             <button
               onClick={() => saveDay(index)}
               disabled={savingDay === index}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 sm:ml-auto"
+              className="inline-flex items-center gap-1.5 rounded-xl border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50 sm:ml-auto"
             >
               {savingDay === index ? (
                 'Saving…'

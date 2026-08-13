@@ -34,7 +34,7 @@ export default function AdminMobileNav({
     <div className="md:hidden border-b border-line">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-7 w-7 rounded-lg bg-accent text-white flex items-center justify-center font-display text-[13px] shrink-0">
+          <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
             {businessName?.[0]?.toUpperCase()}
           </div>
           <span className="font-semibold text-[13.5px] truncate">{businessName}</span>
@@ -50,9 +50,10 @@ export default function AdminMobileNav({
             <Link
               key={tab.href}
               href={tab.href}
-              className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] font-mono uppercase tracking-wide transition-colors ${
-                active ? 'bg-ink text-paper' : 'text-ink-soft'
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-mono uppercase tracking-wide transition-colors ${
+                active ? 'text-white font-semibold' : 'text-ink-soft'
               }`}
+              style={active ? { background: 'var(--accent)' } : undefined}
             >
               {tab.label}
             </Link>

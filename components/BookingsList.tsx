@@ -163,7 +163,7 @@ export default function BookingsList({
         </div>
       </div>
 
-      <div className="border border-line rounded-xl overflow-hidden bg-surface">
+      <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
         <div className="hidden sm:grid grid-cols-[70px_1.4fr_1.3fr_1fr_120px] gap-4 px-5 py-3 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
           <div>When</div>
           <div>Customer</div>

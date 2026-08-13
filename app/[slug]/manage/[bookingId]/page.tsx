@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import ManageBooking from '@/components/ManageBooking';
-import TicketPerforation from '@/components/TicketPerforation';
 import { AccentScope } from '@/components/AccentScope';
 import type { Metadata } from 'next';
 
@@ -74,10 +73,10 @@ export default async function ManageBookingPage({
             </div>
           </div>
 
-          {/* Same ticket identity as the booking confirmation (BookingForm's
+          {/* Same card identity as the booking confirmation (BookingForm's
               confirmed step) — a customer's booking should look like the same
               object when they come back to it, not a different card. */}
-          <div className="rounded-2xl border-2 border-line-strong bg-surface shadow-[0_24px_60px_-30px_rgba(28,23,18,0.4)] overflow-hidden">
+          <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
             <div
               className="p-5 sm:p-6"
               style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), transparent 70%)' }}
@@ -89,7 +88,7 @@ export default async function ManageBookingPage({
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {statusLabel[booking.status] ?? booking.status}
               </span>
-              <h1 className="font-display text-[24px] mt-3">{service?.name}</h1>
+              <h1 className="font-display text-[24px] font-bold mt-3">{service?.name}</h1>
             </div>
             <div className="px-5 sm:px-6">
               <div className="flex justify-between py-2.5 text-[13.5px] border-b border-dashed border-line">
@@ -123,15 +122,12 @@ export default async function ManageBookingPage({
               </div>
             </div>
 
-            <div className="px-5 sm:px-6 mt-2">
-              <TicketPerforation notchColor="var(--paper)" />
-            </div>
-
+            <div className="mx-5 sm:mx-6 border-t-2 border-dashed border-line" />
             <div className="px-5 sm:px-6 py-4 flex items-center justify-between">
               <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">
                 Booking code
               </span>
-              <span className="font-mono text-[15px] tracking-[0.25em] font-semibold text-ink">
+              <span className="font-mono text-[15px] tracking-[0.25em] font-bold" style={{ color: 'var(--accent)' }}>
                 {booking.id.slice(0, 8).toUpperCase()}
               </span>
             </div>
