@@ -82,8 +82,11 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
 // pushing its bottom edge past the others.
 //
 // `featured` marks the one metric that matters most at a glance (revenue)
-// with a soft tinted wash and a slightly larger number — restrained on
-// purpose, one accent per row, not a wall of equally loud cards.
+// with a slightly larger number — that alone, not a tinted background too.
+// A background wash on top of a bigger font on top of a different border
+// color made this one card read as a different *kind* of card sitting
+// among three plain white ones, not "the featured metric" — restraint
+// means picking one differentiator, not stacking three.
 function StatCard({
   label,
   icon,
@@ -104,17 +107,7 @@ function StatCard({
   featured?: boolean;
 }) {
   return (
-    <div
-      className="h-full flex flex-col rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]"
-      style={
-        featured
-          ? {
-              backgroundImage: `linear-gradient(150deg, color-mix(in srgb, ${color} 16%, transparent), var(--surface) 70%)`,
-              borderColor: `color-mix(in srgb, ${color} 28%, var(--line))`,
-            }
-          : undefined
-      }
-    >
+    <div className="h-full flex flex-col rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
       <div className="flex items-start justify-between gap-2 mb-4">
         <div
           className="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center"
@@ -191,6 +184,13 @@ export default function AdminDashboardBody({
     nextSlot && now !== null ? Math.round((new Date(nextSlot.start_time).getTime() - now) / 60000) : null;
   const nextSlotSoon = minutesUntilNext !== null && minutesUntilNext >= 0 && minutesUntilNext <= 180;
 
+  // Same dayCounts array that draws Today's sparkline — last index is
+  // today, the one before it is yesterday — so this is a real delta, not
+  // a filler number, and it's what gives Today a badge in the first
+  // place: without one, it was the only card of the four with an empty
+  // top-right slot, which is what actually broke the row's rhythm.
+  const todayDelta = dayCounts.length >= 2 ? todayCount - dayCounts[dayCounts.length - 2] : 0;
+
   return (
     <div>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -226,7 +226,7 @@ export default function AdminDashboardBody({
             label="Today"
             icon={<path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />}
             value={String(todayCount)}
-            trend={null}
+            trend={todayDelta === 0 ? null : { value: todayDelta, positive: todayDelta > 0 }}
             color="var(--progress)"
             footer={<MiniSparkline data={dayCounts} color="var(--progress)" />}
           />
