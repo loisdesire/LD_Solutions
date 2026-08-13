@@ -191,6 +191,12 @@ export default function AdminDashboardBody({
   // place: without one, it was the only card of the four with an empty
   // top-right slot, which is what actually broke the row's rhythm.
   const todayDelta = dayCounts.length >= 2 ? todayCount - dayCounts[dayCounts.length - 2] : 0;
+  // Derived from weekCountDelta (already computed server-side) rather than
+  // needing a new prop — same reasoning as todayDelta above, just one
+  // level up: give every card a genuine third line instead of leaving two
+  // of them shorter than their sparkline/subtext siblings and relying on
+  // auto-rows-fr to paper over the difference with trailing blank space.
+  const previousWeekCount = thisWeekCount - weekCountDelta;
 
   return (
     <div>
@@ -237,6 +243,7 @@ export default function AdminDashboardBody({
             value={String(thisWeekCount)}
             trend={weekCountDelta === 0 ? null : { value: weekCountDelta, positive: weekCountDelta > 0 }}
             color="var(--tertiary)"
+            footer={<div className="text-[11px] text-ink-faint mt-1">{previousWeekCount} last week</div>}
           />
           <StatCard
             label="Week revenue"
@@ -249,6 +256,7 @@ export default function AdminDashboardBody({
             }
             color="var(--accent)"
             featured
+            footer={<div className="text-[11px] text-ink-faint mt-1">Last 7 days</div>}
           />
           <StatCard
             label="Next slot"
