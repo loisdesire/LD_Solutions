@@ -16,6 +16,7 @@ type Booking = {
   // relation; `any` here matches how the rest of this codebase already
   // works around that rather than fighting its inference.
   services: any;
+  staff?: any;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -27,8 +28,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const statusStyle: Record<string, string> = {
   confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink/5 text-ink-faint',
-  cancelled: 'bg-ink/5 text-ink-faint line-through',
+  completed: 'bg-ink-wash text-ink-faint',
+  cancelled: 'bg-ink-wash text-ink-faint line-through',
   no_show: 'bg-error-bg text-error',
 };
 
@@ -163,62 +164,68 @@ export default function BookingsList({
         </div>
       </div>
 
-      <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
-        <div className="hidden sm:grid grid-cols-[70px_1.4fr_1.3fr_1fr_120px] gap-4 px-5 py-3 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
-          <div>When</div>
+      {/* Deliberately not a bordered box anymore — a top rule plus row
+          dividers reads as a schedule, not another card among cards, and
+          it's the section that matters most on the page, so it shouldn't
+          compete visually with everything boxed around it. */}
+      <div className="border-t-2 border-line">
+        <div className="hidden sm:grid grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px] gap-4 px-2 py-2.5 border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+          <div>Time</div>
           <div>Customer</div>
           <div>Service</div>
+          <div>Staff</div>
           <div>Contact</div>
           <div>Status</div>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="px-5 py-10 text-center text-[13.5px] text-ink-faint">
+          <div className="px-2 py-10 text-center text-[13.5px] text-ink-faint">
             No {filter === 'all' ? scope : STATUS_LABELS[filter]?.toLowerCase()} bookings.
           </div>
         ) : (
-          filtered.map((b, i) => (
-            <div
-              key={b.id}
-              className={`px-5 py-5 hover:bg-accent-soft/40 transition-colors ${
-                i !== filtered.length - 1 ? 'border-b border-line' : ''
-              } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
-            >
-              <div className="flex flex-col gap-2.5 sm:grid sm:grid-cols-[70px_1.4fr_1.3fr_1fr_120px] sm:gap-4 sm:items-center">
-                <div className="flex items-center justify-between sm:block">
-                  <div>
-                    <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
-                      {relativeDay(new Date(b.start_time), startOfToday)}
-                    </span>
+          filtered.map((b, i) => {
+            const staffName = Array.isArray(b.staff) ? b.staff[0]?.name : b.staff?.name;
+            return (
+              <div
+                key={b.id}
+                className={`px-2 py-4 hover:bg-warm-surface transition-colors ${
+                  i !== filtered.length - 1 ? 'border-b border-line' : ''
+                } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
+              >
+                <div className="flex flex-col gap-2.5 sm:grid sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px] sm:gap-4 sm:items-center">
+                  <div className="flex items-center justify-between sm:block">
+                    <div>
+                      <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
+                        {relativeDay(new Date(b.start_time), startOfToday)}
+                      </span>
+                      <span
+                        className="font-display text-[13.5px] font-semibold ml-2 sm:ml-0 sm:block sm:mt-0.5"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {new Date(b.start_time).toLocaleTimeString(undefined, {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
                     <span
-                      className="font-display text-[16px] font-semibold ml-2 sm:ml-0 sm:block sm:mt-0.5"
-                      style={{ color: 'var(--accent)' }}
+                      className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}
                     >
-                      {new Date(b.start_time).toLocaleTimeString(undefined, {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                      {b.status.replace('_', ' ')}
                     </span>
                   </div>
-                  <span
-                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${statusStyle[b.status] ?? 'bg-ink/5 text-ink-faint'}`}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    {b.status.replace('_', ' ')}
-                  </span>
-                </div>
 
-                <div className={b.status === 'cancelled' ? 'line-through' : ''}>
-                  <div className="font-semibold text-[14px] truncate">{b.customer_name}</div>
-                  {b.customer_email && (
-                    <div className="font-mono text-[11.5px] text-ink-faint truncate mt-0.5">
-                      {b.customer_email}
-                    </div>
-                  )}
-                </div>
+                  <div className={b.status === 'cancelled' ? 'line-through' : ''}>
+                    <div className="font-semibold text-[14px] truncate">{b.customer_name}</div>
+                    {b.customer_email && (
+                      <div className="font-mono text-[11.5px] text-ink-faint truncate mt-0.5">
+                        {b.customer_email}
+                      </div>
+                    )}
+                  </div>
 
-                <div className={`flex items-center justify-between sm:block ${b.status === 'cancelled' ? 'line-through' : ''}`}>
-                  <div>
+                  <div className={b.status === 'cancelled' ? 'line-through' : ''}>
                     <span className="text-[13.5px]">{b.services?.name}</span>
                     {b.services?.duration_minutes != null && (
                       <span className="font-mono text-[11px] text-ink-faint ml-2 sm:block sm:ml-0 sm:mt-0.5">
@@ -226,32 +233,29 @@ export default function BookingsList({
                       </span>
                     )}
                   </div>
-                  <span className="font-mono text-[12px] sm:hidden">
-                    <ContactCell
-                      phone={b.customer_phone}
-                      telegramUsername={b.customer_telegram_username}
-                      onOpen={() => setOpenConversation(b)}
-                    />
+
+                  <div className="text-[13px] text-ink-soft truncate">{staffName ?? '—'}</div>
+
+                  <div className="flex items-center justify-between sm:block">
+                    <span className="font-mono text-[12.5px] sm:text-[13px] truncate">
+                      <ContactCell
+                        phone={b.customer_phone}
+                        telegramUsername={b.customer_telegram_username}
+                        onOpen={() => setOpenConversation(b)}
+                      />
+                    </span>
+                  </div>
+
+                  <span
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 w-fit ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {b.status.replace('_', ' ')}
                   </span>
                 </div>
-
-                <div className="hidden sm:block font-mono text-[13px] truncate">
-                  <ContactCell
-                    phone={b.customer_phone}
-                    telegramUsername={b.customer_telegram_username}
-                    onOpen={() => setOpenConversation(b)}
-                  />
-                </div>
-
-                <span
-                  className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 w-fit ${statusStyle[b.status] ?? 'bg-ink/5 text-ink-faint'}`}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {b.status.replace('_', ' ')}
-                </span>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

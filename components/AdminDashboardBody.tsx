@@ -14,6 +14,7 @@ type Booking = {
   start_time: string;
   status: string;
   services: any;
+  staff?: any;
 };
 
 type ExportRow = {
@@ -25,108 +26,29 @@ type ExportRow = {
   service_name: string | null;
 };
 
-function relativeDay(date: Date, today: Date): string {
-  const days = Math.round((date.getTime() - today.getTime()) / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Tomorrow';
-  if (days === -1) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-// A trend delta as a status-style pill (dot + text) — the same shape as
-// every other status badge in the app (booking status, active/hidden
-// toggles) — instead of the plain gray caption text it used to be, so a
-// glance at color alone says "good" or "flat" before reading the number.
-function TrendPill({ trend }: { trend: { value: number; positive: boolean; suffix?: string } }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em] ${
-        trend.positive ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
-      }`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {trend.positive ? '+' : ''}
-      {trend.value}
-      {trend.suffix ?? ''}
-    </span>
-  );
-}
-
-// A quiet 7-bar trend, reusing the exact same day-count data as the
-// "Bookings this week" chart below — no extra fetch, just a smaller echo
-// of it right where the headline number lives. Today's bar reads full
-// strength; the rest sit back so it doesn't compete with the big number.
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data, 1);
-  return (
-    <div className="flex items-end gap-[3px] h-5 mt-2" aria-hidden="true">
-      {data.map((v, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-[2px] transition-all"
-          style={{
-            height: `${Math.max((v / max) * 100, v > 0 ? 18 : 8)}%`,
-            background: color,
-            opacity: v === 0 ? 0.15 : i === data.length - 1 ? 1 : 0.3,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// `auto-rows-fr` on the grid (below) still keeps all four cards the same
-// height, but content here flows top-down now instead of bottom-anchoring
-// the label/value block with `mt-auto` — that pattern was the actual
-// cause of the last round of "overly spaced" feedback: on the two cards
-// with no footer line, the slack from matching a taller sibling collected
-// as a dead gap between the icon row and the label, instead of just
-// sitting as ordinary trailing padding below the content, where extra
-// space reads as normal breathing room instead of a layout glitch.
-//
-// `featured` marks the one metric that matters most at a glance (revenue)
-// with a slightly larger number — that alone, not a tinted background too.
-// A background wash on top of a bigger font on top of a different border
-// color made this one card read as a different *kind* of card sitting
-// among three plain white ones, not "the featured metric" — restraint
-// means picking one differentiator, not stacking three.
-function StatCard({
+// One stat inside the Today strip — not its own bordered card. The strip
+// itself is the single card; each stat is just a labeled number with a
+// hairline divider between them, so three (or four, with Next
+// appointment) numbers read as one connected summary of the day instead
+// of a row of identical boxes competing for attention.
+function TodayStat({
   label,
-  icon,
   value,
-  trend,
-  badge,
-  color = 'var(--accent)',
-  footer,
-  featured = false,
+  sub,
+  color = 'var(--ink)',
 }: {
   label: string;
-  icon: React.ReactNode;
   value: string;
-  trend: { value: number; positive: boolean; suffix?: string } | null;
-  badge?: React.ReactNode;
+  sub?: string;
   color?: string;
-  footer?: React.ReactNode;
-  featured?: boolean;
 }) {
   return (
-    <div className="h-full rounded-2xl bg-surface border-2 border-line p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div
-          className="h-9 w-9 shrink-0 rounded-xl flex items-center justify-center"
-          style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            {icon}
-          </svg>
-        </div>
-        <div className="shrink-0 whitespace-nowrap">{trend ? <TrendPill trend={trend} /> : badge}</div>
-      </div>
-      <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1">{label}</div>
-      <div className={`font-display font-bold leading-none ${featured ? 'text-[22px]' : 'text-[19px]'}`} style={{ color }}>
+    <div className="flex-1 min-w-[120px]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint mb-1">{label}</div>
+      <div className="font-display text-[24px] font-bold leading-none" style={{ color }}>
         {value}
       </div>
-      {footer}
+      {sub && <div className="text-[12px] text-ink-faint mt-1 truncate">{sub}</div>}
     </div>
   );
 }
@@ -139,16 +61,12 @@ export default function AdminDashboardBody({
   exportRows,
   all,
   todayCount,
+  todayRevenue,
   thisWeekCount,
   weekCountDelta,
   weekRevenue,
   revenuePctDelta,
   nextSlot,
-  startOfToday,
-  last7Days,
-  dayCounts,
-  maxDayCount,
-  lowStock,
 }: {
   slug: string;
   businessId: string;
@@ -157,23 +75,18 @@ export default function AdminDashboardBody({
   exportRows: ExportRow[];
   all: Booking[];
   todayCount: number;
+  todayRevenue: number;
   thisWeekCount: number;
   weekCountDelta: number;
   weekRevenue: number;
   revenuePctDelta: number | null;
   nextSlot: Booking | undefined;
-  startOfToday: Date;
-  last7Days: Date[];
-  dayCounts: number[];
-  maxDayCount: number;
-  lowStock: { id: string; name: string; stock_quantity: number | null }[];
 }) {
   const [search, setSearch] = useState('');
 
   // Starts null so the server-rendered markup and the first client render
-  // match exactly (no "in 45m" badge either has a stale server-time value
-  // baked in or causes a hydration mismatch) — it fills in a tick after
-  // mount, then keeps itself current every minute while the page is open.
+  // match exactly (a stale server-time "in 45m" badge, or a hydration
+  // mismatch) — fills in a tick after mount, then stays current.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -183,20 +96,14 @@ export default function AdminDashboardBody({
 
   const minutesUntilNext =
     nextSlot && now !== null ? Math.round((new Date(nextSlot.start_time).getTime() - now) / 60000) : null;
-  const nextSlotSoon = minutesUntilNext !== null && minutesUntilNext >= 0 && minutesUntilNext <= 180;
-
-  // Same dayCounts array that draws Today's sparkline — last index is
-  // today, the one before it is yesterday — so this is a real delta, not
-  // a filler number, and it's what gives Today a badge in the first
-  // place: without one, it was the only card of the four with an empty
-  // top-right slot, which is what actually broke the row's rhythm.
-  const todayDelta = dayCounts.length >= 2 ? todayCount - dayCounts[dayCounts.length - 2] : 0;
-  // Derived from weekCountDelta (already computed server-side) rather than
-  // needing a new prop — same reasoning as todayDelta above, just one
-  // level up: give every card a genuine third line instead of leaving two
-  // of them shorter than their sparkline/subtext siblings and relying on
-  // auto-rows-fr to paper over the difference with trailing blank space.
-  const previousWeekCount = thisWeekCount - weekCountDelta;
+  const nextSlotLabel =
+    nextSlot == null
+      ? '—'
+      : minutesUntilNext !== null && minutesUntilNext >= 0 && minutesUntilNext <= 180
+        ? minutesUntilNext < 60
+          ? `In ${Math.max(minutesUntilNext, 1)}m`
+          : `In ${Math.floor(minutesUntilNext / 60)}h ${minutesUntilNext % 60}m`
+        : new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
   return (
     <div>
@@ -228,65 +135,27 @@ export default function AdminDashboardBody({
       </div>
 
       {all.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 auto-rows-fr">
-          <StatCard
-            label="Today"
-            icon={<path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />}
-            value={String(todayCount)}
-            trend={todayDelta === 0 ? null : { value: todayDelta, positive: todayDelta > 0 }}
-            color="var(--tertiary)"
-            footer={<MiniSparkline data={dayCounts} color="var(--tertiary)" />}
-          />
-          <StatCard
-            label="This week"
-            icon={<path d="M9 11H5a2 2 0 00-2 2v6a2 2 0 002 2h4m0-10v10m0-10h6m-6 10h6m0-10h4a2 2 0 012 2v6a2 2 0 01-2 2h-4m0-10v10" />}
-            value={String(thisWeekCount)}
-            trend={weekCountDelta === 0 ? null : { value: weekCountDelta, positive: weekCountDelta > 0 }}
-            color="var(--tertiary)"
-            footer={<div className="text-[11px] text-ink-faint mt-1">{previousWeekCount} last week</div>}
-          />
-          <StatCard
-            label="Week revenue"
-            icon={<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />}
-            value={weekRevenue ? `₦${weekRevenue.toLocaleString()}` : '—'}
-            trend={
-              revenuePctDelta === null || revenuePctDelta === 0
-                ? null
-                : { value: revenuePctDelta, positive: revenuePctDelta > 0, suffix: '%' }
-            }
-            color="var(--accent)"
-            featured
-            footer={<div className="text-[11px] text-ink-faint mt-1">Last 7 days</div>}
-          />
-          <StatCard
-            label="Next slot"
-            icon={<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>}
-            // The time itself is the number someone actually scans for here
-            // — "Tomorrow" alone wasn't a useful headline. Day + customer
-            // move down into the subtext line, same weight as every other
-            // card's supporting context instead of competing with it.
-            value={nextSlot ? new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '—'}
-            trend={null}
-            color="var(--tertiary)"
-            badge={
-              nextSlotSoon ? (
-                <span
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em]"
-                  style={{ background: 'color-mix(in srgb, var(--tertiary) 14%, transparent)', color: 'var(--tertiary)' }}
-                >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current animate-pulse" />
-                  {minutesUntilNext! < 60 ? `${Math.max(minutesUntilNext!, 1)}m` : `${Math.floor(minutesUntilNext! / 60)}h ${minutesUntilNext! % 60}m`}
-                </span>
-              ) : undefined
-            }
-            footer={
-              nextSlot && (
-                <div className="text-[11px] text-ink-faint mt-1 truncate">
-                  {relativeDay(new Date(nextSlot.start_time), startOfToday)} · {nextSlot.customer_name} ({(nextSlot as any).services?.name})
-                </div>
-              )
-            }
-          />
+        <div className="rounded-2xl bg-warm-surface px-5 py-5 mb-8">
+          <div className="flex flex-wrap gap-x-8 gap-y-5">
+            <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} color="var(--accent)" />
+            <TodayStat
+              label="Next up"
+              value={nextSlotLabel}
+              sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
+            />
+            <TodayStat label="Today's revenue" value={todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '—'} />
+            <TodayStat
+              label="This week"
+              value={String(thisWeekCount)}
+              sub={
+                weekRevenue
+                  ? `₦${weekRevenue.toLocaleString()}${revenuePctDelta ? ` (${revenuePctDelta > 0 ? '+' : ''}${revenuePctDelta}%)` : ''}`
+                  : weekCountDelta !== 0
+                    ? `${weekCountDelta > 0 ? '+' : ''}${weekCountDelta} vs last week`
+                    : undefined
+              }
+            />
+          </div>
         </div>
       )}
 
@@ -321,57 +190,7 @@ export default function AdminDashboardBody({
           <div className="font-mono text-[10.5px] text-ink-faint mt-6 tracking-[0.05em]">/{slug}</div>
         </div>
       ) : (
-        <>
-          <BookingsList slug={slug} bookings={all} search={search} />
-
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8 rounded-2xl bg-surface border-2 border-line p-5">
-              <h3 className="font-display text-[17px] font-semibold text-ink mb-5">Bookings this week</h3>
-              <div className="h-48 flex items-end justify-between gap-2 px-1">
-                {last7Days.map((day, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full flex items-end h-40">
-                      <div
-                        className="w-full rounded-t-md transition-all"
-                        style={{
-                          height: `${Math.max((dayCounts[i] / maxDayCount) * 100, dayCounts[i] > 0 ? 8 : 2)}%`,
-                          background: dayCounts[i] > 0 ? 'var(--accent)' : 'var(--line)',
-                          opacity: dayCounts[i] > 0 ? 1 : 0.4,
-                        }}
-                      />
-                    </div>
-                    <span className="font-mono text-[10px] text-ink-faint">
-                      {new Date(day).toLocaleDateString(undefined, { weekday: 'short' })[0]}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {lowStock.length > 0 && (
-              <div className="lg:col-span-4 rounded-2xl p-5" style={{ background: 'var(--accent-soft)' }}>
-                <p className="font-semibold text-[14px] text-ink mb-2">Low stock</p>
-                <div className="space-y-1.5">
-                  {lowStock.slice(0, 4).map((p) => (
-                    <div key={p.id} className="flex items-center justify-between text-[13px]">
-                      <span className="text-ink-soft truncate">{p.name}</span>
-                      <span className="font-mono font-semibold shrink-0 ml-2" style={{ color: 'var(--accent)' }}>
-                        {p.stock_quantity} left
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <Link
-                  href={`/${slug}/admin/products`}
-                  className="inline-block mt-3 text-[12.5px] font-semibold hover:underline"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  Manage products →
-                </Link>
-              </div>
-            )}
-          </div>
-        </>
+        <BookingsList slug={slug} bookings={all} search={search} />
       )}
     </div>
   );

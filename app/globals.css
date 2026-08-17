@@ -28,6 +28,14 @@
   --line: #ede6d9;
   --line-strong: #ddd0bb;
 
+  /* Baked-in alpha, not a Tailwind opacity modifier — `bg-ink/5` and
+     friends silently generate ZERO css on a color that's a `var()`
+     reference (Tailwind can't decompose it into RGB channels at build
+     time to blend an opacity onto it), so every "inactive" status pill
+     using that pattern was rendering with no background at all. This is
+     a real color value the browser can use directly. */
+  --ink-wash: rgba(32, 32, 32, 0.05);
+
   /* Primary brand — burnt orange/terracotta. Platform default;
      businesses can still override this for their own public page via
      AccentScope. */

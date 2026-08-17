@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getAvailableSlots } from './getAvailableSlots';
 import { todayInTimezone, daysBetween, zonedTimeToUtc } from './timezone';
 import { sendEmail } from './email';
-import { canAcceptBookings } from './subscription';
+import { canAcceptBookings } from './subscription-server';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
 // Twilio — it's the same booking logic the web app already uses (services,

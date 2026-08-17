@@ -119,7 +119,7 @@ export default function NewAppointmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm animate-fade" onClick={onClose} />
+      <div className="absolute inset-0 backdrop-blur-sm animate-fade" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }} onClick={onClose} />
 
       <div className="relative w-full max-w-lg max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-line bg-surface">

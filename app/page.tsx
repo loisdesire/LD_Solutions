@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import SelfBookingDemo from '@/components/SelfBookingDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
+import DashboardPreview from '@/components/DashboardPreview';
 import { SITE_URL } from '@/lib/site';
 import { MONTHLY_PRICE_NGN } from '@/lib/subscription';
 
@@ -95,6 +96,25 @@ const features = [
     title: 'Team management',
     description: 'Invite staff by email, manage roles, and let your whole team work off one shared calendar.',
   },
+];
+
+// A real sequence — this is the one place on the page a numbered list
+// actually earns its keep, since these four things genuinely happen in
+// this order, not four unrelated feature bullets.
+const steps = [
+  { title: 'They ask', description: 'A customer messages you — on your website, or on Telegram.' },
+  { title: 'It checks', description: 'The AI checks your real availability, instantly, against your actual calendar.' },
+  { title: 'It books', description: "It's confirmed and booked. No back-and-forth, no waiting on you." },
+  { title: 'You see it', description: 'The appointment lands on your dashboard automatically — you never touch it.' },
+];
+
+const PLAN_INCLUDES = [
+  'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
+  'Unlimited bookings and services',
+  'One dashboard for every appointment',
+  'Automatic email confirmations',
+  'Your own branded booking page',
+  'Team accounts for your staff',
 ];
 
 const businessTypes = [
@@ -203,7 +223,7 @@ export default function LandingPage() {
       </section>
 
       {/* Channel strip — honest about what's live vs. coming, on purpose */}
-      <section className="border-y border-line bg-surface/60">
+      <section className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-6">
           <Reveal className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
             <p className="text-[13px] text-ink-soft shrink-0">
@@ -241,8 +261,30 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
+      {/* How it works — the one place a numbered sequence belongs on this
+          page, because it genuinely is one. */}
+      <section className="border-y border-line bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
+          <Reveal className="mb-12 max-w-lg">
+            <h2 className="font-display text-3xl text-ink mb-2">How it works</h2>
+            <p className="text-[14px] text-ink-soft">From a message to a confirmed appointment, with nobody in between.</p>
+          </Reveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {steps.map((step, i) => (
+              <Reveal key={step.title} delay={i * 60}>
+                <div className="font-mono text-[11px] mb-3" style={{ color: 'var(--accent)' }}>
+                  0{i + 1}
+                </div>
+                <h3 className="font-display text-[17px] font-semibold text-ink mb-1.5">{step.title}</h3>
+                <p className="text-[13px] text-ink-soft leading-relaxed">{step.description}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
-      <section className="border-y border-line bg-surface/60">
+      <section className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
           <Reveal className="mb-12">
             <h2 className="font-display text-3xl text-ink mb-2">
@@ -269,6 +311,33 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Dashboard preview */}
+      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-14 items-center">
+          <Reveal>
+            <h2 className="font-display text-3xl text-ink mb-4 leading-snug">
+              A real business tool, <span className="italic">not just a chatbot.</span>
+            </h2>
+            <p className="text-[14px] text-ink-soft leading-relaxed mb-6">
+              Every booking — however it came in — lands in one place. Today&rsquo;s schedule,
+              who&rsquo;s next, what you made today. Open it once each morning and you know
+              exactly where your day stands.
+            </p>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 text-[13.5px] font-semibold hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              See it with your own bookings
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+            </Link>
+          </Reveal>
+          <Reveal delay={100}>
+            <DashboardPreview />
+          </Reveal>
         </div>
       </section>
 
@@ -299,16 +368,50 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
+      {/* Pricing — one plan, stated plainly, no tiers to compare */}
+      <section className="border-t border-line">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
+          <Reveal className="text-center mb-12">
+            <h2 className="font-display text-3xl text-ink mb-2">One price. Everything included.</h2>
+            <p className="text-[14px] text-ink-soft">No tiers to compare, no add-ons to figure out.</p>
+          </Reveal>
+          <Reveal delay={80} className="max-w-md mx-auto">
+            <div className="rounded-3xl bg-surface border-2 border-line p-8 text-center">
+              <div className="font-display text-[44px] font-bold text-ink leading-none">
+                ₦{MONTHLY_PRICE_NGN.toLocaleString()}
+                <span className="text-[16px] font-normal text-ink-faint"> /month</span>
+              </div>
+              <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
+
+              <div className="text-left mt-8 space-y-3">
+                {PLAN_INCLUDES.map((item) => (
+                  <div key={item} className="flex items-start gap-2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                      <path d="M5 12l4 4 10-10" />
+                    </svg>
+                    <span className="text-[13.5px] text-ink-soft">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/signup"
+                className="mt-8 w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-[14px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"
+              >
+                Start free for 14 days
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* CTA */}
-      <section className="border-t border-line bg-surface/60">
+      <section className="border-t border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20 text-center">
           <Reveal>
-            <h2 className="font-display text-4xl text-ink mb-3">
+            <h2 className="font-display text-4xl text-ink mb-8">
               Ready to stop typing <span className="italic">&ldquo;what time works?&rdquo;</span>
             </h2>
-            <p className="text-[14px] text-ink-soft mb-8 max-w-sm mx-auto">
-              14 days free, then ₦{MONTHLY_PRICE_NGN.toLocaleString()}/month. Cancel anytime.
-            </p>
             <Link
               href="/signup"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"

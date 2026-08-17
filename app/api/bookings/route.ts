@@ -4,7 +4,7 @@ import { todayInTimezone, daysBetween } from '@/lib/timezone';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { sendEmail } from '@/lib/email';
-import { canAcceptBookings } from '@/lib/subscription';
+import { canAcceptBookings } from '@/lib/subscription-server';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`

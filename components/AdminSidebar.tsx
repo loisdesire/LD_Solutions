@@ -66,10 +66,12 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
+  // Products isn't part of the MVP — the page/route/data still work for
+  // anyone who already uses it, it's just not promoted in the primary
+  // nav alongside the actual core flow (services, hours, staff).
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
     { href: `/${slug}/admin/services`, label: 'Services', key: 'services' },
-    { href: `/${slug}/admin/products`, label: 'Products', key: 'products' },
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
   ];

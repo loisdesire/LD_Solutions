@@ -139,7 +139,7 @@ export default function StaffManager({
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-[14px] truncate">{s.email}</p>
             </div>
-            <span className="font-mono rounded-full bg-ink/5 px-2.5 py-0.5 text-[10.5px] uppercase tracking-[0.05em] text-ink-faint">
+            <span className="font-mono rounded-full bg-ink-wash px-2.5 py-0.5 text-[10.5px] uppercase tracking-[0.05em] text-ink-faint">
               {s.role}
             </span>
             {s.auth_id !== currentUserId && (

@@ -70,7 +70,7 @@ export default function ImageUploadField({
           </div>
         )}
         {uploading && (
-          <div className="absolute inset-0 bg-ink/40 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}>
             <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" />
             </svg>

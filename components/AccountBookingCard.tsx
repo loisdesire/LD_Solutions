@@ -28,8 +28,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink/5 text-ink-faint',
-  cancelled: 'bg-ink/5 text-ink-faint line-through',
+  completed: 'bg-ink-wash text-ink-faint',
+  cancelled: 'bg-ink-wash text-ink-faint line-through',
   no_show: 'bg-error-bg text-error',
 };
 
@@ -46,7 +46,7 @@ export default function AccountBookingCard({
   const service = Array.isArray(booking.services) ? booking.services[0] : booking.services;
 
   return (
-    <div className="rounded-2xl border-2 border-line bg-surface overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-20px_rgba(36,28,24,0.25)]">
+    <div className="rounded-2xl border border-line bg-surface overflow-hidden transition-colors duration-200 hover:border-line-strong">
       <div className="p-4 flex items-center gap-4">
         <div className="min-w-0 flex-1">
           <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">
@@ -67,7 +67,7 @@ export default function AccountBookingCard({
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${STATUS_STYLE[booking.status] ?? 'bg-ink/5 text-ink-faint'}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${STATUS_STYLE[booking.status] ?? 'bg-ink-wash text-ink-faint'}`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {STATUS_LABEL[booking.status] ?? booking.status}

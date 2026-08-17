@@ -59,7 +59,8 @@ function GalleryUploader({
               type="button"
               onClick={() => onChange(urls.filter((_, idx) => idx !== i))}
               aria-label="Remove photo"
-              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-ink/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background: 'color-mix(in srgb, var(--ink) 70%, transparent)' }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>

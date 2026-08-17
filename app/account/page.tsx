@@ -15,23 +15,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-function StatCard({ label, value, iconPath, color }: { label: string; value: string; iconPath: string; color: string }) {
-  return (
-    <div className="rounded-2xl bg-surface border-2 border-line p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.2)]">
-      <div
-        className="h-9 w-9 rounded-xl flex items-center justify-center mb-4"
-        style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d={iconPath} />
-        </svg>
-      </div>
-      <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">{label}</div>
-      <div className="font-display text-[22px] leading-none" style={{ color }}>{value}</div>
-    </div>
-  );
-}
-
 export default async function AccountPage() {
   const supabase = await createCustomerServerSupabase();
   const {
@@ -81,47 +64,32 @@ export default async function AccountPage() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 sm:py-14">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="h-11 w-11 rounded-2xl text-white flex items-center justify-center font-display text-[16px] font-bold shrink-0"
+              className="h-11 w-11 rounded-full text-white flex items-center justify-center font-display text-[16px] font-bold shrink-0"
               style={{ background: 'var(--accent)' }}
             >
               {user.email[0]?.toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h1 className="font-display text-[19px] text-ink leading-tight">My bookings</h1>
-              <p className="text-ink-faint text-[12.5px] truncate">{user.email}</p>
+              <h1 className="font-display text-[20px] text-ink leading-tight">My bookings</h1>
+              <p className="text-ink-faint text-[12.5px] truncate">
+                {user.email}
+                {rows.length > 0 && (
+                  <>
+                    {' · '}
+                    {rows.length} {rows.length === 1 ? 'booking' : 'bookings'}
+                  </>
+                )}
+              </p>
             </div>
           </div>
           <LogoutButton />
         </div>
 
-        {rows.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
-            <StatCard
-              label="Total"
-              value={String(rows.length)}
-              color="var(--tertiary)"
-              iconPath="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"
-            />
-            <StatCard
-              label="Upcoming"
-              value={String(upcoming.length)}
-              color="var(--tertiary)"
-              iconPath="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
-            />
-            <StatCard
-              label="Businesses"
-              value={String(new Set(rows.map((b) => b.business_id)).size)}
-              color="var(--accent)"
-              iconPath="M4 21V7l8-4 8 4v14M9 21v-6h6v6"
-            />
-          </div>
-        )}
-
         {rows.length === 0 ? (
-          <div className="rounded-3xl border-2 border-dashed border-line-strong py-16 text-center">
+          <div className="rounded-3xl bg-warm-surface py-16 text-center px-6">
             <p className="text-ink-soft text-[14px]">
               No bookings found for this email yet — once you book somewhere, it'll show up here.
             </p>

@@ -80,7 +80,7 @@ export default function ConversationPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-ink/20" onClick={onClose} />
+      <div className="absolute inset-0" style={{ background: 'color-mix(in srgb, var(--ink) 20%, transparent)' }} onClick={onClose} />
       <div className="relative w-full max-w-sm bg-surface h-full flex flex-col shadow-soft border-l border-line">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between shrink-0">
           <div className="min-w-0">

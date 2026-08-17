@@ -313,7 +313,7 @@ export default function ProductsManager({
                   </div>
                   <span
                     className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
-                      p.active ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
+                      p.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -329,7 +329,7 @@ export default function ProductsManager({
                 <div className="hidden sm:block">
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
-                      p.active ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
+                      p.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />

@@ -22,10 +22,11 @@ export default function AdminMobileNav({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Products isn't part of the MVP — kept working, just not promoted
+  // in the primary nav (matches the desktop sidebar).
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard' },
     { href: `/${slug}/admin/services`, label: 'Services' },
-    { href: `/${slug}/admin/products`, label: 'Products' },
     { href: `/${slug}/admin/hours`, label: 'Hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff' },
   ];

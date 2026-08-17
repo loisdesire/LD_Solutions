@@ -18,6 +18,7 @@ module.exports = {
         'ink-faint': 'var(--ink-faint)',
         line: 'var(--line)',
         'line-strong': 'var(--line-strong)',
+        'ink-wash': 'var(--ink-wash)',
         accent: 'var(--accent)',
         'accent-hover': 'var(--accent-hover)',
         'accent-active': 'var(--accent-active)',

@@ -31,24 +31,15 @@ export default async function AdminDashboard({
   const { slug } = await params;
   const { business } = await requireStaffSession(slug);
 
-  const LOW_STOCK_THRESHOLD = 3;
-
-  const [{ data: bookings }, { data: lowStockProducts }, { data: bookableServices }, { data: rules }] =
+  const [{ data: bookings }, { data: bookableServices }, { data: rules }] =
     await Promise.all([
       supabaseAdmin
         .from('bookings')
         .select(
-          'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes)'
+          'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes), staff(name)'
         )
         .eq('business_id', business.id)
         .order('start_time', { ascending: true }),
-      supabaseAdmin
-        .from('products')
-        .select('id, name, stock_quantity')
-        .eq('business_id', business.id)
-        .eq('active', true)
-        .lte('stock_quantity', LOW_STOCK_THRESHOLD)
-        .order('stock_quantity', { ascending: true }),
       // For the "New appointment" modal — staff picking a service to book a
       // walk-in/phone customer into, same set a customer would see.
       supabaseAdmin
@@ -65,7 +56,6 @@ export default async function AdminDashboard({
     ]);
 
   const all = bookings ?? [];
-  const lowStock = lowStockProducts ?? [];
   const now = new Date();
   // "Today"/"this week" boundaries in the business's own timezone, not the
   // server's — otherwise a business in Lagos gets its stats flipping over
@@ -81,10 +71,12 @@ export default async function AdminDashboard({
   startOfPrevWeek.setDate(startOfPrevWeek.getDate() - 7);
 
   const active = all.filter((b) => b.status !== 'cancelled');
-  const todayCount = active.filter((b) => {
+  const todayBookings = active.filter((b) => {
     const d = new Date(b.start_time);
     return d >= startOfToday && d < new Date(startOfToday.getTime() + 86400000);
-  }).length;
+  });
+  const todayCount = todayBookings.length;
+  const todayRevenue = todayBookings.reduce((sum, b: any) => sum + (b.services?.price ?? 0), 0);
   const thisWeek = active.filter((b) => {
     const d = new Date(b.start_time);
     return d >= startOfWeek && d < endOfWeek;
@@ -99,22 +91,6 @@ export default async function AdminDashboard({
   const revenuePctDelta =
     prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : null;
   const nextSlot = active.find((b) => new Date(b.start_time) >= now);
-
-  // Real booking counts per day, not the fake fixed-height bars a mockup
-  // would use — last 7 days ending today.
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(startOfToday);
-    d.setDate(d.getDate() - 6 + i);
-    return d;
-  });
-  const dayCounts = last7Days.map((day) => {
-    const nextDay = new Date(day.getTime() + 86400000);
-    return active.filter((b) => {
-      const t = new Date(b.start_time);
-      return t >= day && t < nextDay;
-    }).length;
-  });
-  const maxDayCount = Math.max(1, ...dayCounts);
 
   const exportRows = all.map((b: any) => ({
     customer_name: b.customer_name,
@@ -134,16 +110,12 @@ export default async function AdminDashboard({
       exportRows={exportRows}
       all={all}
       todayCount={todayCount}
+      todayRevenue={todayRevenue}
       thisWeekCount={thisWeek.length}
       weekCountDelta={weekCountDelta}
       weekRevenue={weekRevenue}
       revenuePctDelta={revenuePctDelta}
       nextSlot={nextSlot}
-      startOfToday={startOfToday}
-      last7Days={last7Days}
-      dayCounts={dayCounts}
-      maxDayCount={maxDayCount}
-      lowStock={lowStock}
     />
   );
 }

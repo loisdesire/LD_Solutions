@@ -43,43 +43,30 @@ function groupSlots(slots: string[]): [Period, string[]][] {
   return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
 }
 
-// Numbered circle + connecting line, matching a considered reservation
-// flow rather than a generic multi-step SaaS form.
+// A thin progress rule + a plain mono label, not three bold circles with
+// glow rings — this page's job is to feel like a considered reservation
+// on a business's own site, not a SaaS onboarding wizard. The admin
+// dashboard earns its heavier chrome because it's a working tool; a
+// customer booking an appointment doesn't need to feel like they're
+// filling out a form.
 function StepIndicator({ step }: { step: number }) {
   const steps = ['Service', 'Time', 'Details'];
   return (
-    <div className="flex items-center justify-between max-w-[280px] mx-auto mb-10 relative">
-      <div className="absolute top-5 left-5 right-5 h-px bg-line -z-0" />
-      {steps.map((label, i) => {
-        const n = i + 1;
-        const done = step > n;
-        const active = step === n;
-        return (
-          <div key={label} className="flex flex-col items-center gap-2 relative z-10">
-            <div
-              className={`h-10 w-10 rounded-full flex items-center justify-center font-semibold text-[14px] transition-all duration-300 ${
-                done || active ? 'text-white' : 'border-2 border-line-strong bg-paper text-ink-faint'
-              }`}
-              style={
-                done || active
-                  ? { background: 'var(--tertiary)', boxShadow: '0 0 0 4px color-mix(in srgb, var(--tertiary) 15%, transparent)' }
-                  : undefined
-              }
-            >
-              {done ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              ) : (
-                n
-              )}
-            </div>
-            <span className={`text-[12px] font-medium ${active || done ? 'text-ink' : 'text-ink-faint'}`}>
-              {label}
-            </span>
-          </div>
-        );
-      })}
+    <div className="max-w-xs mx-auto mb-10">
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-faint">
+          Step {step} of 3
+        </span>
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em]" style={{ color: 'var(--accent)' }}>
+          {steps[step - 1]}
+        </span>
+      </div>
+      <div className="h-[3px] rounded-full bg-line overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${(step / 3) * 100}%`, background: 'var(--accent)' }}
+        />
+      </div>
     </div>
   );
 }
@@ -186,7 +173,7 @@ export default function BookingForm({
   if (step === 'confirmed') {
     return (
       <div className="animate-rise max-w-xl mx-auto">
-        <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
+        <div className="rounded-3xl bg-surface border border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
           <div
             className="px-6 sm:px-8 pt-10 pb-7 text-center"
             style={{ background: 'linear-gradient(160deg, var(--accent-soft), transparent 75%)' }}
@@ -225,7 +212,7 @@ export default function BookingForm({
             )}
           </div>
 
-          <div className="mx-6 sm:mx-8 border-t-2 border-dashed border-line" />
+          <div className="mx-6 sm:mx-8 border-t border-dashed border-line" />
           <div className="px-6 sm:px-8 py-5 flex items-center justify-between">
             <span className="text-[12px] text-ink-faint font-medium">Booking code</span>
             <span className="font-mono text-[15px] tracking-[0.2em] font-bold" style={{ color: 'var(--accent)' }}>
@@ -255,35 +242,25 @@ export default function BookingForm({
       <StepIndicator step={stepNum} />
 
       {step !== 'service' && selectedService && (
-        <div className="max-w-xl mx-auto rounded-2xl bg-surface border-2 border-line overflow-hidden mb-6 animate-rise">
+        <div className="max-w-xl mx-auto rounded-2xl bg-warm-surface overflow-hidden mb-6 animate-rise">
           <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className="flex items-center justify-center h-8 w-8 rounded-lg text-[12px] font-bold shrink-0"
-                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
-                {selectedSlot && (
-                  <span className="text-[12px] text-ink-faint">
-                    {new Date(selectedSlot).toLocaleDateString(undefined, {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                    {' · '}
-                    {formatTime(selectedSlot)}
-                  </span>
-                )}
-              </div>
+            <div className="min-w-0">
+              <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
+              {selectedSlot && (
+                <span className="text-[12px] text-ink-faint">
+                  {new Date(selectedSlot).toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                  {' · '}
+                  {formatTime(selectedSlot)}
+                </span>
+              )}
             </div>
             <button
               onClick={() => setStep('service')}
-              className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-colors hover:bg-paper"
+              className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-colors hover:bg-surface shrink-0"
               style={{ color: 'var(--accent)' }}
             >
               Change
@@ -294,56 +271,51 @@ export default function BookingForm({
 
       {step === 'service' && (
         <div className="animate-rise">
-          <h2 className="font-display text-[28px] sm:text-[32px] font-semibold text-ink mb-1.5 text-center">Select a service</h2>
-          <p className="text-[15px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
+          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">Select a service</h2>
+          <p className="text-[14.5px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
-            <div className="max-w-xl mx-auto rounded-xl border border-dashed border-line-strong py-12 text-center">
+            <div className="max-w-lg mx-auto text-center py-12">
               <p className="text-ink-soft text-[14px]">This business hasn&apos;t listed any services yet.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <div className="max-w-2xl mx-auto border-y border-line">
               {services.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => selectService(s)}
-                  className="group text-left rounded-3xl bg-surface border-2 border-line overflow-hidden transition-all duration-300 hover:-translate-y-1.5 shadow-[0_6px_20px_-14px_rgba(36,28,24,0.15)] hover:shadow-[0_20px_40px_-16px_var(--accent-soft)] hover:border-[var(--accent)]"
+                  className="group w-full flex items-center justify-between gap-4 py-5 px-1 text-left border-b border-line last:border-0 transition-colors hover:bg-warm-surface"
                 >
-                  <div className="p-6">
-                    <div className="flex items-start gap-4 mb-5">
-                      <div
-                        className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 font-display text-[18px] font-bold transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
-                        style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                      >
-                        {s.name[0]?.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <h3 className="font-display text-[19px] font-semibold text-ink leading-tight">{s.name}</h3>
-                        <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v6l4 2" />
-                          </svg>
-                          <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
-                        </div>
-                      </div>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-[18px] font-semibold text-ink leading-tight">{s.name}</h3>
+                    <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" />
+                      </svg>
+                      <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
                     </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-line">
-                      {s.price != null ? (
-                        <span className="font-display text-[19px] font-bold" style={{ color: 'var(--accent)' }}>
-                          ₦{s.price.toLocaleString()}
-                        </span>
-                      ) : (
-                        <span className="text-[12.5px] font-medium text-ink-faint">Tap to book</span>
-                      )}
-                      <span
-                        className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-white transition-all duration-300 group-hover:translate-x-1"
-                        style={{ background: 'var(--accent)' }}
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M9 6l6 6-6 6" />
-                        </svg>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {s.price != null ? (
+                      <span className="font-display text-[17px] font-semibold" style={{ color: 'var(--accent)' }}>
+                        ₦{s.price.toLocaleString()}
                       </span>
-                    </div>
+                    ) : (
+                      <span className="text-[12.5px] font-medium text-ink-faint">Ask for pricing</span>
+                    )}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-ink-faint group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
+                    >
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
                   </div>
                 </button>
               ))}
@@ -351,7 +323,7 @@ export default function BookingForm({
           )}
 
           {services.length > 0 && (
-            <div className="mt-10 text-center">
+            <div className="mt-8 text-center">
               <p className="text-[14px] text-ink-faint">
                 Not sure what to pick?{' '}
                 <span className="font-semibold underline underline-offset-4" style={{ color: 'var(--accent)' }}>
@@ -365,10 +337,10 @@ export default function BookingForm({
 
       {step === 'datetime' && selectedService && (
         <div className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[24px] font-semibold text-ink mb-1 text-center">Pick a time</h2>
+          <h2 className="font-display text-[22px] font-semibold text-ink mb-1 text-center">Pick a time</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
 
-          <div className="rounded-2xl bg-surface border-2 border-line p-4 mb-6">
+          <div className="rounded-2xl bg-surface border border-line p-4 mb-6">
             <CalendarPicker
               selectedDate={selectedDate}
               onChange={(d) => {
@@ -389,7 +361,7 @@ export default function BookingForm({
               })}
             </h3>
             {!loadingSlots && (
-              <span className="text-[12px] font-medium text-ink-faint px-2 py-0.5 rounded-md bg-paper border border-line">
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
                 {slots.length} available
               </span>
             )}
@@ -399,18 +371,18 @@ export default function BookingForm({
             <div className="space-y-5 mb-6">
               {[0, 1].map((i) => (
                 <div key={i}>
-                  <div className="h-3 w-20 rounded bg-line/60 mb-3 animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%' }} />
+                  <div className="h-3 w-20 rounded bg-warm-surface mb-3 animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%' }} />
                   <div className="flex flex-wrap gap-2">
                     {[0, 1, 2].map((j) => (
-                      <div key={j} className="w-[80px] h-[40px] rounded-full bg-line/40 animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%', animationDelay: `${j * 0.15}s` }} />
+                      <div key={j} className="w-[76px] h-[36px] rounded-lg bg-warm-surface animate-shimmer" style={{ backgroundImage: 'linear-gradient(90deg, transparent, var(--line), transparent)', backgroundSize: '200% 100%', animationDelay: `${j * 0.15}s` }} />
                     ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : slotGroups.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-line-strong py-10 flex flex-col items-center text-center px-6 mb-6">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-faint mb-3">
+            <div className="rounded-2xl bg-warm-surface py-10 flex flex-col items-center text-center px-6 mb-6">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-faint mb-3">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
@@ -421,10 +393,10 @@ export default function BookingForm({
             <div className="space-y-5 mb-6">
               {slotGroups.map(([period, times]) => (
                 <div key={period}>
-                  <div className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint mb-2.5">
+                  <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2.5">
                     {period}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                  <div className="flex flex-wrap gap-2">
                     {times.map((t) => {
                       const isSel = t === selectedSlot;
                       return (
@@ -433,17 +405,13 @@ export default function BookingForm({
                           onClick={() => setSelectedSlot(t)}
                           style={
                             isSel
-                              ? {
-                                  background: 'var(--accent)',
-                                  borderColor: 'var(--accent)',
-                                  color: 'var(--accent-contrast)',
-                                }
+                              ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
                               : undefined
                           }
-                          className={`py-3.5 px-2 text-[13.5px] font-semibold tabular-nums border-2 rounded-xl transition-all duration-150 ${
+                          className={`min-w-[76px] py-2.5 px-3 text-[13px] font-medium tabular-nums border rounded-lg transition-all duration-150 ${
                             isSel
-                              ? 'animate-punch shadow-[0_6px_16px_-6px_var(--accent)]'
-                              : 'border-line-strong bg-surface hover:border-[var(--accent)] active:scale-95'
+                              ? 'animate-punch border-transparent'
+                              : 'border-line-strong bg-surface text-ink hover:border-[var(--accent)] hover:bg-warm-surface active:scale-95'
                           }`}
                         >
                           {formatTime(t)}
@@ -480,7 +448,7 @@ export default function BookingForm({
 
       {step === 'details' && selectedService && selectedSlot && (
         <form onSubmit={handleSubmit} className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[24px] font-semibold text-ink mb-1 text-center">Your details</h2>
+          <h2 className="font-display text-[22px] font-semibold text-ink mb-1 text-center">Your details</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">We&apos;ll send your confirmation here</p>
 
           <div className="space-y-4 mb-6">
@@ -522,7 +490,7 @@ export default function BookingForm({
 
           {status === 'error' && (
             <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-error-bg border border-error-border">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" /></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" /></svg>
               <p className="text-[13px] text-error">Something went wrong. Please try again.</p>
             </div>
           )}

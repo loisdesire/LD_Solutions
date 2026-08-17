@@ -1,4 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+// Client-safe only — no Supabase client, no service-role key. BillingManager
+// (a client component) imports MONTHLY_PRICE_NGN from here; anything with a
+// module-scope `createClient(..., SUPABASE_SERVICE_ROLE_KEY)` call belongs in
+// subscription-server.ts instead; SUPABASE_SERVICE_ROLE_KEY isn't
+// NEXT_PUBLIC_-prefixed, so it's undefined in a client bundle and crashes
+// the whole module at evaluation time — "supabaseKey is required" — the
+// instant anything client-side imports even one unrelated export from a
+// file that also does that at the top level.
 
 // Referenced by both the billing page (what it shows) and the checkout
 // route (what it actually charges), so there's exactly one number to change.
@@ -63,29 +70,4 @@ export function getSubscriptionState(sub: Subscription | null): SubscriptionStat
   }
 
   return { hasAccess: false, phase: 'expired', trialDaysLeft: 0, currentPeriodEnd: sub.current_period_end };
-}
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// The subscription gate (requireStaffSession) only ever protected the
-// admin dashboard — the actual service being paid for (accepting bookings,
-// on the website and through the AI agent on every channel) had no check
-// at all, so a business past its trial/cancelled kept taking real bookings
-// it had no way to see or manage. Every path that creates a booking on a
-// customer's behalf — the public booking form and the AI agent's
-// create_booking tool — should call this first. Uses the service role key
-// deliberately: this runs from public/anonymous contexts (a customer
-// filling out a form, a webhook from WhatsApp) that never have a staff
-// session, unlike requireStaffSession's own RLS-scoped query.
-export async function canAcceptBookings(businessId: string): Promise<boolean> {
-  const { data: sub } = await supabaseAdmin
-    .from('subscriptions')
-    .select('status, trial_ends_at, current_period_end')
-    .eq('business_id', businessId)
-    .maybeSingle();
-
-  return getSubscriptionState(sub).hasAccess;
 }

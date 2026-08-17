@@ -89,7 +89,7 @@ export default function CalendarPicker({
               if (viewMode === 'week') setWeekStart(addDays(weekStart, -7));
               else setMonthCursor(addMonths(monthCursor, -1));
             }}
-            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-line/50 transition-all active:scale-90"
+            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
             aria-label="Previous"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,7 +109,7 @@ export default function CalendarPicker({
               if (viewMode === 'week') setWeekStart(addDays(weekStart, 7));
               else setMonthCursor(addMonths(monthCursor, 1));
             }}
-            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-line/50 transition-all active:scale-90"
+            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
             aria-label="Next"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -119,7 +119,7 @@ export default function CalendarPicker({
         </div>
 
         {/* Pill toggle */}
-        <div className="flex p-0.5 bg-line/40 rounded-lg">
+        <div className="flex p-0.5 bg-warm-surface rounded-lg">
           {(['week', 'month'] as const).map((mode) => (
             <button
               key={mode}
@@ -157,7 +157,7 @@ export default function CalendarPicker({
                     ? 'opacity-25 cursor-not-allowed'
                     : isSelected
                     ? 'shadow-glow font-semibold'
-                    : 'hover:bg-line/40 active:scale-95'
+                    : 'hover:bg-warm-surface active:scale-95'
                 }`}
               >
                 <span className={`text-[10px] font-mono uppercase tracking-widest ${
@@ -205,12 +205,12 @@ export default function CalendarPicker({
                       : !isCurrentMonth
                       ? isSelected
                         ? 'font-semibold shadow-glow'
-                        : 'text-ink-faint/40 hover:bg-line/30'
+                        : 'text-ink-faint opacity-40 hover:bg-warm-surface'
                       : isSelected
                       ? 'font-semibold shadow-glow'
                       : isToday
                       ? 'font-semibold text-ink ring-1 ring-ink/10'
-                      : 'text-ink hover:bg-line/40 active:scale-90'
+                      : 'text-ink hover:bg-warm-surface active:scale-90'
                   }`}
                 >
                   {d.getDate()}

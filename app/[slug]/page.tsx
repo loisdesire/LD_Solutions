@@ -9,7 +9,7 @@ import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
 import { SITE_URL } from '@/lib/site';
-import { canAcceptBookings } from '@/lib/subscription';
+import { canAcceptBookings } from '@/lib/subscription-server';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -122,11 +122,18 @@ export default async function BusinessBookingPage({
               }}
             />
           )}
-          <div className="absolute inset-0 bg-black/35" />
+          {/* A flat 35% overlay only gets white text to ~2.5:1 contrast
+              against a bright uploaded photo — well under the 4.5:1 body
+              text needs. 45% gets large text (the headline) to a safe
+              ~3.4:1 on its own; the text-shadow below is the real
+              backstop for everything else, since it holds legibility
+              near the glyph edge regardless of how bright the photo
+              actually is, without having to guess its composition. */}
+          <div className="absolute inset-0 bg-black/45" />
         </div>
 
         <div className="relative z-10 w-full px-6 sm:px-10 max-w-5xl mx-auto text-white">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.45)' }}>
             {business.description && (
               <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mb-4 max-w-[48ch]">
                 {business.description}
@@ -153,7 +160,7 @@ export default async function BusinessBookingPage({
               <a
                 href="#book"
                 className="px-6 py-3 rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
-                style={{ background: 'var(--accent-contrast)', color: 'var(--accent)' }}
+                style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
               >
                 Book now
               </a>
@@ -181,7 +188,7 @@ export default async function BusinessBookingPage({
             maxAdvanceDays={maxAdvanceDays}
           />
         ) : (
-          <div className="max-w-lg mx-auto text-center rounded-3xl border-2 border-dashed border-line-strong py-14 px-6">
+          <div className="max-w-lg mx-auto text-center rounded-3xl bg-warm-surface py-14 px-6">
             <p className="font-display text-[20px] text-ink mb-2">Not currently taking bookings</p>
             <p className="text-ink-soft text-[14px]">
               {business.name} isn&apos;t accepting online bookings right now. Please check back later or
