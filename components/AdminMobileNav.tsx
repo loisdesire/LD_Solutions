@@ -51,7 +51,7 @@ export default function AdminMobileNav({
         className={`flex items-center px-3 py-2.5 rounded-xl text-[14px] transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft'
         }`}
-        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+        style={active ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
       >
         {label}
       </Link>

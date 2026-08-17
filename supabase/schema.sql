@@ -10,7 +10,7 @@ create table businesses (
   name text not null,
   business_type text,                     -- e.g. 'salon', 'clinic', 'tutor' (label only, not logic-branching)
   logo_url text,
-  accent_color text default '#FF6B4A', -- platform coral; the signup route also sets this explicitly, this is just the column-level fallback
+  accent_color text default '#C4512D', -- platform terracotta; the signup route also sets this explicitly, this is just the column-level fallback
   timezone text default 'Africa/Lagos',
   owner_auth_id uuid references auth.users(id) not null,
   created_at timestamptz default now()

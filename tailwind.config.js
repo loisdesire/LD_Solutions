@@ -11,24 +11,45 @@ module.exports = {
       colors: {
         paper: 'var(--paper)',
         surface: 'var(--surface)',
+        'warm-surface': 'var(--warm-surface)',
+        'cream-surface': 'var(--cream-surface)',
         ink: 'var(--ink)',
         'ink-soft': 'var(--ink-soft)',
         'ink-faint': 'var(--ink-faint)',
         line: 'var(--line)',
         'line-strong': 'var(--line-strong)',
         accent: 'var(--accent)',
-        // These three were only ever consumed via inline `style={{...}}` /
-        // arbitrary-value classes (`shadow-[...var(--progress)...]`)
-        // elsewhere, but `accent-soft` was used as a plain Tailwind class
-        // (`bg-accent-soft`, `text-accent-soft`) in 8 components — since
-        // Tailwind v3 only generates utilities for colors registered here,
-        // every one of those was silently producing no CSS at all. Adding
-        // all four (not just accent-soft) so the same mistake can't recur
-        // with `bg-progress`/`bg-tertiary` later.
+        'accent-hover': 'var(--accent-hover)',
+        'accent-active': 'var(--accent-active)',
+        // These were only ever consumed via inline `style={{...}}` /
+        // arbitrary-value classes elsewhere, but `accent-soft` was used as
+        // a plain Tailwind class (`bg-accent-soft`, `text-accent-soft`) in
+        // several components — since Tailwind v3 only generates utilities
+        // for colors registered here, every one of those was silently
+        // producing no CSS at all. Registering all of them so the same
+        // mistake can't recur.
         'accent-soft': 'var(--accent-soft)',
         'accent-contrast': 'var(--accent-contrast)',
-        progress: 'var(--progress)',
+        cream: 'var(--cream)',
+        'cream-hover': 'var(--cream-hover)',
+        'cream-contrast': 'var(--cream-contrast)',
         tertiary: 'var(--tertiary)',
+        'secondary-dark': 'var(--secondary-dark)',
+        // Semantic — independent of brand color on purpose. "Confirmed"
+        // should read as success-green whether a business's own accent is
+        // teal, terracotta, or anything else they've picked.
+        success: 'var(--success)',
+        'success-bg': 'var(--success-bg)',
+        'success-border': 'var(--success-border)',
+        warning: 'var(--warning)',
+        'warning-bg': 'var(--warning-bg)',
+        'warning-border': 'var(--warning-border)',
+        error: 'var(--error)',
+        'error-bg': 'var(--error-bg)',
+        'error-border': 'var(--error-border)',
+        info: 'var(--info)',
+        'info-bg': 'var(--info-bg)',
+        'info-border': 'var(--info-border)',
       },
       boxShadow: {
         soft: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',

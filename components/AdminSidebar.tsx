@@ -91,7 +91,7 @@ export default function AdminSidebar({
       <Link
         href={href}
         className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13.5px] transition-colors ${
-          active ? 'font-semibold' : 'text-ink-soft hover:bg-paper hover:text-ink'
+          active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
         }`}
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
@@ -101,6 +101,11 @@ export default function AdminSidebar({
     );
   }
 
+  // Kept predominantly neutral — a solid brand-color sidebar was tried
+  // and reads as exactly the "every component orange" overuse the
+  // brand direction explicitly warns against. The accent shows up only
+  // in the active nav item, matching how restraint is applied
+  // everywhere else in the product.
   return (
     <aside className="hidden md:flex md:w-[240px] shrink-0 bg-surface border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
       <div className="mb-8 px-1">
@@ -143,6 +148,7 @@ export default function AdminSidebar({
           onClick={handleSignOut}
           aria-label="Sign out"
           className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
+          style={{ color: 'rgba(255,255,255,0.55)' }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />

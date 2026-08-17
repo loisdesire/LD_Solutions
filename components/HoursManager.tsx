@@ -75,7 +75,7 @@ export default function HoursManager({
 
   return (
     <div>
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-sm text-error mb-4">{error}</p>}
       <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
         {days.map((day, index) => (
           <div

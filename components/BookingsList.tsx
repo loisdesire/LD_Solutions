@@ -29,7 +29,7 @@ const statusStyle: Record<string, string> = {
   confirmed: 'bg-accent-soft text-accent',
   completed: 'bg-ink/5 text-ink-faint',
   cancelled: 'bg-ink/5 text-ink-faint line-through',
-  no_show: 'bg-red-50 text-red-600',
+  no_show: 'bg-error-bg text-error',
 };
 
 function relativeDay(date: Date, today: Date): string {

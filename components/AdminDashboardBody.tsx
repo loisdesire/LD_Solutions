@@ -41,7 +41,7 @@ function TrendPill({ trend }: { trend: { value: number; positive: boolean; suffi
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em] ${
-        trend.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-ink-faint'
+        trend.positive ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
       }`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -234,8 +234,8 @@ export default function AdminDashboardBody({
             icon={<path d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />}
             value={String(todayCount)}
             trend={todayDelta === 0 ? null : { value: todayDelta, positive: todayDelta > 0 }}
-            color="var(--progress)"
-            footer={<MiniSparkline data={dayCounts} color="var(--progress)" />}
+            color="var(--tertiary)"
+            footer={<MiniSparkline data={dayCounts} color="var(--tertiary)" />}
           />
           <StatCard
             label="This week"
@@ -267,12 +267,12 @@ export default function AdminDashboardBody({
             // card's supporting context instead of competing with it.
             value={nextSlot ? new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '—'}
             trend={null}
-            color="var(--progress)"
+            color="var(--tertiary)"
             badge={
               nextSlotSoon ? (
                 <span
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.04em]"
-                  style={{ background: 'color-mix(in srgb, var(--progress) 14%, transparent)', color: 'var(--progress)' }}
+                  style={{ background: 'color-mix(in srgb, var(--tertiary) 14%, transparent)', color: 'var(--tertiary)' }}
                 >
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current animate-pulse" />
                   {minutesUntilNext! < 60 ? `${Math.max(minutesUntilNext!, 1)}m` : `${Math.floor(minutesUntilNext! / 60)}h ${minutesUntilNext! % 60}m`}

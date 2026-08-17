@@ -108,7 +108,7 @@ export default function ConversationPanel({
                   // and without it every line just runs together into one
                   // block, which is what "jumbled up" actually was.
                   className={`inline-block rounded-md px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap max-w-[85%] text-left ${
-                    m.role === 'user' ? 'bg-paper border border-line text-ink' : 'bg-accent text-white'
+                    m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-white'
                   }`}
                 >
                   {m.content}
@@ -135,7 +135,7 @@ export default function ConversationPanel({
             {sending ? 'Sending…' : 'Send'}
           </button>
         </form>
-        {error && <p className="text-[12px] text-red-600 px-4 pb-3">{error}</p>}
+        {error && <p className="text-[12px] text-error px-4 pb-3">{error}</p>}
       </div>
     </div>
   );

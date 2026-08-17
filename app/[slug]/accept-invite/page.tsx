@@ -22,7 +22,7 @@ export default async function AcceptInvitePage({
         {token ? (
           <AcceptInviteForm token={token} />
         ) : (
-          <p className="text-sm text-red-600">Missing invite token.</p>
+          <p className="text-sm text-error">Missing invite token.</p>
         )}
       </div>
     </main>

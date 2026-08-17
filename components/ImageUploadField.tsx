@@ -93,14 +93,14 @@ export default function ImageUploadField({
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors"
+              className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors"
             >
               Remove
             </button>
           )}
         </div>
         <p className="text-ink-faint text-[11.5px] mt-1.5">JPG, PNG, WEBP, or GIF — up to 5MB.</p>
-        {error && <p className="text-[12px] text-red-600 mt-1">{error}</p>}
+        {error && <p className="text-[12px] text-error mt-1">{error}</p>}
       </div>
     </div>
   );

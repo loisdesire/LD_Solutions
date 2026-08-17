@@ -5,11 +5,12 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
 import ImageUploadField from './ImageUploadField';
 
-// The platform's own bright/airy trio plus a handful of others real
-// businesses might actually want as their own brand color — this is
-// customer-facing branding a business picks for itself, not platform
-// chrome, so it isn't limited to the admin dashboard's fixed palette.
-const PRESETS = ['#FF6B4A', '#0D9488', '#0284C7', '#B5502F', '#2F5D42', '#A8792B', '#6B3450', '#1A1917'];
+// The platform's own terracotta + cream identity leads the list, plus a
+// handful of others real businesses might actually want as their own
+// brand color — this is customer-facing branding a business picks for
+// itself, not platform chrome, so it isn't limited to the platform's
+// own fixed palette.
+const PRESETS = ['#C4512D', '#F3E8BC', '#8E6A4A', '#2F5D42', '#171717', '#6B3450', '#1769AA', '#1A1917'];
 
 export default function BusinessProfileManager({
   slug,
@@ -170,7 +171,7 @@ export default function BusinessProfileManager({
         )}
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

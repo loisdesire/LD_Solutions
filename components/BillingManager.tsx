@@ -12,12 +12,12 @@ type PaymentRecord = {
 };
 
 const STATUS_COPY: Record<SubscriptionState['phase'], { label: string; pill: string }> = {
-  active: { label: 'Active', pill: 'bg-emerald-50 text-emerald-700' },
+  active: { label: 'Active', pill: 'bg-success-bg text-success' },
   trial: { label: 'Free trial', pill: 'bg-accent-soft text-accent' },
-  cancelling: { label: 'Cancelling', pill: 'bg-amber-50 text-amber-700' },
-  past_due: { label: 'Payment failed', pill: 'bg-red-50 text-red-600' },
-  expired: { label: 'Trial ended', pill: 'bg-red-50 text-red-600' },
-  none: { label: 'No active plan', pill: 'bg-red-50 text-red-600' },
+  cancelling: { label: 'Cancelling', pill: 'bg-warning-bg text-warning' },
+  past_due: { label: 'Payment failed', pill: 'bg-error-bg text-error' },
+  expired: { label: 'Trial ended', pill: 'bg-error-bg text-error' },
+  none: { label: 'No active plan', pill: 'bg-error-bg text-error' },
 };
 
 function formatDate(iso: string | null): string {
@@ -118,7 +118,7 @@ export default function BillingManager({
             </p>
           )}
           {state.phase === 'past_due' && (
-            <p className="text-red-600 text-[12.5px] mt-3">
+            <p className="text-error text-[12.5px] mt-3">
               Your last payment didn't go through — subscribe again below to restore access.
             </p>
           )}
@@ -131,7 +131,7 @@ export default function BillingManager({
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="text-[13px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+                className="text-[13px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
               >
                 Cancel subscription
               </button>
@@ -149,7 +149,7 @@ export default function BillingManager({
               {loading ? 'Redirecting…' : 'Subscribe with Flutterwave'}
             </button>
           )}
-          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+          {error && <p className="text-sm text-error mt-3">{error}</p>}
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export default function BillingManager({
                   <div className="text-[13.5px] font-medium text-ink">{formatDate(h.created_at)}</div>
                   <div
                     className={`font-mono text-[10px] uppercase tracking-[0.06em] mt-0.5 ${
-                      h.status === 'successful' ? 'text-emerald-700' : 'text-red-600'
+                      h.status === 'successful' ? 'text-success' : 'text-error'
                     }`}
                   >
                     {h.status === 'successful' ? 'Paid' : 'Failed'}

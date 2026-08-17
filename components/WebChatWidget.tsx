@@ -136,9 +136,9 @@ export default function WebChatWidget({
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
-                    m.role === 'user' ? 'text-white rounded-br-md' : 'bg-paper text-ink rounded-bl-md'
+                    m.role === 'user' ? 'text-ink rounded-br-md' : 'text-white rounded-bl-md'
                   }`}
-                  style={m.role === 'user' ? { background: 'var(--accent)' } : undefined}
+                  style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}
                 >
                   {m.content}
                 </div>
@@ -146,7 +146,7 @@ export default function WebChatWidget({
             ))}
             {thinking && (
               <div className="flex justify-start">
-                <div className="bg-paper text-ink-faint rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px]">
+                <div className="text-white rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px] opacity-70" style={{ background: 'var(--accent)' }}>
                   {THINKING_LINES[0]}
                 </div>
               </div>

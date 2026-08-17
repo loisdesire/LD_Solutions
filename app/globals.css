@@ -3,36 +3,71 @@
 @tailwind utilities;
 
 :root {
-  /* Bright/airy palette — warm near-white rather than stark white, so
-     large light areas don't feel clinical, paired with a vivid coral
-     accent used generously rather than timidly. Replaces an earlier,
-     darker "precision instrument" attempt that read as gloomy. */
-  --paper: #fffcf9;
+  /* Warm burnt-orange / terracotta system — the platform's identity.
+     Predominantly warm neutral/off-white; the accent is used with
+     restraint (primary actions, active nav, selected states, booking
+     confirmations) rather than as general chrome.
+
+     Applies platform-wide (admin chrome, marketing site, auth pages,
+     and the default a business gets before choosing its own color) —
+     it does NOT override a business that has already picked its own
+     accent_color; AccentScope still applies that on their public
+     booking page unchanged. */
+  --paper: #faf8f3;
   --surface: #ffffff;
-  --ink: #241c18;
-  --ink-soft: #5c4f47;
-  /* #7a6d64 computes to ~4.9:1 against --paper and ~4.6:1 against
-     --surface — clears WCAG AA's 4.5:1 for normal text, which matters
-     since this is used at 10-12px for labels/metadata. */
-  --ink-faint: #7a6d64;
-  --line: #f0e4de;
-  --line-strong: #e0cfc6;
-  /* Platform default accent (vivid coral) — overridden per-business via
-     AccentScope on customer-facing pages, stays the platform's own
-     default in admin. */
-  --accent: #ff6b4a;
+  --warm-surface: #f5efe4;
+  --cream-surface: #f3e8bc;
+
+  --ink: #202020;
+  --ink-soft: #6b6b6b;
+  /* #9b9691 computes to ~3.6:1 against --paper/--surface — below AA's
+     4.5:1 for normal text, fine for the low-priority metadata/timestamp
+     role this is actually used for site-wide, never body copy. */
+  --ink-faint: #9b9691;
+
+  --line: #ede6d9;
+  --line-strong: #ddd0bb;
+
+  /* Primary brand — burnt orange/terracotta. Platform default;
+     businesses can still override this for their own public page via
+     AccentScope. */
+  --accent: #c4512d;
+  --accent-hover: #a8431f;
+  --accent-active: #8e3a1c;
   --accent-contrast: #ffffff;
-  --accent-soft: rgba(255, 107, 74, 0.1);
-  /* Fixed teal for progress/step indicators specifically — kept
-     separate from --accent (which businesses customize for pricing,
-     buttons, selection) so "this step is active" reads as a distinct
-     signal rather than just another shade of the brand color. */
-  --progress: #0d9488;
-  /* Fixed sky blue (deliberately not indigo/violet — that's off-limits
-     for this platform) — used alongside --progress and --accent to give
-     admin dashboard stat cards distinct icon colors instead of every
-     card using the same accent shade. */
-  --tertiary: #0284c7;
+  --accent-soft: rgba(196, 81, 45, 0.1);
+
+  /* Warm human accent — cream. Used with restraint: highlight cards,
+     booking confirmations, occasional secondary buttons — never
+     general chrome, so it stays a genuine accent rather than a second
+     background color. */
+  --cream: #f3e8bc;
+  --cream-hover: #e9dba1;
+  --cream-contrast: #202020;
+
+  /* Muted warm brown — a secondary, lower-key accent for decorative
+     differentiation only (e.g. telling apart a few dashboard stat
+     cards), never a second meaning-bearing brand color. */
+  --tertiary: #8e6a4a;
+  --secondary-dark: #171717;
+
+  /* Semantic status colors — intentionally independent of the brand
+     palette, so "confirmed" always reads as success-green and "failed"
+     always reads as error-red regardless of what a business's own
+     accent color is set to. Status is never conveyed by color alone
+     anywhere these are used — always paired with a label. */
+  --success: #16803c;
+  --success-bg: #eaf7ee;
+  --success-border: #a9ddb8;
+  --warning: #9a6700;
+  --warning-bg: #fff7d6;
+  --warning-border: #e8cf76;
+  --error: #c62828;
+  --error-bg: #fdecec;
+  --error-border: #f3b5b5;
+  --info: #1769aa;
+  --info-bg: #eaf4fb;
+  --info-border: #a9d2ed;
 }
 
 body {

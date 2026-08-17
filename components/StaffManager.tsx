@@ -119,7 +119,7 @@ export default function StaffManager({
         </button>
       </form>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-sm text-error mb-4">{error}</p>}
 
       <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-3">
         Team
@@ -145,7 +145,7 @@ export default function StaffManager({
             {s.auth_id !== currentUserId && (
               <button
                 onClick={() => handleRemove(s.id)}
-                className="text-[13px] text-ink-faint hover:text-red-600 transition-colors shrink-0"
+                className="text-[13px] text-ink-faint hover:text-error transition-colors shrink-0"
               >
                 Remove
               </button>

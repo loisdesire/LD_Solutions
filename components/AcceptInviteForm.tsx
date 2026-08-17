@@ -70,7 +70,7 @@ export default function AcceptInviteForm({ token }: { token: string }) {
   if (!info) {
     return (
       <div className="border-2 border-line rounded-2xl p-5 bg-surface">
-        <p className="text-sm text-red-600">{error || 'This invite is invalid or already used'}</p>
+        <p className="text-sm text-error">{error || 'This invite is invalid or already used'}</p>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function AcceptInviteForm({ token }: { token: string }) {
         {loading ? 'Joining…' : 'Accept invite'}
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

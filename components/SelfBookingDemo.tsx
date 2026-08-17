@@ -91,27 +91,27 @@ export default function SelfBookingDemo() {
         {visible.map((step, i) =>
           step.kind === 'thinking' ? (
             <div key={i} className="flex justify-start animate-rise">
-              <div className="bg-paper text-ink-faint rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1">
+              <div className="text-white opacity-70 rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1" style={{ background: 'var(--accent)' }}>
                 {[0, 1, 2].map((d) => (
-                  <span key={d} className="h-1.5 w-1.5 rounded-full bg-current opacity-60 animate-pulse" style={{ animationDelay: `${d * 150}ms` }} />
+                  <span key={d} className="h-1.5 w-1.5 rounded-full bg-current opacity-80 animate-pulse" style={{ animationDelay: `${d * 150}ms` }} />
                 ))}
               </div>
             </div>
           ) : step.kind === 'user' ? (
             <div key={i} className="flex justify-end animate-rise">
-              <div className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] text-white" style={{ background: 'var(--accent)' }}>
+              <div className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] text-ink" style={{ background: 'var(--accent-soft)' }}>
                 {step.text}
               </div>
             </div>
           ) : step.kind === 'assistant' ? (
             <div key={i} className="flex justify-start animate-rise">
-              <div className="max-w-[80%] bg-paper text-ink rounded-2xl rounded-bl-md px-3.5 py-2 text-[13.5px]">
+              <div className="max-w-[80%] text-white rounded-2xl rounded-bl-md px-3.5 py-2 text-[13.5px]" style={{ background: 'var(--accent)' }}>
                 {step.text}
               </div>
             </div>
           ) : (
             <div key={i} className="animate-popIn pt-1">
-              <div className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: 'var(--accent-soft)' }}>
+              <div className="rounded-2xl p-3.5 flex items-center gap-3 border-2" style={{ background: 'var(--cream-surface)', borderColor: 'var(--cream-hover)' }}>
                 <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </div>

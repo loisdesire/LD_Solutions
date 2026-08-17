@@ -84,7 +84,7 @@ function GalleryUploader({
         </button>
       </div>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleSelect} className="hidden" />
-      {error && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-[12px] text-error mt-2">{error}</p>}
     </div>
   );
 }
@@ -315,7 +315,7 @@ export default function SiteContentManager({
         )}
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

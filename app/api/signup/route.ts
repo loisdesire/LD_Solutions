@@ -49,15 +49,13 @@ export async function POST(req: NextRequest) {
   try {
     // 3. Create the business, tied to that owner. accent_color is set
     // explicitly rather than left to the businesses table's column
-    // default — that default is still the platform's old dark-navy
-    // scheme (#0B1E33) from before the bright/airy redesign, and it isn't
-    // one of the Settings page's own preset swatches, so a brand-new
-    // business would open Settings and see no swatch selected despite
-    // already having a real color. Setting it here means every new
-    // business starts on-brand regardless of what the DB default says.
+    // default (which lags behind whatever the platform's own identity
+    // currently is, and isn't guaranteed to be one of the Settings
+    // page's own preset swatches) — this is the platform's current
+    // primary terracotta, kept in sync by hand whenever the brand changes.
     const { data: business, error: bizError } = await supabaseAdmin
       .from('businesses')
-      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id, accent_color: '#FF6B4A' })
+      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id, accent_color: '#C4512D' })
       .select()
       .single();
 

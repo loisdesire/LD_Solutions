@@ -183,7 +183,21 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal delay={100}>
-            <SelfBookingDemo />
+            {/* A warm-tinted backdrop with a soft cream accent behind the
+                white chat card, kept to one quiet zone rather than
+                washing the whole hero in the brand color — the AI
+                receptionist stays the visually distinctive moment
+                without turning into general chrome. */}
+            <div className="relative">
+              <div
+                className="absolute -top-6 -right-6 h-28 w-28 rounded-full -z-10"
+                style={{ background: 'var(--cream)', opacity: 0.6 }}
+                aria-hidden="true"
+              />
+              <div className="rounded-[2rem] p-4 sm:p-6" style={{ background: 'var(--warm-surface)' }}>
+                <SelfBookingDemo />
+              </div>
+            </div>
           </Reveal>
         </div>
       </section>

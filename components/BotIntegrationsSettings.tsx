@@ -97,7 +97,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
           <button
             onClick={handleDisconnect}
             disabled={saving}
-            className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+            className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -126,7 +126,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
           </div>
         </form>
       )}
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-error mt-2">{error}</p>}
     </div>
   );
 }
@@ -194,7 +194,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
           <button
             onClick={handleDisconnect}
             disabled={saving}
-            className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+            className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -223,7 +223,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
           </div>
         </form>
       )}
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-error mt-2">{error}</p>}
     </div>
   );
 }
@@ -355,7 +355,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
           <button
             onClick={handleDisconnect}
             disabled={saving}
-            className="text-[12.5px] font-medium text-ink-faint hover:text-red-600 transition-colors disabled:opacity-50"
+            className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -375,7 +375,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
           </button>
         </div>
       )}
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {error && <p className="text-sm text-error mt-2">{error}</p>}
     </div>
   );
 }

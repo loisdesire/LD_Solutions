@@ -306,7 +306,7 @@ export default function ServicesManager({
         </form>
       )}
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-sm text-error mb-4">{error}</p>}
 
       {services.length === 0 ? (
         <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
@@ -482,7 +482,7 @@ export default function ServicesManager({
                   </div>
                   <span
                     className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${
-                      s.active ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-ink-faint'
+                      s.active ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
                     }`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -499,7 +499,7 @@ export default function ServicesManager({
                 <div className="hidden sm:block">
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
-                      s.active ? 'bg-emerald-50 text-emerald-700' : 'bg-ink/5 text-ink-faint'
+                      s.active ? 'bg-success-bg text-success' : 'bg-ink/5 text-ink-faint'
                     }`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -538,7 +538,7 @@ export default function ServicesManager({
                   <button
                     onClick={() => handleDelete(s.id)}
                     aria-label="Delete"
-                    className={`${iconBtnClass} hover:border-red-300 hover:text-red-600`}
+                    className={`${iconBtnClass} hover:border-error hover:text-error`}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                       <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />

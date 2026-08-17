@@ -270,9 +270,9 @@ export default function NewAppointmentModal({
             </button>
 
             {status === 'error' && (
-              <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-100">
+              <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-error-bg border border-error-border">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" /></svg>
-                <p className="text-[13px] text-red-600">Something went wrong. Please try again.</p>
+                <p className="text-[13px] text-error">Something went wrong. Please try again.</p>
               </div>
             )}
           </form>

@@ -225,7 +225,7 @@ export default function ManageBooking({
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+        {error && <p className="text-sm text-error mt-2">{error}</p>}
       </div>
     );
   }
@@ -242,11 +242,11 @@ export default function ManageBooking({
       <button
         onClick={handleCancel}
         disabled={loading}
-        className="flex-1 rounded-xl border-2 border-red-200 bg-red-50 py-2.5 text-[13.5px] font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+        className="flex-1 rounded-xl border-2 border-error-border bg-error-bg py-2.5 text-[13.5px] font-semibold text-error transition-colors hover:opacity-80 disabled:opacity-50"
       >
         {loading ? 'Cancelling…' : 'Cancel booking'}
       </button>
-      {error && <p className="text-sm text-red-600 w-full">{error}</p>}
+      {error && <p className="text-sm text-error w-full">{error}</p>}
     </div>
   );
 }

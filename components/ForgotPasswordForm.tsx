@@ -73,7 +73,7 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
         {loading ? 'Sending…' : 'Send reset link'}
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

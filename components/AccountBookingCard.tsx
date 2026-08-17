@@ -30,7 +30,7 @@ const STATUS_STYLE: Record<string, string> = {
   confirmed: 'bg-accent-soft text-accent',
   completed: 'bg-ink/5 text-ink-faint',
   cancelled: 'bg-ink/5 text-ink-faint line-through',
-  no_show: 'bg-red-50 text-red-600',
+  no_show: 'bg-error-bg text-error',
 };
 
 export default function AccountBookingCard({
@@ -112,7 +112,7 @@ export default function AccountBookingCard({
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-1.5 text-[12.5px] whitespace-pre-wrap ${
-                      m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-paper text-ink-soft'
+                      m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-white'
                     }`}
                   >
                     {m.content}

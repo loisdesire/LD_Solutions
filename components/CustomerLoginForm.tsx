@@ -75,7 +75,7 @@ export default function CustomerLoginForm() {
         {status === 'sending' ? 'Sending…' : 'Send login link'}
       </button>
 
-      {status === 'error' && <p className="text-sm text-red-600">{error}</p>}
+      {status === 'error' && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

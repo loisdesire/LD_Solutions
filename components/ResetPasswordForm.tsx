@@ -90,7 +90,7 @@ export default function ResetPasswordForm({ slug }: { slug: string }) {
         {loading ? 'Saving…' : 'Set new password'}
       </button>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
     </form>
   );
 }

@@ -181,7 +181,7 @@ export default function SignupPage() {
               {loading ? 'Creating…' : 'Create booking page →'}
             </button>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-error">{error}</p>}
           </form>
 
           <p className="text-ink-faint text-[12px] mt-5">

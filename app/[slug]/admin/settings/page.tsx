@@ -78,7 +78,7 @@ export default async function SettingsPage({
         <CollapsibleSection
           title="Website content"
           description="About, gallery, and contact info shown on your booking page."
-          color="var(--progress)"
+          color="var(--tertiary)"
           icon={
             <svg {...iconProps}>
               <rect x="3" y="4" width="18" height="16" rx="2" />
