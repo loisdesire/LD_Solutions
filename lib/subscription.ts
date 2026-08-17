@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Referenced by both the billing page (what it shows) and the checkout
 // route (what it actually charges), so there's exactly one number to change.
-export const MONTHLY_PRICE_NGN = 20000;
+export const MONTHLY_PRICE_NGN = 15000;
 
 export type Subscription = {
   status: string;
