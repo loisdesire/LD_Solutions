@@ -111,12 +111,12 @@ export default function SelfBookingDemo() {
             </div>
           ) : (
             <div key={i} className="animate-popIn pt-1">
-              <div className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: 'color-mix(in srgb, var(--progress) 10%, transparent)' }}>
-                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--progress) 16%, transparent)', color: 'var(--progress)' }}>
+              <div className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: 'var(--accent-soft)' }}>
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="font-mono text-[9.5px] uppercase tracking-[0.08em]" style={{ color: 'var(--progress)' }}>New booking · on the dashboard</p>
+                  <p className="font-mono text-[9.5px] uppercase tracking-[0.08em]" style={{ color: 'var(--accent)' }}>New booking · on the dashboard</p>
                   <p className="text-[13.5px] font-semibold text-ink mt-0.5">Amaka · Haircut · Tomorrow, 2:30 PM</p>
                 </div>
               </div>

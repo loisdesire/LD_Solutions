@@ -49,11 +49,11 @@ export default function BeforeAfterCompare() {
         </p>
         <Thread messages={MANUAL} accentVar="var(--ink-soft)" />
       </div>
-      <div className="rounded-2xl border-2 p-5" style={{ borderColor: 'color-mix(in srgb, var(--progress) 30%, var(--line))', background: 'color-mix(in srgb, var(--progress) 6%, var(--surface))' }}>
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] mb-4" style={{ color: 'var(--progress)' }}>
+      <div className="rounded-2xl border-2 p-5" style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, var(--line))', background: 'var(--accent-soft)' }}>
+        <p className="font-mono text-[10px] uppercase tracking-[0.12em] mb-4" style={{ color: 'var(--accent)' }}>
           With an AI receptionist
         </p>
-        <Thread messages={AUTOMATIC} accentVar="var(--progress)" />
+        <Thread messages={AUTOMATIC} accentVar="var(--accent)" />
       </div>
     </div>
   );

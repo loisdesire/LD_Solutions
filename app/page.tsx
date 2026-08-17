@@ -150,10 +150,10 @@ export default function LandingPage() {
 
             <h1 className="font-display leading-[1.12] mb-6">
               <span className="block text-[28px] sm:text-[34px] text-ink-soft font-medium">
-                &ldquo;Book me a haircut tomorrow?&rdquo;
+                &ldquo;Got anything free tomorrow?&rdquo;
               </span>
               <span className="block text-[40px] sm:text-[52px] font-bold mt-1" style={{ color: 'var(--accent)' }}>
-                Already done.
+                Already booked.
               </span>
             </h1>
 
@@ -200,7 +200,7 @@ export default function LandingPage() {
                 <span key={c.label} className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.05em]">
                   <span
                     className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ background: c.status === 'live' ? 'var(--progress)' : 'var(--line-strong)' }}
+                    style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
                   />
                   <span className={c.status === 'live' ? 'text-ink' : 'text-ink-faint'}>{c.label}</span>
                   {c.status === 'soon' && <span className="text-ink-faint">· soon</span>}
@@ -215,7 +215,7 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
         <Reveal className="mb-10 max-w-lg">
           <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
-            Same question. <span style={{ color: 'var(--progress)' }}>Very different wait.</span>
+            Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
           </h2>
           <p className="text-[14px] text-ink-soft leading-relaxed">
             This is the actual difference an AI receptionist makes — not a feature list, just
