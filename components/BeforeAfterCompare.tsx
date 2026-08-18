@@ -7,13 +7,13 @@ type Msg = { from: 'them' | 'you'; time: string; text: string };
 const MANUAL: Msg[] = [
   { from: 'them', time: '9:14 AM', text: 'Hi! Are you free Tuesday?' },
   { from: 'you', time: '12:40 PM', text: 'Let me check and get back to you' },
-  { from: 'you', time: 'Next day, 8:02 AM', text: 'Sorry for the wait — yes, 2pm works' },
+  { from: 'you', time: 'Next day, 8:02 AM', text: 'Sorry for the wait. Yes, 2pm works' },
   { from: 'them', time: 'Next day, 8:15 AM', text: 'Ok, see you then' },
 ];
 
 const AUTOMATIC: Msg[] = [
   { from: 'them', time: '9:14 AM', text: 'Hi! Are you free Tuesday?' },
-  { from: 'you', time: '9:14 AM', text: 'Yes — 11am, 2pm or 3:30pm. Which works?' },
+  { from: 'you', time: '9:14 AM', text: 'Yes, 11am, 2pm or 3:30pm. Which works?' },
   { from: 'them', time: '9:15 AM', text: '2pm' },
   { from: 'you', time: '9:15 AM', text: 'Booked for Tuesday at 2pm ✓' },
 ];
@@ -44,15 +44,28 @@ export default function BeforeAfterCompare() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div className="rounded-2xl border-2 border-line bg-surface p-5">
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint mb-4">
-          Answering it yourself
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            Answering it yourself
+          </p>
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.06em] px-2 py-1 rounded-full bg-ink-wash text-ink-faint">
+            ~23 hours
+          </span>
+        </div>
         <Thread messages={MANUAL} accentVar="var(--ink-soft)" />
       </div>
       <div className="rounded-2xl border-2 p-5" style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, var(--line))', background: 'var(--accent-soft)' }}>
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] mb-4" style={{ color: 'var(--accent)' }}>
-          With an AI receptionist
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--accent)' }}>
+            With an AI receptionist
+          </p>
+          <span
+            className="font-mono text-[9.5px] uppercase tracking-[0.06em] px-2 py-1 rounded-full"
+            style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
+          >
+            ~1 minute
+          </span>
+        </div>
         <Thread messages={AUTOMATIC} accentVar="var(--accent)" />
       </div>
     </div>

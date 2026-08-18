@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ConversationPanel from './ConversationPanel';
+import PillTabs from './PillTabs';
 import { parseContact } from '@/lib/contact';
 
 type Booking = {
@@ -120,11 +121,6 @@ export default function BookingsList({
       )
     : statusFiltered;
 
-  const pillClass = (active: boolean) =>
-    `px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${
-      active ? 'text-white' : 'text-ink-faint hover:text-ink'
-    }`;
-
   return (
     <div>
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
@@ -143,25 +139,14 @@ export default function BookingsList({
             {scope === 'upcoming' ? 'View past →' : '← Back to upcoming'}
           </button>
         </div>
-        <div className="flex items-center gap-1 bg-paper rounded-full p-1">
-          <button
-            onClick={() => setFilter('all')}
-            className={pillClass(filter === 'all')}
-            style={filter === 'all' ? { background: 'var(--accent)' } : undefined}
-          >
-            All {scoped.length}
-          </button>
-          {visibleStatuses.map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={pillClass(filter === s)}
-              style={filter === s ? { background: 'var(--accent)' } : undefined}
-            >
-              {STATUS_LABELS[s]} {counts[s]}
-            </button>
-          ))}
-        </div>
+        <PillTabs
+          active={filter}
+          onChange={setFilter}
+          options={[
+            { key: 'all', label: 'All', count: scoped.length },
+            ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s], count: counts[s] })),
+          ]}
+        />
       </div>
 
       {/* Deliberately not a bordered box anymore — a top rule plus row

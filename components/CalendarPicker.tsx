@@ -198,7 +198,13 @@ export default function CalendarPicker({
                   key={ds}
                   disabled={disabled}
                   onClick={() => pickDate(d)}
-                  style={isSelected ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
+                  style={
+                    isSelected
+                      ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
+                      : isToday && isCurrentMonth
+                        ? { boxShadow: '0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent)' }
+                        : undefined
+                  }
                   className={`flex items-center justify-center h-9 rounded-lg transition-all duration-150 font-display text-[14px] ${
                     disabled
                       ? 'opacity-15 cursor-not-allowed'
@@ -209,7 +215,7 @@ export default function CalendarPicker({
                       : isSelected
                       ? 'font-semibold shadow-glow'
                       : isToday
-                      ? 'font-semibold text-ink ring-1 ring-ink/10'
+                      ? 'font-semibold text-ink'
                       : 'text-ink hover:bg-warm-surface active:scale-90'
                   }`}
                 >

@@ -10,7 +10,19 @@ const SAMPLE_ROWS = [
 
 export default function DashboardPreview() {
   return (
-    <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_rgba(32,32,32,0.12)] overflow-hidden">
+    <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_24px_60px_-20px_rgba(32,32,32,0.16)] overflow-hidden transition-transform duration-500 -rotate-1 hover:rotate-0">
+      {/* Browser chrome — a small, honest touch that says "this is a real
+          screen in a real product," not decoration for its own sake. The
+          address shown is the actual URL shape every business gets. */}
+      <div className="px-4 py-2.5 flex items-center gap-3 border-b border-line bg-warm-surface">
+        <div className="flex gap-1.5 shrink-0">
+          <span className="h-2.5 w-2.5 rounded-full bg-error opacity-60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-warning opacity-60" />
+          <span className="h-2.5 w-2.5 rounded-full bg-success opacity-60" />
+        </div>
+        <div className="font-mono text-[10.5px] text-ink-faint truncate">yourbusiness.com/admin</div>
+      </div>
+
       <div className="rounded-2xl bg-warm-surface mx-5 mt-5 px-5 py-4 flex flex-wrap gap-x-8 gap-y-3">
         <div>
           <div className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today</div>
@@ -37,7 +49,7 @@ export default function DashboardPreview() {
         {SAMPLE_ROWS.map((r, i) => (
           <div
             key={i}
-            className={`grid grid-cols-[56px_1.4fr_1.2fr_0.8fr_100px] gap-3 items-center py-3 text-[13px] ${
+            className={`grid grid-cols-[48px_1fr_1fr_auto] sm:grid-cols-[56px_1.4fr_1.2fr_0.8fr_100px] gap-3 items-center py-3 text-[13px] ${
               i !== SAMPLE_ROWS.length - 1 ? 'border-b border-line' : ''
             }`}
           >
@@ -54,7 +66,7 @@ export default function DashboardPreview() {
       </div>
 
       <div className="px-5 py-3 border-t border-line bg-paper font-mono text-[10.5px] text-ink-faint">
-        This is the real dashboard layout — every row here is a booking that made itself.
+        This is the real dashboard layout. Every row here is a booking that made itself.
       </div>
     </div>
   );

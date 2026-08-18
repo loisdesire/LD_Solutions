@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { useToast } from './Toast';
 
 type Product = {
   id: string;
@@ -33,6 +34,7 @@ export default function ProductsManager({
   const [editSaving, setEditSaving] = useState(false);
 
   const supabase = createBrowserSupabase();
+  const showToast = useToast();
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -76,13 +78,21 @@ export default function ProductsManager({
       setProducts((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, active: !p.active } : p))
       );
+      showToast(product.active ? `${product.name} hidden from your booking page` : `${product.name} is visible again`);
+    } else {
+      showToast('Could not update that product', 'error');
     }
   }
 
   async function handleDelete(id: string) {
+    const product = products.find((p) => p.id === id);
+    if (!confirm(`Delete ${product?.name ?? 'this product'}? This can't be undone.`)) return;
     const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
     if (!deleteError) {
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      showToast(`${product?.name ?? 'Product'} deleted`);
+    } else {
+      showToast('Could not delete that product', 'error');
     }
   }
 
@@ -244,9 +254,10 @@ export default function ProductsManager({
             editingId === p.id ? (
               <div
                 key={p.id}
-                className={`flex flex-col gap-3 p-4 bg-accent-soft/40 ${
+                className={`flex flex-col gap-3 p-4 ${
                   i !== products.length - 1 ? 'border-b border-line' : ''
                 }`}
+                style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
                 <input
                   value={editDraft.name}

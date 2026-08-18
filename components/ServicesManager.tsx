@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { useToast } from './Toast';
 
 type Service = {
   id: string;
@@ -50,6 +51,7 @@ export default function ServicesManager({
   const [page, setPage] = useState(0);
 
   const supabase = createBrowserSupabase();
+  const showToast = useToast();
 
   const categories = useMemo(
     () => [...new Set(services.map((s) => s.category).filter((c): c is string => Boolean(c)))].sort(),
@@ -159,13 +161,21 @@ export default function ServicesManager({
       setServices((prev) =>
         prev.map((s) => (s.id === service.id ? { ...s, active: !s.active } : s))
       );
+      showToast(service.active ? `${service.name} hidden from your booking page` : `${service.name} is bookable again`);
+    } else {
+      showToast('Could not update that service', 'error');
     }
   }
 
   async function handleDelete(id: string) {
+    const service = services.find((s) => s.id === id);
+    if (!confirm(`Delete ${service?.name ?? 'this service'}? This can't be undone.`)) return;
     const { error: deleteError } = await supabase.from('services').delete().eq('id', id);
     if (!deleteError) {
       setServices((prev) => prev.filter((s) => s.id !== id));
+      showToast(`${service?.name ?? 'Service'} deleted`);
+    } else {
+      showToast('Could not delete that service', 'error');
     }
   }
 
@@ -406,9 +416,10 @@ export default function ServicesManager({
             editingId === s.id ? (
               <div
                 key={s.id}
-                className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-3 bg-accent-soft/40 ${
+                className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-3 ${
                   i !== paged.length - 1 ? 'border-b border-line' : ''
                 }`}
+                style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
                 <input
                   value={editDraft.name}

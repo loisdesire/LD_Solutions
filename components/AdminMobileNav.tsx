@@ -26,6 +26,8 @@ export default function AdminMobileNav({
   // in the primary nav (matches the desktop sidebar).
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard' },
+    { href: `/${slug}/admin/calendar`, label: 'Calendar' },
+    { href: `/${slug}/admin/customers`, label: 'Customers' },
     { href: `/${slug}/admin/services`, label: 'Services' },
     { href: `/${slug}/admin/hours`, label: 'Hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff' },

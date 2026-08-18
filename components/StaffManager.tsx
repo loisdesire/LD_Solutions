@@ -3,17 +3,10 @@
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
+import { useToast } from './Toast';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
-
-const AVATAR_COLORS = ['#B5502F', '#2F5D42', '#38416B', '#A8792B', '#6B3450', '#2F6F62'];
-
-function avatarColor(seed: string) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
 
 export default function StaffManager({
   businessId,
@@ -38,6 +31,7 @@ export default function StaffManager({
   const [copiedId, setCopiedId] = useState('');
 
   const supabase = createBrowserSupabase();
+  const showToast = useToast();
 
   function inviteUrl(token: string) {
     return `${window.location.origin}/${slug}/accept-invite?token=${token}`;
@@ -63,6 +57,7 @@ export default function StaffManager({
 
     setInvites((prev) => [...prev, data]);
     setEmail('');
+    showToast(`Invite sent to ${data.email}`);
 
     fetch('/api/staff/notify-invite', {
       method: 'POST',
@@ -82,9 +77,14 @@ export default function StaffManager({
   }
 
   async function handleRemove(id: string) {
+    const member = staff.find((s) => s.id === id);
+    if (!confirm(`Remove ${member?.name ?? 'this person'} from your team? They'll lose access immediately.`)) return;
     const { error: deleteError } = await supabase.from('staff').delete().eq('id', id);
     if (!deleteError) {
       setStaff((prev) => prev.filter((s) => s.id !== id));
+      showToast(`${member?.name ?? 'Team member'} removed`);
+    } else {
+      showToast('Could not remove that team member', 'error');
     }
   }
 
@@ -131,13 +131,17 @@ export default function StaffManager({
             className="flex items-center gap-3.5 border-2 border-line rounded-2xl p-4 bg-surface"
           >
             <div
-              className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white text-[14px] font-semibold"
-              style={{ background: avatarColor(s.email) }}
+              className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
-              {s.email[0]?.toUpperCase()}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[14px] truncate">{s.email}</p>
+              <p className="font-semibold text-[14px] truncate">{s.name}</p>
+              <p className="font-mono text-[11px] text-ink-faint truncate mt-0.5">{s.email}</p>
             </div>
             <span className="font-mono rounded-full bg-ink-wash px-2.5 py-0.5 text-[10.5px] uppercase tracking-[0.05em] text-ink-faint">
               {s.role}

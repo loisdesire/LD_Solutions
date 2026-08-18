@@ -1,6 +1,7 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminMobileNav from '@/components/AdminMobileNav';
+import { ToastProvider } from '@/components/Toast';
 import type { Metadata } from 'next';
 
 // Private staff area — never indexed, regardless of what any individual
@@ -23,18 +24,20 @@ export default async function AdminLayout({
   const { business, user, staff } = await requireStaffSession(slug);
 
   return (
-    <div className="min-h-screen bg-paper md:flex">
-      <AdminSidebar
-        slug={slug}
-        businessName={business.name}
-        businessType={business.business_type}
-        userEmail={user.email ?? ''}
-        role={staff.role ?? 'staff'}
-      />
-      <div className="flex-1 min-w-0">
-        <AdminMobileNav slug={slug} businessName={business.name} />
-        <main className="max-w-[1000px] px-6 sm:px-10 py-9">{children}</main>
+    <ToastProvider>
+      <div className="min-h-screen bg-paper md:flex">
+        <AdminSidebar
+          slug={slug}
+          businessName={business.name}
+          businessType={business.business_type}
+          userEmail={user.email ?? ''}
+          role={staff.role ?? 'staff'}
+        />
+        <div className="flex-1 min-w-0">
+          <AdminMobileNav slug={slug} businessName={business.name} />
+          <main className="max-w-[1000px] px-6 sm:px-10 py-9">{children}</main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

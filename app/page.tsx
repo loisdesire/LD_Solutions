@@ -12,7 +12,7 @@ const DEMO_SLUG = 'glow-salon';
 export const metadata: Metadata = {
   title: 'An AI receptionist for appointment businesses',
   description:
-    'Your customers ask for a time, the AI checks real availability and books it — on your website today, Telegram today, WhatsApp and Messenger next. Every booking lands on one dashboard. 14 days free.',
+    'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram today, WhatsApp and Messenger coming soon. Every booking lands on one dashboard. 14 days free.',
   alternates: { canonical: '/' },
   openGraph: {
     title: 'An AI receptionist for appointment businesses',
@@ -71,7 +71,7 @@ const features = [
       </svg>
     ),
     title: 'Every booking, one dashboard',
-    description: 'Website, Telegram, and soon WhatsApp — wherever the message came from, it lands in the same place.',
+    description: 'Website, Telegram, and soon WhatsApp. Wherever the message came from, it lands in the same place.',
   },
   {
     icon: (
@@ -102,10 +102,10 @@ const features = [
 // actually earns its keep, since these four things genuinely happen in
 // this order, not four unrelated feature bullets.
 const steps = [
-  { title: 'They ask', description: 'A customer messages you — on your website, or on Telegram.' },
+  { title: 'They ask', description: 'A customer messages you on your website, or on Telegram.' },
   { title: 'It checks', description: 'The AI checks your real availability, instantly, against your actual calendar.' },
   { title: 'It books', description: "It's confirmed and booked. No back-and-forth, no waiting on you." },
-  { title: 'You see it', description: 'The appointment lands on your dashboard automatically — you never touch it.' },
+  { title: 'You see it', description: 'The appointment lands on your dashboard automatically. You never touch it.' },
 ];
 
 const PLAN_INCLUDES = [
@@ -132,7 +132,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-paper">
       {/* Nav */}
-      <nav className="border-b border-line">
+      <nav
+        className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
+        style={{ background: 'color-mix(in srgb, var(--paper) 80%, transparent)' }}
+      >
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
@@ -158,17 +161,10 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 pt-16 sm:pt-20 pb-16 sm:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-14 items-center">
+      <section className="max-w-6xl mx-auto px-6 lg:px-10 pt-12 sm:pt-16 pb-16 sm:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-14 items-center">
           <Reveal>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-px w-8 bg-line-strong" />
-              <span className="font-mono text-[11px] text-ink-faint uppercase tracking-[0.14em]">
-                AI receptionist for appointment businesses
-              </span>
-            </div>
-
-            <h1 className="font-display leading-[1.12] mb-6">
+            <h1 className="font-display leading-[1.12] mb-4">
               <span className="block text-[28px] sm:text-[34px] text-ink-soft font-medium">
                 &ldquo;Got anything free tomorrow?&rdquo;
               </span>
@@ -178,9 +174,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-[16px] text-ink-soft leading-relaxed mb-8 max-w-md">
-              An AI receptionist answers your customers on your website and Telegram right
-              now — checks your real availability, books it, and puts it straight on your
-              dashboard. You never touch the back-and-forth.
+              Meet your new AI receptionist. It answers instantly, checks your real
+              availability, and books the appointment on your website and Telegram, 24/7.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5">
@@ -203,33 +198,19 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal delay={100}>
-            {/* A warm-tinted backdrop with a soft cream accent behind the
-                white chat card, kept to one quiet zone rather than
-                washing the whole hero in the brand color — the AI
-                receptionist stays the visually distinctive moment
-                without turning into general chrome. */}
-            <div className="relative">
-              <div
-                className="absolute -top-6 -right-6 h-28 w-28 rounded-full -z-10"
-                style={{ background: 'var(--cream)', opacity: 0.6 }}
-                aria-hidden="true"
-              />
-              <div className="rounded-[2rem] p-4 sm:p-6" style={{ background: 'var(--warm-surface)' }}>
-                <SelfBookingDemo />
-              </div>
-            </div>
+            <SelfBookingDemo />
           </Reveal>
         </div>
       </section>
 
       {/* Channel strip — honest about what's live vs. coming, on purpose */}
       <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-6">
-          <Reveal className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
-            <p className="text-[13px] text-ink-soft shrink-0">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
+          <Reveal className="flex flex-col items-center text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-6">
               One receptionist. Every channel your customers already use.
             </p>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
               {CHANNELS.map((c) => (
                 <span key={c.label} className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.05em]">
                   <span
@@ -247,12 +228,12 @@ export default function LandingPage() {
 
       {/* Before / after */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-10 max-w-lg">
+        <Reveal className="mb-12 max-w-xl mx-auto text-center">
           <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
             Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
           </h2>
           <p className="text-[14px] text-ink-soft leading-relaxed">
-            This is the actual difference an AI receptionist makes — not a feature list, just
+            This is the actual difference an AI receptionist makes, not a feature list, just
             the same customer asking the same thing.
           </p>
         </Reveal>
@@ -265,15 +246,18 @@ export default function LandingPage() {
           page, because it genuinely is one. */}
       <section className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12 max-w-lg">
+          <Reveal className="mb-12 max-w-xl mx-auto text-center">
             <h2 className="font-display text-3xl text-ink mb-2">How it works</h2>
             <p className="text-[14px] text-ink-soft">From a message to a confirmed appointment, with nobody in between.</p>
           </Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((step, i) => (
-              <Reveal key={step.title} delay={i * 60}>
-                <div className="font-mono text-[11px] mb-3" style={{ color: 'var(--accent)' }}>
-                  0{i + 1}
+              <Reveal key={step.title} delay={i * 60} className="text-center sm:text-left">
+                <div
+                  className="h-11 w-11 rounded-xl border-2 flex items-center justify-center font-display text-[16px] font-bold mb-4 mx-auto sm:mx-0"
+                  style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, var(--line))', color: 'var(--accent)' }}
+                >
+                  {i + 1}
                 </div>
                 <h3 className="font-display text-[17px] font-semibold text-ink mb-1.5">{step.title}</h3>
                 <p className="text-[13px] text-ink-soft leading-relaxed">{step.description}</p>
@@ -286,11 +270,11 @@ export default function LandingPage() {
       {/* Features */}
       <section className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12">
+          <Reveal className="mb-12 max-w-xl mx-auto text-center">
             <h2 className="font-display text-3xl text-ink mb-2">
               Everything you need, <span className="italic">nothing you don&rsquo;t.</span>
             </h2>
-            <p className="text-[14px] text-ink-soft max-w-md">
+            <p className="text-[14px] text-ink-soft">
               Built for how small businesses actually work.
             </p>
           </Reveal>
@@ -322,7 +306,7 @@ export default function LandingPage() {
               A real business tool, <span className="italic">not just a chatbot.</span>
             </h2>
             <p className="text-[14px] text-ink-soft leading-relaxed mb-6">
-              Every booking — however it came in — lands in one place. Today&rsquo;s schedule,
+              Every booking lands in one place, no matter how it came in. Today&rsquo;s schedule,
               who&rsquo;s next, what you made today. Open it once each morning and you know
               exactly where your day stands.
             </p>
@@ -343,28 +327,24 @@ export default function LandingPage() {
 
       {/* Who it's for */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div>
-            <h2 className="font-display text-3xl text-ink mb-4 leading-snug">
-              Built for businesses that
-              <br />
-              <span className="italic">take appointments.</span>
-            </h2>
-            <p className="text-[14px] text-ink-soft leading-relaxed">
-              Whether you run a salon, clinic, tutoring service, or consulting practice,
-              if your customers need to book time with you, this is for you.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {businessTypes.map((biz) => (
-              <div
-                key={biz}
-                className="px-4 py-3 rounded-xl border-2 border-line bg-surface text-[13px] text-ink-soft"
-              >
-                {biz}
-              </div>
-            ))}
-          </div>
+        <Reveal className="mb-10 max-w-xl mx-auto text-center">
+          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
+            Built for businesses that <span className="italic">take appointments.</span>
+          </h2>
+          <p className="text-[14px] text-ink-soft leading-relaxed">
+            Whether you run a salon, clinic, tutoring service, or consulting practice,
+            if your customers need to book time with you, this is for you.
+          </p>
+        </Reveal>
+        <Reveal delay={80} className="flex flex-wrap justify-center gap-3">
+          {businessTypes.map((biz) => (
+            <span
+              key={biz}
+              className="px-5 py-2.5 rounded-full border-2 border-line bg-surface text-[13px] text-ink-soft"
+            >
+              {biz}
+            </span>
+          ))}
         </Reveal>
       </section>
 
@@ -433,7 +413,7 @@ export default function LandingPage() {
               <span className="text-white text-[9px] font-bold">LD</span>
             </div>
             <span className="font-mono text-[11px] text-ink-faint">
-              LD Solutions — an AI receptionist for appointment businesses
+              LD Solutions, an AI receptionist for appointment businesses
             </span>
           </div>
           <Link href="/signup" className="text-[12px] text-ink-faint hover:text-ink transition-colors">

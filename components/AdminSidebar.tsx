@@ -13,6 +13,19 @@ const icons: Record<string, React.ReactNode> = {
       <rect x="14" y="13" width="7" height="7" rx="1.5" />
     </svg>
   ),
+  calendar: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 9.5H21" />
+      <path d="M8 3V6.5M16 3V6.5" strokeLinecap="round" />
+    </svg>
+  ),
+  customers: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+    </svg>
+  ),
   services: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <path d="M4 6h16M4 12h16M4 18h10" />
@@ -71,6 +84,8 @@ export default function AdminSidebar({
   // nav alongside the actual core flow (services, hours, staff).
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
+    { href: `/${slug}/admin/calendar`, label: 'Calendar', key: 'calendar' },
+    { href: `/${slug}/admin/customers`, label: 'Customers', key: 'customers' },
     { href: `/${slug}/admin/services`, label: 'Services', key: 'services' },
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },

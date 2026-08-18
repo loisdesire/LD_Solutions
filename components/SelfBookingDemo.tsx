@@ -19,10 +19,10 @@ type Step =
 const SCRIPT: Step[] = [
   { kind: 'user', text: 'Hey, are you free tomorrow afternoon?' },
   { kind: 'thinking' },
-  { kind: 'assistant', text: "We've got 1:00, 2:30 and 4:00 open tomorrow — which works?" },
+  { kind: 'assistant', text: "We've got 1:00, 2:30 and 4:00 open tomorrow, which works?" },
   { kind: 'user', text: '2:30 works' },
   { kind: 'thinking' },
-  { kind: 'assistant', text: "Great — what's your name?" },
+  { kind: 'assistant', text: "Great, what's your name?" },
   { kind: 'user', text: 'Amaka' },
   { kind: 'thinking' },
   { kind: 'assistant', text: "You're booked for 2:30 tomorrow, Amaka ✓" },
@@ -85,6 +85,11 @@ export default function SelfBookingDemo() {
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           Online
         </span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-ink-faint shrink-0" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
+        </svg>
       </div>
 
       <div ref={scrollRef} className="p-5 min-h-[280px] max-h-[280px] overflow-y-auto space-y-2.5">
@@ -125,8 +130,24 @@ export default function SelfBookingDemo() {
         )}
       </div>
 
-      <div className="px-5 py-3 border-t border-line bg-paper font-mono text-[10.5px] text-ink-faint">
-        {booked ? 'The business owner never typed a word.' : 'This is the real chat, replaying a real booking.'}
+      <div className="px-5 pt-3 border-t border-line">
+        <p className="font-mono text-[10px] text-ink-faint mb-3">
+          {booked ? 'The business owner never typed a word.' : 'This is the real chat, replaying a real booking.'}
+        </p>
+        {/* Decorative, not a real input — this card is a replay, not a
+            live chat — but the bar itself is drawn to match the actual
+            widget's real one exactly, same rounded pill, same send button. */}
+        <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 mb-4">
+          <span className="flex-1 text-[13px] text-ink-faint">Type a message…</span>
+          <span
+            className="h-8 w-8 rounded-full flex items-center justify-center text-white shrink-0"
+            style={{ background: 'var(--accent)' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </span>
+        </div>
       </div>
     </div>
   );
