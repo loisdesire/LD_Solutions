@@ -56,8 +56,14 @@ export async function POST(
     .single();
 
   if (error) {
+    // The raw Postgres message used to go straight to the customer on the
+    // public manage-booking page. It's already logged with full detail
+    // above; the customer gets something they can act on instead.
     logError('api/bookings/cancel:update', error, { bookingId: id });
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "We couldn't cancel that booking. Please try again, or contact the business directly." },
+      { status: 400 }
+    );
   }
 
   return NextResponse.json({ booking });

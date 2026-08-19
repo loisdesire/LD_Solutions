@@ -12,7 +12,7 @@ export default async function CalendarPage({
   const { data: bookings } = await supabase
     .from('bookings')
     .select(
-      'id, customer_name, customer_phone, start_time, end_time, status, services(name), staff(name)'
+      'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, services(name), staff(name)'
     )
     .eq('business_id', business.id)
     .order('start_time', { ascending: true });
@@ -27,7 +27,7 @@ export default async function CalendarPage({
         <p className="text-ink-soft text-[13.5px] mt-1">Your schedule, week by week.</p>
       </div>
 
-      <CalendarView timezone={business.timezone || 'UTC'} bookings={bookings ?? []} />
+      <CalendarView slug={slug} timezone={business.timezone || 'UTC'} bookings={bookings ?? []} />
     </div>
   );
 }

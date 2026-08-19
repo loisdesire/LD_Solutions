@@ -25,6 +25,10 @@ export default function BotIntegrationsSettings({
 }) {
   return (
     <div className="space-y-8">
+      <div>
+        <h3 className="font-display text-[16px] text-ink mb-1">Connected channels</h3>
+        <p className="text-[12.5px] text-ink-faint">Connect the places where customers already message you.</p>
+      </div>
       <TelegramSection slug={slug} initialUsername={initialTelegramUsername} />
       <div className="border-t border-dashed border-line" />
       <MessengerSection slug={slug} initialPageName={initialMessengerPageName} />
@@ -68,13 +72,26 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
     }
     setSaving(true);
     setError('');
-    const res = await fetch('/api/settings/messenger', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    });
-    setSaving(false);
-    if (res.ok) setPageName(null);
+    // A failed DELETE used to do nothing at all — no error, badge still
+    // reading "Connected", owner believing they'd disconnected when the
+    // bot was in fact still live on their page.
+    try {
+      const res = await fetch('/api/settings/messenger', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      if (res.ok) {
+        setPageName(null);
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "Couldn't disconnect Messenger. It's still connected — please try again.");
+      }
+    } catch {
+      setError("Couldn't reach the server. Messenger is still connected — please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -165,13 +182,23 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
     }
     setSaving(true);
     setError('');
-    const res = await fetch('/api/settings/telegram', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    });
-    setSaving(false);
-    if (res.ok) setUsername(null);
+    try {
+      const res = await fetch('/api/settings/telegram', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      if (res.ok) {
+        setUsername(null);
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "Couldn't disconnect the Telegram bot. It's still connected — please try again.");
+      }
+    } catch {
+      setError("Couldn't reach the server. The bot is still connected — please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -328,13 +355,23 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
     }
     setSaving(true);
     setError('');
-    const res = await fetch('/api/settings/whatsapp', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    });
-    setSaving(false);
-    if (res.ok) setNumber(null);
+    try {
+      const res = await fetch('/api/settings/whatsapp', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      if (res.ok) {
+        setNumber(null);
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "Couldn't disconnect WhatsApp. It's still connected — please try again.");
+      }
+    } catch {
+      setError("Couldn't reach the server. WhatsApp is still connected — please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

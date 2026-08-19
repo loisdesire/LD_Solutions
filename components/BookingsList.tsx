@@ -133,7 +133,7 @@ export default function BookingsList({
               setScope((s) => (s === 'upcoming' ? 'past' : 'upcoming'));
               setFilter('all');
             }}
-            className="text-[12.5px] font-medium hover:underline"
+            className="text-caption font-medium hover:underline"
             style={{ color: 'var(--accent)' }}
           >
             {scope === 'upcoming' ? 'View past →' : '← Back to upcoming'}
@@ -164,7 +164,7 @@ export default function BookingsList({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="px-2 py-10 text-center text-[13.5px] text-ink-faint">
+          <div className="px-2 py-10 text-center text-body-sm text-ink-faint">
             No {filter === 'all' ? scope : STATUS_LABELS[filter]?.toLowerCase()} bookings.
           </div>
         ) : (
@@ -184,7 +184,7 @@ export default function BookingsList({
                         {relativeDay(new Date(b.start_time), startOfToday)}
                       </span>
                       <span
-                        className="font-display text-[13.5px] font-semibold ml-2 sm:ml-0 sm:block sm:mt-0.5"
+                        className="font-display text-body-sm font-semibold ml-2 sm:ml-0 sm:block sm:mt-0.5"
                         style={{ color: 'var(--accent)' }}
                       >
                         {new Date(b.start_time).toLocaleTimeString(undefined, {
@@ -211,9 +211,9 @@ export default function BookingsList({
                   </div>
 
                   <div className={b.status === 'cancelled' ? 'line-through' : ''}>
-                    <span className="text-[13.5px]">{b.services?.name}</span>
+                    <span className="text-body-sm">{b.services?.name}</span>
                     {b.services?.duration_minutes != null && (
-                      <span className="font-mono text-[11px] text-ink-faint ml-2 sm:block sm:ml-0 sm:mt-0.5">
+                      <span className="font-mono text-label text-ink-faint ml-2 sm:block sm:ml-0 sm:mt-0.5">
                         {b.services.duration_minutes} min
                       </span>
                     )}
@@ -222,7 +222,7 @@ export default function BookingsList({
                   <div className="text-[13px] text-ink-soft truncate">{staffName ?? '—'}</div>
 
                   <div className="flex items-center justify-between sm:block">
-                    <span className="font-mono text-[12.5px] sm:text-[13px] truncate">
+                    <span className="font-mono text-caption sm:text-[13px] truncate">
                       <ContactCell
                         phone={b.customer_phone}
                         telegramUsername={b.customer_telegram_username}

@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { useToast } from './Toast';
+import PillTabs from './PillTabs';
+import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
 
 type Service = {
   id: string;
@@ -226,24 +228,12 @@ export default function ServicesManager({
     setEditingId('');
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const smallInputClass =
-    'rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-  const iconBtnClass =
-    'h-8 w-8 flex items-center justify-center rounded-full border-2 border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
-  const pillClass = (active: boolean) =>
-    `px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${
-      active ? 'text-white' : 'text-ink-faint hover:text-ink'
-    }`;
-
   return (
     <div className="print:[&_.no-print]:hidden">
       <div className="flex justify-end mb-4 no-print">
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
@@ -309,7 +299,7 @@ export default function ServicesManager({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -331,36 +321,19 @@ export default function ServicesManager({
             </svg>
           </div>
           <h2 className="font-display text-[20px]">No services yet</h2>
-          <p className="text-ink-soft text-[13.5px] mt-1.5">Add your first one above.</p>
+          <p className="text-ink-soft text-body-sm mt-1.5">Add your first one above.</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3 no-print">
-            <div className="flex items-center gap-1 bg-paper rounded-full p-1">
-              <button
-                onClick={() => {
-                  setCategoryFilter('all');
-                  setPage(0);
-                }}
-                className={pillClass(categoryFilter === 'all')}
-                style={categoryFilter === 'all' ? { background: 'var(--accent)' } : undefined}
-              >
-                All
-              </button>
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => {
-                    setCategoryFilter(c);
-                    setPage(0);
-                  }}
-                  className={pillClass(categoryFilter === c)}
-                  style={categoryFilter === c ? { background: 'var(--accent)' } : undefined}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            <PillTabs
+              options={[{ key: 'all', label: 'All' }, ...categories.map((c) => ({ key: c, label: c }))]}
+              active={categoryFilter}
+              onChange={(key) => {
+                setCategoryFilter(key);
+                setPage(0);
+              }}
+            />
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
@@ -408,7 +381,7 @@ export default function ServicesManager({
             <div className="no-print" />
           </div>
           {paged.length === 0 ? (
-            <div className="px-5 py-10 text-center text-[13.5px] text-ink-faint">
+            <div className="px-5 py-10 text-center text-body-sm text-ink-faint">
               No services match {search ? 'that search' : 'this category'}.
             </div>
           ) : (
@@ -454,13 +427,13 @@ export default function ServicesManager({
                   <button
                     onClick={() => saveEdit(s.id)}
                     disabled={editSaving}
-                    className="rounded-xl bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                    className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-white disabled:opacity-50"
                   >
                     {editSaving ? 'Saving…' : 'Save'}
                   </button>
                   <button
                     onClick={() => setEditingId('')}
-                    className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+                    className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-caption font-medium text-ink-soft hover:text-ink transition-colors"
                   >
                     Cancel
                   </button>
@@ -504,7 +477,7 @@ export default function ServicesManager({
                   {formatDuration(s.duration_minutes)}
                   {s.price != null && <span className="sm:hidden"> · ₦{s.price.toLocaleString()}</span>}
                 </div>
-                <div className="hidden sm:block font-semibold text-[13.5px]" style={{ color: 'var(--accent)' }}>
+                <div className="hidden sm:block font-semibold text-body-sm" style={{ color: 'var(--accent)' }}>
                   {s.price != null ? `₦${s.price.toLocaleString()}` : '—'}
                 </div>
                 <div className="hidden sm:block">
@@ -563,7 +536,7 @@ export default function ServicesManager({
 
           {filtered.length > PAGE_SIZE && (
             <div className="px-5 py-3 border-t border-line flex items-center justify-between text-ink-faint no-print">
-              <p className="font-mono text-[11px]">
+              <p className="font-mono text-label">
                 Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, filtered.length)} of{' '}
                 {filtered.length}
               </p>
@@ -575,7 +548,7 @@ export default function ServicesManager({
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
                 </button>
-                <span className="font-mono text-[11px] px-1">{currentPage + 1} / {totalPages}</span>
+                <span className="font-mono text-label px-1">{currentPage + 1} / {totalPages}</span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage >= totalPages - 1}

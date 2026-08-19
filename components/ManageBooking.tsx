@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import CalendarPicker from './CalendarPicker';
+import Skeleton from './Skeleton';
 
 type Period = 'Morning' | 'Afternoon' | 'Evening';
 
@@ -49,6 +50,14 @@ export default function ManageBooking({
   const [rescheduling, setRescheduling] = useState(false);
   const [date, setDate] = useState(toDateStr(new Date()));
   const [slots, setSlots] = useState<string[]>([]);
+  // Without these, every date change rendered "0 open" and "No openings
+  // this day" for the entire duration of the fetch — telling a customer
+  // trying to reschedule that the business was full, on every single click.
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState(false);
+  // Forces a refetch of the same date — setDate(d => d) would be a no-op,
+  // since React bails out when state is identical.
+  const [reloadKey, setReloadKey] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [rescheduled, setRescheduled] = useState(false);
 
@@ -62,10 +71,30 @@ export default function ManageBooking({
       setSlots([]);
       return;
     }
+    let cancelled = false;
+    setLoadingSlots(true);
+    setSlotsError(false);
+    setSlots([]);
     fetch(`/api/availability?businessId=${businessId}&serviceId=${serviceId}&date=${date}`)
-      .then((r) => r.json())
-      .then((data) => setSlots(data.slots ?? []));
-  }, [date, businessId, serviceId]);
+      .then(async (r) => {
+        if (!r.ok) throw new Error('availability request failed');
+        return r.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (!Array.isArray(data?.slots)) throw new Error('malformed availability response');
+        setSlots(data.slots);
+      })
+      .catch(() => {
+        if (!cancelled) setSlotsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [date, businessId, serviceId, reloadKey]);
 
   async function handleCancel() {
     setLoading(true);
@@ -160,9 +189,35 @@ export default function ManageBooking({
               <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint">
                 Available times
               </label>
-              <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>
+              {!loadingSlots && !slotsError && (
+                <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>
+              )}
             </div>
-            {slots.length === 0 ? (
+            {loadingSlots ? (
+              <div className="space-y-4 mb-4">
+                {[0, 1].map((i) => (
+                  <div key={i}>
+                    <Skeleton className="h-2.5 w-16 rounded mb-2" />
+                    <div className="flex flex-wrap gap-2">
+                      {[0, 1, 2].map((j) => (
+                        <Skeleton key={j} className="w-[72px] h-[34px] rounded-lg" delay={j * 0.15} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : slotsError ? (
+              <div className="border-2 border-dashed border-line-strong rounded-xl py-6 flex flex-col items-center text-center px-4">
+                <p className="text-ink-soft text-[13px]">We couldn&rsquo;t load available times.</p>
+                <button
+                  type="button"
+                  onClick={() => setReloadKey((k) => k + 1)}
+                  className="mt-3 rounded-full border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-semibold text-ink hover:border-accent hover:text-accent transition-colors"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : slots.length === 0 ? (
               <div className="border-2 border-dashed border-line-strong rounded-xl py-6 flex flex-col items-center text-center px-4">
                 <p className="text-ink-soft text-[13px]">No openings this day. Try another date.</p>
               </div>

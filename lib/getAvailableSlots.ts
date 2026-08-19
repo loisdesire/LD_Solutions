@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { todayInTimezone, dayOfWeekForDate, daysBetween, zonedTimeToUtc } from './timezone';
+import { getBusinessTimezone } from './getBusinessTimezone';
 import { generateSlots } from './slotGenerator';
 
 // Service role: this file only ever runs server-side (from
@@ -19,13 +20,7 @@ export async function getAvailableSlots(
   serviceId: string,
   dateISO: string // e.g. '2026-07-15' — a calendar date in the business's own timezone
 ) {
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('timezone')
-    .eq('id', businessId)
-    .single();
-
-  const timeZone = business?.timezone || 'UTC';
+  const timeZone = await getBusinessTimezone(businessId);
   const dayOfWeek = dayOfWeekForDate(dateISO);
 
   // 1. Get the service duration

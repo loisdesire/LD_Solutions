@@ -31,3 +31,29 @@ export async function canAcceptBookings(businessId: string): Promise<boolean> {
 
   return getSubscriptionState(sub).hasAccess;
 }
+
+// Gates the two deeper-AI features (the staff-only insights panel, and
+// richer business-info answers in the public chat) — active access AND
+// the higher plan, not just one or the other. Same defensive fallback as
+// elsewhere in this codebase: if the `plan` column hasn't been migrated
+// in yet, this just resolves to false (core-only) rather than erroring,
+// since a select naming a nonexistent column fails as a whole unit.
+export async function hasBusinessIntelligence(businessId: string): Promise<boolean> {
+  const { data: sub, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('status, trial_ends_at, current_period_end, plan')
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  if (error?.code === '42703') {
+    const fallback = await supabaseAdmin
+      .from('subscriptions')
+      .select('status, trial_ends_at, current_period_end')
+      .eq('business_id', businessId)
+      .maybeSingle();
+    return getSubscriptionState(fallback.data).hasAccess && false; // plan column doesn't exist yet — never true
+  }
+
+  const state = getSubscriptionState(sub);
+  return state.hasAccess && state.plan === 'business_intelligence';
+}

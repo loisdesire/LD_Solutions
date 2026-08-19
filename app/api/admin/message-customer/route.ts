@@ -4,6 +4,7 @@ import { sendTelegramMessage, sendWhatsappMessage, sendMessengerMessage } from '
 import { parseContact } from '@/lib/contact';
 import { loadConversation, saveConversation, type ChatMessage } from '@/lib/whatsappTools';
 import { MAX_HISTORY } from '@/lib/whatsappAgent';
+import { getNotifyCreds } from '@/lib/notifyCustomer';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // GET /api/admin/message-customer?slug=...&customerPhone=... — the same
@@ -42,14 +43,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing slug, customerPhone, or message' }, { status: 400 });
   }
 
-  // One query for id + the channel credentials this route might need, not
-  // a second business lookup after the auth check already did one.
-  const auth = await requireStaffApiSession(
-    slug,
-    'id, whatsapp_phone_number_id, whatsapp_access_token, telegram_bot_token, messenger_page_id, messenger_access_token'
-  );
+  const auth = await requireStaffApiSession(slug, 'id');
   if (auth.error) return auth.error;
-  const { business } = auth;
+  // Fetched separately (rather than in the same select as the auth check)
+  // because whatsapp_access_token is currently missing from the live
+  // database (documented in schema.sql, evidently never actually applied)
+  // — combining it into one select would fail the whole query and make
+  // Telegram/Messenger replies break too, not just WhatsApp. getNotifyCreds
+  // already degrades gracefully for exactly this case.
+  const business = await getNotifyCreds(auth.business.id);
 
   const { channel } = parseContact(customerPhone);
 
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
   // Sending and reading current history are independent — no reason to
   // wait for one before starting the other. Only the decision to *save*
   // depends on the send having actually succeeded.
-  const [sent, history] = await Promise.all([sendPromise, loadConversation(business.id, customerPhone)]);
+  const [sent, history] = await Promise.all([sendPromise, loadConversation(auth.business.id, customerPhone)]);
 
   if (!sent) {
     return NextResponse.json({ error: 'Failed to send after retrying. Please try again shortly.' }, { status: 502 });
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
 
   const newTurn: ChatMessage = { role: 'assistant', content: message };
   const updated = [...history, newTurn].slice(-MAX_HISTORY);
-  await saveConversation(business.id, customerPhone, updated);
+  await saveConversation(auth.business.id, customerPhone, updated);
 
   return NextResponse.json({ sent: true });
 }

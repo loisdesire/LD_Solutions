@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
+import GalleryGrid from '@/components/GalleryGrid';
 import { AccentScope } from '@/components/AccentScope';
 
 export async function generateMetadata({
@@ -41,13 +42,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
           <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-10 text-center">
             Gallery
           </h1>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {galleryImages.map((url, i) => (
-              <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-surface border-2 border-line">
-                <img src={url} alt="" className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
+          <GalleryGrid images={galleryImages} />
         </div>
       </main>
       <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />

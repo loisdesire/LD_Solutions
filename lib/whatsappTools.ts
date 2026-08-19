@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAvailableSlots } from './getAvailableSlots';
 import { todayInTimezone, daysBetween, zonedTimeToUtc } from './timezone';
+import { getBusinessTimezone } from './getBusinessTimezone';
+import { formatLocalDateTime, formatLocalTime, to24Hour } from './formatDateTime';
 import { sendEmail } from './email';
 import { canAcceptBookings } from './subscription-server';
+import { SITE_URL } from './site';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
 // Twilio — it's the same booking logic the web app already uses (services,
@@ -72,8 +75,17 @@ export async function getBusinessByTelegramToken(botToken: string) {
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export async function getBusinessContext(businessId: string) {
+  // contact_phone/contact_email/instagram_url/facebook_url are already
+  // filled in by the business in Settings and shown on the public Contact
+  // page — the AI just never actually got them, so "what's your phone
+  // number" was unanswerable even though the business had already
+  // provided one.
   const [{ data: business }, { data: services }, { data: hours }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('id, name, timezone').eq('id', businessId).single(),
+    supabaseAdmin
+      .from('businesses')
+      .select('id, name, timezone, contact_phone, contact_email, instagram_url, facebook_url')
+      .eq('id', businessId)
+      .single(),
     supabaseAdmin
       .from('services')
       .select('name, duration_minutes, price')
@@ -97,30 +109,6 @@ export async function getBusinessContext(businessId: string) {
   });
 
   return { business, services: services ?? [], weeklyHours };
-}
-
-// The model repeatedly doing UTC→local mental math across a long conversation
-// is exactly the kind of arithmetic LLMs get wrong silently — it caused a real
-// bug where a booking confirmed as "8:00 AM" got redisplayed later as "07:00"
-// (the raw UTC hour). Formatting server-side, deterministically, removes that
-// error class entirely: the model only ever sees an already-correct string.
-function formatLocalDateTime(iso: string, timeZone: string): string {
-  return new Date(iso).toLocaleString('en-US', {
-    timeZone,
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function formatLocalTime(iso: string, timeZone: string): string {
-  return new Date(iso).toLocaleString('en-US', { timeZone, hour: 'numeric', minute: '2-digit' });
-}
-
-function to24Hour(iso: string, timeZone: string): string {
-  return new Date(iso).toLocaleString('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 async function findActiveService(businessId: string, serviceName: string) {
@@ -149,12 +137,7 @@ export async function checkAvailability(ctx: ToolContext, args: { serviceName: s
     };
   }
 
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('timezone')
-    .eq('id', ctx.businessId)
-    .single();
-  const timeZone = business?.timezone || 'UTC';
+  const timeZone = await getBusinessTimezone(ctx.businessId);
 
   const slots = await getAvailableSlots(ctx.businessId, service.id, args.date);
 
@@ -184,12 +167,50 @@ export async function createBooking(
   const service = await findActiveService(ctx.businessId, args.serviceName);
   if (!service) return { error: `No service matching "${args.serviceName}" found.` };
 
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('timezone')
-    .eq('id', ctx.businessId)
-    .single();
+  let [{ data: business }, { data: rules }] = await Promise.all([
+    supabaseAdmin.from('businesses').select('slug, timezone, paystack_public_key').eq('id', ctx.businessId).single(),
+    supabaseAdmin.from('booking_rules').select('require_payment').eq('business_id', ctx.businessId).maybeSingle(),
+  ]);
+
+  // Same defensive fallback used everywhere the payments migration might
+  // not have run yet on a given deployment — a select naming a
+  // nonexistent column fails as a whole unit, so this re-queries with
+  // just the columns that predate payments. `rules` needs no equivalent
+  // fallback: whether it's null because there's genuinely no row yet, or
+  // because require_payment doesn't exist as a column, `rules?.require_payment`
+  // reads as falsy either way — exactly the safe "not required" default.
+  if (business === null) {
+    const fallback = await supabaseAdmin.from('businesses').select('slug, timezone').eq('id', ctx.businessId).single();
+    if (fallback.data) business = { ...fallback.data, paystack_public_key: null };
+  }
+
   const timeZone = business?.timezone || 'UTC';
+
+  // This tool used to insert a booking here with no idea whether the
+  // business requires payment at all — a customer chatting through
+  // WhatsApp/Telegram/web-chat could book a service completely free even
+  // when the exact same service required payment upfront on the web
+  // booking page (app/api/bookings/route.ts). There's no interactive
+  // checkout inside a chat conversation to collect that payment, so the
+  // fix isn't to collect it here — it's to never let this tool create an
+  // unpaid booking for a service that requires one. Gated on
+  // paystack_public_key specifically (not just the require_payment
+  // toggle) to match the exact same condition the public booking page
+  // uses to decide whether payment is actually active — a business that
+  // switched the toggle on but never connected Paystack isn't actually
+  // collecting payment anywhere, on this channel or the web one.
+  if (rules?.require_payment && service.price && business?.paystack_public_key) {
+    const bookingUrl = business.slug ? `${SITE_URL}/${business.slug}` : SITE_URL;
+    return {
+      requires_payment: true,
+      price: service.price,
+      booking_url: bookingUrl,
+      instructions:
+        `This service requires payment to book, which can't be collected in this chat. Tell the customer their ` +
+        `${service.name} appointment needs to be booked (with payment) on the website, and give them this link: ${bookingUrl}. ` +
+        `Do not say the booking is confirmed — nothing has been booked yet.`,
+    };
+  }
 
   const start = zonedTimeToUtc(args.date, args.time, timeZone);
   const end = new Date(start.getTime() + service.duration_minutes * 60000);
@@ -238,22 +259,62 @@ export async function createBooking(
   };
 }
 
-export async function findCustomerBookings(ctx: ToolContext) {
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('timezone')
-    .eq('id', ctx.businessId)
-    .single();
-  const timeZone = business?.timezone || 'UTC';
-
+// Business-Intelligence-plan-only, and deliberately much narrower than
+// anything in lib/insightsTools.ts: service name and how often it's been
+// booked, nothing else. No revenue, no per-customer data, nothing that
+// identifies any other customer — this is reachable by anyone who can
+// message the bot, unlike insightsTools.ts which only ever runs behind a
+// staff session. Only wired into the tool list when the business is on the
+// business_intelligence plan (see whatsappAgent.ts).
+export async function getPopularServices(businessId: string, args: { limit?: number }) {
   const { data } = await supabaseAdmin
     .from('bookings')
-    .select('id, start_time, status, services(name)')
+    .select('services(name)')
+    .eq('business_id', businessId)
+    .neq('status', 'cancelled');
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const service = Array.isArray(row.services) ? row.services[0] : row.services;
+    if (!service?.name) continue;
+    counts.set(service.name, (counts.get(service.name) ?? 0) + 1);
+  }
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, args.limit ?? 3);
+  if (sorted.length === 0) return { popular_services: [] };
+  return { popular_services: sorted.map(([name]) => name) };
+}
+
+export async function findCustomerBookings(ctx: ToolContext) {
+  const timeZone = await getBusinessTimezone(ctx.businessId);
+
+  // payment_status/amount_paid let the bot actually answer "did my
+  // deposit go through" instead of having nothing to check — same
+  // defensive fallback as every other payments-column read this session,
+  // since a business that never ran that migration would otherwise fail
+  // this whole query (and with it, cancel/reschedule, which both call
+  // this same tool's underlying lookup pattern) rather than just not
+  // having payment info to show.
+  let { data, error } = await supabaseAdmin
+    .from('bookings')
+    .select('id, start_time, status, payment_status, amount_paid, services(name)')
     .eq('business_id', ctx.businessId)
     .eq('customer_phone', ctx.customerPhone)
     .neq('status', 'cancelled')
     .gte('start_time', new Date().toISOString())
     .order('start_time');
+
+  if (error?.code === '42703') {
+    const fallback = await supabaseAdmin
+      .from('bookings')
+      .select('id, start_time, status, services(name)')
+      .eq('business_id', ctx.businessId)
+      .eq('customer_phone', ctx.customerPhone)
+      .neq('status', 'cancelled')
+      .gte('start_time', new Date().toISOString())
+      .order('start_time');
+    data = (fallback.data ?? []).map((b) => ({ ...b, payment_status: null, amount_paid: null }));
+  }
 
   return {
     // No id exposed here on purpose — cancel/reschedule identify a booking
@@ -261,10 +322,12 @@ export async function findCustomerBookings(ctx: ToolContext) {
     // conversation), not by asking the model to transcribe a UUID it saw in
     // a previous turn. `when` is the only time representation given here too,
     // so there's nothing left for it to (mis)calculate either.
-    bookings: (data ?? []).map((b) => ({
+    bookings: (data ?? []).map((b: any) => ({
       service: (b.services as unknown as { name: string } | null)?.name,
       when: formatLocalDateTime(b.start_time, timeZone),
       status: b.status,
+      paid: b.payment_status === 'paid' ? true : b.payment_status ? false : null,
+      amount_paid: b.amount_paid ?? null,
     })),
   };
 }
@@ -281,12 +344,7 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
   const service = await findActiveService(ctx.businessId, args.serviceName);
   if (!service) return null;
 
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('timezone')
-    .eq('id', ctx.businessId)
-    .single();
-  const timeZone = business?.timezone || 'UTC';
+  const timeZone = await getBusinessTimezone(ctx.businessId);
 
   const target = zonedTimeToUtc(args.date, args.time, timeZone);
 
@@ -334,8 +392,8 @@ export async function rescheduleBooking(
   if (!existing) return { error: 'Could not find a matching booking for that service, date, and time.' };
   if (existing.status === 'cancelled') return { error: 'That booking is already cancelled.' };
 
-  const [{ data: business }, { data: rules }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('timezone').eq('id', ctx.businessId).single(),
+  const [timeZone, { data: rules }] = await Promise.all([
+    getBusinessTimezone(ctx.businessId),
     supabaseAdmin
       .from('booking_rules')
       .select('buffer_minutes, max_advance_days, cancellation_window_hours')
@@ -343,7 +401,6 @@ export async function rescheduleBooking(
       .maybeSingle(),
   ]);
 
-  const timeZone = business?.timezone || 'UTC';
   const windowHours = rules?.cancellation_window_hours ?? 24;
   const hoursUntilStart = (new Date(existing.start_time).getTime() - Date.now()) / 3600000;
   if (hoursUntilStart < windowHours) {

@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google';
+import { Hanken_Grotesk, IBM_Plex_Mono, Source_Serif_4 } from 'next/font/google';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
-const inter = Inter({
+const hankenGrotesk = Hanken_Grotesk({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['400', '500', '600', '700'],
 });
 
-const spaceGrotesk = Space_Grotesk({
+const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -24,11 +24,36 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Book an appointment',
+    default: 'LD Solutions | AI booking receptionist for appointment businesses',
     template: '%s',
   },
   description:
-    'Book an appointment online in seconds — real-time availability, instant confirmation, no account needed.',
+    'An AI booking receptionist for salons, clinics, tutors, coaches, and other appointment businesses. Answer customer questions, check real availability, and book appointments automatically.',
+  keywords: [
+    'AI booking receptionist',
+    'appointment booking software',
+    'online booking for small businesses',
+    'salon booking software',
+    'real-time appointment scheduling',
+    'customer booking automation',
+  ],
+  applicationName: 'LD Solutions',
+  category: 'business',
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    title: 'LD Solutions | Your AI booking receptionist',
+    description:
+      'Let customers ask for an appointment, check real availability, and book without the back-and-forth.',
+    url: SITE_URL,
+    siteName: 'LD Solutions',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'LD Solutions | Your AI booking receptionist',
+    description:
+      'Appointment booking that answers customers, checks real availability, and confirms the booking.',
+  },
   // Without this, WebKit/Chromium auto-detect date/time-looking text
   // (e.g. "9 AM–5 PM" in the hours line) and silently style it like a
   // phone-number link — no anchor tag involved, just an odd blue tint
@@ -38,7 +63,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${hankenGrotesk.variable} ${sourceSerif.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );

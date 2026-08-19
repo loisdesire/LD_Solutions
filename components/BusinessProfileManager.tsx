@@ -72,8 +72,9 @@ export default function BusinessProfileManager({
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   return (
-    <form onSubmit={handleSave} className="space-y-5">
+    <form onSubmit={handleSave} className="space-y-8">
       <div>
+        <h3 className="font-display text-[16px] text-ink mb-4">Identity</h3>
         <label className={labelClass}>Business name</label>
         <input
           required
@@ -91,7 +92,8 @@ export default function BusinessProfileManager({
         <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
       </div>
 
-      <div>
+      <div className="border-t border-line pt-6">
+        <h3 className="font-display text-[16px] text-ink mb-4">Booking page appearance</h3>
         <label className={labelClass}>Description</label>
         <textarea
           value={description}

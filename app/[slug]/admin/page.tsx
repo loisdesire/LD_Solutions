@@ -109,6 +109,7 @@ export default async function AdminDashboard({
       maxAdvanceDays={rules?.max_advance_days ?? 30}
       exportRows={exportRows}
       all={all}
+      todayBookings={todayBookings}
       todayCount={todayCount}
       todayRevenue={todayRevenue}
       thisWeekCount={thisWeek.length}

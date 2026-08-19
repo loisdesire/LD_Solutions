@@ -111,7 +111,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
           </svg>
         </div>
         <h2 className="font-display text-[20px]">No customers yet</h2>
-        <p className="text-ink-soft text-[13.5px] mt-1.5 max-w-sm mx-auto">
+        <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
           The moment someone books, they'll show up here — with every visit and how much they've
           spent, not just the one appointment.
         </p>
@@ -131,7 +131,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search customers…"
-            className="bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint w-full"
+            className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
           />
         </div>
         <PillTabs<'recent' | 'frequent' | 'spent'>
@@ -155,7 +155,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
         </div>
 
         {filtered.length === 0 ? (
-          <div className="px-2 py-10 text-center text-[13.5px] text-ink-faint">No customers match that search.</div>
+          <div className="px-2 py-10 text-center text-body-sm text-ink-faint">No customers match that search.</div>
         ) : (
           filtered.map((c, i) => {
             const { isBotContact, label } = parseContact(c.phone ?? c.email ?? '', c.telegramUsername);
@@ -198,15 +198,15 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                       separate stacked blocks — matches how BookingsList
                       groups related fields on a single row instead of
                       stacking every grid column individually. */}
-                  <div className="font-mono text-[11px] text-ink-faint sm:hidden">
+                  <div className="font-mono text-label text-ink-faint sm:hidden">
                     {c.bookingCount} {c.bookingCount === 1 ? 'visit' : 'visits'}
                     {c.totalSpent ? ` · ₦${c.totalSpent.toLocaleString()}` : ''}
                     {' · '}{relativeDay(c.lastVisit)}
                   </div>
-                  <div className="hidden sm:block text-[13.5px] text-ink-soft">
+                  <div className="hidden sm:block text-body-sm text-ink-soft">
                     {c.bookingCount} {c.bookingCount === 1 ? 'visit' : 'visits'}
                   </div>
-                  <div className="hidden sm:block font-mono text-[13.5px] font-semibold" style={{ color: 'var(--accent)' }}>
+                  <div className="hidden sm:block font-mono text-body-sm font-semibold" style={{ color: 'var(--accent)' }}>
                     {c.totalSpent ? `₦${c.totalSpent.toLocaleString()}` : '—'}
                   </div>
                   <div className="hidden sm:block text-[13px] text-ink-soft">{relativeDay(c.lastVisit)}</div>

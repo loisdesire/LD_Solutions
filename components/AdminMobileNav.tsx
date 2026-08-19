@@ -23,7 +23,9 @@ export default function AdminMobileNav({
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Products isn't part of the MVP — kept working, just not promoted
-  // in the primary nav (matches the desktop sidebar).
+  // in the primary nav (matches the desktop sidebar). Same three-group
+  // split as AdminSidebar (Manage / Connect / Account), for the same
+  // reason: a single 9-item "Manage" bucket had no sub-structure.
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard' },
     { href: `/${slug}/admin/calendar`, label: 'Calendar' },
@@ -32,11 +34,16 @@ export default function AdminMobileNav({
     { href: `/${slug}/admin/hours`, label: 'Hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff' },
   ];
+  const connect = [
+    { href: `/${slug}/admin/channels`, label: 'Channels' },
+    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule assistant' },
+  ];
   const account = [
+    { href: `/${slug}/admin/insights`, label: 'Insights' },
     { href: `/${slug}/admin/billing`, label: 'Billing' },
     { href: `/${slug}/admin/settings`, label: 'Settings' },
   ];
-  const currentLabel = [...manage, ...account].find((t) => t.href === pathname)?.label ?? 'Dashboard';
+  const currentLabel = [...manage, ...connect, ...account].find((t) => t.href === pathname)?.label ?? 'Dashboard';
 
   async function handleSignOut() {
     const supabase = createBrowserSupabase();
@@ -45,6 +52,12 @@ export default function AdminMobileNav({
     router.refresh();
   }
 
+  // Soft accent bg + accent text, matching AdminSidebar's active state —
+  // previously this used a solid accent bg + inverted text, a different
+  // treatment for the same concept depending on which breakpoint you were
+  // on. The sidebar's soft treatment is the one with a documented
+  // rationale (a solid-accent sidebar was tried and rejected as
+  // overusing brand color), so that's the convention this now follows.
   function NavLink({ href, label }: { href: string; label: string }) {
     const active = pathname === href;
     return (
@@ -54,7 +67,7 @@ export default function AdminMobileNav({
         className={`flex items-center px-3 py-2.5 rounded-xl text-[14px] transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft'
         }`}
-        style={active ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
+        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
         {label}
       </Link>
@@ -68,11 +81,13 @@ export default function AdminMobileNav({
           <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
             {businessName?.[0]?.toUpperCase()}
           </div>
-          <span className="font-semibold text-[13.5px] truncate">{businessName}</span>
+          <span className="font-semibold text-body-sm truncate">{businessName}</span>
         </div>
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full border-2 border-line-strong pl-3.5 pr-2.5 py-1.5 text-[12.5px] font-semibold text-ink shrink-0"
+          aria-expanded={menuOpen}
+          aria-controls="admin-mobile-nav-menu"
+          className="flex items-center gap-1.5 rounded-full border-2 border-line-strong pl-3.5 pr-2.5 py-1.5 text-caption font-semibold text-ink shrink-0"
         >
           {currentLabel}
           <svg
@@ -92,12 +107,21 @@ export default function AdminMobileNav({
       </div>
 
       {menuOpen && (
-        <div className="border-t border-line px-4 py-4 animate-rise">
+        <div id="admin-mobile-nav-menu" role="menu" className="border-t border-line px-4 py-4 animate-rise">
           <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
             Manage
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
             {manage.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} />
+            ))}
+          </nav>
+
+          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
+            Connect
+          </div>
+          <nav className="flex flex-col gap-0.5 mb-4">
+            {connect.map((tab) => (
               <NavLink key={tab.href} href={tab.href} label={tab.label} />
             ))}
           </nav>

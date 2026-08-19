@@ -38,6 +38,7 @@ export default function WebChatWidget({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [value, setValue] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [thinkingLineIndex, setThinkingLineIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +74,21 @@ export default function WebChatWidget({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, thinking]);
+
+  // THINKING_LINES has 3 messages so a reply that takes a couple of
+  // seconds doesn't just sit on the same static "Checking availability…"
+  // the whole time — cycles while thinking is true, resets to the first
+  // line at the start of every new request.
+  useEffect(() => {
+    if (!thinking) {
+      setThinkingLineIndex(0);
+      return;
+    }
+    const id = setInterval(() => {
+      setThinkingLineIndex((i) => (i + 1) % THINKING_LINES.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [thinking]);
 
   async function send() {
     const text = value.trim();
@@ -147,7 +163,7 @@ export default function WebChatWidget({
             {thinking && (
               <div className="flex justify-start">
                 <div className="text-white rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px] opacity-70" style={{ background: 'var(--accent)' }}>
-                  {THINKING_LINES[0]}
+                  {THINKING_LINES[thinkingLineIndex]}
                 </div>
               </div>
             )}

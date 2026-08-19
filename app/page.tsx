@@ -4,6 +4,7 @@ import Reveal from '@/components/Reveal';
 import SelfBookingDemo from '@/components/SelfBookingDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
+import Button from '@/components/Button';
 import { SITE_URL } from '@/lib/site';
 import { MONTHLY_PRICE_NGN } from '@/lib/subscription';
 
@@ -20,6 +21,26 @@ export const metadata: Metadata = {
       'Your customers ask for a time, the AI books it. Every channel, one dashboard. 14 days free.',
     url: SITE_URL,
     type: 'website',
+  },
+};
+
+const homepageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'LD Solutions',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  url: SITE_URL,
+  description:
+    'An AI booking receptionist that answers customer questions, checks real availability, and books appointments for service businesses.',
+  offers: {
+    '@type': 'Offer',
+    price: MONTHLY_PRICE_NGN,
+    priceCurrency: 'NGN',
+  },
+  audience: {
+    '@type': 'BusinessAudience',
+    audienceType: 'Appointment-based small businesses',
   },
 };
 
@@ -130,7 +151,11 @@ const businessTypes = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="landing min-h-screen bg-paper">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageJsonLd) }}
+      />
       {/* Nav */}
       <nav
         className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
@@ -143,6 +168,17 @@ export default function LandingPage() {
             </div>
             <span className="text-[14px] font-semibold text-ink tracking-tight">LD Solutions</span>
           </div>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#how-it-works" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+              How it works
+            </a>
+            <a href="#features" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+              Features
+            </a>
+            <a href="#pricing" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+              Pricing
+            </a>
+          </div>
           <div className="flex items-center gap-5">
             <a
               href={`/${DEMO_SLUG}`}
@@ -150,12 +186,9 @@ export default function LandingPage() {
             >
               See a live demo
             </a>
-            <Link
-              href="/signup"
-              className="px-5 py-2.5 rounded-full text-[13.5px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"
-            >
+            <Button href="/signup" size="sm">
               Get started
-            </Link>
+            </Button>
           </div>
         </div>
       </nav>
@@ -164,11 +197,14 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 lg:px-10 pt-12 sm:pt-16 pb-16 sm:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-14 items-center">
           <Reveal>
-            <h1 className="font-display leading-[1.12] mb-4">
-              <span className="block text-[28px] sm:text-[34px] text-ink-soft font-medium">
-                &ldquo;Got anything free tomorrow?&rdquo;
+            <h1 className="font-display leading-[0.92] tracking-[-0.06em] mb-4 max-w-[700px]">
+              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
+                &ldquo;Do you have an
               </span>
-              <span className="block text-[40px] sm:text-[52px] font-bold mt-1" style={{ color: 'var(--accent)' }}>
+              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
+                opening tomorrow?&rdquo;
+              </span>
+              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium mt-2" style={{ color: 'var(--accent)' }}>
                 Already booked.
               </span>
             </h1>
@@ -179,21 +215,15 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"
-              >
+              <Button href="/signup">
                 Start free for 14 days
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
-              </Link>
-              <a
-                href={`/${DEMO_SLUG}`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-medium text-ink border-2 border-line-strong hover:border-accent hover:text-accent transition-colors"
-              >
+              </Button>
+              <Button href={`/${DEMO_SLUG}`} variant="outline">
                 See it live
-              </a>
+              </Button>
             </div>
           </Reveal>
 
@@ -226,98 +256,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Before / after */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-12 max-w-xl mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
-            Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
-          </h2>
-          <p className="text-[14px] text-ink-soft leading-relaxed">
-            This is the actual difference an AI receptionist makes, not a feature list, just
-            the same customer asking the same thing.
-          </p>
-        </Reveal>
-        <Reveal delay={80}>
-          <BeforeAfterCompare />
-        </Reveal>
-      </section>
-
-      {/* How it works — the one place a numbered sequence belongs on this
-          page, because it genuinely is one. */}
-      <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12 max-w-xl mx-auto text-center">
-            <h2 className="font-display text-3xl text-ink mb-2">How it works</h2>
-            <p className="text-[14px] text-ink-soft">From a message to a confirmed appointment, with nobody in between.</p>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((step, i) => (
-              <Reveal key={step.title} delay={i * 60} className="text-center sm:text-left">
-                <div
-                  className="h-11 w-11 rounded-xl border-2 flex items-center justify-center font-display text-[16px] font-bold mb-4 mx-auto sm:mx-0"
-                  style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, var(--line))', color: 'var(--accent)' }}
-                >
-                  {i + 1}
-                </div>
-                <h3 className="font-display text-[17px] font-semibold text-ink mb-1.5">{step.title}</h3>
-                <p className="text-[13px] text-ink-soft leading-relaxed">{step.description}</p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12 max-w-xl mx-auto text-center">
-            <h2 className="font-display text-3xl text-ink mb-2">
-              Everything you need, <span className="italic">nothing you don&rsquo;t.</span>
-            </h2>
-            <p className="text-[14px] text-ink-soft">
-              Built for how small businesses actually work.
-            </p>
-          </Reveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {features.map((feature, index) => (
-              <Reveal key={feature.title} delay={index * 50}>
-                <div className="h-full rounded-2xl bg-surface border-2 border-line p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-18px_rgba(36,28,24,0.18)]">
-                  <div
-                    className="h-10 w-10 rounded-xl flex items-center justify-center mb-4"
-                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                  >
-                    <div className="h-[18px] w-[18px]">{feature.icon}</div>
-                  </div>
-                  <h3 className="text-[14.5px] font-semibold text-ink mb-1.5">{feature.title}</h3>
-                  <p className="text-[13px] text-ink-faint leading-relaxed">{feature.description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Dashboard preview */}
+      {/* Dashboard preview follows the channel separation: customers ask,
+          the AI books, and the owner sees the appointment immediately. */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-14 items-center">
           <Reveal>
-            <h2 className="font-display text-3xl text-ink mb-4 leading-snug">
-              A real business tool, <span className="italic">not just a chatbot.</span>
+            <h2 className="font-display text-4xl sm:text-5xl text-ink mb-5 leading-[0.95] tracking-[-0.04em]">
+              Your whole day, <span className="italic" style={{ color: 'var(--accent)' }}>at a glance.</span>
             </h2>
-            <p className="text-[14px] text-ink-soft leading-relaxed mb-6">
-              Every booking lands in one place, no matter how it came in. Today&rsquo;s schedule,
-              who&rsquo;s next, what you made today. Open it once each morning and you know
-              exactly where your day stands.
+            <p className="text-[15px] text-ink-soft leading-relaxed mb-6 max-w-md">
+              Once the AI books an appointment, it appears here automatically. See what&rsquo;s
+              coming up, who&rsquo;s next, and how the day is shaping up without chasing messages
+              or checking calendars.
             </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 text-[13.5px] font-semibold hover:underline"
-              style={{ color: 'var(--accent)' }}
-            >
-              See it with your own bookings
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-            </Link>
           </Reveal>
           <Reveal delay={100}>
             <DashboardPreview />
@@ -325,13 +276,90 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Before / after */}
+      <section className="border-t border-line bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
+        <Reveal className="mb-12 max-w-xl mx-auto text-center">
+          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
+            Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
+          </h2>
+          <p className="text-[15px] text-ink-soft leading-relaxed">
+            This is the actual difference an AI receptionist makes, not a feature list, just
+            the same customer asking the same thing.
+          </p>
+        </Reveal>
+        <Reveal delay={80}>
+          <BeforeAfterCompare />
+        </Reveal>
+        </div>
+      </section>
+
+      {/* How it works — a connected path keeps the sequence feeling like one
+          process instead of four separate feature cards. */}
+      <section id="how-it-works" className="border-y border-line bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16 sm:py-16">
+          <Reveal className="mb-10 max-w-xl mx-auto text-center">
+            <h2 className="font-display text-3xl sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
+            <p className="text-[15px] text-ink-soft">A simple path from the first question to a confirmed appointment.</p>
+          </Reveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-9 lg:gap-x-12">
+            {steps.map((step, i) => (
+              <Reveal key={step.title} delay={i * 60} className="relative">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <span className="font-display text-[24px] font-normal leading-none" style={{ color: 'var(--accent)' }}>{String(i + 1).padStart(2, '0')}</span>
+                  <h3 className="font-display text-[20px] font-normal text-ink leading-tight">{step.title}</h3>
+                </div>
+                <p className="text-[15px] text-ink-soft leading-relaxed max-w-[230px]">{step.description}</p>
+                {i < steps.length - 1 && (
+                  <svg aria-hidden="true" className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 w-11 h-3 text-ink-faint" viewBox="0 0 44 12" fill="none">
+                    <path d="M1 6h38M35 1l5 5-5 5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="border-y border-line bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
+          <Reveal className="mb-12 mx-auto text-center">
+            <h2 className="font-display text-3xl text-ink mb-2 sm:whitespace-nowrap">
+              The work gets lighter, <span className="italic" style={{ color: 'var(--accent)' }}>the bookings keep coming.</span>
+            </h2>
+            <p className="text-[15px] text-ink-soft">
+              The essentials for running an appointment business, without the busywork around them.
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+            {features.map((feature, index) => (
+              <Reveal key={feature.title} delay={index * 50}>
+                <div className="h-full border-t-2 border-line pt-5">
+                  <div className="flex items-start gap-3.5">
+                    <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                      <div className="h-[16px] w-[16px]">{feature.icon}</div>
+                    </div>
+                    <div>
+                      <h3 className="font-display text-[18px] font-semibold text-ink mb-1.5">{feature.title}</h3>
+                      <p className="text-[15px] text-ink-soft leading-relaxed">{feature.description}</p>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Who it's for */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-10 max-w-xl mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
+        <Reveal className="mb-10 mx-auto text-center">
+          <h2 className="font-display text-3xl text-ink mb-3 leading-snug sm:whitespace-nowrap">
             Built for businesses that <span className="italic">take appointments.</span>
           </h2>
-          <p className="text-[14px] text-ink-soft leading-relaxed">
+          <p className="text-[15px] text-ink-soft leading-relaxed">
             Whether you run a salon, clinic, tutoring service, or consulting practice,
             if your customers need to book time with you, this is for you.
           </p>
@@ -349,11 +377,11 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing — one plan, stated plainly, no tiers to compare */}
-      <section className="border-t border-line">
+      <section id="pricing" className="border-t border-line">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
           <Reveal className="text-center mb-12">
             <h2 className="font-display text-3xl text-ink mb-2">One price. Everything included.</h2>
-            <p className="text-[14px] text-ink-soft">No tiers to compare, no add-ons to figure out.</p>
+            <p className="text-[15px] text-ink-soft">No tiers to compare, no add-ons to figure out.</p>
           </Reveal>
           <Reveal delay={80} className="max-w-md mx-auto">
             <div className="rounded-3xl bg-surface border-2 border-line p-8 text-center">
@@ -374,12 +402,9 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              <Link
-                href="/signup"
-                className="mt-8 w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-[14px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"
-              >
+              <Button href="/signup" className="mt-8 w-full">
                 Start free for 14 days
-              </Link>
+              </Button>
             </div>
           </Reveal>
         </div>
@@ -392,33 +417,59 @@ export default function LandingPage() {
             <h2 className="font-display text-4xl text-ink mb-8">
               Ready to stop typing <span className="italic">&ldquo;what time works?&rdquo;</span>
             </h2>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-semibold text-white bg-accent shadow-sm hover:opacity-90 transition-all active:scale-95"
-            >
+            <Button href="/signup">
               Start free trial
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
-            </Link>
+            </Button>
           </Reveal>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-line">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center">
-              <span className="text-white text-[9px] font-bold">LD</span>
+      {/* Footer — deliberately not a four-column link directory. That
+          pattern is exactly the "generic template" look the rest of the
+          page has been avoiding, and boxed against the CTA section right
+          above it (same bg-warm-surface), it just read as one undifferentiated
+          block with a hairline in the middle. Plain bg-paper gives it real
+          separation; links sit as two quiet grouped rows instead of
+          column headers, closer to how the rest of this page actually talks. */}
+      <footer className="border-t border-line bg-paper">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 pt-14 pb-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 mb-10">
+            <div className="max-w-xs">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                  <span className="text-white text-[11px] font-bold">LD</span>
+                </div>
+                <span className="text-[14px] font-semibold text-ink tracking-tight">LD Solutions</span>
+              </div>
+              <p className="text-[13px] text-ink-soft leading-relaxed">
+                An AI receptionist for appointment businesses. Your customers ask, it books.
+              </p>
             </div>
-            <span className="font-mono text-[11px] text-ink-faint">
-              LD Solutions, an AI receptionist for appointment businesses
-            </span>
+
+            <div className="flex flex-col gap-3 md:items-end">
+              <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
+                <a href="#how-it-works" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">How it works</a>
+                <a href="#features" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Features</a>
+                <a href="#pricing" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Pricing</a>
+                <a href={`/${DEMO_SLUG}`} className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Live demo</a>
+              </nav>
+              <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
+                <Link href="/signup" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Create an account</Link>
+                <Link href="/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Business login</Link>
+                <Link href="/account/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">My bookings</Link>
+              </nav>
+            </div>
           </div>
-          <Link href="/signup" className="text-[12px] text-ink-faint hover:text-ink transition-colors">
-            Sign up
-          </Link>
+
+          <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p className="font-mono text-[11px] text-ink-faint">
+              © {new Date().getFullYear()} LD Solutions. All rights reserved.
+            </p>
+            <p className="font-mono text-[11px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
+          </div>
         </div>
       </footer>
     </div>

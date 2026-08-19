@@ -1,8 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { MONTHLY_PRICE_NGN } from '@/lib/subscription';
-import type { SubscriptionState } from '@/lib/subscription';
+import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
+import type { SubscriptionState, Plan } from '@/lib/subscription';
+
+const PLAN_BLURB: Record<Plan, string> = {
+  core: 'Bookings, the AI receptionist, everything you need to run the calendar.',
+  business_intelligence: 'Everything in Core, plus an AI insights panel for you and richer AI answers for customers.',
+};
 
 type PaymentRecord = {
   id: string;
@@ -37,6 +42,10 @@ export default function BillingManager({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cancelled, setCancelled] = useState(false);
+  // Defaults to whatever plan they're already on (or were on before it
+  // lapsed) rather than always resetting to Core — someone re-subscribing
+  // after a failed payment shouldn't get quietly downgraded.
+  const [selectedPlan, setSelectedPlan] = useState<Plan>(state.plan);
 
   async function handleSubscribe() {
     setLoading(true);
@@ -45,7 +54,7 @@ export default function BillingManager({
     const res = await fetch('/api/billing/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
+      body: JSON.stringify({ slug, plan: selectedPlan }),
     });
     const data = await res.json();
 
@@ -93,11 +102,11 @@ export default function BillingManager({
           </span>
 
           <h2 className="font-display text-[22px] mt-3">
-            ₦{MONTHLY_PRICE_NGN.toLocaleString()}
+            ₦{PLAN_PRICE_NGN[state.plan].toLocaleString()}
             <span className="text-[14px] font-normal text-ink-faint"> / month</span>
           </h2>
           <p className="text-ink-soft text-[13.5px] mt-1.5">
-            Full access — bookings, the AI assistant, everything.
+            {PLAN_LABEL[state.plan]} plan — {PLAN_BLURB[state.plan]}
           </p>
 
           {state.phase === 'active' && (
@@ -141,17 +150,49 @@ export default function BillingManager({
               You won't be charged again. You can keep using everything until the date above.
             </p>
           ) : (
-            <button
-              onClick={handleSubscribe}
-              disabled={loading}
-              className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-            >
-              {loading ? 'Redirecting…' : 'Subscribe with Flutterwave'}
-            </button>
+            <>
+              <div className="grid grid-cols-2 gap-2.5 mb-4">
+                {(Object.keys(PLAN_PRICE_NGN) as Plan[]).map((plan) => (
+                  <button
+                    key={plan}
+                    type="button"
+                    onClick={() => setSelectedPlan(plan)}
+                    className={`text-left rounded-xl border-2 px-3.5 py-3 transition-colors ${
+                      selectedPlan === plan ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
+                    }`}
+                  >
+                    <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
+                      {PLAN_LABEL[plan]}
+                    </div>
+                    <div className="font-display text-[17px] text-ink mt-0.5">
+                      ₦{PLAN_PRICE_NGN[plan].toLocaleString()}
+                    </div>
+                    <p className="text-[11.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB[plan]}</p>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleSubscribe}
+                disabled={loading}
+                className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+              >
+                {loading ? 'Redirecting…' : `Subscribe to ${PLAN_LABEL[selectedPlan]} with Flutterwave`}
+              </button>
+            </>
           )}
           {error && <p className="text-sm text-error mt-3">{error}</p>}
         </div>
       </div>
+
+      {/* No mid-cycle plan-swap/proration yet — switching plans reuses the
+          same tested cancel-then-resubscribe path rather than new billing
+          logic, so it's a manual two-step for now. */}
+      {(state.phase === 'active' || state.phase === 'cancelling') && !cancelled && (
+        <p className="text-ink-faint text-[12.5px] mt-4">
+          Want to switch to {PLAN_LABEL[state.plan === 'core' ? 'business_intelligence' : 'core']}? Cancel your
+          current plan above, then subscribe again and pick the new one once this period ends.
+        </p>
+      )}
 
       {!state.hasAccess && state.phase !== 'past_due' && (
         <p className="text-ink-faint text-[12.5px] mt-4">

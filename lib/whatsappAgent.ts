@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { runToolAgent } from './agentLoop';
 import {
   checkAvailability,
   createBooking,
@@ -6,12 +7,14 @@ import {
   cancelBooking,
   rescheduleBooking,
   getBusinessContext,
+  getPopularServices,
   loadConversation,
   saveConversation,
   type ToolContext,
   type ChatMessage,
 } from './whatsappTools';
 import { todayInTimezone } from './timezone';
+import { hasBusinessIntelligence } from './subscription-server';
 
 // The system prompt tells the model never to use markdown, but that
 // instruction isn't reliably followed on its own — chat apps like WhatsApp/
@@ -25,16 +28,14 @@ function stripMarkdown(text: string): string {
     .replace(/^#{1,6}\s+/gm, '');
 }
 
-// Everything OpenAI-specific lives in this one file: the tool schemas, the
-// chat-completions request/response shape, and the tool-calling loop. The
-// actual booking logic (lib/whatsappTools.ts) and the Twilio webhook route
-// know nothing about which AI provider is in use. Swapping to Anthropic's
-// Messages API later means rewriting this file only — same exported
-// `runWhatsappAgent` signature, same tool functions underneath.
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
+// Everything OpenAI-specific lives in this one file (plus the shared loop
+// in lib/agentLoop.ts): the tool schemas and what each tool call actually
+// does. The actual booking logic (lib/whatsappTools.ts) and the webhook
+// routes know nothing about which AI provider is in use. Swapping to
+// Anthropic's Messages API later means rewriting this file (and
+// agentLoop.ts) only — same exported `runWhatsappAgent` signature, same
+// tool functions underneath.
 export const MAX_HISTORY = 20; // messages kept per conversation, oldest dropped first
-const MAX_TOOL_ITERATIONS = 5; // hard cap on tool-call round trips per turn
 
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -57,7 +58,8 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'create_booking',
       description:
-        'Book an appointment. Only call this after the customer has explicitly confirmed the exact service, date, and time, and has actually told you their name (never invent or guess it, never pass a placeholder like "Customer").',
+        'Book an appointment. Only call this after the customer has explicitly confirmed the exact service, date, and time, and has actually told you their name (never invent or guess it, never pass a placeholder like "Customer"). ' +
+        'If the service requires payment upfront, this will NOT create a booking — it returns a booking_url instead, since payment can\'t be collected in chat. Pass that link to the customer and do not say the booking is confirmed.',
       parameters: {
         type: 'object',
         properties: {
@@ -78,7 +80,8 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'find_customer_bookings',
-      description: "List this customer's upcoming bookings with this business.",
+      description:
+        "List this customer's upcoming bookings with this business. Each result includes whether it's paid — use this to answer things like \"did my deposit go through?\".",
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -120,7 +123,28 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
+// Only offered to the model when the business is on the business_intelligence
+// plan (checked once per incoming message in runWhatsappAgent) — a core-plan
+// business simply never has this tool in its list, so the model can't call
+// it no matter what a customer asks.
+const BI_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_popular_services',
+      description: "The business's most-booked services, most popular first. Useful for \"what's popular\" or \"what do you recommend\" type questions.",
+      parameters: {
+        type: 'object',
+        properties: { limit: { type: 'number', description: 'How many to return. Default 3.' } },
+      },
+    },
+  },
+];
+
 async function executeTool(name: string, args: Record<string, unknown>, ctx: ToolContext) {
+  if (name === 'get_popular_services') {
+    return getPopularServices(ctx.businessId, { limit: args.limit as number | undefined });
+  }
   switch (name) {
     case 'check_availability':
       return checkAvailability(ctx, { serviceName: String(args.service_name), date: String(args.date) });
@@ -161,15 +185,27 @@ export async function runWhatsappAgent(params: {
 }): Promise<string> {
   const { businessId, customerPhone, incomingText, customerUsername } = params;
 
-  const [{ business, services, weeklyHours }, history] = await Promise.all([
+  const [{ business, services, weeklyHours }, history, biEnabled] = await Promise.all([
     getBusinessContext(businessId),
     loadConversation(businessId, customerPhone),
+    hasBusinessIntelligence(businessId),
   ]);
 
   if (!business) return "Sorry, I couldn't find this business. Please contact support.";
 
   const timeZone = business.timezone || 'UTC';
   const today = todayInTimezone(timeZone);
+
+  // Only lines for whatever the business actually filled in — previously
+  // this was entirely absent from the prompt, so even a business that had
+  // set every one of these in Settings still got "I don't have that info"
+  // for "what's your phone number" or "are you on Instagram."
+  const contactLines = [
+    business.contact_phone && `Phone: ${business.contact_phone}`,
+    business.contact_email && `Email: ${business.contact_email}`,
+    business.instagram_url && `Instagram: ${business.instagram_url}`,
+    business.facebook_url && `Facebook: ${business.facebook_url}`,
+  ].filter(Boolean);
 
   const systemPrompt = `You are the WhatsApp booking assistant for ${business.name}.
 Today's date is ${today} (business timezone: ${timeZone}).
@@ -181,10 +217,12 @@ Services offered: ${
   }.
 
 Weekly hours: ${weeklyHours.join(', ')}.
-
+${contactLines.length ? `\nContact info: ${contactLines.join(' · ')}.\n` : ''}
 Help the customer check availability and book, reschedule, cancel, or look up their appointments.
-Use the "Weekly hours" and "Services offered" info above to answer general questions directly (e.g.
-"are you open Sundays", "what do you offer", "how much is X") without needing a tool call.
+Use the "Weekly hours", "Services offered", and "Contact info" above to answer general questions directly (e.g.
+"are you open Sundays", "what do you offer", "how much is X", "what's your number/Instagram") without needing a
+tool call. Only share contact details that are actually listed above — if something isn't listed (e.g. no
+Instagram given), say you don't have that rather than guessing or inventing one.
 Always call check_availability before confirming any *specific* open time slot — never guess or invent one.
 Before calling create_booking, you must have, from the customer's own words in this conversation: the service,
 date, time, AND their name. If you don't have their name yet, ask for it — do not proceed without it, and never
@@ -195,9 +233,13 @@ the current, correct booking id — never reuse an id or time you recall from ea
 if you're confident about it. Bookings can change, and re-checking costs nothing.
 When telling the customer a time (from any tool result), always use the exact "when" or "label" string that
 tool gave you, word for word — never calculate, convert, or restate a time yourself.
+find_customer_bookings' "paid" field: true means paid in full, false means payment was required but hasn't come
+through yet, null means no payment was required for that booking at all — read it plainly rather than assuming
+what it means.
 Always confirm the service, date, and time back to the customer in plain language before calling create_booking.
 If asked something you have no info for (address, parking, payment methods, etc.), say so plainly and suggest
 contacting the business directly — never invent details.
+${biEnabled ? '\nIf asked what\'s popular or recommended, you can call get_popular_services to answer with real booking data instead of guessing.\n' : ''}
 
 Stay in scope. You only handle things related to booking appointments at ${business.name} — services, hours,
 availability, and the customer's own bookings. If someone asks something unrelated (general knowledge, other
@@ -223,47 +265,17 @@ Formatting rules (strict — replies go to chat apps with no markdown rendering,
 - Keep replies short and conversational — a few lines, not paragraphs. Never expose internal ids, error
   codes, or database details to the customer.`;
 
-  const conversation: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
-    ...history.map((m): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({ role: m.role, content: m.content })),
-    { role: 'user', content: incomingText },
-  ];
-
   const ctx: ToolContext = { businessId, customerPhone, customerUsername };
-  let finalText = 'Sorry, something went wrong on our end. Please try again in a moment.';
+  const tools = biEnabled ? [...TOOLS, ...BI_TOOLS] : TOOLS;
 
-  for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: conversation,
-      tools: TOOLS,
-      tool_choice: 'auto',
-    });
-
-    const choice = completion.choices[0].message;
-    conversation.push(choice);
-
-    if (!choice.tool_calls || choice.tool_calls.length === 0) {
-      finalText = choice.content ? stripMarkdown(choice.content) : finalText;
-      break;
-    }
-
-    for (const toolCall of choice.tool_calls) {
-      if (toolCall.type !== 'function') continue;
-      let args: Record<string, unknown> = {};
-      try {
-        args = JSON.parse(toolCall.function.arguments || '{}');
-      } catch {
-        args = {};
-      }
-      const result = await executeTool(toolCall.function.name, args, ctx);
-      conversation.push({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: JSON.stringify(result),
-      });
-    }
-  }
+  const finalText = await runToolAgent({
+    systemPrompt,
+    history,
+    message: incomingText,
+    tools,
+    executeTool: (name, args) => executeTool(name, args, ctx),
+    postProcess: stripMarkdown,
+  });
 
   const newTurns: ChatMessage[] = [
     { role: 'user', content: incomingText },

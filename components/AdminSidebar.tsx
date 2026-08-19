@@ -26,6 +26,12 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
     </svg>
   ),
+  channels: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M4 4h16v12H8l-4 4V4z" />
+      <path d="M8 9h8M8 12h5" />
+    </svg>
+  ),
   services: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <path d="M4 6h16M4 12h16M4 18h10" />
@@ -61,6 +67,18 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M2 10h20" />
     </svg>
   ),
+  insights: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
+    </svg>
+  ),
+  scheduleAssistant: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 9.5H21M8 3V6.5M16 3V6.5" strokeLinecap="round" />
+      <path d="M8 13.5l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 export default function AdminSidebar({
@@ -82,6 +100,12 @@ export default function AdminSidebar({
   // Products isn't part of the MVP — the page/route/data still work for
   // anyone who already uses it, it's just not promoted in the primary
   // nav alongside the actual core flow (services, hours, staff).
+  //
+  // Three groups instead of two: the old single "Manage" bucket had 9
+  // unrelated items with no sub-structure. Connect groups the two things
+  // about how customers/staff reach the business (channels, the
+  // scheduling assistant that messages customers); Account groups the
+  // business-as-a-whole concerns (analytics, billing, configuration).
   const manage = [
     { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
     { href: `/${slug}/admin/calendar`, label: 'Calendar', key: 'calendar' },
@@ -90,7 +114,12 @@ export default function AdminSidebar({
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
     { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
   ];
+  const connect = [
+    { href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels' },
+    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule assistant', key: 'scheduleAssistant' },
+  ];
   const account = [
+    { href: `/${slug}/admin/insights`, label: 'Insights', key: 'insights' },
     { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
     { href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' },
   ];
@@ -107,7 +136,7 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
-        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13.5px] transition-colors ${
+        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-body-sm transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
         }`}
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
@@ -142,6 +171,15 @@ export default function AdminSidebar({
       </nav>
 
       <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
+        Connect
+      </div>
+      <nav className="flex flex-col gap-0.5 mb-5">
+        {connect.map((tab) => (
+          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+        ))}
+      </nav>
+
+      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
         Account
       </div>
       <nav className="flex flex-col gap-0.5">
@@ -158,14 +196,13 @@ export default function AdminSidebar({
           {userEmail?.[0]?.toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-medium truncate">{userEmail}</div>
+          <div className="text-caption font-medium truncate">{userEmail}</div>
           <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
         </div>
         <button
           onClick={handleSignOut}
           aria-label="Sign out"
           className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
-          style={{ color: 'rgba(255,255,255,0.55)' }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />

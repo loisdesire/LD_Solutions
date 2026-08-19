@@ -28,11 +28,19 @@ export async function generateMetadata({
 
   const { business } = data;
   const title = `Book with ${business.name}`;
-  const description = `Book an appointment with ${business.name} online — real-time availability, instant confirmation, no account needed.`;
+  const description = business.description
+    ? `${business.description} Book an appointment with ${business.name} online with real-time availability and instant confirmation.`
+    : `Book an appointment with ${business.name} online — real-time availability, instant confirmation, no account needed.`;
 
   return {
     title,
     description,
+    keywords: [
+      `${business.name} booking`,
+      `${business.name} appointments`,
+      `book ${business.name}`,
+      'online appointment booking',
+    ],
     alternates: { canonical: `/${slug}` },
     openGraph: {
       title,
@@ -62,14 +70,19 @@ export default async function BusinessBookingPage({
   const { business, services, hoursSummary } = data;
 
   // Service role: booking_rules is staff-only under RLS, but the date
-  // picker below needs max_advance_days to cap what it lets a customer pick.
+  // picker below needs max_advance_days to cap what it lets a customer pick,
+  // and now also whether this business requires payment to confirm.
   const { data: rules } = await supabaseAdmin
     .from('booking_rules')
-    .select('max_advance_days')
+    .select('max_advance_days, require_payment, deposit_percentage')
     .eq('business_id', business.id)
     .maybeSingle();
 
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
+  // Payment only actually applies if the business also finished connecting
+  // Paystack — a business that flips the toggle on but never pastes a
+  // public key shouldn't silently break booking for every customer.
+  const requirePayment = Boolean(rules?.require_payment && business.paystack_public_key);
   const { showAbout, showGallery, showContact } = getSiteContentFlags(business);
   const acceptingBookings = await canAcceptBookings(business.id);
 
@@ -139,8 +152,11 @@ export default async function BusinessBookingPage({
                 {business.description}
               </p>
             )}
+            {/* Personalized rather than a static "Book your visit" on
+                every business's page — the first thing a visitor should
+                know is whose page this actually is. */}
             <h1 className="font-display text-[36px] sm:text-[52px] font-semibold leading-[1.05]">
-              Book your visit
+              Book with {business.name}
             </h1>
             {hoursSummary && (
               <div className="flex items-center gap-2.5 mt-6 text-white/90">
@@ -186,6 +202,9 @@ export default async function BusinessBookingPage({
             slug={slug}
             services={services}
             maxAdvanceDays={maxAdvanceDays}
+            requirePayment={requirePayment}
+            depositPercentage={rules?.deposit_percentage ?? 100}
+            paystackPublicKey={business.paystack_public_key}
           />
         ) : (
           <div className="max-w-lg mx-auto text-center rounded-3xl bg-warm-surface py-14 px-6">

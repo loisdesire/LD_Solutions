@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { todayInTimezone, daysBetween } from '@/lib/timezone';
+import { getBusinessTimezone } from '@/lib/getBusinessTimezone';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
@@ -33,16 +34,15 @@ export async function POST(
     return NextResponse.json({ error: 'Booking not found or already cancelled' }, { status: 404 });
   }
 
-  const [{ data: rules }, { data: business }] = await Promise.all([
+  const [{ data: rules }, timeZone] = await Promise.all([
     supabaseAdmin
       .from('booking_rules')
       .select('buffer_minutes, max_advance_days, cancellation_window_hours')
       .eq('business_id', booking.business_id)
       .maybeSingle(),
-    supabaseAdmin.from('businesses').select('timezone').eq('id', booking.business_id).single(),
+    getBusinessTimezone(booking.business_id),
   ]);
 
-  const timeZone = business?.timezone || 'UTC';
   const bufferMinutes = rules?.buffer_minutes ?? 0;
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
   const windowHours = rules?.cancellation_window_hours ?? 24;
@@ -100,7 +100,10 @@ export async function POST(
       return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });
     }
     logError('api/bookings/reschedule:update', error, { bookingId: id });
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "We couldn't move that booking. Please try again, or contact the business directly." },
+      { status: 400 }
+    );
   }
 
   return NextResponse.json({ booking: updated });

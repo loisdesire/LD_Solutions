@@ -8,6 +8,22 @@ module.exports = {
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
+      // Named steps for the sizes already in near-universal use across the
+      // app as one-off arbitrary values (text-[13.5px], text-[11px], etc.)
+      // — every step here matches an existing value exactly, so adopting
+      // these in a component is a rename, not a visual change. Existing
+      // text-[Npx] usages elsewhere keep working untouched; this is additive.
+      fontSize: {
+        label: '11px',
+        caption: '12.5px',
+        'body-sm': '13.5px',
+        body: '14.5px',
+        lead: '16px',
+        h3: '19px',
+        h2: '22px',
+        h1: '26px',
+        display: '32px',
+      },
       colors: {
         paper: 'var(--paper)',
         surface: 'var(--surface)',

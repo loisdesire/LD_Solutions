@@ -97,9 +97,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ business });
   } catch (err) {
     await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+    // This catch wraps the business/staff/booking_rules inserts, so `err`
+    // here is a raw Postgres error, not a readable auth message like the
+    // one at the top of this route. Logged above with full detail; the
+    // signup page shows something a person can act on instead.
     logError('api/signup', err, { slug, ownerEmail });
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Signup failed partway through. Please try again.' },
+      { error: 'Signup failed partway through and has been rolled back. Please try again.' },
       { status: 500 }
     );
   }

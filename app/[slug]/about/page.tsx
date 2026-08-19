@@ -38,6 +38,17 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
       />
       <main className="pt-16">
         <div className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20 text-center">
+          {/* Reuses the same cover photo the hero already has (no new
+              field/query) — this page was pure text with nothing to
+              visually anchor it, noticeably barer than every other public
+              page. */}
+          {business.cover_image_url && (
+            <img
+              src={business.cover_image_url}
+              alt=""
+              className="w-full max-h-[280px] object-cover rounded-2xl mb-10"
+            />
+          )}
           <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-6">About</h1>
           <p className="text-[15.5px] leading-relaxed text-ink-soft whitespace-pre-line text-left sm:text-center">
             {business.about_text}

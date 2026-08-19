@@ -59,8 +59,8 @@ export default function CollapsibleSection({
         </svg>
       </button>
       {open && (
-        <div className="pb-7 pl-4 ml-[22px] border-l-2" style={{ borderColor: color }}>
-          {children}
+        <div className="pb-8 pt-1 pl-[60px]">
+          <div className="max-w-2xl">{children}</div>
         </div>
       )}
     </div>

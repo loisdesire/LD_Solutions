@@ -27,20 +27,36 @@ function GalleryUploader({
     setUploading(true);
 
     const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? 'One or more uploads failed.');
-        continue;
+    let failed = 0;
+    // try/finally around the whole batch: a network throw mid-loop used
+    // to escape the function entirely, leaving the spinner stuck forever
+    // and silently discarding any files that had already succeeded.
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
+          const data = await res.json().catch(() => null);
+          if (!res.ok) {
+            failed += 1;
+            continue;
+          }
+          uploaded.push(data.url);
+        } catch {
+          failed += 1;
+        }
       }
-      uploaded.push(data.url);
+    } finally {
+      setUploading(false);
+      // Keep whatever did upload rather than throwing the batch away.
+      if (uploaded.length > 0) onChange([...urls, ...uploaded]);
+      if (failed > 0) {
+        setError(
+          failed === 1 ? "One photo didn't upload. Please try it again." : `${failed} photos didn't upload. Please try them again.`
+        );
+      }
     }
-
-    setUploading(false);
-    if (uploaded.length > 0) onChange([...urls, ...uploaded]);
   }
 
   function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -59,7 +75,11 @@ function GalleryUploader({
               type="button"
               onClick={() => onChange(urls.filter((_, idx) => idx !== i))}
               aria-label="Remove photo"
-              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              // Was opacity-0 + group-hover only: on a touch device there
+              // is no hover, so the delete button was completely
+              // unreachable — and keyboard focus never revealed it either.
+              // Always visible below sm, hover/focus-revealed above it.
+              className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full text-white flex items-center justify-center transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
               style={{ background: 'color-mix(in srgb, var(--ink) 70%, transparent)' }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -190,8 +210,9 @@ export default function SiteContentManager({
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <form onSubmit={handleSave} className="space-y-8">
       <div>
+        <h3 className="font-display text-[16px] text-ink mb-4">Pages</h3>
         <div className="flex items-center justify-between mb-1.5">
           <label className={labelClass}>About</label>
           <Toggle
@@ -218,7 +239,8 @@ export default function SiteContentManager({
         </p>
       </div>
 
-      <div>
+      <div className="border-t border-line pt-6">
+        <h3 className="font-display text-[16px] text-ink mb-4">Contact details</h3>
         <div className="flex items-center justify-between mb-1.5">
           <label className={labelClass}>Gallery photos</label>
           <Toggle

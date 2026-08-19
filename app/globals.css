@@ -3,16 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Warm burnt-orange / terracotta system — the platform's identity.
-     Predominantly warm neutral/off-white; the accent is used with
-     restraint (primary actions, active nav, selected states, booking
-     confirmations) rather than as general chrome.
-
-     Applies platform-wide (admin chrome, marketing site, auth pages,
-     and the default a business gets before choosing its own color) —
-     it does NOT override a business that has already picked its own
-     accent_color; AccentScope still applies that on their public
-     booking page unchanged. */
+   /* Shared application tokens. The landing page overrides these locally. */
   --paper: #faf8f3;
   --surface: #ffffff;
   --warm-surface: #f5efe4;
@@ -38,7 +29,19 @@
 
   /* Primary brand — burnt orange/terracotta. Platform default;
      businesses can still override this for their own public page via
-     AccentScope. */
+     AccentScope.
+
+     Convention for HOW to apply --accent in a className vs. inline style,
+     so this doesn't stay an arbitrary per-file choice: on pages where
+     AccentScope can rescope this variable per business (public/[slug]
+     pages, the booking flow, anything rendered inside AccentScope) use
+     inline `style={{ color: 'var(--accent)' }}` — Tailwind's `text-accent`
+     utility is generated once at build time from this file's value, so it
+     can't react to a runtime-scoped override the way a raw var() read at
+     paint time can. Everywhere else (the marketing site, admin chrome) —
+     contexts where --accent is always this one static value — prefer the
+     `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
+     get Tailwind's normal tooling (autocomplete, purge) for free. */
   --accent: #c4512d;
   --accent-hover: #a8431f;
   --accent-active: #8e3a1c;
@@ -76,6 +79,40 @@
   --info: #1769aa;
   --info-bg: #eaf4fb;
   --info-border: #a9d2ed;
+}
+
+.landing .font-display {
+   font-family: var(--font-display), Georgia, serif;
+   letter-spacing: -0.02em;
+}
+
+.landing nav a,
+.landing button,
+.landing a {
+  transition-duration: 220ms;
+}
+
+.landing section {
+  scroll-margin-top: 96px;
+}
+
+.landing .rounded-3xl,
+.landing .rounded-2xl {
+  border-radius: 8px;
+}
+
+.landing .rounded-xl {
+  border-radius: 6px;
+}
+
+.landing .rounded-full {
+  border-radius: 12px;
+}
+
+@media (min-width: 768px) {
+   .landing .max-w-6xl {
+      max-width: 1280px;
+   }
 }
 
 body {

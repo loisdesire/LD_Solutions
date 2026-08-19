@@ -77,6 +77,29 @@ create table bookings (
   created_at timestamptz default now()
 );
 
+-- The actual backstop against double-booking — not just app-level
+-- availability checks (those are the fast path / good UX), this is what
+-- closes the race condition where two customers hit "book" on the same
+-- slot within the same second. Whichever insert lands first wins; the
+-- second gets Postgres error 23P01, which app/api/bookings/route.ts and
+-- the AI agent's create_booking tool both already catch and turn into
+-- "that time is no longer available." Scoped to (business_id, time_range)
+-- only, not staff_id — two different staff members currently can't be
+-- double-booked into the same slot either, since bookings aren't actually
+-- assigned to a specific staff_id anywhere in the live booking flow yet.
+-- (This constraint already exists in the live database; added here only
+-- so schema.sql matches reality, since it must have been added by hand at
+-- some point rather than through this file.)
+-- Needed for the "=" comparison on a non-range column (business_id) inside
+-- a GIST exclusion constraint.
+create extension if not exists btree_gist;
+
+alter table bookings add constraint no_overlapping_bookings
+  exclude using gist (
+    business_id with =,
+    tstzrange(start_time, end_time) with &&
+  ) where (status <> 'cancelled');
+
 -- ============================================
 -- Row Level Security: this is what makes multi-tenant isolation real,
 -- not just "we filter in app code"
@@ -288,6 +311,30 @@ alter table bookings add column if not exists reminder_sent_at timestamptz;
 alter table bookings add column if not exists customer_telegram_username text;
 
 -- ============================================
+-- Payments (Paystack) — each business connects its own Paystack account
+-- (same self-serve pattern as Telegram/WhatsApp: they paste their own
+-- keys in Settings), so a customer's payment settles straight to that
+-- business's own account. The platform never touches or splits the money.
+-- ============================================
+
+-- Toggle + how much of the service price is due upfront. null/100 means
+-- the full price; 1-99 is treated as a percentage deposit, with the rest
+-- collected by the business separately (in person, bank transfer, etc).
+alter table booking_rules add column if not exists require_payment boolean not null default false;
+alter table booking_rules add column if not exists deposit_percentage integer;
+
+alter table businesses add column if not exists paystack_public_key text;
+alter table businesses add column if not exists paystack_secret_key text;
+
+-- Set only after the booking route has independently verified the
+-- payment_reference against Paystack's own API (never trusted from the
+-- client) — payment_status is null for every booking where payment
+-- wasn't required, not just the unpaid ones.
+alter table bookings add column if not exists payment_status text;
+alter table bookings add column if not exists payment_reference text;
+alter table bookings add column if not exists amount_paid numeric;
+
+-- ============================================
 -- Products (AI-assisted product discovery, web only for now — no
 -- checkout/payment/inventory-decrement yet, that's a deliberately deferred
 -- later phase). Mirrors the services table shape/RLS exactly.
@@ -372,3 +419,44 @@ create policy "staff can view own payment history"
       select business_id from staff where auth_id = auth.uid()
     )
   );
+
+-- ============================================
+-- Tiered plans + custom domains
+-- ============================================
+
+-- 'core' | 'business_intelligence' — see lib/subscription.ts. Set
+-- optimistically by the checkout route when a business starts a checkout
+-- for a given plan; never itself grants access, that's still entirely
+-- `status`/`current_period_end` as before, this only decides which
+-- features unlock once access is already granted.
+alter table subscriptions add column if not exists plan text not null default 'core';
+
+-- A business's own domain, pointed at this deployment via CNAME. Unique so
+-- middleware.ts's hostname lookup is always unambiguous. Actually serving
+-- traffic on it also requires the domain be added to the Vercel project by
+-- hand (no Vercel API token in this project) — see the Settings page's
+-- Custom domain section for the customer-facing instructions.
+alter table businesses add column if not exists custom_domain text unique;
+
+-- ============================================
+-- Reschedule assistant — an owner tells the bot to block out a window
+-- (e.g. "I'm out Tuesday 2-5pm"), it proposes new times for every booking
+-- that falls inside it, and only actually moves anything + messages
+-- customers once the owner explicitly confirms. `moves` is a snapshot
+-- (customer contact info included) taken at propose time — not
+-- re-derived from bookings at apply time — so what the owner approved is
+-- exactly what executes, even if something else about the booking
+-- changed in between.
+-- ============================================
+create table if not exists reschedule_plans (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  window_start timestamptz not null,
+  window_end timestamptz not null,
+  reason text,
+  moves jsonb not null,
+  status text not null default 'pending', -- 'pending' | 'applied' | 'expired'
+  created_at timestamptz default now()
+);
+
+alter table reschedule_plans enable row level security;

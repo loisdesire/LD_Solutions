@@ -12,19 +12,15 @@ import { useEffect, useRef, useState } from 'react';
 // not a separate illustration invented for marketing.
 type Step =
   | { kind: 'user'; text: string }
-  | { kind: 'thinking' }
   | { kind: 'assistant'; text: string }
   | { kind: 'booked' };
 
 const SCRIPT: Step[] = [
-  { kind: 'user', text: 'Hey, are you free tomorrow afternoon?' },
-  { kind: 'thinking' },
-  { kind: 'assistant', text: "We've got 1:00, 2:30 and 4:00 open tomorrow, which works?" },
-  { kind: 'user', text: '2:30 works' },
-  { kind: 'thinking' },
-  { kind: 'assistant', text: "Great, what's your name?" },
+  { kind: 'user', text: "I'd like to book an appointment tomorrow afternoon." },
+  { kind: 'assistant', text: "Of course. What would you like to book? We have 1:00, 2:30 and 4:00 open." },
+  { kind: 'user', text: 'An appointment at 2:30 works.' },
+  { kind: 'assistant', text: "Perfect. What's your name?" },
   { kind: 'user', text: 'Amaka' },
-  { kind: 'thinking' },
   { kind: 'assistant', text: "You're booked for 2:30 tomorrow, Amaka ✓" },
   { kind: 'booked' },
 ];
@@ -54,8 +50,9 @@ export default function SelfBookingDemo() {
           return;
         }
 
-        SCRIPT.forEach((_, i) => {
-          setTimeout(() => setVisibleCount(i + 1), (i + 1) * STEP_DELAY_MS);
+        setVisibleCount(1);
+        SCRIPT.slice(1).forEach((_, i) => {
+          setTimeout(() => setVisibleCount(i + 2), (i + 1) * STEP_DELAY_MS);
         });
       },
       { threshold: 0.4 }
@@ -78,7 +75,7 @@ export default function SelfBookingDemo() {
           G
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold text-ink truncate">Glow Salon</p>
+          <p className="text-[14px] font-semibold text-ink truncate">Your business</p>
           <p className="font-mono text-[10.5px] text-ink-faint">Chat on the booking page</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.06em] shrink-0" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
@@ -94,15 +91,7 @@ export default function SelfBookingDemo() {
 
       <div ref={scrollRef} className="p-5 min-h-[280px] max-h-[280px] overflow-y-auto space-y-2.5">
         {visible.map((step, i) =>
-          step.kind === 'thinking' ? (
-            <div key={i} className="flex justify-start animate-rise">
-              <div className="text-white opacity-70 rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1" style={{ background: 'var(--accent)' }}>
-                {[0, 1, 2].map((d) => (
-                  <span key={d} className="h-1.5 w-1.5 rounded-full bg-current opacity-80 animate-pulse" style={{ animationDelay: `${d * 150}ms` }} />
-                ))}
-              </div>
-            </div>
-          ) : step.kind === 'user' ? (
+          step.kind === 'user' ? (
             <div key={i} className="flex justify-end animate-rise">
               <div className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] text-ink" style={{ background: 'var(--accent-soft)' }}>
                 {step.text}
@@ -122,7 +111,7 @@ export default function SelfBookingDemo() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-mono text-[9.5px] uppercase tracking-[0.08em]" style={{ color: 'var(--accent)' }}>New booking · on the dashboard</p>
-                  <p className="text-[13.5px] font-semibold text-ink mt-0.5">Amaka · Haircut · Tomorrow, 2:30 PM</p>
+                  <p className="text-[13.5px] font-semibold text-ink mt-0.5">Amaka · Appointment · Tomorrow, 2:30 PM</p>
                 </div>
               </div>
             </div>

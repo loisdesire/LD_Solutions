@@ -2,7 +2,7 @@ import { requireStaffSession } from '@/lib/requireStaffSession';
 import BusinessProfileManager from '@/components/BusinessProfileManager';
 import SiteContentManager from '@/components/SiteContentManager';
 import SettingsManager from '@/components/SettingsManager';
-import BotIntegrationsSettings from '@/components/BotIntegrationsSettings';
+import CustomDomainManager from '@/components/CustomDomainManager';
 import CollapsibleSection from '@/components/CollapsibleSection';
 
 const iconProps = {
@@ -24,33 +24,77 @@ export default async function SettingsPage({
   const { slug } = await params;
   const { business, supabase } = await requireStaffSession(slug);
 
-  const [{ data: rules }, { data: bizRow }] = await Promise.all([
+  let [{ data: rules }, { data: bizRow }] = await Promise.all([
     supabase
       .from('booking_rules')
-      .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours')
+      .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours, require_payment, deposit_percentage')
       .eq('business_id', business.id)
       .maybeSingle(),
     supabase
       .from('businesses')
       .select(
-        'telegram_bot_username, whatsapp_display_number, messenger_page_name, about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact'
+        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, paystack_public_key, paystack_secret_key, custom_domain'
       )
       .eq('id', business.id)
       .single(),
   ]);
 
+  // Same reasoning as the booking route: before the payments migration
+  // runs, the combined selects above fail as a whole unit and silently
+  // return null — which would make this page render every real,
+  // already-saved booking-rule/site-content value as if it were unset,
+  // and a normal "Save" click would then overwrite it with the reset
+  // default. Falls back to the pre-payments column set so existing data
+  // stays visible (and safe from being accidentally wiped) in the meantime.
+  if (rules === null) {
+    const fallback = await supabase
+      .from('booking_rules')
+      .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours')
+      .eq('business_id', business.id)
+      .maybeSingle();
+    if (fallback.data) rules = { ...fallback.data, require_payment: false, deposit_percentage: null };
+  }
+  if (bizRow === null) {
+    const fallback = await supabase
+      .from('businesses')
+      .select('about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact')
+      .eq('id', business.id)
+      .single();
+    if (fallback.data) bizRow = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null, custom_domain: null };
+  }
+
+  // If even the fallback came back empty, the forms below will render
+  // every field at its default — and a Save from that state would write
+  // those defaults over whatever is actually stored. Warn rather than let
+  // someone silently wipe their own settings.
+  const loadFailed = rules === null || bizRow === null;
+
   return (
     <div>
       <div className="mb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
           Configure
         </div>
-        <h1 className="font-display text-[26px] text-ink">Settings</h1>
-        <p className="text-ink-soft text-[13.5px] mt-1">
+        <h1 className="font-display text-h1 text-ink">Settings</h1>
+        <p className="text-ink-soft text-body-sm mt-1">
           Make this feel like your business.
         </p>
       </div>
 
+      {loadFailed && (
+        <div role="alert" className="mb-6 rounded-xl bg-error-bg border border-error-border px-4 py-3">
+          <p className="text-body-sm text-error">
+            We couldn&rsquo;t load your current settings, so the fields below are showing defaults rather than what
+            you have saved. Refresh before saving — saving now would overwrite your real settings.
+          </p>
+        </div>
+      )}
+
+      {/* Channel connections used to live here as a fourth item — moved to
+          its own page, since checking whether WhatsApp is still connected
+          is something you'd do far more often than touch a cancellation
+          policy, and it deserves its own spot in the sidebar rather than
+          being the buried last item in Settings. */}
       <div className="border-t border-line">
         <CollapsibleSection
           title="Business profile"
@@ -119,26 +163,25 @@ export default async function SettingsPage({
             initialBufferMinutes={rules?.buffer_minutes ?? 0}
             initialMaxAdvanceDays={rules?.max_advance_days ?? 30}
             initialCancellationWindowHours={rules?.cancellation_window_hours ?? 24}
+            initialRequirePayment={rules?.require_payment ?? false}
+            initialDepositPercentage={rules?.deposit_percentage ?? null}
+            initialPaystackPublicKey={bizRow?.paystack_public_key ?? null}
+            initialPaystackSecretKey={bizRow?.paystack_secret_key ?? null}
           />
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="AI booking assistant"
-          description="Let customers check availability and book straight from a chat."
+          title="Custom domain"
+          description="Serve your booking page from your own domain instead of the platform's."
           color="var(--accent)"
           icon={
             <svg {...iconProps}>
-              <path d="M4 4h16v12H8l-4 4V4z" />
-              <path d="M8 9h8M8 12h5" />
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3c2.5 2.7 4 6 4 9s-1.5 6.3-4 9c-2.5-2.7-4-6-4-9s1.5-6.3 4-9z" />
             </svg>
           }
         >
-          <BotIntegrationsSettings
-            slug={slug}
-            initialTelegramUsername={bizRow?.telegram_bot_username ?? null}
-            initialWhatsappNumber={bizRow?.whatsapp_display_number ?? null}
-            initialMessengerPageName={bizRow?.messenger_page_name ?? null}
-          />
+          <CustomDomainManager businessId={business.id} initialCustomDomain={bizRow?.custom_domain ?? null} />
         </CollapsibleSection>
       </div>
     </div>

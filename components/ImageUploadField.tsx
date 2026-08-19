@@ -31,17 +31,24 @@ export default function ImageUploadField({
     const formData = new FormData();
     formData.append('file', file);
 
-    const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
-    const data = await res.json();
+    // try/finally, because a network failure here used to throw straight
+    // out of this function — setUploading(false) never ran and the
+    // spinner sat on the image forever with no error and no way back.
+    try {
+      const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
+      const data = await res.json().catch(() => null);
 
-    setUploading(false);
+      if (!res.ok) {
+        setError(data?.error ?? 'Upload failed. Please try again.');
+        return;
+      }
 
-    if (!res.ok) {
-      setError(data.error ?? 'Upload failed. Please try again.');
-      return;
+      onChange(data.url);
+    } catch {
+      setError("Upload failed — check your connection and try again.");
+    } finally {
+      setUploading(false);
     }
-
-    onChange(data.url);
   }
 
   function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {

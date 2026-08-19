@@ -7,14 +7,35 @@
 // instant anything client-side imports even one unrelated export from a
 // file that also does that at the top level.
 
+export type Plan = 'core' | 'business_intelligence';
+
 // Referenced by both the billing page (what it shows) and the checkout
-// route (what it actually charges), so there's exactly one number to change.
-export const MONTHLY_PRICE_NGN = 15000;
+// route (what it actually charges), so there's exactly one number to change
+// per plan. Both AI receptionist booking capability and the dashboard are
+// in 'core' — the thing 'business_intelligence' actually adds is deeper AI
+// access: the owner-facing insights panel, and richer business-info
+// answers in the public chat (top services, etc). It is NOT "AI vs no AI" —
+// every plan gets the same booking AI, since that's the entire premise of
+// the product, not an upsell.
+export const PLAN_PRICE_NGN: Record<Plan, number> = {
+  core: 15000,
+  business_intelligence: 25000,
+};
+
+export const PLAN_LABEL: Record<Plan, string> = {
+  core: 'Core',
+  business_intelligence: 'Business Intelligence',
+};
+
+// Kept for existing call sites that only ever meant "the price" before
+// plans existed — equivalent to PLAN_PRICE_NGN.core.
+export const MONTHLY_PRICE_NGN = PLAN_PRICE_NGN.core;
 
 export type Subscription = {
   status: string;
   trial_ends_at: string | null;
   current_period_end: string | null;
+  plan?: string | null;
 };
 
 export type SubscriptionState = {
@@ -28,7 +49,12 @@ export type SubscriptionState = {
   phase: 'trial' | 'active' | 'cancelling' | 'past_due' | 'expired' | 'none';
   trialDaysLeft: number | null;
   currentPeriodEnd: string | null;
+  plan: Plan;
 };
+
+function normalizePlan(plan: string | null | undefined): Plan {
+  return plan === 'business_intelligence' ? 'business_intelligence' : 'core';
+}
 
 // Centralizes "is this business allowed in" so it's computed the same way
 // everywhere (the access gate, and the billing page showing status) — a
@@ -36,14 +62,15 @@ export type SubscriptionState = {
 // someone still inside their trial window, or cut off someone who
 // cancelled but already paid through the end of their current period.
 export function getSubscriptionState(sub: Subscription | null): SubscriptionState {
-  if (!sub) return { hasAccess: false, phase: 'none', trialDaysLeft: null, currentPeriodEnd: null };
+  if (!sub) return { hasAccess: false, phase: 'none', trialDaysLeft: null, currentPeriodEnd: null, plan: 'core' };
 
+  const plan = normalizePlan(sub.plan);
   const now = Date.now();
   const periodEnd = sub.current_period_end ? new Date(sub.current_period_end).getTime() : null;
   const stillWithinPaidPeriod = periodEnd !== null && periodEnd > now;
 
   if (sub.status === 'active') {
-    return { hasAccess: true, phase: 'active', trialDaysLeft: null, currentPeriodEnd: sub.current_period_end };
+    return { hasAccess: true, phase: 'active', trialDaysLeft: null, currentPeriodEnd: sub.current_period_end, plan };
   }
 
   if (sub.status === 'cancelled') {
@@ -54,6 +81,7 @@ export function getSubscriptionState(sub: Subscription | null): SubscriptionStat
       phase: stillWithinPaidPeriod ? 'cancelling' : 'expired',
       trialDaysLeft: null,
       currentPeriodEnd: sub.current_period_end,
+      plan,
     };
   }
 
@@ -61,13 +89,13 @@ export function getSubscriptionState(sub: Subscription | null): SubscriptionStat
     const trialEnd = new Date(sub.trial_ends_at).getTime();
     if (trialEnd > now) {
       const daysLeft = Math.ceil((trialEnd - now) / 86400000);
-      return { hasAccess: true, phase: 'trial', trialDaysLeft: daysLeft, currentPeriodEnd: null };
+      return { hasAccess: true, phase: 'trial', trialDaysLeft: daysLeft, currentPeriodEnd: null, plan };
     }
   }
 
   if (sub.status === 'past_due') {
-    return { hasAccess: false, phase: 'past_due', trialDaysLeft: null, currentPeriodEnd: sub.current_period_end };
+    return { hasAccess: false, phase: 'past_due', trialDaysLeft: null, currentPeriodEnd: sub.current_period_end, plan };
   }
 
-  return { hasAccess: false, phase: 'expired', trialDaysLeft: 0, currentPeriodEnd: sub.current_period_end };
+  return { hasAccess: false, phase: 'expired', trialDaysLeft: 0, currentPeriodEnd: sub.current_period_end, plan };
 }

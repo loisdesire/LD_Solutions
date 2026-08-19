@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { useToast } from './Toast';
+import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
 
 type Product = {
   id: string;
@@ -21,6 +22,7 @@ export default function ProductsManager({
   initialProducts: Product[];
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -143,20 +145,21 @@ export default function ProductsManager({
     setEditingId('');
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const smallInputClass =
-    'rounded-xl border-2 border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-  const iconBtnClass =
-    'h-8 w-8 flex items-center justify-center rounded-full border-2 border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
+  // Same search-by-name filtering Services already had — Products was the
+  // only one of the two near-identical entities with no way to find one
+  // item in a long, entirely unpaginated list.
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) => p.name.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
+  }, [products, search]);
 
   return (
     <div>
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
@@ -216,7 +219,7 @@ export default function ProductsManager({
           <button
             type="submit"
             disabled={saving}
-            className="sm:col-span-2 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="sm:col-span-2 rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -239,10 +242,24 @@ export default function ProductsManager({
             </svg>
           </div>
           <h2 className="font-display text-[20px]">No products yet</h2>
-          <p className="text-ink-soft text-[13.5px] mt-1.5">Add your first one above.</p>
+          <p className="text-ink-soft text-body-sm mt-1.5">Add your first one above.</p>
         </div>
       ) : (
-        <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
+        <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
+          <div className="p-4 border-b border-line flex items-center justify-end">
+            <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 w-full sm:w-64">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" />
+              </svg>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products…"
+                className="bg-transparent border-none outline-none text-[13px] text-ink placeholder-ink-faint w-full"
+              />
+            </div>
+          </div>
           <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_90px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
             <div>Product</div>
             <div>Price</div>
@@ -250,12 +267,15 @@ export default function ProductsManager({
             <div>Status</div>
             <div />
           </div>
-          {products.map((p, i) =>
+          {filteredProducts.length === 0 && (
+            <div className="px-5 py-8 text-center text-body-sm text-ink-faint">No products match "{search}".</div>
+          )}
+          {filteredProducts.map((p, i) =>
             editingId === p.id ? (
               <div
                 key={p.id}
                 className={`flex flex-col gap-3 p-4 ${
-                  i !== products.length - 1 ? 'border-b border-line' : ''
+                  i !== filteredProducts.length - 1 ? 'border-b border-line' : ''
                 }`}
                 style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
@@ -293,13 +313,13 @@ export default function ProductsManager({
                     <button
                       onClick={() => saveEdit(p.id)}
                       disabled={editSaving}
-                      className="rounded-xl bg-accent px-4 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                      className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-white disabled:opacity-50"
                     >
                       {editSaving ? 'Saving…' : 'Save'}
                     </button>
                     <button
                       onClick={() => setEditingId('')}
-                      className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-[12.5px] font-medium text-ink-soft hover:text-ink transition-colors"
+                      className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-caption font-medium text-ink-soft hover:text-ink transition-colors"
                     >
                       Cancel
                     </button>
@@ -310,7 +330,7 @@ export default function ProductsManager({
               <div
                 key={p.id}
                 className={`flex flex-col gap-2.5 sm:grid sm:grid-cols-[1.6fr_1fr_1fr_1fr_90px] sm:gap-4 sm:items-center px-5 py-4 ${
-                  i !== products.length - 1 ? 'border-b border-line' : ''
+                  i !== filteredProducts.length - 1 ? 'border-b border-line' : ''
                 } ${!p.active ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-center justify-between sm:block">
