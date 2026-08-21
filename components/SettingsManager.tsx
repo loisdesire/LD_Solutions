@@ -59,6 +59,30 @@ export default function SettingsManager({
 
   const paystackConnected = paystackPublicKey.trim() !== '' && paystackSecretKey.trim() !== '';
 
+  // Paystack's dashboard lets you copy each key separately, but people
+  // routinely copy the whole block, or paste the secret into the first box
+  // because it is first. Rather than tell them off, take whatever arrives
+  // and put each key where it belongs.
+  function absorbKeys(raw: string, field: 'public' | 'secret') {
+    const pk = raw.match(/pk_(?:live|test)_[A-Za-z0-9]+/)?.[0];
+    const sk = raw.match(/sk_(?:live|test)_[A-Za-z0-9]+/)?.[0];
+
+    if (pk || sk) {
+      if (pk) setPaystackPublicKey(pk);
+      if (sk) setPaystackSecretKey(sk);
+      // A single key pasted into the wrong box: it has been filed
+      // correctly above, so clear where it landed.
+      if (field === 'public' && !pk && sk) setPaystackPublicKey('');
+      if (field === 'secret' && !sk && pk) setPaystackSecretKey('');
+      return;
+    }
+
+    // Nothing key-shaped yet - they are still typing, or it is being
+    // cleared. Leave it alone so the field stays editable.
+    if (field === 'public') setPaystackPublicKey(raw.trim());
+    else setPaystackSecretKey(raw.trim());
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -217,18 +241,24 @@ export default function SettingsManager({
                   </span>
                 )}
               </div>
+              {/* Two labelled boxes asked the owner to know which key was
+                  which, which is exactly the bit a non-technical person gets
+                  wrong: keys swapped, or the same one pasted twice. Both
+                  fields sort out whatever lands in them, so pasting either
+                  key into either box works, and pasting the whole block
+                  copied from Paystack fills both at once. */}
               <div className="space-y-2.5">
                 <input
                   value={paystackPublicKey}
-                  onChange={(e) => { setPaystackPublicKey(e.target.value); setSaved(false); }}
-                  placeholder="pk_live_..."
+                  onChange={(e) => { absorbKeys(e.target.value, 'public'); setSaved(false); }}
+                  placeholder="Paste your public key (pk_...)"
                   className={inputClass}
                 />
                 <input
-                  type="password"
+                  type={paystackSecretKey.startsWith('sk_') ? 'password' : 'text'}
                   value={paystackSecretKey}
-                  onChange={(e) => { setPaystackSecretKey(e.target.value); setSaved(false); }}
-                  placeholder="sk_live_..."
+                  onChange={(e) => { absorbKeys(e.target.value, 'secret'); setSaved(false); }}
+                  placeholder="Paste your secret key (sk_...)"
                   className={inputClass}
                 />
               </div>
@@ -247,9 +277,30 @@ export default function SettingsManager({
                 </p>
               )}
 
-              <p className="text-ink-faint text-[12px] mt-2">
-                From your own Paystack dashboard (Settings → API Keys & Webhooks). Payments go straight to
-                your Paystack account. We never touch the money.
+              {/* Was a single line naming a menu path. For someone who has
+                  never opened Paystack, "Settings then API Keys and
+                  Webhooks" is not instructions, it is a place they have to
+                  go find. */}
+              <ol className="text-ink-faint text-[12px] mt-3 space-y-1.5 list-decimal pl-4">
+                <li>
+                  Open{' '}
+                  <a
+                    href="https://dashboard.paystack.com/#/settings/developers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline underline-offset-2"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    your Paystack API keys page
+                  </a>
+                  . Create a free Paystack account first if you do not have one.
+                </li>
+                <li>Copy the Public Key and paste it above. Copy the Secret Key and paste it above too.</li>
+                <li>Press Save. We check both with Paystack straight away and tell you if anything is wrong.</li>
+              </ol>
+              <p className="text-ink-faint text-[12px] mt-2.5">
+                Either key can go in either box, we sort them out. Payments go straight to your own Paystack
+                account. We never hold your money.
               </p>
 
               {/* Only matters once keys are in, so it stays out of the way
