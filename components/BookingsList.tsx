@@ -120,8 +120,10 @@ export default function BookingsList({
 
   const scoped = isPast ? past : upcoming;
 
-  // Counts come from the upcoming list even while Past is selected, so the
-  // status pills do not renumber or vanish as you move between them.
+  // Not shown any more, but still needed: this decides WHICH status pills
+  // exist, so a business with no cancellations never sees a Cancelled pill.
+  // Counted from the upcoming list even while Past is selected, so the pills
+  // do not appear and disappear as you move between them.
   const counts = upcoming.reduce<Record<string, number>>((acc, b) => {
     acc[b.status] = (acc[b.status] ?? 0) + 1;
     return acc;
@@ -152,8 +154,11 @@ export default function BookingsList({
             if (f !== 'past') setRange({ from: '', to: '' });
           }}
           options={[
-            { key: 'all', label: 'All', count: upcoming.length },
-            ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s], count: counts[s] })),
+            // No counts. Past cannot carry one now that the browser only
+            // holds a window of history, and a row where some pills are
+            // numbered and one is not reads as though that one is broken.
+            { key: 'all', label: 'All' },
+            ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s] })),
             { key: 'past', label: 'Past' },
           ]}
         />
