@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
+import ConversationPanel from './ConversationPanel';
+import { statusLabel, statusStyle } from '@/lib/bookingStatus';
 
 type Booking = {
   id: string;
@@ -26,23 +28,6 @@ type ExportRow = {
   service_name: string | null;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  confirmed: 'Confirmed',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  no_show: 'No-show',
-};
-
-// Same status→style mapping as BookingsList, reused here rather than
-// redefined, so "confirmed" reads identically whether you're looking at
-// today's schedule or the full list below it.
-const statusStyle: Record<string, string> = {
-  confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink-wash text-ink-faint',
-  cancelled: 'bg-ink-wash text-ink-faint line-through',
-  no_show: 'bg-error-bg text-error',
-};
-
 // One stat inside the Today strip - not its own bordered card. The strip
 // itself is the single card; each stat is just a labeled number with a
 // hairline divider between them, so three (or four, with Next
@@ -55,25 +40,35 @@ function TodayStat({
   label,
   value,
   sub,
+  delta,
   color = 'var(--ink)',
   emphasis = false,
 }: {
   label: string;
   value: string;
   sub?: string;
+  /** Kept separate from `sub` so a fall can read differently from a rise. */
+  delta?: { value: string; up: boolean };
   color?: string;
   emphasis?: boolean;
 }) {
   return (
     <div className="flex-1 min-w-[120px]">
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint mb-1">{label}</div>
+      <div className="font-mono text-label uppercase tracking-[0.12em] text-ink-faint mb-1">{label}</div>
       <div
         className={`font-display font-bold leading-none ${emphasis ? 'text-[30px]' : 'text-[24px]'}`}
         style={{ color }}
       >
         {value}
       </div>
-      {sub && <div className={`text-[12px] text-ink-faint mt-1 truncate ${emphasis ? 'max-w-[220px]' : ''}`}>{sub}</div>}
+      <div className={`flex items-baseline gap-1.5 mt-1 ${emphasis ? 'max-w-[220px]' : ''}`}>
+        {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
+        {delta && (
+          <span className="text-caption font-semibold shrink-0" style={{ color: delta.up ? 'var(--success)' : 'var(--error)' }}>
+            {delta.value}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -112,6 +107,9 @@ export default function AdminDashboardBody({
   nextSlot: Booking | undefined;
 }) {
   const [search, setSearch] = useState('');
+  // Today's schedule rows are tappable like the ones in BookingsList, so
+  // this panel is needed here too rather than only there.
+  const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
   // Starts null so the server-rendered markup and the first client render
   // match exactly (a stale server-time "in 45m" badge, or a hydration
@@ -202,15 +200,16 @@ export default function AdminDashboardBody({
               emphasis
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
-            <TodayStat label="Today's revenue" value={todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '-'} />
+            <TodayStat label="Today's revenue" value={todayRevenue != null ? `₦${todayRevenue.toLocaleString()}` : '-'} />
             <TodayStat
               label="This week"
               value={String(thisWeekCount)}
-              sub={
-                weekRevenue
-                  ? `₦${weekRevenue.toLocaleString()}${revenuePctDelta ? ` (${revenuePctDelta > 0 ? '+' : ''}${revenuePctDelta}%)` : ''}`
+              sub={weekRevenue != null ? `₦${weekRevenue.toLocaleString()}` : undefined}
+              delta={
+                revenuePctDelta != null && revenuePctDelta !== 0
+                  ? { value: `${revenuePctDelta > 0 ? '+' : ''}${revenuePctDelta}%`, up: revenuePctDelta > 0 }
                   : weekCountDelta !== 0
-                    ? `${weekCountDelta > 0 ? '+' : ''}${weekCountDelta} vs last week`
+                    ? { value: `${weekCountDelta > 0 ? '+' : ''}${weekCountDelta} vs last week`, up: weekCountDelta > 0 }
                     : undefined
               }
             />
@@ -230,9 +229,13 @@ export default function AdminDashboardBody({
               .slice()
               .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
               .map((b) => (
-                <div key={b.id} className="flex items-center justify-between gap-4 py-3 border-b border-line">
+                <button
+                  key={b.id}
+                  onClick={() => setOpenConversation(b)}
+                  className="w-full flex items-center justify-between gap-4 py-3 min-h-[52px] border-b border-line text-left transition-colors hover:bg-warm-surface"
+                >
                   <div className="flex items-center gap-4 min-w-0">
-                    <span className="font-mono text-[13px] text-accent shrink-0 w-[68px]">
+                    <span className="font-mono text-body-sm text-accent shrink-0 w-[68px]">
                       {new Date(b.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                     </span>
                     <span className="text-body-sm text-ink truncate">
@@ -240,10 +243,10 @@ export default function AdminDashboardBody({
                       <span className="text-ink-faint"> · {(b as any).services?.name ?? 'Appointment'}</span>
                     </span>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.04em] ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}>
-                    {STATUS_LABELS[b.status] ?? b.status}
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-label uppercase tracking-[0.04em] ${statusStyle(b.status)}`}>
+                    {statusLabel(b.status)}
                   </span>
-                </div>
+                </button>
               ))}
           </div>
         </div>
@@ -266,21 +269,34 @@ export default function AdminDashboardBody({
           <div className="flex items-center justify-center gap-3 mt-6">
             <Link
               href={`/${slug}/admin/services`}
-              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="inline-flex items-center rounded-full border-2 border-line-strong px-5 py-2.5 min-h-[44px] text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Add a service
             </Link>
             <Link
               href={`/${slug}/admin/hours`}
-              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="inline-flex items-center rounded-full border-2 border-line-strong px-5 py-2.5 min-h-[44px] text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Set your hours
             </Link>
           </div>
-          <div className="font-mono text-[10.5px] text-ink-faint mt-6 tracking-[0.05em]">/{slug}</div>
+          <div className="font-mono text-label text-ink-faint mt-6 tracking-[0.05em]">/{slug}</div>
         </div>
       ) : (
         <BookingsList slug={slug} bookings={all} search={search} />
+      )}
+
+      {openConversation && (
+        <ConversationPanel
+          slug={slug}
+          customerPhone={openConversation.customer_phone}
+          customerLabel={
+            openConversation.customer_telegram_username
+              ? `@${openConversation.customer_telegram_username}`
+              : openConversation.customer_name
+          }
+          onClose={() => setOpenConversation(null)}
+        />
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ConversationPanel from './ConversationPanel';
+import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
 import PillTabs from './PillTabs';
 import { parseContact } from '@/lib/contact';
 
@@ -18,20 +19,6 @@ type Booking = {
   // works around that rather than fighting its inference.
   services: any;
   staff?: any;
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  confirmed: 'Confirmed',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  no_show: 'No-show',
-};
-
-const statusStyle: Record<string, string> = {
-  confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink-wash text-ink-faint',
-  cancelled: 'bg-ink-wash text-ink-faint line-through',
-  no_show: 'bg-error-bg text-error',
 };
 
 function relativeDay(date: Date, today: Date): string {
@@ -187,7 +174,7 @@ export default function BookingsList({
                       </span>
                     </div>
                     <span
-                      className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}
+                      className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${statusStyle(b.status)}`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {b.status.replace('_', ' ')}
@@ -225,7 +212,7 @@ export default function BookingsList({
                   </div>
 
                   <span
-                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 w-fit ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 w-fit ${statusStyle(b.status)}`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {b.status.replace('_', ' ')}
