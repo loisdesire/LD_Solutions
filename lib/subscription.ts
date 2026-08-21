@@ -19,7 +19,7 @@ export type Plan = 'core' | 'business_intelligence';
 // the product, not an upsell.
 export const PLAN_PRICE_NGN: Record<Plan, number> = {
   core: 15000,
-  business_intelligence: 25000,
+  business_intelligence: 20000,
 };
 
 export const PLAN_LABEL: Record<Plan, string> = {
