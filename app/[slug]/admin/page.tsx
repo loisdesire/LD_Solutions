@@ -1,4 +1,5 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
+import { hasBusinessIntelligence } from '@/lib/subscription-server';
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
@@ -32,6 +33,7 @@ export default async function AdminDashboard({
   const { slug } = await params;
   const { from, to } = await searchParams;
   const { business } = await requireStaffSession(slug);
+  const analyticsEnabled = await hasBusinessIntelligence(business.id);
 
   // The page used to load every booking a business had ever taken, then
   // throw most of it away in the browser. That is fine at a few dozen and
@@ -132,10 +134,10 @@ export default async function AdminDashboard({
       slug={slug}
       businessName={business.name}
       businessId={business.id}
+      analyticsEnabled={analyticsEnabled}
       services={bookableServices ?? []}
       maxAdvanceDays={rules?.max_advance_days ?? 30}
       all={all}
-      todayBookings={todayBookings}
       todayCount={todayCount}
       todayRevenue={todayRevenue}
       thisWeekCount={thisWeek.length}

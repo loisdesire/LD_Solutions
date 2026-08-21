@@ -16,8 +16,17 @@ const SUGGESTIONS_FULL = [
   'When am I busiest?',
 ];
 
-export default async function AssistantPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AssistantPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ q?: string }>;
+}) {
   const { slug } = await params;
+  // Lets the dashboard hand a question straight over, so asking from there
+  // lands on the answer rather than on an empty chat.
+  const { q } = await searchParams;
   const { business } = await requireStaffSession(slug);
   const analyticsEnabled = await hasBusinessIntelligence(business.id);
 
@@ -42,6 +51,7 @@ export default async function AssistantPage({ params }: { params: Promise<{ slug
             : `Tell it what needs moving and it will work out where everyone affected should go.`
         }
         suggestions={analyticsEnabled ? SUGGESTIONS_FULL : SUGGESTIONS_CORE}
+        initialMessage={q?.slice(0, 500)}
         inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}
         banner={
           <div className="rounded-xl bg-warm-surface px-4 py-3 mb-4 flex items-start gap-2.5">

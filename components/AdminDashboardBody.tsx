@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
-import ConversationPanel from './ConversationPanel';
 import { statusLabel, statusStyle } from '@/lib/bookingStatus';
+import AskAssistantBar from './AskAssistantBar';
 
 type Booking = {
   id: string;
@@ -64,10 +64,10 @@ export default function AdminDashboardBody({
   slug,
   businessName,
   businessId,
+  analyticsEnabled,
   services,
   maxAdvanceDays,
   all,
-  todayBookings,
   todayCount,
   todayRevenue,
   thisWeekCount,
@@ -79,10 +79,10 @@ export default function AdminDashboardBody({
   slug: string;
   businessName: string;
   businessId: string;
+  analyticsEnabled: boolean;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
   all: Booking[];
-  todayBookings: Booking[];
   todayCount: number;
   todayRevenue: number;
   thisWeekCount: number;
@@ -92,9 +92,6 @@ export default function AdminDashboardBody({
   nextSlot: Booking | undefined;
 }) {
   const [search, setSearch] = useState('');
-  // Today's schedule rows are tappable like the ones in BookingsList, so
-  // this panel is needed here too rather than only there.
-  const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
   // Starts null so the server-rendered markup and the first client render
   // match exactly (a stale server-time "in 45m" badge, or a hydration
@@ -214,40 +211,14 @@ export default function AdminDashboardBody({
         </div>
       )}
 
-      {/* Today's appointments used to only ever surface as a count in the
-          stat strip above - finding out WHAT they actually are meant
-          scanning the full upcoming list below. This scopes just today,
-          reusing bookings already fetched server-side (no new query). */}
-      {todayBookings.length > 0 && (
-        <div className="mb-8">
-          <h2 className="font-display text-[17px] text-ink mb-3">Today's schedule</h2>
-          <div className="border-t border-line">
-            {todayBookings
-              .slice()
-              .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-              .map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => setOpenConversation(b)}
-                  className="w-full flex items-center justify-between gap-4 py-3 min-h-[52px] border-b border-line text-left transition-colors hover:bg-warm-surface"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <span className="font-mono text-body-sm text-accent shrink-0 w-[68px]">
-                      {new Date(b.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                    </span>
-                    <span className="text-body-sm text-ink truncate">
-                      {b.customer_name}
-                      <span className="text-ink-faint"> · {(b as any).services?.name ?? 'Appointment'}</span>
-                    </span>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-label uppercase tracking-[0.04em] ${statusStyle(b.status)}`}>
-                    {statusLabel(b.status)}
-                  </span>
-                </button>
-              ))}
-          </div>
-        </div>
-      )}
+      <AskAssistantBar
+        slug={slug}
+        suggestions={
+          analyticsEnabled
+            ? ['How much did I make this month?', 'Who are my top customers?', "I'm out sick tomorrow"]
+            : ["I'm out sick tomorrow", 'Move my next appointment to Friday']
+        }
+      />
 
       {all.length === 0 ? (
         <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
@@ -283,18 +254,6 @@ export default function AdminDashboardBody({
         <BookingsList slug={slug} bookings={all} search={search} />
       )}
 
-      {openConversation && (
-        <ConversationPanel
-          slug={slug}
-          customerPhone={openConversation.customer_phone}
-          customerLabel={
-            openConversation.customer_telegram_username
-              ? `@${openConversation.customer_telegram_username}`
-              : openConversation.customer_name
-          }
-          onClose={() => setOpenConversation(null)}
-        />
-      )}
     </div>
   );
 }

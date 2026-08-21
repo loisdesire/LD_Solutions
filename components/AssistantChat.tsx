@@ -16,12 +16,15 @@ export default function AssistantChat({
   suggestions,
   inputPlaceholder,
   banner,
+  initialMessage,
 }: {
   slug: string;
   endpoint: string;
   emptyStateText: string;
   suggestions: string[];
   inputPlaceholder: string;
+  /** Asked automatically on mount, so a question typed elsewhere can open straight into its answer. */
+  initialMessage?: string;
   banner?: ReactNode;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -33,6 +36,16 @@ export default function AssistantChat({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Ask the opening question once. The ref guard matters because effects run
+  // twice in development, and without it the question is sent twice.
+  const askedRef = useRef(false);
+  useEffect(() => {
+    if (!initialMessage || askedRef.current) return;
+    askedRef.current = true;
+    send(initialMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage]);
 
   async function send(text: string) {
     if (!text.trim() || loading) return;
