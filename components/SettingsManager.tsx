@@ -224,6 +224,24 @@ export default function SettingsManager({
                 From your own Paystack dashboard (Settings → API Keys & Webhooks). Payments go straight to
                 your Paystack account — we never touch the money.
               </p>
+
+              {/* Only matters once keys are in, so it stays out of the way
+                  until then. Without this webhook a chat booking still
+                  works — the customer just has to say "I've paid" for it to
+                  be checked, instead of it confirming by itself. */}
+              {paystackSecretKey && (
+                <div className="mt-4 rounded-xl bg-warm-surface p-3.5">
+                  <p className="text-ink text-[12.5px] font-semibold mb-1">One more step, for chat bookings</p>
+                  <p className="text-ink-soft text-[12px] leading-relaxed mb-2">
+                    Paste this into Paystack (Settings → API Keys &amp; Webhooks → Webhook URL) so bookings made
+                    through chat confirm themselves the moment a customer pays. Without it they still work, but the
+                    customer has to tell the assistant they&apos;ve paid.
+                  </p>
+                  <code className="block rounded-lg bg-surface px-3 py-2 font-mono text-[11.5px] text-ink break-all">
+                    {typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/paystack
+                  </code>
+                </div>
+              )}
             </div>
           </div>
         )}

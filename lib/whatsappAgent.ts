@@ -12,6 +12,7 @@ import {
   saveConversation,
   type ToolContext,
   type ChatMessage,
+  checkPayment,
 } from './whatsappTools';
 import { todayInTimezone } from './timezone';
 import { hasBusinessIntelligence } from './subscription-server';
@@ -121,6 +122,15 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'check_payment',
+      description:
+        "Check whether the customer's pending payment has gone through, and confirm their booking if it has. Call this when a customer says they have paid, or asks whether their payment worked. Only relevant after create_booking returned awaiting_payment.",
+      parameters: { type: 'object', properties: {} },
+    },
+  },
 ];
 
 // Only offered to the model when the business is on the business_intelligence
@@ -172,6 +182,8 @@ async function executeTool(name: string, args: Record<string, unknown>, ctx: Too
         newDate: String(args.new_date),
         newTime: String(args.new_time),
       });
+    case 'check_payment':
+      return checkPayment(ctx);
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -236,6 +248,15 @@ tool gave you, word for word — never calculate, convert, or restate a time you
 find_customer_bookings' "paid" field: true means paid in full, false means payment was required but hasn't come
 through yet, null means no payment was required for that booking at all — read it plainly rather than assuming
 what it means.
+Some services must be paid for before they're booked. If create_booking comes back with awaiting_payment, the
+slot is only HELD, not booked: give the customer the exact payment_url it returned, tell them the amount and that
+the slot is held for 15 minutes, and ask them to message you once they've paid. Never call that booking confirmed
+until check_payment says so — telling someone they're booked when no money has moved, and the hold is minutes from
+lapsing, is the worst thing you can do here. If create_booking returns needs_email, ask for their email and call it
+again; Paystack needs one to send the receipt.
+When the customer says they've paid (or asks whether it worked), call check_payment. If it says slot_taken, their
+payment succeeded but the hold had already lapsed — apologise plainly, tell them the business has been notified and
+will sort their payment out, and offer the alternative times it gives you.
 Always confirm the service, date, and time back to the customer in plain language before calling create_booking.
 If asked something you have no info for (address, parking, payment methods, etc.), say so plainly and suggest
 contacting the business directly — never invent details.

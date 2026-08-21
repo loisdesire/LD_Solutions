@@ -12,6 +12,26 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// A chat booking awaiting payment sits at status 'pending_payment', which
+// the no_overlapping_bookings constraint treats like any other live
+// booking — deliberately, since that's what holds the slot while the
+// customer pays. The flip side is that an abandoned payment would hold it
+// forever, so holds carry an expiry and get released here.
+//
+// Swept lazily on the availability read rather than by a cron: it runs
+// exactly when the answer matters, needs no scheduler that can silently
+// stop, and self-heals. Cancelling (rather than deleting) keeps the
+// attempt visible to the business and leaves a row for a late webhook to
+// find, which is what makes the paid-too-late case recoverable.
+async function expireStalePaymentHolds(businessId: string) {
+  await supabaseAdmin
+    .from('bookings')
+    .update({ status: 'cancelled', payment_status: 'expired' })
+    .eq('business_id', businessId)
+    .eq('status', 'pending_payment')
+    .lt('payment_expires_at', new Date().toISOString());
+}
+
 // Given a business, a service, and a date, work out which time slots are
 // actually free — this is what real availability logic looks like, instead
 // of letting a customer type any date/time they want.
@@ -20,6 +40,8 @@ export async function getAvailableSlots(
   serviceId: string,
   dateISO: string // e.g. '2026-07-15' — a calendar date in the business's own timezone
 ) {
+  await expireStalePaymentHolds(businessId);
+
   const timeZone = await getBusinessTimezone(businessId);
   const dayOfWeek = dayOfWeekForDate(dateISO);
 

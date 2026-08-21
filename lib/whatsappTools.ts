@@ -6,6 +6,8 @@ import { formatLocalDateTime, formatLocalTime, to24Hour } from './formatDateTime
 import { sendEmail } from './email';
 import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
+import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
+import { randomUUID } from 'crypto';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
 // Twilio — it's the same booking logic the web app already uses (services,
@@ -160,8 +162,8 @@ export async function createBooking(
   if (!service) return { error: `No service matching "${args.serviceName}" found.` };
 
   let [{ data: business }, { data: rules }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('slug, timezone, paystack_public_key').eq('id', ctx.businessId).single(),
-    supabaseAdmin.from('booking_rules').select('require_payment').eq('business_id', ctx.businessId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('slug, timezone, paystack_public_key, paystack_secret_key').eq('id', ctx.businessId).single(),
+    supabaseAdmin.from('booking_rules').select('require_payment, deposit_percentage').eq('business_id', ctx.businessId).maybeSingle(),
   ]);
 
   // Same defensive fallback used everywhere the payments migration might
@@ -173,7 +175,7 @@ export async function createBooking(
   // reads as falsy either way — exactly the safe "not required" default.
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('slug, timezone').eq('id', ctx.businessId).single();
-    if (fallback.data) business = { ...fallback.data, paystack_public_key: null };
+    if (fallback.data) business = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null };
   }
 
   const timeZone = business?.timezone || 'UTC';
@@ -191,16 +193,24 @@ export async function createBooking(
   // uses to decide whether payment is actually active — a business that
   // switched the toggle on but never connected Paystack isn't actually
   // collecting payment anywhere, on this channel or the web one.
-  if (rules?.require_payment && service.price && business?.paystack_public_key) {
-    const bookingUrl = business.slug ? `${SITE_URL}/${business.slug}` : SITE_URL;
+  // Paid services used to be refused outright here with a "book it on the
+  // website" link — correct at the time (a chat has no popup checkout, and
+  // letting this tool book a paid service free was the actual bug) but a
+  // dead end in the conversation. Now the slot is held as 'pending_payment'
+  // and the customer gets a hosted Paystack link they can open from the
+  // chat. The hold is what makes this safe: it reserves the slot via the
+  // same no_overlapping_bookings constraint a confirmed booking uses, so
+  // nobody can take it while they pay, and it self-releases if they don't
+  // (see expireStalePaymentHolds in getAvailableSlots).
+  const paymentRequired = Boolean(rules?.require_payment && service.price && business?.paystack_public_key);
+
+  if (paymentRequired && !business?.paystack_secret_key) {
+    return { error: "This business hasn't finished setting up payments, so this service can't be booked here yet. Tell the customer to contact them directly." };
+  }
+  if (paymentRequired && !args.customerEmail) {
     return {
-      requires_payment: true,
-      price: service.price,
-      booking_url: bookingUrl,
-      instructions:
-        `This service requires payment to book, which can't be collected in this chat. Tell the customer their ` +
-        `${service.name} appointment needs to be booked (with payment) on the website, and give them this link: ${bookingUrl}. ` +
-        `Do not say the booking is confirmed — nothing has been booked yet.`,
+      needs_email: true,
+      instructions: 'This service needs paying for before it can be booked, and Paystack requires an email address to send the receipt to. Ask the customer for their email, then call this tool again with it.',
     };
   }
 
@@ -212,6 +222,9 @@ export async function createBooking(
     .insert({
       business_id: ctx.businessId,
       service_id: service.id,
+      status: paymentRequired ? 'pending_payment' : 'confirmed',
+      payment_status: paymentRequired ? 'pending' : null,
+      payment_expires_at: paymentRequired ? new Date(Date.now() + 15 * 60_000).toISOString() : null,
       customer_name: args.customerName,
       customer_phone: ctx.customerPhone,
       customer_email: args.customerEmail || null,
@@ -229,6 +242,51 @@ export async function createBooking(
     return { error: error.message };
   }
 
+  // Payment path: the slot is held but nothing is booked yet. Hand back a
+  // hosted checkout link instead of a confirmation, and be explicit to the
+  // model that this is NOT a confirmed booking — the single most damaging
+  // thing it could do here is tell a customer they're booked when no money
+  // has moved and the hold is about to lapse.
+  if (paymentRequired) {
+    const depositPct = rules?.deposit_percentage ?? 100;
+    const amountNaira = Math.round(service.price! * (depositPct / 100));
+    const reference = `chat_${booking.id}_${randomUUID().slice(0, 8)}`;
+
+    const init = await initializePaystackTransaction({
+      secretKey: business!.paystack_secret_key!,
+      email: args.customerEmail!,
+      amountKobo: amountNaira * 100,
+      reference,
+      bookingId: booking.id,
+      callbackUrl: business?.slug ? `${SITE_URL}/${business.slug}` : undefined,
+    });
+
+    if (!init) {
+      // Don't leave a hold sitting on a slot for a checkout that never
+      // existed — release it immediately rather than waiting 15 minutes.
+      await supabaseAdmin.from('bookings').update({ status: 'cancelled', payment_status: 'failed' }).eq('id', booking.id);
+      return { error: "Couldn't start the payment just now. Ask the customer to try again in a moment." };
+    }
+
+    await supabaseAdmin.from('bookings').update({ payment_reference: reference }).eq('id', booking.id);
+
+    return {
+      awaiting_payment: true,
+      booking_id: booking.id,
+      service: service.name,
+      when: formatLocalDateTime(booking.start_time, timeZone),
+      amount_naira: amountNaira,
+      is_deposit: depositPct < 100,
+      payment_url: init.authorizationUrl,
+      holds_slot_for_minutes: 15,
+      instructions:
+        `Do NOT say the booking is confirmed — it is not. Tell the customer their ${service.name} slot at ` +
+        `${formatLocalDateTime(booking.start_time, timeZone)} is held for 15 minutes, give them this exact link to pay ` +
+        `₦${amountNaira.toLocaleString()}: ${init.authorizationUrl} — and tell them to message you once they have paid so you can confirm it. ` +
+        `If they don't pay within 15 minutes the slot is released.`,
+    };
+  }
+
   // Same fire-and-forget confirmation email as the web booking flow
   // (app/api/bookings/route.ts) — failure here never blocks the booking.
   if (args.customerEmail) {
@@ -236,7 +294,7 @@ export async function createBooking(
       {
         to: args.customerEmail,
         subject: 'Your appointment is confirmed',
-        html: `<p>Hi ${args.customerName}, your ${service.name} appointment is confirmed for ${start.toLocaleString()}.</p>`,
+        html: `<p>Hi ${args.customerName}, your ${service.name} appointment is confirmed for ${formatLocalDateTime(booking.start_time, timeZone)}.</p>`,
       },
       'whatsappTools:createBooking:confirmation-email',
       { businessId: ctx.businessId }
@@ -275,6 +333,126 @@ export async function getPopularServices(businessId: string, args: { limit?: num
   const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, args.limit ?? 3);
   if (sorted.length === 0) return { popular_services: [] };
   return { popular_services: sorted.map(([name]) => name) };
+}
+
+// Confirms a held booking once the customer says they've paid. This is the
+// no-setup path: the Paystack webhook is faster and needs no prompting,
+// but it only fires for businesses that have pasted the webhook URL into
+// their own Paystack dashboard, and many won't have. Verifying on demand
+// works for everyone.
+//
+// Shares confirmPaidBooking with the webhook so both routes apply the
+// identical amount check and idempotency rule.
+export async function checkPayment(ctx: ToolContext) {
+  const { data: booking } = await supabaseAdmin
+    .from('bookings')
+    .select('id, status, payment_reference, payment_status, start_time, services(name)')
+    .eq('business_id', ctx.businessId)
+    .eq('customer_phone', ctx.customerPhone)
+    .in('status', ['pending_payment', 'confirmed'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!booking) return { error: 'No recent booking found for this customer to check payment against.' };
+  if (booking.status === 'confirmed') {
+    return { already_confirmed: true, instructions: 'This booking is already confirmed — reassure the customer, do not ask them to pay again.' };
+  }
+  if (!booking.payment_reference) return { error: 'That booking has no payment attached to check.' };
+
+  const result = await confirmPaidBooking(booking.id, booking.payment_reference);
+
+  if (result.confirmed) {
+    return { confirmed: true, when: result.when, instructions: 'Payment confirmed. Tell the customer their booking is now confirmed for this time.' };
+  }
+  if (result.reason === 'not_paid') {
+    return {
+      confirmed: false,
+      instructions: "Paystack hasn't recorded that payment yet. Tell the customer it may take a moment, and to try the link again if they haven't completed it.",
+    };
+  }
+  if (result.reason === 'slot_taken') {
+    return {
+      confirmed: false,
+      slot_taken: true,
+      alternatives: result.alternatives,
+      instructions:
+        'Their payment went through but the hold had already lapsed and the slot was taken. Apologise clearly, say the ' +
+        'business has been notified and will sort out their payment, and offer the alternative times listed.',
+    };
+  }
+  return { confirmed: false, instructions: "Couldn't verify that payment. Ask the customer to contact the business directly." };
+}
+
+// The one place a held booking becomes a real one. Both the webhook and
+// check_payment go through here so the amount check, the expiry check and
+// the idempotency rule can't drift apart between them.
+export async function confirmPaidBooking(
+  bookingId: string,
+  reference: string
+): Promise<{ confirmed: boolean; when?: string; reason?: string; alternatives?: string[] }> {
+  const { data: booking } = await supabaseAdmin
+    .from('bookings')
+    .select('id, business_id, service_id, status, start_time, end_time, payment_expires_at')
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  if (!booking) return { confirmed: false, reason: 'not_found' };
+
+  const timeZone = await getBusinessTimezone(booking.business_id);
+
+  // Already done — a customer paying twice on the same link, or the webhook
+  // and check_payment both landing, must not double-confirm or re-charge.
+  if (booking.status === 'confirmed') {
+    return { confirmed: true, when: formatLocalDateTime(booking.start_time, timeZone) };
+  }
+
+  const [{ data: business }, { data: rules }, { data: service }] = await Promise.all([
+    supabaseAdmin.from('businesses').select('paystack_secret_key').eq('id', booking.business_id).single(),
+    supabaseAdmin.from('booking_rules').select('deposit_percentage').eq('business_id', booking.business_id).maybeSingle(),
+    supabaseAdmin.from('services').select('price, name').eq('id', booking.service_id).maybeSingle(),
+  ]);
+
+  if (!business?.paystack_secret_key) return { confirmed: false, reason: 'not_configured' };
+
+  const verified = await verifyPaystackTransaction(business.paystack_secret_key, reference);
+  if (!verified || verified.status !== 'success') return { confirmed: false, reason: 'not_paid' };
+
+  // Never trust an amount reported to us — recompute what was owed and
+  // compare against what Paystack says actually settled.
+  const expectedKobo = Math.round((service?.price ?? 0) * ((rules?.deposit_percentage ?? 100) / 100)) * 100;
+  if (Math.abs(verified.amount - expectedKobo) > 200) return { confirmed: false, reason: 'amount_mismatch' };
+
+  const amountPaid = Math.round(verified.amount / 100);
+
+  const { error } = await supabaseAdmin
+    .from('bookings')
+    .update({ status: 'confirmed', payment_status: 'paid', amount_paid: amountPaid, payment_expires_at: null })
+    .eq('id', booking.id)
+    .eq('status', 'pending_payment');
+
+  if (error) {
+    // 23P01 here means the hold lapsed, the sweep cancelled it, and
+    // somebody else has since taken the slot — so this booking can't be
+    // revived. The customer HAS paid, so this must never fail silently:
+    // it stays cancelled-but-paid for the business to see and settle.
+    if ((error as { code?: string }).code === '23P01') {
+      await supabaseAdmin
+        .from('bookings')
+        .update({ payment_status: 'paid_slot_lost', amount_paid: amountPaid })
+        .eq('id', booking.id);
+      const dateISO = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date(booking.start_time));
+      const slots = await getAvailableSlots(booking.business_id, booking.service_id, dateISO);
+      return {
+        confirmed: false,
+        reason: 'slot_taken',
+        alternatives: slots.slice(0, 5).map((iso) => formatLocalDateTime(iso, timeZone)),
+      };
+    }
+    return { confirmed: false, reason: 'update_failed' };
+  }
+
+  return { confirmed: true, when: formatLocalDateTime(booking.start_time, timeZone) };
 }
 
 export async function findCustomerBookings(ctx: ToolContext) {
