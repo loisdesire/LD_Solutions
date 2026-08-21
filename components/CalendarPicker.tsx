@@ -81,7 +81,7 @@ export default function CalendarPicker({
   return (
     <div>
       {/* Nav bar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 mb-4">
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -89,15 +89,15 @@ export default function CalendarPicker({
               if (viewMode === 'week') setWeekStart(addDays(weekStart, -7));
               else setMonthCursor(addMonths(monthCursor, -1));
             }}
-            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
-            aria-label="Previous"
+            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
+            aria-label="Previous month"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          <span className="font-display text-[15px] font-semibold text-ink min-w-[140px] text-center select-none">
+          <span className="font-display text-[14px] sm:text-[15px] font-semibold text-ink min-w-[104px] sm:min-w-[140px] text-center select-none">
             {viewMode === 'week'
               ? weekDays[3].toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
               : monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
@@ -109,8 +109,8 @@ export default function CalendarPicker({
               if (viewMode === 'week') setWeekStart(addDays(weekStart, 7));
               else setMonthCursor(addMonths(monthCursor, 1));
             }}
-            className="p-2 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
-            aria-label="Next"
+            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
+            aria-label="Next month"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 5l7 7-7 7" />
@@ -125,7 +125,7 @@ export default function CalendarPicker({
               key={mode}
               type="button"
               onClick={() => setViewMode(mode)}
-              className={`px-3 py-1 rounded-md text-[11px] font-mono font-medium uppercase tracking-wider transition-all duration-200 ${
+              className={`px-3.5 py-2 min-h-[40px] rounded-md text-[11px] font-mono font-medium uppercase tracking-wider transition-all duration-200 ${
                 viewMode === mode
                   ? 'bg-surface text-ink shadow-sm'
                   : 'text-ink-faint hover:text-ink'
@@ -154,7 +154,7 @@ export default function CalendarPicker({
                 style={isSelected ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
                 className={`relative flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all duration-200 ${
                   disabled
-                    ? 'opacity-25 cursor-not-allowed'
+                    ? 'opacity-45 cursor-not-allowed'
                     : isSelected
                     ? 'shadow-glow font-semibold'
                     : 'hover:bg-warm-surface active:scale-95'
@@ -185,7 +185,7 @@ export default function CalendarPicker({
               </span>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-0.5">
+          <div className="grid grid-cols-7 gap-1">
             {monthDays.map((d) => {
               const ds = toDateStr(d);
               const isCurrentMonth = d.getMonth() === monthCursor.getMonth();
@@ -205,9 +205,9 @@ export default function CalendarPicker({
                         ? { boxShadow: '0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent)' }
                         : undefined
                   }
-                  className={`flex items-center justify-center h-9 rounded-lg transition-all duration-150 font-display text-[14px] ${
+                  className={`flex items-center justify-center h-11 sm:h-10 rounded-lg transition-all duration-150 font-display text-[14px] ${
                     disabled
-                      ? 'opacity-15 cursor-not-allowed'
+                      ? 'opacity-40 cursor-not-allowed line-through'
                       : !isCurrentMonth
                       ? isSelected
                         ? 'font-semibold shadow-glow'

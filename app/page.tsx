@@ -342,7 +342,7 @@ export default function LandingPage() {
       <section id="features" className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
           <Reveal className="mb-12 mx-auto text-center">
-            <h2 className="font-display text-3xl text-ink mb-2 sm:whitespace-nowrap">
+            <h2 className="font-display text-3xl text-ink mb-2 lg:whitespace-nowrap">
               The work gets lighter, <span className="italic" style={{ color: 'var(--accent)' }}>the bookings keep coming.</span>
             </h2>
             <p className="text-[15px] text-ink-soft">
@@ -373,7 +373,7 @@ export default function LandingPage() {
       {/* Who it's for */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
         <Reveal className="mb-10 mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug sm:whitespace-nowrap">
+          <h2 className="font-display text-3xl text-ink mb-3 leading-snug lg:whitespace-nowrap">
             Built for businesses that <span className="italic">take appointments.</span>
           </h2>
           <p className="text-[15px] text-ink-soft leading-relaxed">

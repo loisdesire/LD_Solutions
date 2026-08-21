@@ -56,7 +56,7 @@ export default function DashboardPreview() {
             <div>Time</div><div>Customer</div><div>Service</div><div>Staff</div><div>Status</div>
           </div>
           {SAMPLE_ROWS.map((r, i) => (
-            <div key={r.name} className={`grid grid-cols-[42px_1fr_1fr_auto] md:grid-cols-[50px_1.3fr_1fr_0.8fr_66px] gap-2 items-center px-1.5 py-2.5 text-[10px] ${i !== SAMPLE_ROWS.length - 1 ? 'border-b border-line' : ''}`}>
+            <div key={r.name} className={`grid grid-cols-[38px_1fr_auto] sm:grid-cols-[42px_1fr_1fr_auto] md:grid-cols-[50px_1.3fr_1fr_0.8fr_66px] gap-2 items-center px-1.5 py-2.5 text-[10px] ${i !== SAMPLE_ROWS.length - 1 ? 'border-b border-line' : ''}`}>
               <div className="font-display font-semibold" style={{ color: 'var(--accent)' }}>{r.time}</div>
               <div className="font-medium text-ink truncate">{r.name}</div>
               <div className="text-ink-soft truncate">{r.service}</div>
