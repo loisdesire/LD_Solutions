@@ -3,21 +3,20 @@
 @tailwind utilities;
 
 :root {
-   /* Shared application tokens. The landing page overrides these locally. */
-  --paper: #faf8f3;
+  --paper: #f8f6f2;
   --surface: #ffffff;
-  --warm-surface: #f5efe4;
-  --cream-surface: #f3e8bc;
+  --warm-surface: #f1eee8;
+  --cream-surface: #f4e6c5;
 
-  --ink: #202020;
-  --ink-soft: #6b6b6b;
+  --ink: #211f1b;
+  --ink-soft: #6e6a63;
   /* #9b9691 computes to ~3.6:1 against --paper/--surface - below AA's
      4.5:1 for normal text, fine for the low-priority metadata/timestamp
      role this is actually used for site-wide, never body copy. */
-  --ink-faint: #9b9691;
+  --ink-faint: #8f8a82;
 
-  --line: #ede6d9;
-  --line-strong: #ddd0bb;
+  --line: #e7e2da;
+  --line-strong: #d6cec2;
 
   /* Baked-in alpha, not a Tailwind opacity modifier - `bg-ink/5` and
      friends silently generate ZERO css on a color that's a `var()`
@@ -42,9 +41,9 @@
      contexts where --accent is always this one static value - prefer the
      `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
      get Tailwind's normal tooling (autocomplete, purge) for free. */
-  --accent: #c4512d;
-  --accent-hover: #a8431f;
-  --accent-active: #8e3a1c;
+  --accent: #b94f32;
+  --accent-hover: #9f4028;
+  --accent-active: #86341f;
   --accent-contrast: #ffffff;
   --accent-soft: rgba(196, 81, 45, 0.1);
 
@@ -121,6 +120,18 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
 }
 
 .font-display {

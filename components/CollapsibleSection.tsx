@@ -38,10 +38,10 @@ export default function CollapsibleSection({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="group w-full flex items-center gap-4 py-5 text-left"
+        className="group w-full flex items-center gap-4 py-6 text-left"
       >
         <div
-          className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105"
+          className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105"
           style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
         >
           {icon}

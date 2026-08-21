@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
-import { Hanken_Grotesk, IBM_Plex_Mono, Source_Serif_4 } from 'next/font/google';
+import { IBM_Plex_Mono, Outfit, Plus_Jakarta_Sans } from 'next/font/google';
 import { SITE_URL } from '@/lib/site';
 import './globals.css';
 
-const hankenGrotesk = Hanken_Grotesk({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['400', '500', '600', '700'],
 });
 
-const sourceSerif = Source_Serif_4({
+const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-display',
   weight: ['400', '500', '600', '700'],
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${hankenGrotesk.variable} ${sourceSerif.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${plusJakarta.variable} ${outfit.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );

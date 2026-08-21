@@ -74,7 +74,7 @@ export default function AdminMobileNav({
   }
 
   return (
-    <div className="md:hidden border-b border-line bg-surface sticky top-0 z-40">
+    <div className="md:hidden border-b border-line bg-paper/95 backdrop-blur-xl sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
@@ -86,7 +86,7 @@ export default function AdminMobileNav({
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-controls="admin-mobile-nav-menu"
-          className="flex items-center gap-1.5 rounded-full border-2 border-line-strong pl-3.5 pr-3 py-2 min-h-[40px] max-w-[52%] text-caption font-semibold text-ink shrink-0"
+          className="flex items-center gap-1.5 rounded-xl border-2 border-line-strong pl-3.5 pr-3 py-2 min-h-[40px] max-w-[52%] text-caption font-semibold text-ink shrink-0"
         >
           <span className="truncate">{currentLabel}</span>
           <svg

@@ -42,19 +42,26 @@ export default function AssistantChat({
     setLoading(true);
     setError('');
 
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, message: text, history: messages }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    // A dropped connection here used to leave the chat on "Thinking..."
+    // permanently, with the input disabled and no error shown.
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, message: text, history: messages }),
+      });
+      const data = await res.json();
+      setLoading(false);
 
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
-      return;
+      if (!res.ok) {
+        setError(data.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
+      setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
+    } catch {
+      setLoading(false);
+      setError("Couldn't reach the server. Check your connection and try again.");
     }
-    setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
   }
 
   return (

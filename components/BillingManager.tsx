@@ -51,20 +51,29 @@ export default function BillingManager({
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/billing/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, plan: selectedPlan }),
-    });
-    const data = await res.json();
+    // Without this, a dropped connection throws out of the handler, the
+    // rejection goes unhandled, and `loading` is never cleared - leaving
+    // the button disabled on "Redirecting..." with no way back except a
+    // page reload.
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, plan: selectedPlan }),
+      });
+      const data = await res.json();
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setLoading(false);
+        setError(data.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
+
+      window.location.href = data.checkoutUrl;
+    } catch {
       setLoading(false);
-      setError(data.error ?? 'Something went wrong.');
-      return;
+      setError("Couldn't reach the server. Check your connection and try again.");
     }
-
-    window.location.href = data.checkoutUrl;
   }
 
   async function handleCancel() {
@@ -74,19 +83,24 @@ export default function BillingManager({
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/billing/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    });
-    const data = await res.json();
-    setLoading(false);
+    try {
+      const res = await fetch('/api/billing/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json();
+      setLoading(false);
 
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
-      return;
+      if (!res.ok) {
+        setError(data.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
+      setCancelled(true);
+    } catch {
+      setLoading(false);
+      setError("Couldn't reach the server. Your subscription has not been changed.");
     }
-    setCancelled(true);
   }
 
   const copy = STATUS_COPY[state.phase];

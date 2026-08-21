@@ -25,7 +25,7 @@ export default async function AdminLayout({
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-paper md:flex">
+      <div className="min-h-screen bg-warm-surface md:flex">
         <AdminSidebar
           slug={slug}
           businessName={business.name}
@@ -33,9 +33,9 @@ export default async function AdminLayout({
           userEmail={user.email ?? ''}
           role={staff.role ?? 'staff'}
         />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 bg-paper md:bg-warm-surface">
           <AdminMobileNav slug={slug} businessName={business.name} />
-          <main className="max-w-[1000px] px-6 sm:px-10 py-9">{children}</main>
+          <main className="max-w-[1180px] px-5 sm:px-8 lg:px-12 py-7 sm:py-10">{children}</main>
         </div>
       </div>
     </ToastProvider>

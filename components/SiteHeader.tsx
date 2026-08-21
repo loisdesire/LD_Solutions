@@ -35,7 +35,7 @@ export default function SiteHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const linkClass = (page: typeof active) =>
-    `font-medium text-[13.5px] transition-colors ${
+    `font-medium text-[13px] transition-colors ${
       active === page ? 'text-ink' : 'text-ink-soft hover:text-ink'
     }`;
 
@@ -47,35 +47,35 @@ export default function SiteHeader({
   ].filter((l) => l.show);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-paper border-b border-line">
-      <nav className="flex justify-between items-center w-full px-6 sm:px-10 py-4 max-w-5xl mx-auto">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-xl">
+      <nav className="flex justify-between items-center w-full px-5 sm:px-8 py-3.5 max-w-6xl mx-auto">
         <a href={`/${slug}`} className="flex items-center gap-2.5 min-w-0">
           {business.logo_url ? (
-            <img src={business.logo_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+            <img src={business.logo_url} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
           ) : (
             <div
-              className="h-8 w-8 rounded-full flex items-center justify-center font-display text-[13px] font-semibold shrink-0"
+              className="h-9 w-9 rounded-xl flex items-center justify-center font-display text-[14px] font-semibold shrink-0"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
               {business.name?.[0]?.toUpperCase()}
             </div>
           )}
-          <span className="font-display text-[17px] font-semibold text-ink truncate">{business.name}</span>
+          <span className="font-display text-[16px] font-semibold text-ink truncate">{business.name}</span>
         </a>
 
         {/* Desktop nav - unchanged */}
-        <div className="hidden sm:flex items-center gap-6">
+        <div className="hidden sm:flex items-center gap-7">
           {links.map((l) => (
             <a key={l.key} href={l.href} className={linkClass(l.key)}>
               {l.label}
             </a>
           ))}
-          <a href="/account" className="font-medium text-[13.5px] text-ink-soft hover:text-ink transition-colors">
+          <a href="/account" className="font-medium text-[13px] text-ink-soft hover:text-ink transition-colors">
             My bookings
           </a>
           <a
             href={`/${slug}#book`}
-            className="px-5 py-2.5 rounded-full font-medium text-[13.5px] text-white transition-opacity hover:opacity-90 active:scale-95"
+            className="px-5 py-2.5 rounded-xl font-semibold text-[13px] text-white transition-opacity hover:opacity-90 active:scale-95"
             style={{ background: 'var(--accent)' }}
           >
             Book now
@@ -86,7 +86,7 @@ export default function SiteHeader({
         <div className="flex sm:hidden items-center gap-2">
           <a
             href={`/${slug}#book`}
-            className="px-4 py-2 rounded-full font-medium text-[13px] text-white"
+            className="px-4 py-2 rounded-xl font-semibold text-[13px] text-white"
             style={{ background: 'var(--accent)' }}
           >
             Book now

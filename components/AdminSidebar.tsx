@@ -152,11 +152,18 @@ export default function AdminSidebar({
   // in the active nav item, matching how restraint is applied
   // everywhere else in the product.
   return (
-    <aside className="hidden md:flex md:w-[240px] shrink-0 bg-surface border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
-      <div className="mb-8 px-1">
-        <div className="font-display text-[19px] font-semibold text-ink tracking-tight">{businessName}</div>
-        <div className="font-mono text-[10.5px] text-ink-faint mt-0.5">
-          {businessType ? `${businessType} · ` : ''}/{slug}
+    <aside className="hidden md:flex md:w-[256px] shrink-0 bg-surface border-r border-line flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
+      <div className="mb-10 px-2">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-display text-[14px] font-semibold shrink-0" style={{ background: 'var(--accent)' }}>
+            {businessName?.[0]?.toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <div className="font-display text-[17px] font-semibold text-ink tracking-tight truncate">{businessName}</div>
+            <div className="font-mono text-[10px] text-ink-faint mt-0.5 truncate">
+              {businessType ? `${businessType} · ` : ''}/{slug}
+            </div>
+          </div>
         </div>
       </div>
 

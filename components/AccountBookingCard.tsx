@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import WebChatWidget from './WebChatWidget';
+import { statusLabel, statusStyle } from '@/lib/bookingStatus';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -17,20 +18,6 @@ type Booking = {
   // is normalized to a single object below, same as manage/[bookingId].
   businesses: any;
   services: any;
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  confirmed: 'Confirmed',
-  cancelled: 'Cancelled',
-  completed: 'Completed',
-  no_show: 'No-show',
-};
-
-const STATUS_STYLE: Record<string, string> = {
-  confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink-wash text-ink-faint',
-  cancelled: 'bg-ink-wash text-ink-faint line-through',
-  no_show: 'bg-error-bg text-error',
 };
 
 export default function AccountBookingCard({
@@ -67,10 +54,10 @@ export default function AccountBookingCard({
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${STATUS_STYLE[booking.status] ?? 'bg-ink-wash text-ink-faint'}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${statusStyle(booking.status)}`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {STATUS_LABEL[booking.status] ?? booking.status}
+            {statusLabel(booking.status)}
           </span>
           <div className="flex items-center gap-2.5">
             {business?.id && (
