@@ -200,6 +200,7 @@ export default async function BusinessBookingPage({
           <BookingForm
             businessId={business.id}
             slug={slug}
+            businessName={business.name}
             services={services}
             maxAdvanceDays={maxAdvanceDays}
             requirePayment={requirePayment}

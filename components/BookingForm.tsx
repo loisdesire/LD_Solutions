@@ -58,19 +58,52 @@ function groupSlots(slots: string[]): [Period, string[]][] {
 // dashboard earns its heavier chrome because it's a working tool; a
 // customer booking an appointment doesn't need to feel like they're
 // filling out a form.
+// Labels match the step headings word for word. They used to read
+// Service/Time/Details against headings of "What would you like?" etc, so
+// the progress bar and the page named the same step differently.
+const STEP_LABELS = ['What you want', 'When', 'Your details'];
+
+// Google Calendar rather than an .ics download: data:-URI downloads are
+// blocked in many in-app browsers (Instagram, WhatsApp) which is exactly
+// where a lot of these bookings happen. A plain https link degrades to
+// "opens a web page" at worst, instead of silently doing nothing.
+function googleCalendarUrl(opts: { title: string; startISO: string; minutes: number; details: string }): string {
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const start = new Date(opts.startISO);
+  const end = new Date(start.getTime() + opts.minutes * 60000);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: opts.title,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: opts.details,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function StepIndicator({ step }: { step: number }) {
-  const steps = ['Service', 'Time', 'Details'];
   return (
     <div className="max-w-xs mx-auto mb-10">
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-faint">
+      {/* The whole flow was silent to screen readers — moving between steps
+          changed everything on screen and announced nothing. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        Step {step} of 3: {STEP_LABELS[step - 1]}
+      </p>
+      <div className="flex items-center justify-between mb-2.5" aria-hidden="true">
+        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-faint">
           Step {step} of 3
         </span>
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.12em]" style={{ color: 'var(--accent)' }}>
-          {steps[step - 1]}
+        <span className="font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: 'var(--accent)' }}>
+          {STEP_LABELS[step - 1]}
         </span>
       </div>
-      <div className="h-[3px] rounded-full bg-line overflow-hidden">
+      <div
+        className="h-[3px] rounded-full bg-line overflow-hidden"
+        role="progressbar"
+        aria-valuenow={step}
+        aria-valuemin={1}
+        aria-valuemax={3}
+        aria-label="Booking progress"
+      >
         <div
           className="h-full rounded-full transition-all duration-500 ease-out"
           style={{ width: `${(step / 3) * 100}%`, background: 'var(--accent)' }}
@@ -92,6 +125,7 @@ function ConfirmationRow({ label, value }: { label: string; value: string }) {
 export default function BookingForm({
   businessId,
   slug,
+  businessName,
   services,
   maxAdvanceDays,
   requirePayment = false,
@@ -100,6 +134,7 @@ export default function BookingForm({
 }: {
   businessId: string;
   slug: string;
+  businessName: string;
   services: Service[];
   maxAdvanceDays: number;
   requirePayment?: boolean;
@@ -389,16 +424,42 @@ export default function BookingForm({
           </div>
         </div>
 
-        <div className="text-center mt-5">
+        {/* Was a single ~20px-tall text link. Someone who has just booked
+            wants to save it or return to the business — neither was offered. */}
+        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+          {selectedService && selectedSlot && (
+            <a
+              href={googleCalendarUrl({
+                title: `${selectedService.name} — ${businessName}`,
+                startISO: selectedSlot,
+                minutes: selectedService.duration_minutes,
+                details: `Booking code ${bookingId.slice(0, 8).toUpperCase()}`,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-3 min-h-[44px] rounded-full border-2 border-line-strong text-[13.5px] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
+              </svg>
+              Add to calendar
+            </a>
+          )}
           <Link
             href={`/${slug}/manage/${bookingId}`}
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors hover:opacity-80"
-            style={{ color: 'var(--accent)' }}
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 min-h-[44px] rounded-full text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: 'var(--accent)' }}
           >
             Manage this booking
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
+          </Link>
+        </div>
+
+        <div className="text-center mt-4">
+          <Link href={`/${slug}`} className="text-[13px] text-ink-faint hover:text-ink transition-colors">
+            Back to {businessName}
           </Link>
         </div>
       </div>
@@ -414,6 +475,11 @@ export default function BookingForm({
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="min-w-0">
               <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
+              {selectedService.price != null && (
+                <span className="text-[12px] text-ink-faint block">
+                  ₦{selectedService.price.toLocaleString()}
+                </span>
+              )}
               {selectedSlot && (
                 <span className="text-[12px] text-ink-faint">
                   {new Date(selectedSlot).toLocaleDateString(undefined, {
@@ -426,20 +492,36 @@ export default function BookingForm({
                 </span>
               )}
             </div>
-            <button
-              onClick={() => setStep('service')}
-              className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-colors hover:bg-surface shrink-0"
-              style={{ color: 'var(--accent)' }}
-            >
-              Change
-            </button>
+            {/* Was a single "Change" that always jumped to step 1 and cleared
+                the chosen slot — so a customer on step 3 who only wanted a
+                different time had to re-pick the service too. */}
+            <div className="flex items-center gap-1 shrink-0">
+              {step === 'details' && (
+                <button
+                  type="button"
+                  onClick={() => setStep('datetime')}
+                  className="text-[12.5px] font-semibold px-3 py-2 rounded-lg transition-colors hover:bg-surface min-h-[40px]"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Change time
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setStep('service')}
+                className="text-[12.5px] font-semibold px-3 py-2 rounded-lg transition-colors hover:bg-surface min-h-[40px]"
+                style={{ color: 'var(--accent)' }}
+              >
+                Change service
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {step === 'service' && (
         <div className="animate-rise">
-          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">Select a service</h2>
+          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">What would you like?</h2>
           <p className="text-[14.5px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
             <div className="max-w-lg mx-auto text-center py-12">
@@ -514,7 +596,7 @@ export default function BookingForm({
 
       {step === 'datetime' && selectedService && (
         <div className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[22px] font-semibold text-ink mb-1 text-center">Pick a time</h2>
+          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">When works for you?</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
 
           {/* A 409 (slot taken while they were filling in details) sends
@@ -622,7 +704,7 @@ export default function BookingForm({
                               ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
                               : undefined
                           }
-                          className={`min-w-[76px] py-2.5 px-3 text-[13px] font-medium tabular-nums border rounded-lg transition-all duration-150 ${
+                          className={`min-w-[76px] py-3 px-3.5 min-h-[44px] text-[13.5px] font-medium tabular-nums border rounded-lg transition-all duration-150 ${
                             isSel
                               ? 'animate-punch border-transparent'
                               : 'border-line-strong bg-surface text-ink hover:border-[var(--accent)] hover:bg-warm-surface active:scale-95'
@@ -641,7 +723,7 @@ export default function BookingForm({
           <div className="flex items-center justify-between">
             <button
               onClick={() => setStep('service')}
-              className="flex items-center gap-1.5 text-[13.5px] font-medium text-ink-faint hover:text-ink transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-full text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -651,8 +733,8 @@ export default function BookingForm({
             <button
               onClick={() => setStep('details')}
               disabled={!selectedSlot}
-              style={selectedSlot ? { background: 'var(--accent)' } : undefined}
-              className="px-8 py-3 text-[14px] font-semibold text-white rounded-full transition-all disabled:opacity-25 disabled:bg-line-strong hover:opacity-90 active:scale-[0.98]"
+              style={selectedSlot ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--line)', color: 'var(--ink-faint)' }}
+              className="px-8 py-3 min-h-[44px] text-[14px] font-semibold rounded-full transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed"
             >
               Continue to details
             </button>
@@ -662,7 +744,7 @@ export default function BookingForm({
 
       {step === 'details' && selectedService && selectedSlot && (
         <form onSubmit={handleSubmit} className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[22px] font-semibold text-ink mb-1 text-center">Your details</h2>
+          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">Almost there</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">We&apos;ll send your confirmation here</p>
 
           <div className="space-y-4 mb-6">
@@ -699,6 +781,14 @@ export default function BookingForm({
               </p>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={() => setStep('datetime')}
+            className="w-full mb-2.5 py-3 text-[13.5px] font-medium text-ink-soft rounded-full border-2 border-line-strong transition-colors hover:border-accent hover:text-accent"
+          >
+            Back to times
+          </button>
 
           <button
             type="submit"
