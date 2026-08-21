@@ -5,6 +5,7 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
 import { useToast } from './Toast';
 import { inputClass, smallInputClass, iconBtnClass, labelClass } from './formStyles';
+import PageHeader from './PageHeader';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
@@ -118,17 +119,22 @@ export default function StaffManager({
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setShowInvite((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          {showInvite ? 'Cancel' : 'Invite someone'}
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Manage"
+        title="Your team"
+        description={`Invite people to help manage bookings for ${businessName}.`}
+        action={
+          <button
+            onClick={() => setShowInvite((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            {showInvite ? 'Cancel' : 'Invite someone'}
+          </button>
+        }
+      />
 
       {showInvite && (
         <form
@@ -162,16 +168,16 @@ export default function StaffManager({
       <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-3">
         Team
       </div>
-      <div className="space-y-2 mb-8">
+      <div className="border-2 border-line rounded-2xl bg-surface overflow-hidden mb-8">
         {staff.length === 0 && (
-          <p className="text-ink-soft text-body-sm py-3">
+          <p className="text-ink-soft text-body-sm px-4 py-5">
             No one on the team yet. Invite a staff member and they&apos;ll be able to see the calendar and manage
             their own bookings.
           </p>
         )}
         {staff.map((s) =>
           editingId === s.id ? (
-            <div key={s.id} className="flex flex-col gap-3 border-2 border-line rounded-2xl p-4 bg-surface">
+            <div key={s.id} className="flex flex-col gap-3 p-4 border-b border-line last:border-0">
               <input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -198,7 +204,7 @@ export default function StaffManager({
           ) : (
             <div
               key={s.id}
-              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3.5 border-2 border-line rounded-2xl p-4 bg-surface"
+              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3.5 px-4 py-3.5 border-b border-line last:border-0"
             >
               <div className="flex items-center gap-3.5 min-w-0 flex-1">
                 <div
@@ -216,9 +222,17 @@ export default function StaffManager({
                 </div>
               </div>
               <div className="flex items-center gap-2.5 shrink-0 pl-[52px] sm:pl-0">
-                <span className="font-mono rounded-full bg-ink-wash px-2.5 py-0.5 text-[10.5px] uppercase tracking-[0.05em] text-ink-faint">
+                <span className="font-mono rounded-full bg-ink-wash px-2.5 py-0.5 text-label uppercase tracking-[0.05em] text-ink-faint">
                   {s.role}
                 </span>
+                {s.auth_id === currentUserId && (
+                  <span
+                    className="font-mono rounded-full px-2.5 py-0.5 text-label uppercase tracking-[0.05em]"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  >
+                    You
+                  </span>
+                )}
                 <button onClick={() => startEdit(s)} aria-label="Edit" className={iconBtnClass}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
@@ -244,11 +258,14 @@ export default function StaffManager({
           <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-3">
             Pending invites
           </div>
-          <div className="space-y-2">
+          {/* Same treatment as the team list above: one container with
+              dividers, rather than a card per person. Dashed border keeps
+              these visually distinct from staff who have actually joined. */}
+          <div className="border-2 border-dashed border-line-strong rounded-2xl overflow-hidden">
             {invites.map((inv) => (
               <div
                 key={inv.id}
-                className="flex items-center gap-3 border-2 border-dashed border-line-strong rounded-2xl p-4"
+                className="flex items-center gap-3 px-4 py-3.5 border-b border-dashed border-line last:border-0"
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-[14px] truncate">{inv.email}</p>

@@ -23,16 +23,6 @@ export default async function StaffPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
-        </div>
-        <h1 className="font-display text-[26px] text-ink">Your team</h1>
-        <p className="text-ink-soft text-[13.5px] mt-1">
-          Invite people to help manage bookings for {business.name}.
-        </p>
-      </div>
-
       <StaffManager
         businessId={business.id}
         businessName={business.name}
