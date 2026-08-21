@@ -7,7 +7,16 @@
 // an API route deciding which provider to send through).
 export type ContactChannel = 'whatsapp' | 'telegram' | 'messenger' | 'direct';
 
-export function parseContact(phone: string, telegramUsername?: string | null) {
+// phone is nullable in the database (bookings.customer_phone) but was typed
+// as a plain string, so every caller implicitly promised something the
+// schema does not guarantee. One booking with no phone — which both the
+// admin "new appointment" form and the API allow — crashed the ENTIRE
+// dashboard with "Cannot read properties of null (reading 'startsWith')",
+// because this runs once per booking in the list.
+export function parseContact(phone: string | null | undefined, telegramUsername?: string | null) {
+  if (!phone) {
+    return { channel: 'direct' as ContactChannel, isBotContact: false, label: 'No contact given' };
+  }
   if (phone.startsWith('whatsapp:')) {
     return { channel: 'whatsapp' as ContactChannel, isBotContact: true, label: phone.slice('whatsapp:'.length) };
   }
