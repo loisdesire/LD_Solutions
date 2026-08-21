@@ -1,6 +1,6 @@
 // Pulled out of ServicesManager.tsx, ProductsManager.tsx, and StaffManager.tsx,
 // where these exact strings were defined byte-for-byte identically (each
-// file redeclared its own copy). Pure dedup — no visual change; every class
+// file redeclared its own copy). Pure dedup - no visual change; every class
 // here matches what those three files already had inline.
 export const inputClass =
   'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';

@@ -4,7 +4,7 @@ import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
-// GET /api/web-chat?businessId=&sessionId= — hydrates the widget with
+// GET /api/web-chat?businessId=&sessionId= - hydrates the widget with
 // existing history when a returning visitor reopens it, same conversation
 // the AI already has from any earlier turns on this session.
 export async function GET(req: NextRequest) {
@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ messages });
 }
 
-// POST /api/web-chat — the website's own chat widget, talking to the exact
+// POST /api/web-chat - the website's own chat widget, talking to the exact
 // same agent as WhatsApp/Telegram/Messenger (lib/whatsappAgent.ts doesn't
 // know or care which channel called it). No provider webhook involved here
 // at all: the browser calls this directly and gets the reply back in the
-// same request, since there's no external messaging platform in the loop —
+// same request, since there's no external messaging platform in the loop -
 // `web:<sessionId>` is just this channel's version of the same opaque
 // per-channel customer identifier the other channels already use.
 export async function POST(req: NextRequest) {

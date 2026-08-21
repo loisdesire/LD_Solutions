@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = await getBusinessBySlug(slug);
-  return { title: data ? `About — ${data.business.name}` : 'About' };
+  return { title: data ? `About - ${data.business.name}` : 'About' };
 }
 
 export default async function AboutPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -39,7 +39,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
       <main className="pt-16">
         <div className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20 text-center">
           {/* Reuses the same cover photo the hero already has (no new
-              field/query) — this page was pure text with nothing to
+              field/query) - this page was pure text with nothing to
               visually anchor it, noticeably barer than every other public
               page. */}
           {business.cover_image_url && (

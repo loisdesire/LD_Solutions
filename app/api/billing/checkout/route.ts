@@ -12,7 +12,7 @@ const supabaseAdmin = createClient(
 );
 
 // Each plan needs its own Payment Plan created by hand in the Flutterwave
-// dashboard (Recurring Payments → Payment Plans) — same one-time manual
+// dashboard (Recurring Payments → Payment Plans) - same one-time manual
 // step as before, just one more of them. We don't create plans
 // dynamically here, since re-running that on every deploy risks
 // duplicate plans.
@@ -21,7 +21,7 @@ const PLAN_ENV_KEY: Record<Plan, string> = {
   business_intelligence: 'FLUTTERWAVE_PLAN_ID_BI',
 };
 
-// POST /api/billing/checkout — starts a Flutterwave subscription checkout
+// POST /api/billing/checkout - starts a Flutterwave subscription checkout
 // for this business, for whichever plan they picked.
 export async function POST(req: NextRequest) {
   const { slug, plan: rawPlan } = await req.json();
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   if (!process.env.FLUTTERWAVE_SECRET_KEY || !flwPlanId) {
     return NextResponse.json(
-      { error: `The ${PLAN_LABEL[plan]} plan isn't fully set up yet — missing its Flutterwave plan ID.` },
+      { error: `The ${PLAN_LABEL[plan]} plan isn't fully set up yet - missing its Flutterwave plan ID.` },
       { status: 503 }
     );
   }
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         name: business.name,
       },
       customizations: {
-        title: `${business.name} — ${PLAN_LABEL[plan]} subscription`,
+        title: `${business.name} - ${PLAN_LABEL[plan]} subscription`,
         description: 'Monthly platform access',
       },
     }),
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   // Record the tx_ref now so the webhook (which only knows the tx_ref, not
   // which business initiated it) can match this payment back to a business
   // when it lands. `plan` is set here too, optimistically, ahead of actual
-  // payment confirmation — safe to do because it never gates access on its
+  // payment confirmation - safe to do because it never gates access on its
   // own, only which features are unlocked once `status`/`current_period_end`
   // already say the business has access. A failed payment just leaves
   // status wherever it already was.
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     .update({ flw_tx_ref: txRef, plan })
     .eq('business_id', business.id);
 
-  // 42703 = the `plan` migration hasn't run yet — still start checkout
+  // 42703 = the `plan` migration hasn't run yet - still start checkout
   // (core pricing/plan works exactly as before), just without recording
   // which plan was picked until the column exists.
   if (updateError?.code === '42703') {

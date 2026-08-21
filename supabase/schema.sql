@@ -38,7 +38,7 @@ create table services (
   created_at timestamptz default now()
 );
 
--- Optional grouping label ("Hair", "Nails", ...) — free text the owner
+-- Optional grouping label ("Hair", "Nails", ...) - free text the owner
 -- sets themselves, not a fixed enum, since categories vary wildly by
 -- business type. Filter tabs on the services page only appear once real
 -- categories exist, never a fixed placeholder set.
@@ -77,14 +77,14 @@ create table bookings (
   created_at timestamptz default now()
 );
 
--- The actual backstop against double-booking — not just app-level
+-- The actual backstop against double-booking - not just app-level
 -- availability checks (those are the fast path / good UX), this is what
 -- closes the race condition where two customers hit "book" on the same
 -- slot within the same second. Whichever insert lands first wins; the
 -- second gets Postgres error 23P01, which app/api/bookings/route.ts and
 -- the AI agent's create_booking tool both already catch and turn into
 -- "that time is no longer available." Scoped to (business_id, time_range)
--- only, not staff_id — two different staff members currently can't be
+-- only, not staff_id - two different staff members currently can't be
 -- double-booked into the same slot either, since bookings aren't actually
 -- assigned to a specific staff_id anywhere in the live booking flow yet.
 -- (This constraint already exists in the live database; added here only
@@ -114,13 +114,13 @@ alter table bookings enable row level security;
 
 -- Customer-facing booking pages read business data while signed out
 -- (name, logo, services shown to anyone), so this has to allow anonymous
--- reads — it's not sensitive data, unlike the tables below.
+-- reads - it's not sensitive data, unlike the tables below.
 create policy "anyone can view businesses"
   on businesses for select
   using (true);
 
 -- Staff (any role, not just the owner) can update their own business's
--- profile — settings/branding fields, matching the same staff-membership
+-- profile - settings/branding fields, matching the same staff-membership
 -- check used for services/availability/booking_rules below. Missing this
 -- was a real bug: BusinessProfileManager's save always failed silently
 -- with no policy permitting the update at all.
@@ -191,38 +191,38 @@ create policy "anyone can create a booking"
 -- ============================================
 
 -- The WhatsApp number Twilio routes inbound messages to for this business.
--- Superseded by Meta's Cloud API below (whatsapp_phone_number_id) — kept
+-- Superseded by Meta's Cloud API below (whatsapp_phone_number_id) - kept
 -- for now rather than dropped, in case of rollback.
 alter table businesses add column if not exists whatsapp_number text unique;
 
 -- Meta's own WhatsApp Cloud API, replacing Twilio as the WhatsApp
 -- middleman. Unlike whatsapp_number (a human-readable phone string), this
 -- is the numeric phone_number_id Meta assigns when a number is registered
--- to a WhatsApp Business Account — required for both the outbound Graph
+-- to a WhatsApp Business Account - required for both the outbound Graph
 -- API send call and for routing inbound webhook payloads to the right
 -- business (see lib/whatsappTools.ts getBusinessByMetaPhoneNumberId).
 alter table businesses add column if not exists whatsapp_phone_number_id text unique;
 
--- The WhatsApp Business Account this phone number lives under — not used
+-- The WhatsApp Business Account this phone number lives under - not used
 -- for routing (phone_number_id already does that) but required to fetch
 -- phone number details and subscribe the app to that WABA's webhooks
 -- during Embedded Signup.
 alter table businesses add column if not exists whatsapp_business_account_id text;
 
--- Human-readable number (e.g. +234...) for showing in the settings UI —
+-- Human-readable number (e.g. +234...) for showing in the settings UI -
 -- whatsapp_phone_number_id is an opaque numeric id, not something an
 -- owner would recognize as "their number".
 alter table businesses add column if not exists whatsapp_display_number text;
 
 -- Each business connects its own WhatsApp Business Account via Embedded
--- Signup, so each needs its own access token scoped to their number — a
+-- Signup, so each needs its own access token scoped to their number - a
 -- single shared env-var token (the pre-Embedded-Signup approach, used only
 -- for the one hardcoded test business) doesn't work once multiple real
 -- businesses are connected.
 alter table businesses add column if not exists whatsapp_access_token text;
 
 -- Wide banner shown across the top of the public booking page. Separate
--- from logo_url (a small square mark) — this is what gives the booking
+-- from logo_url (a small square mark) - this is what gives the booking
 -- page visual presence instead of reading as a bare form.
 alter table businesses add column if not exists cover_image_url text;
 
@@ -230,17 +230,17 @@ alter table businesses add column if not exists cover_image_url text;
 -- on something that reads as a real place, not just a name and a list.
 alter table businesses add column if not exists description text;
 
--- Longer-form "About" section body for the public booking page — separate
+-- Longer-form "About" section body for the public booking page - separate
 -- from `description` (a short tagline shown in the hero), this is the
 -- fuller story shown in its own section, only rendered if set.
 alter table businesses add column if not exists about_text text;
 
 -- Photo gallery for the public booking page. Stored as one URL per line
--- rather than a separate table/upload flow — same "paste a URL" pattern
+-- rather than a separate table/upload flow - same "paste a URL" pattern
 -- already used for logo_url/cover_image_url, just multiple lines.
 alter table businesses add column if not exists gallery_urls text;
 
--- Real contact details for the public booking page's Contact section —
+-- Real contact details for the public booking page's Contact section -
 -- all optional, all independent (a business might have a phone but no
 -- Instagram, etc.), each only rendered if actually set.
 alter table businesses add column if not exists contact_phone text;
@@ -249,7 +249,7 @@ alter table businesses add column if not exists instagram_url text;
 alter table businesses add column if not exists facebook_url text;
 
 -- Explicit per-section on/off switches, independent of whether content is
--- filled in — a business might have gallery photos ready but not want the
+-- filled in - a business might have gallery photos ready but not want the
 -- tab live yet. Default true so existing businesses' nav behavior doesn't
 -- change (a section still only ever shows when it also has real content).
 alter table businesses add column if not exists show_about boolean not null default true;
@@ -259,7 +259,7 @@ alter table businesses add column if not exists show_contact boolean not null de
 -- Rolling chat history per (business, customer phone), so the agent has
 -- context across turns ("book that one" referring to a slot offered two
 -- messages ago). Only ever touched by the webhook route via the service
--- role key, so no public policies are defined here — RLS-enabled with zero
+-- role key, so no public policies are defined here - RLS-enabled with zero
 -- policies means everyone but the service role is denied by default.
 create table if not exists whatsapp_conversations (
   id uuid primary key default gen_random_uuid(),
@@ -280,7 +280,7 @@ alter table whatsapp_conversations enable row level security;
 -- Telegram history too (customer_phone holds 'telegram:<chatId>' there).
 alter table businesses add column if not exists telegram_bot_token text unique;
 
--- Facebook Messenger, connected via a Page rather than a phone number —
+-- Facebook Messenger, connected via a Page rather than a phone number -
 -- no OTP, no business-verification wait, and connecting it never logs the
 -- owner out of anything (unlike WhatsApp's Cloud API). Like whatsapp_phone_
 -- number_id, page id is how a shared webhook routes an inbound message
@@ -288,7 +288,7 @@ alter table businesses add column if not exists telegram_bot_token text unique;
 alter table businesses add column if not exists messenger_page_id text unique;
 alter table businesses add column if not exists messenger_access_token text;
 alter table businesses add column if not exists messenger_page_name text;
--- Cosmetic only (shown in Settings as "Connected as @x") — never used for
+-- Cosmetic only (shown in Settings as "Connected as @x") - never used for
 -- auth/routing, telegram_bot_token is the only thing that matters for that.
 alter table businesses add column if not exists telegram_bot_username text;
 
@@ -298,7 +298,7 @@ alter table businesses add column if not exists telegram_bot_username text;
 
 -- Null until a reminder email has actually been sent for this booking.
 -- The cron job (app/api/cron/send-reminders) uses this to send each
--- reminder exactly once, regardless of how often the job runs — a booking
+-- reminder exactly once, regardless of how often the job runs - a booking
 -- becomes eligible once it's within the reminder window and stays eligible
 -- until this gets set, so an infrequent cron schedule (e.g. hourly, or
 -- daily on cheaper Vercel plans) still catches every booking correctly.
@@ -306,12 +306,12 @@ alter table bookings add column if not exists reminder_sent_at timestamptz;
 
 -- Telegram-only, only set when the customer has a public username. It's
 -- the one thing that makes a Telegram-originated booking's contact actually
--- useful to the business owner — customer_phone stores 'telegram:<chatId>'
+-- useful to the business owner - customer_phone stores 'telegram:<chatId>'
 -- for these, which has no clickable/callable meaning on its own.
 alter table bookings add column if not exists customer_telegram_username text;
 
 -- ============================================
--- Payments (Paystack) — each business connects its own Paystack account
+-- Payments (Paystack) - each business connects its own Paystack account
 -- (same self-serve pattern as Telegram/WhatsApp: they paste their own
 -- keys in Settings), so a customer's payment settles straight to that
 -- business's own account. The platform never touches or splits the money.
@@ -328,14 +328,14 @@ alter table businesses add column if not exists paystack_secret_key text;
 
 -- Set only after the booking route has independently verified the
 -- payment_reference against Paystack's own API (never trusted from the
--- client) — payment_status is null for every booking where payment
+-- client) - payment_status is null for every booking where payment
 -- wasn't required, not just the unpaid ones.
 alter table bookings add column if not exists payment_status text;
 alter table bookings add column if not exists payment_reference text;
 alter table bookings add column if not exists amount_paid numeric;
 
 -- ============================================
--- Products (AI-assisted product discovery, web only for now — no
+-- Products (AI-assisted product discovery, web only for now - no
 -- checkout/payment/inventory-decrement yet, that's a deliberately deferred
 -- later phase). Mirrors the services table shape/RLS exactly.
 -- ============================================
@@ -367,11 +367,11 @@ create policy "anyone can view active products"
   using (active = true);
 
 -- ============================================
--- Subscriptions — the platform's OWN monthly billing (businesses paying
+-- Subscriptions - the platform's OWN monthly billing (businesses paying
 -- YOU to use this), via Flutterwave. Not customer-facing payments.
 -- One row per business; status changes only ever come from the checkout
 -- route or the Flutterwave webhook (both service-role), never directly
--- from the client, so staff can read their own status but not edit it —
+-- from the client, so staff can read their own status but not edit it -
 -- editing it themselves would mean anyone could just mark their own
 -- account "active" for free.
 -- ============================================
@@ -399,7 +399,7 @@ create policy "staff can view own subscription"
   );
 
 -- One row per webhook event, so the billing page can show real payment
--- history — the subscriptions table only ever holds current status, it
+-- history - the subscriptions table only ever holds current status, it
 -- has no memory of past charges once overwritten.
 create table if not exists payment_history (
   id uuid primary key default gen_random_uuid(),
@@ -424,7 +424,7 @@ create policy "staff can view own payment history"
 -- Tiered plans + custom domains
 -- ============================================
 
--- 'core' | 'business_intelligence' — see lib/subscription.ts. Set
+-- 'core' | 'business_intelligence' - see lib/subscription.ts. Set
 -- optimistically by the checkout route when a business starts a checkout
 -- for a given plan; never itself grants access, that's still entirely
 -- `status`/`current_period_end` as before, this only decides which
@@ -434,17 +434,17 @@ alter table subscriptions add column if not exists plan text not null default 'c
 -- A business's own domain, pointed at this deployment via CNAME. Unique so
 -- middleware.ts's hostname lookup is always unambiguous. Actually serving
 -- traffic on it also requires the domain be added to the Vercel project by
--- hand (no Vercel API token in this project) — see the Settings page's
+-- hand (no Vercel API token in this project) - see the Settings page's
 -- Custom domain section for the customer-facing instructions.
 alter table businesses add column if not exists custom_domain text unique;
 
 -- ============================================
--- Reschedule assistant — an owner tells the bot to block out a window
+-- Reschedule assistant - an owner tells the bot to block out a window
 -- (e.g. "I'm out Tuesday 2-5pm"), it proposes new times for every booking
 -- that falls inside it, and only actually moves anything + messages
 -- customers once the owner explicitly confirms. `moves` is a snapshot
--- (customer contact info included) taken at propose time — not
--- re-derived from bookings at apply time — so what the owner approved is
+-- (customer contact info included) taken at propose time - not
+-- re-derived from bookings at apply time - so what the owner approved is
 -- exactly what executes, even if something else about the booking
 -- changed in between.
 -- ============================================

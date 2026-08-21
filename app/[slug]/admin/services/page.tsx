@@ -15,7 +15,7 @@ export default async function ServicesPage({
       .select('id, name, duration_minutes, price, active, category')
       .eq('business_id', business.id)
       .order('name'),
-    // Feeds the real "most booked" / "highest revenue" stats below —
+    // Feeds the real "most booked" / "highest revenue" stats below -
     // computed from actual bookings, not the fixed numbers a mockup uses.
     supabase
       .from('bookings')

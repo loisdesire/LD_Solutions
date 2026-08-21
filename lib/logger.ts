@@ -1,5 +1,5 @@
 // Structured error logging. This is NOT a substitute for real monitoring
-// (Sentry, etc.) — nothing here alerts anyone or persists past the process
+// (Sentry, etc.) - nothing here alerts anyone or persists past the process
 // lifetime. It exists so that (a) logs are consistently structured and
 // greppable in whatever hosting platform's log viewer you're using, and
 // (b) there's exactly one function to swap out for `Sentry.captureException`

@@ -3,7 +3,7 @@ import { zonedTimeToUtc } from './timezone';
 type Window = { start_time: string; end_time: string };
 type Booking = { start_time: string; end_time: string };
 
-// Pure function, no I/O — generates candidate slots across working-hours
+// Pure function, no I/O - generates candidate slots across working-hours
 // windows in duration-sized steps, converts each to the correct UTC instant
 // for the business's timezone, and excludes anything that overlaps an
 // existing booking (padded by the buffer on each side). Split out from

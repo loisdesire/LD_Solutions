@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/bookings/[id]/reschedule — same trust model as cancel: the
+// POST /api/bookings/[id]/reschedule - same trust model as cancel: the
 // booking id is the secret. Re-validates the new slot against other
 // bookings so rescheduling can't create a double-booking.
 export async function POST(
@@ -94,7 +94,7 @@ export async function POST(
     .single();
 
   if (error) {
-    // Same DB-level backstop as booking creation — closes the race
+    // Same DB-level backstop as booking creation - closes the race
     // condition the pre-check above can't fully rule out on its own.
     if ((error as { code?: string }).code === '23P01') {
       return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });

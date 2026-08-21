@@ -19,7 +19,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/bookings — creates a booking, then fires off a confirmation email.
+// POST /api/bookings - creates a booking, then fires off a confirmation email.
 // Centralizing this in an API route (rather than calling Supabase directly
 // from the browser) is what lets us also trigger email/SMS in one place.
 export async function POST(req: NextRequest) {
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const start = new Date(startTime);
   const end = new Date(start.getTime() + durationMinutes * 60000);
 
-  // Enforce max_advance_days server-side too — the date picker already
+  // Enforce max_advance_days server-side too - the date picker already
   // caps this in the UI, but that's bypassable by calling this route
   // directly, so re-check the same rule here. Measured in the business's
   // own timezone, not the server's, so this stays correct after deploy.
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   ]);
 
   // A Postgres select fails as one unit if ANY selected column is
-  // missing, not just the new ones — so before the payments migration
+  // missing, not just the new ones - so before the payments migration
   // runs, that combined query above silently loses webhook_url and
   // max_advance_days too, not just the payment fields. Falls back to the
   // pre-payments column set rather than let real, already-configured
@@ -93,10 +93,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'That date is not available for booking' }, { status: 400 });
   }
 
-  // Payment gate — only when the business has turned this on AND actually
+  // Payment gate - only when the business has turned this on AND actually
   // has a price on the service; a free/unpriced service can't require
   // payment no matter what the toggle says. Verified against Paystack
-  // directly rather than trusting whatever the client claims it paid —
+  // directly rather than trusting whatever the client claims it paid -
   // the client only ever hands us a reference, never an amount or a
   // "paid" flag we'd have to take on faith.
   let paymentStatus: string | null = null;
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     const expectedKobo = expectedNaira * 100;
 
     const verified = await verifyPaystackTransaction(business.paystack_secret_key, paymentReference);
-    // A few naira of rounding slack, not an exact-match requirement —
+    // A few naira of rounding slack, not an exact-match requirement -
     // Paystack's own fee handling can shift the settled amount by a kobo
     // or two even when the customer paid the right thing.
     if (!verified || verified.status !== 'success' || Math.abs(verified.amount - expectedKobo) > 200) {
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    // 23P01 = Postgres exclusion_violation — the DB-level guarantee that no
+    // 23P01 = Postgres exclusion_violation - the DB-level guarantee that no
     // two non-cancelled bookings for the same business can overlap in time.
     // This is what actually closes the race condition two customers could
     // hit booking the same slot at the same moment; everything upstream
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });
     }
     logError('api/bookings:insert', error, { businessId, serviceId });
-    // Raw Postgres text is logged, not shown — this is a public endpoint.
+    // Raw Postgres text is logged, not shown - this is a public endpoint.
     return NextResponse.json(
       { error: "We couldn't complete that booking. Please try again, or contact the business directly." },
       { status: 400 }
@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Fire-and-forget webhook, if the business has one configured (Zapier,
-  // Make, their own CRM — anything that accepts a POST).
+  // Make, their own CRM - anything that accepts a POST).
   if (rules?.webhook_url) {
     try {
       await fetch(rules.webhook_url, {
@@ -177,8 +177,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fire-and-forget confirmation email — never fails the booking itself.
-  // Formatted in the business's own timezone, not the server's — a real
+  // Fire-and-forget confirmation email - never fails the booking itself.
+  // Formatted in the business's own timezone, not the server's - a real
   // bug this was hitting before: a booking confirmed for "8:00 AM" Lagos
   // time could show a different hour in the email if the server (e.g. a
   // US-region Vercel deploy) runs in a different zone.
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
           businessName: bizName,
           accentColor: business?.accent_color,
           logoUrl: business?.logo_url,
-          preheader: `${service?.name ?? 'Your appointment'} — ${whenLabel}`,
+          preheader: `${service?.name ?? 'Your appointment'} - ${whenLabel}`,
           heading: "You're booked",
           intro: `Hi ${customerName}, your appointment is confirmed. Here are the details.`,
           rows,

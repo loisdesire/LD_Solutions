@@ -6,7 +6,7 @@ import { notFound, redirect } from 'next/navigation';
 // Shared by every /[slug]/admin/* page: confirms the visitor is logged in
 // and is staff for THIS business, then hands back a session-aware Supabase
 // client (so callers can do further RLS-respecting reads/writes) plus the
-// business row. Also gates on subscription status — pass
+// business row. Also gates on subscription status - pass
 // `skipSubscriptionCheck: true` only from the billing page itself, since
 // that's the one page a business with an expired trial still needs to
 // reach in order to pay and regain access.

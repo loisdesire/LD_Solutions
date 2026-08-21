@@ -51,11 +51,11 @@ export default function ManageBooking({
   const [date, setDate] = useState(toDateStr(new Date()));
   const [slots, setSlots] = useState<string[]>([]);
   // Without these, every date change rendered "0 open" and "No openings
-  // this day" for the entire duration of the fetch — telling a customer
+  // this day" for the entire duration of the fetch - telling a customer
   // trying to reschedule that the business was full, on every single click.
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState(false);
-  // Forces a refetch of the same date — setDate(d => d) would be a no-op,
+  // Forces a refetch of the same date - setDate(d => d) would be a no-op,
   // since React bails out when state is identical.
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState('');
@@ -145,7 +145,7 @@ export default function ManageBooking({
   }
 
   // Reschedule/cancel only make sense for something that hasn't happened
-  // yet — this used to show both buttons unconditionally, so a booking
+  // yet - this used to show both buttons unconditionally, so a booking
   // from last week still looked fully actionable.
   if (new Date(startTime).getTime() < Date.now()) {
     return (

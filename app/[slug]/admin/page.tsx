@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = await getBusinessBySlug(slug);
-  return { title: data ? `${data.business.name} — Dashboard` : 'Dashboard' };
+  return { title: data ? `${data.business.name} - Dashboard` : 'Dashboard' };
 }
 
 export default async function AdminDashboard({
@@ -40,7 +40,7 @@ export default async function AdminDashboard({
         )
         .eq('business_id', business.id)
         .order('start_time', { ascending: true }),
-      // For the "New appointment" modal — staff picking a service to book a
+      // For the "New appointment" modal - staff picking a service to book a
       // walk-in/phone customer into, same set a customer would see.
       supabaseAdmin
         .from('services')
@@ -58,7 +58,7 @@ export default async function AdminDashboard({
   const all = bookings ?? [];
   const now = new Date();
   // "Today"/"this week" boundaries in the business's own timezone, not the
-  // server's — otherwise a business in Lagos gets its stats flipping over
+  // server's - otherwise a business in Lagos gets its stats flipping over
   // at server-local midnight (UTC on most hosts), miscounting bookings for
   // anyone within a few hours of that boundary.
   const timeZone = business.timezone || 'UTC';

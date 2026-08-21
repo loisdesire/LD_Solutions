@@ -3,7 +3,7 @@ import { logError } from './logger';
 // Set RESEND_FROM to a verified sender (e.g. bookings@vanovahub.com) once
 // the domain is verified in Resend. Until then this falls back to Resend's
 // shared test sender, which needs no verification but only ever delivers to
-// the Resend account's own address — so real customers get nothing.
+// the Resend account's own address - so real customers get nothing.
 //
 // Deliberately env-driven rather than hardcoded to the real domain:
 // Resend rejects a From on an unverified domain outright, so hardcoding it
@@ -13,7 +13,7 @@ import { logError } from './logger';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'onboarding@resend.dev';
 
 // A rejected send (bad address, restricted recipient, rate limit) comes
-// back from Resend as a normal non-2xx response, not a thrown exception —
+// back from Resend as a normal non-2xx response, not a thrown exception -
 // fetch() alone won't catch that, so this checks the response explicitly
 // rather than only catching network-level errors. No-ops (returns false)
 // when RESEND_API_KEY isn't configured, so callers can call this

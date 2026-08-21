@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Extracted from what was originally only inside the reminders cron route —
+// Extracted from what was originally only inside the reminders cron route -
 // "message a customer through whichever channel they actually booked
 // through, falling back to email if that channel's since been
 // disconnected" is exactly the same problem the reschedule feature has, so
@@ -34,7 +34,7 @@ export type NotifyCustomerContact = {
   customer_email: string | null;
 };
 
-// Returns true only if something was actually sent — a rejected/failed
+// Returns true only if something was actually sent - a rejected/failed
 // send of any kind should be treated as a failure by the caller, never as
 // silently "handled."
 export async function notifyCustomer(
@@ -86,10 +86,10 @@ export async function notifyCustomer(
 }
 
 // Single place that knows how to safely fetch a business's channel
-// credentials for notifyCustomer — `whatsapp_access_token` and
+// credentials for notifyCustomer - `whatsapp_access_token` and
 // `whatsapp_business_account_id` are live-verified missing on the current
 // database (documented in schema.sql as migrated, but never actually
-// applied — see the note on those two `alter table` lines), so a combined
+// applied - see the note on those two `alter table` lines), so a combined
 // select naming whatsapp_access_token fails as a whole unit and silently
 // takes Telegram/Messenger/email down with it. Falls back to the columns
 // that do exist so every OTHER channel keeps working regardless of

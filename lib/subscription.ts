@@ -1,9 +1,9 @@
-// Client-safe only — no Supabase client, no service-role key. BillingManager
+// Client-safe only - no Supabase client, no service-role key. BillingManager
 // (a client component) imports MONTHLY_PRICE_NGN from here; anything with a
 // module-scope `createClient(..., SUPABASE_SERVICE_ROLE_KEY)` call belongs in
 // subscription-server.ts instead; SUPABASE_SERVICE_ROLE_KEY isn't
 // NEXT_PUBLIC_-prefixed, so it's undefined in a client bundle and crashes
-// the whole module at evaluation time — "supabaseKey is required" — the
+// the whole module at evaluation time - "supabaseKey is required" - the
 // instant anything client-side imports even one unrelated export from a
 // file that also does that at the top level.
 
@@ -12,9 +12,9 @@ export type Plan = 'core' | 'business_intelligence';
 // Referenced by both the billing page (what it shows) and the checkout
 // route (what it actually charges), so there's exactly one number to change
 // per plan. Both AI receptionist booking capability and the dashboard are
-// in 'core' — the thing 'business_intelligence' actually adds is deeper AI
+// in 'core' - the thing 'business_intelligence' actually adds is deeper AI
 // access: the owner-facing insights panel, and richer business-info
-// answers in the public chat (top services, etc). It is NOT "AI vs no AI" —
+// answers in the public chat (top services, etc). It is NOT "AI vs no AI" -
 // every plan gets the same booking AI, since that's the entire premise of
 // the product, not an upsell.
 export const PLAN_PRICE_NGN: Record<Plan, number> = {
@@ -28,7 +28,7 @@ export const PLAN_LABEL: Record<Plan, string> = {
 };
 
 // Kept for existing call sites that only ever meant "the price" before
-// plans existed — equivalent to PLAN_PRICE_NGN.core.
+// plans existed - equivalent to PLAN_PRICE_NGN.core.
 export const MONTHLY_PRICE_NGN = PLAN_PRICE_NGN.core;
 
 export type Subscription = {
@@ -40,9 +40,9 @@ export type Subscription = {
 
 export type SubscriptionState = {
   // Whether the business should actually be let into the admin area right
-  // now — the one thing every call site actually cares about.
+  // now - the one thing every call site actually cares about.
   hasAccess: boolean;
-  // 'trial' | 'active' | 'cancelling' | 'past_due' | 'expired' | 'none' —
+  // 'trial' | 'active' | 'cancelling' | 'past_due' | 'expired' | 'none' -
   // 'none' covers a business created before subscriptions existed, or some
   // other edge case with no row at all; treated as expired (no free pass)
   // rather than silently granting access.
@@ -57,7 +57,7 @@ function normalizePlan(plan: string | null | undefined): Plan {
 }
 
 // Centralizes "is this business allowed in" so it's computed the same way
-// everywhere (the access gate, and the billing page showing status) — a
+// everywhere (the access gate, and the billing page showing status) - a
 // naive `status === 'active'` check alone would incorrectly lock out
 // someone still inside their trial window, or cut off someone who
 // cancelled but already paid through the end of their current period.

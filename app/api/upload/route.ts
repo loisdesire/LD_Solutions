@@ -18,7 +18,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/gif': 'gif',
 };
 
-// Buckets are created once per environment, not once per request — this
+// Buckets are created once per environment, not once per request - this
 // caches the "does it exist yet" check for the life of the server process
 // instead of hitting the Storage API on every single upload.
 let bucketReady: Promise<void> | null = null;
@@ -38,7 +38,7 @@ function ensureBucket(): Promise<void> {
   return bucketReady;
 }
 
-// POST /api/upload?slug=... — logo/cover/gallery photos all go through
+// POST /api/upload?slug=... - logo/cover/gallery photos all go through
 // here rather than asking someone to paste a URL to an image they'd
 // already have to host somewhere else first. Staff-authenticated (same
 // session check every other admin-only route uses), and scoped under the

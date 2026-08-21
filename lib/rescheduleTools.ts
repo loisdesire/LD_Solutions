@@ -5,13 +5,13 @@ import { formatLocalDateTime } from './formatDateTime';
 import { getAvailableSlots } from './getAvailableSlots';
 import { notifyCustomer, getNotifyCreds } from './notifyCustomer';
 
-// Owner-facing, write-capable — the counterpart to insightsTools.ts (which
+// Owner-facing, write-capable - the counterpart to insightsTools.ts (which
 // is deliberately read-only). Two-step by design: proposeReschedule never
 // touches a booking, it only computes a plan and persists it; applyReschedule
 // only ever executes a plan that's already been shown to and approved by the
 // owner. A model calling proposeReschedule twice in a row is harmless; a
 // model calling applyReschedule on its own initiative without ever showing
-// the plan is the failure mode this split exists to prevent — see the
+// the plan is the failure mode this split exists to prevent - see the
 // system prompt in lib/rescheduleAgent.ts for the actual enforcement.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,7 +34,7 @@ type Move = {
 };
 
 // Searches forward day by day for the earliest slot at/after `notBeforeISO`
-// for this service — getAvailableSlots only ever answers for a single
+// for this service - getAvailableSlots only ever answers for a single
 // calendar date, so this is what turns that into "the next one, whenever
 // that ends up being." Capped so a service with no working hours configured
 // (or a business closed indefinitely) fails fast with "no slot found"
@@ -83,7 +83,7 @@ export async function proposeReschedule(
 
   const affected = bookings ?? [];
   if (affected.length === 0) {
-    return { affected_bookings: 0, message: 'No bookings fall inside that window — nothing to reschedule.' };
+    return { affected_bookings: 0, message: 'No bookings fall inside that window - nothing to reschedule.' };
   }
 
   const moves: Move[] = [];
@@ -122,7 +122,7 @@ export async function proposeReschedule(
     .single();
 
   if (error) {
-    // PGRST205 = PostgREST can't find the table at all — the
+    // PGRST205 = PostgREST can't find the table at all - the
     // reschedule_plans migration hasn't been run against this database
     // yet. A plain, model-friendly message beats leaking raw Postgres/
     // PostgREST internals into a chat reply.
@@ -139,22 +139,22 @@ export async function proposeReschedule(
       customer: m.customer_name,
       service: m.service_name,
       from: m.old_when,
-      to: m.new_when ?? 'No open slot found in the next 3 weeks — this one needs manual handling.',
+      to: m.new_when ?? 'No open slot found in the next 3 weeks - this one needs manual handling.',
     })),
     instructions:
       'Show this exact plan to the owner, formatted clearly, and ask them to confirm before doing anything else. ' +
-      'Only call apply_reschedule with this plan_id after the owner has explicitly said yes — never on your own judgment, ' +
+      'Only call apply_reschedule with this plan_id after the owner has explicitly said yes - never on your own judgment, ' +
       'and never for a plan you have not just shown them in this conversation.',
   };
 }
 
-// plan_id is optional on purpose. Each chat turn is its own API request —
+// plan_id is optional on purpose. Each chat turn is its own API request -
 // the client only resends plain text history (see AssistantChat.tsx), not
-// the actual tool-call/tool-result exchange from earlier turns — so a
+// the actual tool-call/tool-result exchange from earlier turns - so a
 // model replying to "yeah" a turn *after* it proposed a plan has no way to
 // know the exact plan_id it got back then; that value simply isn't in its
 // context anymore. Requiring it as the only way in meant the model could
-// never actually apply anything past turn one — it would just keep
+// never actually apply anything past turn one - it would just keep
 // re-showing the same plan, unable to proceed. Falls back to this
 // business's most recent still-pending plan, capped at an hour old so a
 // stray confirmation in some unrelated later conversation can't reach
@@ -163,7 +163,7 @@ const PENDING_PLAN_MAX_AGE_MS = 60 * 60_000;
 
 // Single-booking counterpart to proposeReschedule. Same output shape and
 // the same reschedule_plans row, so applyReschedule handles both without
-// knowing which built the plan — the only thing that differs is how the
+// knowing which built the plan - the only thing that differs is how the
 // moves get selected ("everyone in this window" vs "this one person").
 //
 // Deliberately returns candidates instead of guessing when a name matches
@@ -245,7 +245,7 @@ export async function proposeBookingMove(
     new_when: newStart ? formatLocalDateTime(newStart, timeZone) : null,
   };
 
-  // window_* describe the slot being vacated — for a single move that's
+  // window_* describe the slot being vacated - for a single move that's
   // just the booking's own time, which keeps the row shape identical to a
   // window-based plan.
   const { data: plan, error } = await supabaseAdmin
@@ -276,7 +276,7 @@ export async function proposeBookingMove(
         customer: move.customer_name,
         service: move.service_name,
         from: move.old_when,
-        to: move.new_when ?? 'No open slot found in the next 3 weeks — this one needs manual handling.',
+        to: move.new_when ?? 'No open slot found in the next 3 weeks - this one needs manual handling.',
       },
     ],
     instructions:
@@ -313,7 +313,7 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
 
   if (!plan) return { error: 'No pending reschedule plan found to confirm. Call propose_reschedule again.' };
   if (plan.status !== 'pending') {
-    return { error: `This plan was already ${plan.status === 'applied' ? 'applied' : plan.status} — propose a new one if you need to make another change.` };
+    return { error: `This plan was already ${plan.status === 'applied' ? 'applied' : plan.status} - propose a new one if you need to make another change.` };
   }
 
   const business = await getNotifyCreds(businessId);
@@ -323,7 +323,7 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
 
   for (const move of moves) {
     if (!move.new_start) {
-      results.push({ customer: move.customer_name, service: move.service_name, applied: false, notified: false, detail: 'No available slot was found for this one — needs manual rescheduling.' });
+      results.push({ customer: move.customer_name, service: move.service_name, applied: false, notified: false, detail: 'No available slot was found for this one - needs manual rescheduling.' });
       continue;
     }
 
@@ -338,17 +338,17 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
 
     if (error) {
       // 23P01 here means the slot this plan picked got taken by something
-      // else between propose and apply (a new booking landed there) — real
+      // else between propose and apply (a new booking landed there) - real
       // but rare given the plan searches forward from a blocked window,
       // surfaced plainly rather than silently dropped.
       const detail = (error as { code?: string }).code === '23P01'
-        ? 'That slot got booked by someone else in the meantime — needs manual rescheduling.'
+        ? 'That slot got booked by someone else in the meantime - needs manual rescheduling.'
         : error.message;
       results.push({ customer: move.customer_name, service: move.service_name, applied: false, notified: false, detail });
       continue;
     }
 
-    const text = `Hi ${move.customer_name}, ${business.name ?? 'we'} had to move your ${move.service_name} appointment. Your new time is ${move.new_when}. Sorry for the short notice — reply here if that doesn't work for you.`;
+    const text = `Hi ${move.customer_name}, ${business.name ?? 'we'} had to move your ${move.service_name} appointment. Your new time is ${move.new_when}. Sorry for the short notice - reply here if that doesn't work for you.`;
     const notified = await notifyCustomer(
       business,
       move,
@@ -358,7 +358,7 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
       { businessId, bookingId: move.booking_id }
     );
 
-    results.push({ customer: move.customer_name, service: move.service_name, applied: true, notified, detail: notified ? 'Moved and customer notified.' : 'Moved, but the customer could not be notified automatically — let them know directly.' });
+    results.push({ customer: move.customer_name, service: move.service_name, applied: true, notified, detail: notified ? 'Moved and customer notified.' : 'Moved, but the customer could not be notified automatically - let them know directly.' });
   }
 
   await supabaseAdmin.from('reschedule_plans').update({ status: 'applied' }).eq('id', plan.id);

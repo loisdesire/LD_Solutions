@@ -1,7 +1,7 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import BotIntegrationsSettings from '@/components/BotIntegrationsSettings';
 
-// Split out of Settings — connection status for the channels your AI
+// Split out of Settings - connection status for the channels your AI
 // receptionist actually answers on is core product functionality, not
 // a buried setting, and it's something worth checking far more often
 // than you'd ever touch a cancellation policy.
@@ -32,7 +32,7 @@ export default async function ChannelsPage({
       </div>
 
       {/* Without this, a failed read renders every channel as
-          "not connected" — the most misleading possible state on this
+          "not connected" - the most misleading possible state on this
           page, since an owner could reasonably reconnect (or panic)
           based on it. */}
       {bizError && (

@@ -8,7 +8,7 @@ const THINKING_LINES = ['Checking availability…', 'One moment…', 'Almost the
 
 // A random per-visitor id, one per business (a customer browsing two
 // different businesses' pages should get two separate conversations, not
-// one bleeding into the other) — persisted in localStorage so reopening
+// one bleeding into the other) - persisted in localStorage so reopening
 // the widget, or coming back later, continues the same thread instead of
 // starting over. This is the website's version of the same opaque
 // "customerPhone" identifier WhatsApp/Telegram/Messenger already use.
@@ -29,7 +29,7 @@ export default function WebChatWidget({
   businessId: string;
   // Set when this widget is mounted on demand from somewhere that already
   // represents "open the chat" as its own action (e.g. clicking a chat
-  // icon on /account) — skips relying on the #chat hash trick, which is
+  // icon on /account) - skips relying on the #chat hash trick, which is
   // really meant for deep-linking in from a different page.
   defaultOpen?: boolean;
 }) {
@@ -50,7 +50,7 @@ export default function WebChatWidget({
   useEffect(() => {
     // Lets other pages (e.g. /account's "Message them" button) deep-link
     // straight into an open chat, and lets an on-page CTA in the hero do
-    // the same thing without a full navigation — both just set the hash.
+    // the same thing without a full navigation - both just set the hash.
     const checkHash = () => {
       if (window.location.hash === '#chat') setOpen(true);
     };
@@ -77,7 +77,7 @@ export default function WebChatWidget({
 
   // THINKING_LINES has 3 messages so a reply that takes a couple of
   // seconds doesn't just sit on the same static "Checking availability…"
-  // the whole time — cycles while thinking is true, resets to the first
+  // the whole time - cycles while thinking is true, resets to the first
   // line at the start of every new request.
   useEffect(() => {
     if (!thinking) {

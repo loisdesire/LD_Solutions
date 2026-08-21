@@ -3,7 +3,7 @@ import { supabasePublic } from '@/lib/supabase';
 import { SITE_URL } from '@/lib/site';
 
 // Paths that involve cookie-scoped auth (staff session or customer
-// session) — these only work correctly on the platform's own domain, since
+// session) - these only work correctly on the platform's own domain, since
 // that's the domain the auth cookie is actually set on. A business's
 // custom domain serves its public booking pages only; staff still manage
 // the business and log in via <slug>.<platform domain>, exactly as before.
@@ -20,7 +20,7 @@ const PLATFORM_HOSTNAME = (() => {
 // Matches the platform's own hostname with or without a leading "www.",
 // in both directions. Vercel serves whichever of the two you set primary
 // and 308-redirects the other, so the host that actually arrives here may
-// not be the one SITE_URL is written with — and a mismatch means every
+// not be the one SITE_URL is written with - and a mismatch means every
 // request to the marketing site falls through to the custom-domain
 // lookup below and pays for a Supabase round trip it can never use.
 function isPlatformHost(hostname: string): boolean {
@@ -35,11 +35,11 @@ function isPlatformHost(hostname: string): boolean {
 }
 
 // Custom-domain routing: a request for glowsalon.com gets rewritten to
-// /glow-salon under the hood, same app, same data — the business just
+// /glow-salon under the hood, same app, same data - the business just
 // never sees the /glow-salon prefix. Every non-platform host that reaches
 // this deployment is looked up by businesses.custom_domain; anything that
 // doesn't match (DNS pointed here but never actually connected in
-// Settings, or the migration hasn't run yet — see the 42703 handling
+// Settings, or the migration hasn't run yet - see the 42703 handling
 // below) falls through to ordinary routing, which just renders the
 // platform's own marketing site rather than erroring.
 export async function middleware(req: NextRequest) {
@@ -49,7 +49,7 @@ export async function middleware(req: NextRequest) {
   // Wrapped because this runs on EVERY request that reaches it: an
   // unguarded throw here (network blip, Supabase timeout) would 500 the
   // request rather than degrade. Falling through to normal routing is
-  // always the safe outcome — worst case a custom domain temporarily
+  // always the safe outcome - worst case a custom domain temporarily
   // shows the platform site instead of the business's page.
   let business: { slug: string } | null = null;
   try {
@@ -59,7 +59,7 @@ export async function middleware(req: NextRequest) {
       .eq('custom_domain', hostname)
       .maybeSingle();
     // 42703 = the custom_domain column hasn't been migrated in yet on this
-    // database — same defensive pattern as everywhere else this session.
+    // database - same defensive pattern as everywhere else this session.
     if (error) return NextResponse.next();
     business = data;
   } catch {

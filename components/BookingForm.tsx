@@ -53,7 +53,7 @@ function groupSlots(slots: string[]): [Period, string[]][] {
 }
 
 // A thin progress rule + a plain mono label, not three bold circles with
-// glow rings — this page's job is to feel like a considered reservation
+// glow rings - this page's job is to feel like a considered reservation
 // on a business's own site, not a SaaS onboarding wizard. The admin
 // dashboard earns its heavier chrome because it's a working tool; a
 // customer booking an appointment doesn't need to feel like they're
@@ -83,7 +83,7 @@ function googleCalendarUrl(opts: { title: string; startISO: string; minutes: num
 function StepIndicator({ step }: { step: number }) {
   return (
     <div className="max-w-xs mx-auto mb-10">
-      {/* The whole flow was silent to screen readers — moving between steps
+      {/* The whole flow was silent to screen readers - moving between steps
           changed everything on screen and announced nothing. */}
       <p className="sr-only" role="status" aria-live="polite">
         Step {step} of 3: {STEP_LABELS[step - 1]}
@@ -154,13 +154,13 @@ export default function BookingForm({
   // The API already returns specific, human-readable messages for every
   // failure ("That time is no longer available", "Too many requests…").
   // They used to be parsed and thrown away in favour of one generic
-  // string, which made a 409 actively misleading — "please try again"
+  // string, which made a 409 actively misleading - "please try again"
   // can never succeed without refetching slots first.
   const [errorMessage, setErrorMessage] = useState('');
   const [bookingId, setBookingId] = useState('');
   const [paystackReady, setPaystackReady] = useState(false);
   // Distinguishes "this day is genuinely fully booked" from "we couldn't
-  // load availability" — before this, a network failure or a 429 rendered
+  // load availability" - before this, a network failure or a 429 rendered
   // as "No openings on this day", telling the customer the business was
   // full when it wasn't.
   const [slotsError, setSlotsError] = useState(false);
@@ -168,7 +168,7 @@ export default function BookingForm({
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
 
-  // Only a service with a real price can actually require payment — a
+  // Only a service with a real price can actually require payment - a
   // service with no price set (price is nullable) has nothing to charge,
   // so this business's toggle can't apply to it no matter what.
   const paymentActive = requirePayment && Boolean(selectedService?.price) && Boolean(paystackPublicKey);
@@ -202,7 +202,7 @@ export default function BookingForm({
 
   const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
-  // `reloadKey` lets other code force a refetch of the same date — used
+  // `reloadKey` lets other code force a refetch of the same date - used
   // after a 409, where the slot list on screen is known to be stale.
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -244,11 +244,11 @@ export default function BookingForm({
 
   // `paymentTaken` changes what a failure means. Payment happens BEFORE
   // the booking row exists, so if this call fails after a successful
-  // charge the customer has paid for nothing — they must be told that
+  // charge the customer has paid for nothing - they must be told that
   // plainly rather than shown a generic "try again" that would risk a
   // second charge.
   const PAYMENT_TAKEN_FAILURE =
-    "Your payment went through, but we couldn't finish creating the booking. Please contact the business directly with your payment reference — do not pay again.";
+    "Your payment went through, but we couldn't finish creating the booking. Please contact the business directly with your payment reference - do not pay again.";
 
   async function createBooking(paymentReference?: string) {
     const paymentTaken = Boolean(paymentReference);
@@ -320,7 +320,7 @@ export default function BookingForm({
     if (!selectedService || !selectedSlot) return;
     setStatus('saving');
 
-    // Payment happens before the booking exists at all — the popup asks
+    // Payment happens before the booking exists at all - the popup asks
     // for money first, and only a genuinely successful charge (verified
     // again server-side, not just trusted from the client callback) ever
     // creates the booking. A cancelled/failed payment just returns to the
@@ -328,7 +328,7 @@ export default function BookingForm({
     if (paymentActive) {
       if (!window.PaystackPop) {
         setErrorMessage(
-          "The payment window couldn't load. Check your connection (or any ad blocker) and try again — nothing has been charged."
+          "The payment window couldn't load. Check your connection (or any ad blocker) and try again. Nothing has been charged."
         );
         setStatus('error');
         return;
@@ -425,12 +425,12 @@ export default function BookingForm({
         </div>
 
         {/* Was a single ~20px-tall text link. Someone who has just booked
-            wants to save it or return to the business — neither was offered. */}
+            wants to save it or return to the business - neither was offered. */}
         <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
           {selectedService && selectedSlot && (
             <a
               href={googleCalendarUrl({
-                title: `${selectedService.name} — ${businessName}`,
+                title: `${selectedService.name} at ${businessName}`,
                 startISO: selectedSlot,
                 minutes: selectedService.duration_minutes,
                 details: `Booking code ${bookingId.slice(0, 8).toUpperCase()}`,
@@ -493,7 +493,7 @@ export default function BookingForm({
               )}
             </div>
             {/* Was a single "Change" that always jumped to step 1 and cleared
-                the chosen slot — so a customer on step 3 who only wanted a
+                the chosen slot - so a customer on step 3 who only wanted a
                 different time had to re-pick the service too. */}
             <div className="flex items-center gap-1 shrink-0">
               {step === 'details' && (
@@ -525,7 +525,7 @@ export default function BookingForm({
           <p className="text-[14.5px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
             <div className="max-w-lg mx-auto text-center py-12">
-              <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat — we can still help.</p>
+              <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
             <div className="max-w-2xl mx-auto border-y border-line">
@@ -577,7 +577,7 @@ export default function BookingForm({
               <p className="text-[14px] text-ink-faint">
                 Not sure what to pick?{' '}
                 {/* Was a <span> styled to look exactly like a link but
-                    doing nothing — not focusable, not clickable. The chat
+                    doing nothing - not focusable, not clickable. The chat
                     widget already opens on the #chat hash (see
                     WebChatWidget's hashchange listener), which is what the
                     hero's "Chat with us" button uses too. */}
@@ -600,7 +600,7 @@ export default function BookingForm({
           <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
 
           {/* A 409 (slot taken while they were filling in details) sends
-              them back here — without this banner they'd arrive with no
+              them back here - without this banner they'd arrive with no
               idea why, and their selected time silently cleared. */}
           {status === 'error' && errorMessage && (
             <div role="alert" className="flex items-start gap-2 mb-5 px-3 py-2 rounded-lg bg-error-bg border border-error-border">
@@ -650,7 +650,7 @@ export default function BookingForm({
               ))}
             </div>
           ) : slotsError ? (
-            // Deliberately NOT the "no openings" state — telling someone a
+            // Deliberately NOT the "no openings" state - telling someone a
             // business is fully booked when we simply failed to load is a
             // lie that costs the business a booking.
             <div className="rounded-2xl bg-warm-surface py-10 flex flex-col items-center text-center px-6 mb-6">
@@ -659,7 +659,7 @@ export default function BookingForm({
                 <path d="M12 8v5M12 16h.01" strokeLinecap="round" />
               </svg>
               <p className="text-ink-soft text-[14px]">We couldn&rsquo;t load available times</p>
-              <p className="text-ink-faint text-[12px] mt-1 mb-4">This is us, not you — the times may still be free.</p>
+              <p className="text-ink-faint text-[12px] mt-1 mb-4">This is us, not you. The times may still be free.</p>
               <button
                 type="button"
                 onClick={() => setReloadKey((k) => k + 1)}
@@ -777,7 +777,7 @@ export default function BookingForm({
                 </span>
               </div>
               <p className="text-ink-faint text-[11.5px] mt-1.5">
-                Paid securely through Paystack — card or bank transfer.
+                Paid securely through Paystack. Card or bank transfer.
               </p>
             </div>
           )}

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 // Codifies the pattern already proven in AdminDashboardBody's bookings
-// empty state — what's missing, why it matters, and what to do next —
+// empty state - what's missing, why it matters, and what to do next -
 // against the dozen or so elsewhere that just said "No services yet".
 //
 // The brief's rule: never a bare "no data". A blank screen is where a new

@@ -7,7 +7,7 @@ import { MAX_HISTORY } from '@/lib/whatsappAgent';
 import { getNotifyCreds } from '@/lib/notifyCustomer';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
-// GET /api/admin/message-customer?slug=...&customerPhone=... — the same
+// GET /api/admin/message-customer?slug=...&customerPhone=... - the same
 // history the AI agent already reads for context (lib/whatsappTools.ts
 // loadConversation), surfaced to the business owner so replying isn't a
 // blind message into a conversation they can't see.
@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ messages });
 }
 
-// POST /api/admin/message-customer — lets the business owner reply to a
+// POST /api/admin/message-customer - lets the business owner reply to a
 // customer through the SAME bot identity (WhatsApp number or Telegram bot)
 // the customer already has an open conversation with. Deliberately not a
-// "message their personal number/account" flow (e.g. wa.me/t.me links) —
+// "message their personal number/account" flow (e.g. wa.me/t.me links) -
 // a WhatsApp Business API number can't double as a normal consumer WhatsApp
 // account on someone's phone, so that would always send from a different,
 // unrecognized number. This sends as the actual bot, continuing the same
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   // Fetched separately (rather than in the same select as the auth check)
   // because whatsapp_access_token is currently missing from the live
   // database (documented in schema.sql, evidently never actually applied)
-  // — combining it into one select would fail the whole query and make
+  // - combining it into one select would fail the whole query and make
   // Telegram/Messenger replies break too, not just WhatsApp. getNotifyCreds
   // already degrades gracefully for exactly this case.
   const business = await getNotifyCreds(auth.business.id);
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       ? sendMessengerMessage(business.messenger_access_token!, customerPhone.slice('messenger:'.length), message)
       : sendTelegramMessage(business.telegram_bot_token, customerPhone.slice('telegram:'.length), message);
 
-  // Sending and reading current history are independent — no reason to
+  // Sending and reading current history are independent - no reason to
   // wait for one before starting the other. Only the decision to *save*
   // depends on the send having actually succeeded.
   const [sent, history] = await Promise.all([sendPromise, loadConversation(auth.business.id, customerPhone)]);

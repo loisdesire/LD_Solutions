@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 
-// Replaces what used to be a raw "paste a URL" text input — nobody
+// Replaces what used to be a raw "paste a URL" text input - nobody
 // actually wants to host an image somewhere else first just to link it
 // here. This uploads straight to the backend (/api/upload, which puts it
 // in Supabase Storage) and hands back a real, working URL, same as any
@@ -32,7 +32,7 @@ export default function ImageUploadField({
     formData.append('file', file);
 
     // try/finally, because a network failure here used to throw straight
-    // out of this function — setUploading(false) never ran and the
+    // out of this function - setUploading(false) never ran and the
     // spinner sat on the image forever with no error and no way back.
     try {
       const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
@@ -45,7 +45,7 @@ export default function ImageUploadField({
 
       onChange(data.url);
     } catch {
-      setError("Upload failed — check your connection and try again.");
+      setError("Upload failed - check your connection and try again.");
     } finally {
       setUploading(false);
     }
@@ -106,7 +106,7 @@ export default function ImageUploadField({
             </button>
           )}
         </div>
-        <p className="text-ink-faint text-[11.5px] mt-1.5">JPG, PNG, WEBP, or GIF — up to 5MB.</p>
+        <p className="text-ink-faint text-[11.5px] mt-1.5">JPG, PNG, WEBP, or GIF - up to 5MB.</p>
         {error && <p className="text-[12px] text-error mt-1">{error}</p>}
       </div>
     </div>

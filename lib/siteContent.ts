@@ -1,4 +1,4 @@
-// Shared "does this section actually have anything to show" logic — a nav
+// Shared "does this section actually have anything to show" logic - a nav
 // link (or a whole page) only appears when the owner has both turned it on
 // AND filled in real content, not one without the other.
 export function getSiteContentFlags(business: {

@@ -30,7 +30,7 @@ export default function BotIntegrationsSettings({
         <p className="text-[12.5px] text-ink-faint">Connect the places where customers already message you.</p>
       </div>
 
-      {/* Website chat has no connect step — it is live on every public page
+      {/* Website chat has no connect step - it is live on every public page
           the moment a business exists. Leaving it off this page made the
           list read as "you have nothing connected" when in fact the most
           reliable channel was already running. */}
@@ -44,7 +44,7 @@ export default function BotIntegrationsSettings({
             </span>
           </div>
           <p className="text-[12.5px] text-ink-soft mt-0.5">
-            Live on your booking page already — nothing to set up.
+            Live on your booking page already. Nothing to set up.
           </p>
         </div>
       </div>
@@ -91,7 +91,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
     }
     setSaving(true);
     setError('');
-    // A failed DELETE used to do nothing at all — no error, badge still
+    // A failed DELETE used to do nothing at all - no error, badge still
     // reading "Connected", owner believing they'd disconnected when the
     // bot was in fact still live on their page.
     try {
@@ -104,10 +104,10 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
         setPageName(null);
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Couldn't disconnect Messenger. It's still connected — please try again.");
+        setError(data?.error ?? "Couldn't disconnect Messenger. It's still connected. Please try again.");
       }
     } catch {
-      setError("Couldn't reach the server. Messenger is still connected — please try again.");
+      setError("Couldn't reach the server. Messenger is still connected. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -211,10 +211,10 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
         setUsername(null);
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Couldn't disconnect the Telegram bot. It's still connected — please try again.");
+        setError(data?.error ?? "Couldn't disconnect the Telegram bot. It's still connected. Please try again.");
       }
     } catch {
-      setError("Couldn't reach the server. The bot is still connected — please try again.");
+      setError("Couldn't reach the server. The bot is still connected. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -283,7 +283,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
   const signupData = useRef<{ wabaId?: string; phoneNumberId?: string }>({});
 
   // Meta posts a WA_EMBEDDED_SIGNUP message to the window as the owner
-  // completes the popup — this is how we learn which WABA/number they
+  // completes the popup - this is how we learn which WABA/number they
   // picked, since FB.login's own callback only ever hands back the auth code.
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
@@ -354,7 +354,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
 
         if (!code || !signupData.current.wabaId || !signupData.current.phoneNumberId) {
           setConnecting(false);
-          return; // cancelled or closed without finishing — not an error to surface
+          return; // cancelled or closed without finishing - not an error to surface
         }
 
         finishConnect(code);
@@ -384,10 +384,10 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
         setNumber(null);
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Couldn't disconnect WhatsApp. It's still connected — please try again.");
+        setError(data?.error ?? "Couldn't disconnect WhatsApp. It's still connected. Please try again.");
       }
     } catch {
-      setError("Couldn't reach the server. WhatsApp is still connected — please try again.");
+      setError("Couldn't reach the server. WhatsApp is still connected. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -420,9 +420,9 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
         <div className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
             Connect the WhatsApp number you already message customers from. You&apos;ll sign in with Facebook and
-            need a Meta Business account — if you don&apos;t have one yet, Meta walks you through creating it, which
+            need a Meta Business account. If you don&apos;t have one yet, Meta walks you through creating it, which
             can take a day or two to be approved. Heads up: linking a number here deactivates the regular WhatsApp
-            app on that phone — your assistant takes over replying there.
+            app on that phone. Your assistant takes over replying there.
           </p>
           <button
             onClick={handleConnect}

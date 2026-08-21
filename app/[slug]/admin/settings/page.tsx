@@ -41,7 +41,7 @@ export default async function SettingsPage({
 
   // Same reasoning as the booking route: before the payments migration
   // runs, the combined selects above fail as a whole unit and silently
-  // return null — which would make this page render every real,
+  // return null - which would make this page render every real,
   // already-saved booking-rule/site-content value as if it were unset,
   // and a normal "Save" click would then overwrite it with the reset
   // default. Falls back to the pre-payments column set so existing data
@@ -64,7 +64,7 @@ export default async function SettingsPage({
   }
 
   // If even the fallback came back empty, the forms below will render
-  // every field at its default — and a Save from that state would write
+  // every field at its default - and a Save from that state would write
   // those defaults over whatever is actually stored. Warn rather than let
   // someone silently wipe their own settings.
   const loadFailed = rules === null || bizRow === null;
@@ -85,12 +85,12 @@ export default async function SettingsPage({
         <div role="alert" className="mb-6 rounded-xl bg-error-bg border border-error-border px-4 py-3">
           <p className="text-body-sm text-error">
             We couldn&rsquo;t load your current settings, so the fields below are showing defaults rather than what
-            you have saved. Refresh before saving — saving now would overwrite your real settings.
+            you have saved. Refresh before saving - saving now would overwrite your real settings.
           </p>
         </div>
       )}
 
-      {/* Channel connections used to live here as a fourth item — moved to
+      {/* Channel connections used to live here as a fourth item - moved to
           its own page, since checking whether WhatsApp is still connected
           is something you'd do far more often than touch a cancellation
           policy, and it deserves its own spot in the sidebar rather than
@@ -148,7 +148,7 @@ export default async function SettingsPage({
 
         <CollapsibleSection
           title="Booking rules and payments"
-          description="Buffers, how far ahead people can book, cancellation notice — and taking deposits with Paystack."
+          description="Buffers, how far ahead people can book, cancellation notice - and taking deposits with Paystack."
           color="var(--tertiary)"
           icon={
             <svg {...iconProps}>
@@ -172,7 +172,7 @@ export default async function SettingsPage({
 
         <CollapsibleSection
           title="Custom domain"
-          description="Use your own web address instead of ours. Your public pages only — you still log in here."
+          description="Use your own web address instead of ours. Your public pages only - you still log in here."
           color="var(--accent)"
           icon={
             <svg {...iconProps}>

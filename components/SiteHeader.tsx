@@ -8,13 +8,13 @@ type Business = {
 };
 
 // Shared top nav for every public page under /[slug]/* (home, about,
-// gallery, contact) — real hrefs to real pages now, not anchor scrolls
+// gallery, contact) - real hrefs to real pages now, not anchor scrolls
 // within a single page. `active` highlights the current page; each
 // optional link is passed in already resolved (toggle AND has-content),
 // so this component doesn't need to know the business's raw data shape.
 //
 // The nav links used to be `hidden sm:inline` with no mobile fallback at
-// all — on a phone, every link (About/Gallery/Contact/My bookings)
+// all - on a phone, every link (About/Gallery/Contact/My bookings)
 // simply vanished, leaving no way to navigate anywhere except "Book now"
 // or the logo. A hamburger menu below restores all of them on mobile.
 export default function SiteHeader({
@@ -63,7 +63,7 @@ export default function SiteHeader({
           <span className="font-display text-[17px] font-semibold text-ink truncate">{business.name}</span>
         </a>
 
-        {/* Desktop nav — unchanged */}
+        {/* Desktop nav - unchanged */}
         <div className="hidden sm:flex items-center gap-6">
           {links.map((l) => (
             <a key={l.key} href={l.href} className={linkClass(l.key)}>

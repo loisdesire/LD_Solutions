@@ -7,7 +7,7 @@ import ImageUploadField from './ImageUploadField';
 
 // The platform's own terracotta + cream identity leads the list, plus a
 // handful of others real businesses might actually want as their own
-// brand color — this is customer-facing branding a business picks for
+// brand color - this is customer-facing branding a business picks for
 // itself, not platform chrome, so it isn't limited to the platform's
 // own fixed palette.
 const PRESETS = ['#C4512D', '#F3E8BC', '#8E6A4A', '#2F5D42', '#171717', '#6B3450', '#1769AA', '#1A1917'];
@@ -153,7 +153,7 @@ export default function BusinessProfileManager({
           <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
         </div>
         <p className="text-ink-faint text-[12px] mt-2">
-          Flows through your whole booking page — buttons, selected dates, times.
+          Flows through your whole booking page - buttons, selected dates, times.
         </p>
       </div>
 

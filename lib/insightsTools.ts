@@ -6,11 +6,11 @@ import { getSubscriptionState, PLAN_LABEL, PLAN_PRICE_NGN } from './subscription
 
 // Server-side only, staff-facing counterpart to whatsappTools.ts. That file
 // is customer-facing and deliberately exposes nothing about revenue, other
-// customers, or business performance — this file is the opposite: read-only
+// customers, or business performance - this file is the opposite: read-only
 // business-intelligence queries, gated (by the caller, lib/insightsAgent.ts)
 // behind requireStaffApiSession AND hasBusinessIntelligence(), never reachable
 // from the public booking chat. Every function here takes a businessId and
-// scopes strictly to it — there is no cross-business query in this file.
+// scopes strictly to it - there is no cross-business query in this file.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -29,7 +29,7 @@ function serviceOf(row: BookingRow): { name: string; price: number | null } | nu
   return Array.isArray(row.services) ? (row.services[0] ?? null) : row.services;
 }
 
-// Every function below excludes cancelled bookings from revenue/counts —
+// Every function below excludes cancelled bookings from revenue/counts -
 // a cancelled booking never happened as far as "how much have we made" or
 // "who are our top customers" is concerned, same convention as the rest of
 // the codebase (see findCustomerBookings, findOwnedBooking in whatsappTools.ts).
@@ -75,7 +75,7 @@ export async function getTopCustomers(businessId: string, args: { limit?: number
 
   for (const b of bookings) {
     // Group by phone when present (the one stable identifier across a
-    // customer's bookings — see the customerPhone convention in
+    // customer's bookings - see the customerPhone convention in
     // whatsappTools.ts), falling back to name for old/manually-entered
     // rows that predate a phone being required.
     const key = b.customer_phone || b.customer_name || 'unknown';
@@ -155,7 +155,7 @@ export async function getNextAppointment(businessId: string) {
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // The only function in this file that deliberately does NOT exclude
-// cancelled/no-show bookings — every other tool here treats "cancelled"
+// cancelled/no-show bookings - every other tool here treats "cancelled"
 // as "never happened," which is correct for revenue/top-customers/etc.,
 // but is exactly the data get_cancellations_and_no_shows exists to
 // surface. Kept as its own query rather than a fetchBookings variant, so
@@ -189,7 +189,7 @@ export async function getCancellationsAndNoShows(businessId: string, args: { fro
   };
 }
 
-// Day-of-week / hour-of-day breakdown, in the business's own timezone —
+// Day-of-week / hour-of-day breakdown, in the business's own timezone -
 // a booking's raw UTC start_time would give the wrong "busiest day" for
 // any business not in UTC (a 11pm UTC booking might be the next morning
 // locally).
@@ -224,7 +224,7 @@ export async function getBusiestTimes(businessId: string) {
 }
 
 // Unlike get_top_customers (a top-5 leaderboard), this looks up ONE
-// customer by name or phone — someone outside the top 5 was previously
+// customer by name or phone - someone outside the top 5 was previously
 // just invisible to this agent entirely.
 export async function findCustomer(businessId: string, args: { query: string }) {
   const bookings = await fetchBookings(businessId);
@@ -262,7 +262,7 @@ export async function findCustomer(businessId: string, args: { query: string }) 
   };
 }
 
-// "Who hasn't booked in a while" — every past customer whose most recent
+// "Who hasn't booked in a while" - every past customer whose most recent
 // visit is older than the cutoff AND who has nothing upcoming (someone
 // with a future booking already isn't at risk of being forgotten).
 export async function getInactiveCustomers(businessId: string, args: { days?: number; limit?: number }) {
@@ -303,7 +303,7 @@ export async function getInactiveCustomers(businessId: string, args: { days?: nu
 }
 
 // Does the from/to → previous-period-of-equal-length subtraction itself,
-// server-side, deterministically — rather than the model calling
+// server-side, deterministically - rather than the model calling
 // get_revenue twice and doing the arithmetic (and the date-range math for
 // "the same length period right before this one") itself, which is
 // exactly the kind of thing worth not trusting an LLM to get right twice
@@ -315,8 +315,8 @@ export async function compareRevenuePeriods(
   // "How am I doing this month vs last?" is the overwhelmingly common form
   // of this question, so it's the default rather than an error. Previously
   // a call with no arguments (or an unparseable date) reached
-  // .toISOString() on an Invalid Date and threw, which — before agentLoop
-  // caught tool errors — 500'd the whole conversation.
+  // .toISOString() on an Invalid Date and threw, which - before agentLoop
+  // caught tool errors - 500'd the whole conversation.
   const now = new Date();
   const to = args.to ? new Date(args.to) : now;
   const from = args.from
@@ -352,7 +352,7 @@ export async function compareRevenuePeriods(
 }
 
 // The one tool in this file that touches a different table entirely
-// (subscriptions, not bookings) — "when does my trial end" / "what plan
+// (subscriptions, not bookings) - "when does my trial end" / "what plan
 // am I on" is still a completely reasonable question for this agent to
 // answer, it just needed its own query rather than being derivable from
 // booking data. Same 42703 fallback as the billing page itself, since the

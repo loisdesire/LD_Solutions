@@ -7,10 +7,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/webhooks/flutterwave — Flutterwave calls this on every payment
+// POST /api/webhooks/flutterwave - Flutterwave calls this on every payment
 // event (initial subscribe, each monthly renewal, failures). Verified via
 // the `verif-hash` header, which must match the secret hash configured in
-// the Flutterwave dashboard's webhook settings (Settings → Webhooks) — NOT
+// the Flutterwave dashboard's webhook settings (Settings → Webhooks) - NOT
 // the same thing as the secret API key.
 export async function POST(req: NextRequest) {
   const signature = req.headers.get('verif-hash');
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   // Renewal charges on a recurring plan come through with a NEW tx_ref
   // each cycle (not the original one), so those only match by the
   // subscription id Flutterwave assigned after the first successful
-  // charge — this second lookup is unverified against a real renewal
+  // charge - this second lookup is unverified against a real renewal
   // payload (that can't happen until a full month has passed) and may
   // need adjusting once one actually lands; check logs after the first
   // renewal to confirm this matches.

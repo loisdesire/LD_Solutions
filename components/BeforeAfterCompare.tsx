@@ -1,5 +1,5 @@
 // The actual argument for this product, rendered as the thing it's
-// arguing about — two real-looking message threads, same request, real
+// arguing about - two real-looking message threads, same request, real
 // timestamps. The gap between "next day, 8:02 AM" and "9:15 AM, same
 // morning" is the entire pitch; nothing needs to be said about it.
 type Msg = { from: 'them' | 'you'; time: string; text: string };

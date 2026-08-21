@@ -5,12 +5,12 @@ import type { AgentMessage } from '@/lib/agentLoop';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
-// POST /api/schedule-assistant/chat — the staff-only reschedule assistant.
-// Not gated by plan (unlike Insights) — this automates something every
+// POST /api/schedule-assistant/chat - the staff-only reschedule assistant.
+// Not gated by plan (unlike Insights) - this automates something every
 // plan can already do by hand from the Calendar page (move a booking,
 // message the customer), it's operational, not an analytics upsell. Same
 // "browser holds history, resends it each turn" shape as the insights
-// chat — no cross-session persistence needed for a single staff member's
+// chat - no cross-session persistence needed for a single staff member's
 // dashboard conversation.
 export async function POST(req: NextRequest) {
   if (!rateLimit(`schedule-assistant:${getClientIp(req)}`, 20, 5 * 60_000)) {

@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/billing/cancel — stops future renewals. Access to the current
+// POST /api/billing/cancel - stops future renewals. Access to the current
 // paid period is intentionally left alone here (current_period_end stays
 // as-is); the access gate should honor that rather than cutting them off
 // mid-period they already paid for.
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       logError('api/billing/cancel:flutterwave', new Error(`Flutterwave responded ${res.status}`), {
         businessId: business.id,
       });
-      // Still cancel locally below — don't let a Flutterwave-side hiccup
+      // Still cancel locally below - don't let a Flutterwave-side hiccup
       // trap someone into a subscription they're actively trying to leave.
     }
   }

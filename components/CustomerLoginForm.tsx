@@ -63,7 +63,7 @@ export default function CustomerLoginForm() {
           className="w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
         <p className="text-ink-faint text-[12px] mt-2">
-          The same email you used when booking. We'll send a one-click login link — no password.
+          The same email you used when booking. We'll send a one-click login link - no password.
         </p>
       </div>
 

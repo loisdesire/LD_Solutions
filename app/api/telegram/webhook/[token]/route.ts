@@ -13,12 +13,12 @@ type TelegramUpdate = {
   };
 };
 
-// POST /api/telegram/webhook/[token] — Telegram calls this per-bot URL for
+// POST /api/telegram/webhook/[token] - Telegram calls this per-bot URL for
 // every update (each business's bot is registered against its own URL, so
 // the token in the path IS the routing signal). Unlike Twilio's synchronous
 // TwiML reply, Telegram requires actively calling sendMessage to reply; the
 // response to this webhook itself is just an ack. All Telegram-specific
-// concerns live here — the shared agent (lib/whatsappAgent.ts) and booking
+// concerns live here - the shared agent (lib/whatsappAgent.ts) and booking
 // logic (lib/whatsappTools.ts) don't know this channel exists.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -32,14 +32,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const update: TelegramUpdate = await req.json();
   const chatId = update.message?.chat.id;
   const text = update.message?.text?.trim();
-  // Not every Telegram user has a public username set — when present, it's
+  // Not every Telegram user has a public username set - when present, it's
   // the only thing that makes this customer actually reachable outside the
   // bot (t.me/<username> opens a real chat with them; the numeric chat id
   // alone can't be turned into a link a business owner could click).
   const username = update.message?.from?.username;
 
   // Ack with 200 even when there's nothing actionable (non-text messages,
-  // edited messages, etc.) — a non-200 makes Telegram retry the same update.
+  // edited messages, etc.) - a non-200 makes Telegram retry the same update.
   if (!chatId || !text) {
     return NextResponse.json({ ok: true });
   }

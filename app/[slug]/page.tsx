@@ -30,7 +30,7 @@ export async function generateMetadata({
   const title = `Book with ${business.name}`;
   const description = business.description
     ? `${business.description} Book an appointment with ${business.name} online with real-time availability and instant confirmation.`
-    : `Book an appointment with ${business.name} online — real-time availability, instant confirmation, no account needed.`;
+    : `Book an appointment with ${business.name} online - real-time availability, instant confirmation, no account needed.`;
 
   return {
     title,
@@ -80,7 +80,7 @@ export default async function BusinessBookingPage({
 
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
   // Payment only actually applies if the business also finished connecting
-  // Paystack — a business that flips the toggle on but never pastes a
+  // Paystack - a business that flips the toggle on but never pastes a
   // public key shouldn't silently break booking for every customer.
   const requirePayment = Boolean(rules?.require_payment && business.paystack_public_key);
   const { showAbout, showGallery, showContact } = getSiteContentFlags(business);
@@ -119,7 +119,7 @@ export default async function BusinessBookingPage({
         showContact={showContact}
       />
 
-      {/* Hero — the business's own cover photo if they've set one, or a
+      {/* Hero - the business's own cover photo if they've set one, or a
           rich accent-colored gradient in its place. Never a stock photo:
           nothing here is real unless the business actually provided it. */}
       <section className="relative h-[420px] sm:h-[480px] pt-16 flex items-center overflow-hidden">
@@ -136,7 +136,7 @@ export default async function BusinessBookingPage({
             />
           )}
           {/* A flat 35% overlay only gets white text to ~2.5:1 contrast
-              against a bright uploaded photo — well under the 4.5:1 body
+              against a bright uploaded photo - well under the 4.5:1 body
               text needs. 45% gets large text (the headline) to a safe
               ~3.4:1 on its own; the text-shadow below is the real
               backstop for everything else, since it holds legibility
@@ -153,7 +153,7 @@ export default async function BusinessBookingPage({
               </p>
             )}
             {/* Personalized rather than a static "Book your visit" on
-                every business's page — the first thing a visitor should
+                every business's page - the first thing a visitor should
                 know is whose page this actually is. */}
             <h1 className="font-display text-[36px] sm:text-[52px] font-semibold leading-[1.05]">
               Book with {business.name}
@@ -169,7 +169,7 @@ export default async function BusinessBookingPage({
             )}
 
             {/* Chatting with the AI agent is a first-class way to book,
-                not a minor extra — it gets equal billing with "Book now"
+                not a minor extra - it gets equal billing with "Book now"
                 here in the hero, not just a small corner bubble someone
                 has to notice on their own. */}
             <div className="flex flex-wrap items-center gap-3 mt-8">

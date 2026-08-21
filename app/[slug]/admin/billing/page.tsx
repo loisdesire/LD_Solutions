@@ -2,7 +2,7 @@ import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getSubscriptionState } from '@/lib/subscription';
 import BillingManager from '@/components/BillingManager';
 
-// The one admin page reachable with an expired trial — everything else
+// The one admin page reachable with an expired trial - everything else
 // redirects here via requireStaffSession's gate, so this can't itself
 // require an active subscription.
 export default async function BillingPage({
@@ -27,7 +27,7 @@ export default async function BillingPage({
   ]);
 
   // Before the plan migration runs, selecting a nonexistent column fails
-  // the whole query — fall back to reading the plan-less row rather than
+  // the whole query - fall back to reading the plan-less row rather than
   // showing this business as having no subscription at all.
   if (subError?.code === '42703') {
     const fallback = await supabase

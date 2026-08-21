@@ -10,12 +10,12 @@ const supabaseAdmin = createClient(
 );
 
 const REMINDER_WINDOW_HOURS = 24;
-const BATCH_SIZE = 10; // concurrent sends — bounded so a large backlog doesn't all hit a provider at once
+const BATCH_SIZE = 10; // concurrent sends - bounded so a large backlog doesn't all hit a provider at once
 
-// GET /api/cron/send-reminders — triggered by Vercel Cron (see vercel.json).
+// GET /api/cron/send-reminders - triggered by Vercel Cron (see vercel.json).
 // Reminds a customer through whichever channel they actually booked
-// through — email for a direct web booking, the business's own connected
-// Telegram/WhatsApp/Messenger bot for a chat booking — rather than only
+// through - email for a direct web booking, the business's own connected
+// Telegram/WhatsApp/Messenger bot for a chat booking - rather than only
 // ever emailing, which silently reminded nobody who booked through a bot
 // with no email on file. reminder_sent_at still makes every booking
 // eligible exactly once, regardless of which channel actually sent it.
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const windowEnd = new Date(Date.now() + REMINDER_WINDOW_HOURS * 3600_000).toISOString();
 
-  // whatsapp_access_token deliberately isn't in this select — it's
+  // whatsapp_access_token deliberately isn't in this select - it's
   // currently missing from the live database (documented in schema.sql as
   // migrated, but live-verified never actually applied), and a combined
   // select naming it fails the WHOLE query, taking every channel's
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   const rows = bookings ?? [];
 
   // One extra query for the whole batch, scoped to only the businesses
-  // that look WhatsApp-connected (have a phone_number_id) — not one query
+  // that look WhatsApp-connected (have a phone_number_id) - not one query
   // per booking. Empty map (rather than throwing) if the column is still
   // missing, which just means every business resolves to "no WhatsApp
   // token," the correct behavior until that migration runs.
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
     if (!waError) {
       for (const row of waRows ?? []) waTokenByBusinessId.set(row.id, row.whatsapp_access_token);
     }
-    // waError (42703) just leaves the map empty — every business below
+    // waError (42703) just leaves the map empty - every business below
     // falls back to `null`, i.e. "not connected," rather than erroring.
   }
 
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
 
     // Distinguishes "nothing was actually attempted" (skipped, not a
     // failure worth alerting on) from "attempted and it didn't go
-    // through" (failed) — a booking with only a bare phone number and no
+    // through" (failed) - a booking with only a bare phone number and no
     // email, no bot channel connected, has nowhere to actually send to.
     const { channel } = booking.customer_phone ? parseContact(booking.customer_phone, booking.customer_telegram_username) : { channel: 'direct' as const };
     const hasBotChannel =
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
       (channel === 'whatsapp' && business?.whatsapp_access_token && business?.whatsapp_phone_number_id) ||
       (channel === 'messenger' && business?.messenger_access_token);
     if (!hasBotChannel && !booking.customer_email) {
-      // Nothing eligible to send through — not connected, or no contact
+      // Nothing eligible to send through - not connected, or no contact
       // info at all. Leave reminder_sent_at null so it's picked up again
       // once the underlying reason is fixed, but don't count it as a
       // failure (nothing was actually attempted).
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Each booking's send+update is independent of the others, so process in
-  // parallel batches rather than one at a time — bounded so a large
+  // parallel batches rather than one at a time - bounded so a large
   // backlog doesn't fire 100 concurrent requests at a provider at once.
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     await Promise.all(rows.slice(i, i + BATCH_SIZE).map(remindOne));

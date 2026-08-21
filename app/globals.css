@@ -11,7 +11,7 @@
 
   --ink: #202020;
   --ink-soft: #6b6b6b;
-  /* #9b9691 computes to ~3.6:1 against --paper/--surface — below AA's
+  /* #9b9691 computes to ~3.6:1 against --paper/--surface - below AA's
      4.5:1 for normal text, fine for the low-priority metadata/timestamp
      role this is actually used for site-wide, never body copy. */
   --ink-faint: #9b9691;
@@ -19,7 +19,7 @@
   --line: #ede6d9;
   --line-strong: #ddd0bb;
 
-  /* Baked-in alpha, not a Tailwind opacity modifier — `bg-ink/5` and
+  /* Baked-in alpha, not a Tailwind opacity modifier - `bg-ink/5` and
      friends silently generate ZERO css on a color that's a `var()`
      reference (Tailwind can't decompose it into RGB channels at build
      time to blend an opacity onto it), so every "inactive" status pill
@@ -27,7 +27,7 @@
      a real color value the browser can use directly. */
   --ink-wash: rgba(32, 32, 32, 0.05);
 
-  /* Primary brand — burnt orange/terracotta. Platform default;
+  /* Primary brand - burnt orange/terracotta. Platform default;
      businesses can still override this for their own public page via
      AccentScope.
 
@@ -35,11 +35,11 @@
      so this doesn't stay an arbitrary per-file choice: on pages where
      AccentScope can rescope this variable per business (public/[slug]
      pages, the booking flow, anything rendered inside AccentScope) use
-     inline `style={{ color: 'var(--accent)' }}` — Tailwind's `text-accent`
+     inline `style={{ color: 'var(--accent)' }}` - Tailwind's `text-accent`
      utility is generated once at build time from this file's value, so it
      can't react to a runtime-scoped override the way a raw var() read at
-     paint time can. Everywhere else (the marketing site, admin chrome) —
-     contexts where --accent is always this one static value — prefer the
+     paint time can. Everywhere else (the marketing site, admin chrome) -
+     contexts where --accent is always this one static value - prefer the
      `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
      get Tailwind's normal tooling (autocomplete, purge) for free. */
   --accent: #c4512d;
@@ -48,25 +48,25 @@
   --accent-contrast: #ffffff;
   --accent-soft: rgba(196, 81, 45, 0.1);
 
-  /* Warm human accent — cream. Used with restraint: highlight cards,
-     booking confirmations, occasional secondary buttons — never
+  /* Warm human accent - cream. Used with restraint: highlight cards,
+     booking confirmations, occasional secondary buttons - never
      general chrome, so it stays a genuine accent rather than a second
      background color. */
   --cream: #f3e8bc;
   --cream-hover: #e9dba1;
   --cream-contrast: #202020;
 
-  /* Muted warm brown — a secondary, lower-key accent for decorative
+  /* Muted warm brown - a secondary, lower-key accent for decorative
      differentiation only (e.g. telling apart a few dashboard stat
      cards), never a second meaning-bearing brand color. */
   --tertiary: #8e6a4a;
   --secondary-dark: #171717;
 
-  /* Semantic status colors — intentionally independent of the brand
+  /* Semantic status colors - intentionally independent of the brand
      palette, so "confirmed" always reads as success-green and "failed"
      always reads as error-red regardless of what a business's own
      accent color is set to. Status is never conveyed by color alone
-     anywhere these are used — always paired with a label. */
+     anywhere these are used - always paired with a label. */
   --success: #16803c;
   --success-bg: #eaf7ee;
   --success-border: #a9ddb8;
@@ -137,7 +137,7 @@ body {
    `focus-visible` appeared zero times in this codebase, while
    `outline-none` was applied unconditionally in ~20 files. Inputs
    compensated with their own focus ring, but no button or link anywhere
-   had any focus style at all — so a keyboard user could not see where
+   had any focus style at all - so a keyboard user could not see where
    they were. Icon buttons, nav links, slot pills, tab pills, gallery
    thumbnails and modal close buttons were all invisible.
 
@@ -160,7 +160,7 @@ body {
 /* ============================================
    Reduced motion
    ============================================
-   25 animate-* usages ran at full strength regardless of the OS setting —
+   25 animate-* usages ran at full strength regardless of the OS setting -
    including an infinite shimmer and a scale-punch on every time-slot tap.
    For people who get motion sickness or vestibular symptoms this is not a
    preference, it's an accessibility requirement.

@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/settings/telegram — a business owner pastes their own BotFather
+// POST /api/settings/telegram - a business owner pastes their own BotFather
 // token; we validate it's real, register our webhook against it directly
 // via Telegram's API (no manual console step needed, unlike Twilio), and
 // save it. Fully self-serve, unlike WhatsApp's semi-manual flow below.
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const me = meRes ? await meRes.json().catch(() => null) : null;
   if (!me?.ok) {
     return NextResponse.json(
-      { error: "That doesn't look like a valid bot token — double check it from BotFather." },
+      { error: "That doesn't look like a valid bot token - double check it from BotFather." },
       { status: 400 }
     );
   }

@@ -1,4 +1,4 @@
-// Pure string logic only — no Supabase/env access — so this is safe to
+// Pure string logic only - no Supabase/env access - so this is safe to
 // import from both server code and client components. customer_phone
 // doubles as an opaque per-channel identifier for chat bookings
 // ('whatsapp:+234...' / 'telegram:<chatId>'), and this is the one place
@@ -9,8 +9,8 @@ export type ContactChannel = 'whatsapp' | 'telegram' | 'messenger' | 'direct';
 
 // phone is nullable in the database (bookings.customer_phone) but was typed
 // as a plain string, so every caller implicitly promised something the
-// schema does not guarantee. One booking with no phone — which both the
-// admin "new appointment" form and the API allow — crashed the ENTIRE
+// schema does not guarantee. One booking with no phone - which both the
+// admin "new appointment" form and the API allow - crashed the ENTIRE
 // dashboard with "Cannot read properties of null (reading 'startsWith')",
 // because this runs once per booking in the list.
 export function parseContact(phone: string | null | undefined, telegramUsername?: string | null) {

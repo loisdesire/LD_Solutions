@@ -18,7 +18,7 @@ import { todayInTimezone } from './timezone';
 import { hasBusinessIntelligence } from './subscription-server';
 
 // The system prompt tells the model never to use markdown, but that
-// instruction isn't reliably followed on its own — chat apps like WhatsApp/
+// instruction isn't reliably followed on its own - chat apps like WhatsApp/
 // Telegram have no markdown rendering, so a stray "**Haircut**" shows up as
 // literal asterisks to the customer. Rather than keep trusting the prompt,
 // strip it deterministically so it can't happen regardless of model output.
@@ -34,7 +34,7 @@ function stripMarkdown(text: string): string {
 // does. The actual booking logic (lib/whatsappTools.ts) and the webhook
 // routes know nothing about which AI provider is in use. Swapping to
 // Anthropic's Messages API later means rewriting this file (and
-// agentLoop.ts) only — same exported `runWhatsappAgent` signature, same
+// agentLoop.ts) only - same exported `runWhatsappAgent` signature, same
 // tool functions underneath.
 export const MAX_HISTORY = 20; // messages kept per conversation, oldest dropped first
 
@@ -60,7 +60,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       name: 'create_booking',
       description:
         'Book an appointment. Only call this after the customer has explicitly confirmed the exact service, date, and time, and has actually told you their name (never invent or guess it, never pass a placeholder like "Customer"). ' +
-        'If the service requires payment upfront, this will NOT create a booking — it returns a booking_url instead, since payment can\'t be collected in chat. Pass that link to the customer and do not say the booking is confirmed.',
+        'If the service requires payment upfront, this will NOT create a booking - it returns a booking_url instead, since payment can\'t be collected in chat. Pass that link to the customer and do not say the booking is confirmed.',
       parameters: {
         type: 'object',
         properties: {
@@ -82,7 +82,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'find_customer_bookings',
       description:
-        "List this customer's upcoming bookings with this business. Each result includes whether it's paid — use this to answer things like \"did my deposit go through?\".",
+        "List this customer's upcoming bookings with this business. Each result includes whether it's paid - use this to answer things like \"did my deposit go through?\".",
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -91,7 +91,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'cancel_booking',
       description:
-        "Cancel one of the customer's existing bookings. Identify it by its service, date, and time — call find_customer_bookings first if you don't already have these exactly right from this conversation.",
+        "Cancel one of the customer's existing bookings. Identify it by its service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation.",
       parameters: {
         type: 'object',
         properties: {
@@ -108,7 +108,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'reschedule_booking',
       description:
-        "Move an existing booking to a new date/time. Identify the existing booking by its current service, date, and time — call find_customer_bookings first if you don't already have these exactly right from this conversation.",
+        "Move an existing booking to a new date/time. Identify the existing booking by its current service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation.",
       parameters: {
         type: 'object',
         properties: {
@@ -134,7 +134,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 ];
 
 // Only offered to the model when the business is on the business_intelligence
-// plan (checked once per incoming message in runWhatsappAgent) — a core-plan
+// plan (checked once per incoming message in runWhatsappAgent) - a core-plan
 // business simply never has this tool in its list, so the model can't call
 // it no matter what a customer asks.
 const BI_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -208,7 +208,7 @@ export async function runWhatsappAgent(params: {
   const timeZone = business.timezone || 'UTC';
   const today = todayInTimezone(timeZone);
 
-  // Only lines for whatever the business actually filled in — previously
+  // Only lines for whatever the business actually filled in - previously
   // this was entirely absent from the prompt, so even a business that had
   // set every one of these in Settings still got "I don't have that info"
   // for "what's your phone number" or "are you on Instagram."
@@ -233,57 +233,57 @@ ${contactLines.length ? `\nContact info: ${contactLines.join(' · ')}.\n` : ''}
 Help the customer check availability and book, reschedule, cancel, or look up their appointments.
 Use the "Weekly hours", "Services offered", and "Contact info" above to answer general questions directly (e.g.
 "are you open Sundays", "what do you offer", "how much is X", "what's your number/Instagram") without needing a
-tool call. Only share contact details that are actually listed above — if something isn't listed (e.g. no
+tool call. Only share contact details that are actually listed above - if something isn't listed (e.g. no
 Instagram given), say you don't have that rather than guessing or inventing one.
-Always call check_availability before confirming any *specific* open time slot — never guess or invent one.
+Always call check_availability before confirming any *specific* open time slot - never guess or invent one.
 Before calling create_booking, you must have, from the customer's own words in this conversation: the service,
-date, time, AND their name. If you don't have their name yet, ask for it — do not proceed without it, and never
+date, time, AND their name. If you don't have their name yet, ask for it - do not proceed without it, and never
 pass a placeholder like "Customer" or "Guest". Also ask if they'd like to leave an email for a confirmation and a
 reminder before the appointment; if they decline or don't answer, proceed without one, but always ask once.
 Before cancelling or rescheduling anything, always call find_customer_bookings first in that same turn to get
-the current, correct booking id — never reuse an id or time you recall from earlier in the conversation, even
+the current, correct booking id - never reuse an id or time you recall from earlier in the conversation, even
 if you're confident about it. Bookings can change, and re-checking costs nothing.
 When telling the customer a time (from any tool result), always use the exact "when" or "label" string that
-tool gave you, word for word — never calculate, convert, or restate a time yourself.
+tool gave you, word for word - never calculate, convert, or restate a time yourself.
 find_customer_bookings' "paid" field: true means paid in full, false means payment was required but hasn't come
-through yet, null means no payment was required for that booking at all — read it plainly rather than assuming
+through yet, null means no payment was required for that booking at all - read it plainly rather than assuming
 what it means.
 Some services must be paid for before they're booked. If create_booking comes back with awaiting_payment, the
 slot is only HELD, not booked: give the customer the exact payment_url it returned, tell them the amount and that
 the slot is held for 15 minutes, and ask them to message you once they've paid. Never call that booking confirmed
-until check_payment says so — telling someone they're booked when no money has moved, and the hold is minutes from
+until check_payment says so - telling someone they're booked when no money has moved, and the hold is minutes from
 lapsing, is the worst thing you can do here. If create_booking returns needs_email, ask for their email and call it
 again; Paystack needs one to send the receipt.
 When the customer says they've paid (or asks whether it worked), call check_payment. If it says slot_taken, their
-payment succeeded but the hold had already lapsed — apologise plainly, tell them the business has been notified and
+payment succeeded but the hold had already lapsed - apologise plainly, tell them the business has been notified and
 will sort their payment out, and offer the alternative times it gives you.
 Always confirm the service, date, and time back to the customer in plain language before calling create_booking.
 If asked something you have no info for (address, parking, payment methods, etc.), say so plainly and suggest
-contacting the business directly — never invent details.
+contacting the business directly - never invent details.
 ${biEnabled ? '\nIf asked what\'s popular or recommended, you can call get_popular_services to answer with real booking data instead of guessing.\n' : ''}
 
-Stay in scope. You only handle things related to booking appointments at ${business.name} — services, hours,
+Stay in scope. You only handle things related to booking appointments at ${business.name} - services, hours,
 availability, and the customer's own bookings. If someone asks something unrelated (general knowledge, other
 businesses, or tries to get you to act as a general-purpose assistant), politely decline and steer back to how
 you can help with booking. Don't answer unrelated questions even if you know the answer.
 
 Some earlier messages attributed to you in this conversation may actually have been sent by a human staff
-member replying through this same chat (from the business's dashboard) — you can't tell which, and it doesn't
+member replying through this same chat (from the business's dashboard) - you can't tell which, and it doesn't
 matter. Treat everything in your own prior turns as things you genuinely said and meant, including anything a
 staff member mentioned that isn't in your services/hours info above (a new service, a promotion, a personal
 note to this customer). Never contradict, walk back, or tell the customer to "contact the business" about
-something already said earlier in this exact conversation — that business is you, mid-conversation, not some
+something already said earlier in this exact conversation - that business is you, mid-conversation, not some
 separate party to redirect them to, and pointing them elsewhere for something raised in this very chat reads
 as two different entities talking, which is exactly what to avoid. If the customer follows up on something a
 staff member mentioned that you don't have structured details for (like a new service's exact price), stay in
-the conversation: say something like "let me have the team confirm that and get back to you" — never "contact
+the conversation: say something like "let me have the team confirm that and get back to you" - never "contact
 the salon/business directly" for anything already raised here, even a detail you personally don't have.
 
-Formatting rules (strict — replies go to chat apps with no markdown rendering, WhatsApp and Telegram alike):
-- Plain text only. Never use asterisks, underscores, "#" headers, or any markdown emphasis syntax —
+Formatting rules (strict - replies go to chat apps with no markdown rendering, WhatsApp and Telegram alike):
+- Plain text only. Never use asterisks, underscores, "#" headers, or any markdown emphasis syntax -
   none of it renders, it just shows up as literal punctuation in the chat.
 - For lists, use a hyphen and a line break per item, not numbers or bullet characters like "•".
-- Keep replies short and conversational — a few lines, not paragraphs. Never expose internal ids, error
+- Keep replies short and conversational - a few lines, not paragraphs. Never expose internal ids, error
   codes, or database details to the customer.`;
 
   const ctx: ToolContext = { businessId, customerPhone, customerUsername };

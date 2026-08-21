@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-// POST /api/settings/whatsapp — completes Meta's Embedded Signup flow. The
+// POST /api/settings/whatsapp - completes Meta's Embedded Signup flow. The
 // frontend (BotIntegrationsSettings) runs the FB.login popup itself and
 // hands us the resulting authorization `code` plus the wabaId/phoneNumberId
 // captured from the WA_EMBEDDED_SIGNUP postMessage event; everything from
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const { slug, code, wabaId, phoneNumberId } = await req.json();
   if (!slug || !code || !wabaId || !phoneNumberId) {
-    return NextResponse.json({ error: 'Missing signup data — please try connecting again.' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing signup data - please try connecting again.' }, { status: 400 });
   }
 
   const auth = await requireStaffApiSession(slug);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const { business } = auth;
 
   // The code from FB.login (embedded-signup mode) is exchanged with no
-  // redirect_uri — that's specific to this JS SDK flow, unlike a normal
+  // redirect_uri - that's specific to this JS SDK flow, unlike a normal
   // OAuth redirect-based exchange.
   const shortLived = await fetch(
     `${GRAPH}/oauth/access_token?client_id=${process.env.NEXT_PUBLIC_META_APP_ID}&client_secret=${process.env.META_APP_SECRET}&code=${code}`
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   const accessToken = longLived?.access_token ?? shortLived.access_token;
 
   // Fetch the human-readable number for display, and subscribe our app to
-  // this WABA's webhooks — without this, Meta never sends inbound messages
+  // this WABA's webhooks - without this, Meta never sends inbound messages
   // for this business's number to /api/meta/webhook at all.
   const [phoneRes, subscribeRes] = await Promise.all([
     fetch(`${GRAPH}/${phoneNumberId}?fields=display_phone_number`, {
@@ -104,13 +104,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This number is already connected to another business.' }, { status: 409 });
     }
     // 42703 = whatsapp_access_token / whatsapp_business_account_id are
-    // missing from the live database — live-verified (documented in
+    // missing from the live database - live-verified (documented in
     // schema.sql as migrated, but never actually applied). Worth a
     // distinct message rather than the generic one below: this isn't a
     // transient failure a retry would fix.
     if ((updateError as { code?: string }).code === '42703') {
       return NextResponse.json(
-        { error: "WhatsApp isn't fully set up on this deployment yet — a database migration is still pending. Contact support." },
+        { error: "WhatsApp isn't fully set up on this deployment yet - a database migration is still pending. Contact support." },
         { status: 503 }
       );
     }
@@ -138,7 +138,7 @@ export async function DELETE(req: NextRequest) {
     })
     .eq('id', business.id);
 
-  // Previously unchecked — a failed disconnect silently reported success,
+  // Previously unchecked - a failed disconnect silently reported success,
   // leaving the business looking connected in the DB while the owner
   // believed they'd disconnected. whatsapp_business_account_id/
   // whatsapp_access_token being absent (see the POST handler above) would

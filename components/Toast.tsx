@@ -7,7 +7,7 @@ type ToastItem = { id: number; message: string; kind: ToastKind };
 
 const ToastContext = createContext<((message: string, kind?: ToastKind) => void) | null>(null);
 
-// A real, app-wide toast system — one consistent place for "this action
+// A real, app-wide toast system - one consistent place for "this action
 // just happened" feedback, instead of every form hand-rolling its own
 // inline error paragraph (still fine for field-level validation, but
 // there was nothing at all for things like removing a staff member or

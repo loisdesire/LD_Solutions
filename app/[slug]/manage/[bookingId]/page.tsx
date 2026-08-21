@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Reached only via an unguessable booking id — never meant to be indexed.
+// Reached only via an unguessable booking id - never meant to be indexed.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
@@ -74,7 +74,7 @@ export default async function ManageBookingPage({
           </div>
 
           {/* Same card identity as the booking confirmation (BookingForm's
-              confirmed step) — a customer's booking should look like the same
+              confirmed step) - a customer's booking should look like the same
               object when they come back to it, not a different card. */}
           <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
             <div

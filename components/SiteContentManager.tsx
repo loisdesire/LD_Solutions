@@ -8,7 +8,7 @@ import CheckIcon from './CheckIcon';
 // URLs blind and only find out something's broken when you check the
 // live Gallery page. Stored the same way as before under the hood (the
 // `gallery_urls` column is still just newline-joined URLs, no schema
-// change) — this only changes how a URL gets into that list.
+// change) - this only changes how a URL gets into that list.
 function GalleryUploader({
   slug,
   urls,
@@ -77,7 +77,7 @@ function GalleryUploader({
               aria-label="Remove photo"
               // Was opacity-0 + group-hover only: on a touch device there
               // is no hover, so the delete button was completely
-              // unreachable — and keyboard focus never revealed it either.
+              // unreachable - and keyboard focus never revealed it either.
               // Always visible below sm, hover/focus-revealed above it.
               className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full text-white flex items-center justify-center transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
               style={{ background: 'color-mix(in srgb, var(--ink) 70%, transparent)' }}
@@ -318,7 +318,7 @@ export default function SiteContentManager({
           />
         </div>
         <p className="text-ink-faint text-[12px] mt-2">
-          All optional — only the ones you fill in show up, and only if the toggle above is on.
+          All optional - only the ones you fill in show up, and only if the toggle above is on.
         </p>
       </div>
 

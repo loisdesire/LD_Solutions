@@ -55,8 +55,8 @@ export const metadata: Metadata = {
       'Appointment booking that answers customers, checks real availability, and confirms the booking.',
   },
   // Without this, WebKit/Chromium auto-detect date/time-looking text
-  // (e.g. "9 AM–5 PM" in the hours line) and silently style it like a
-  // phone-number link — no anchor tag involved, just an odd blue tint
+  // (e.g. "9 AM-5 PM" in the hours line) and silently style it like a
+  // phone-number link - no anchor tag involved, just an odd blue tint
   // with no href behind it.
   other: { 'format-detection': 'telephone=no, date=no' },
 };

@@ -23,10 +23,10 @@ export default function ConversationPanel({
   const [error, setError] = useState('');
   const cancelledRef = useRef(false);
 
-  // Only Supabase reads here — no OpenAI/Twilio/Telegram calls — so polling
+  // Only Supabase reads here - no OpenAI/Twilio/Telegram calls - so polling
   // costs nothing beyond ordinary database usage. Still kept to a modest
   // interval, paused while the tab isn't visible, and stopped entirely on
-  // unmount — not out of cost concern, just no reason to hammer it.
+  // unmount - not out of cost concern, just no reason to hammer it.
   const load = useCallback(
     async (isFirstLoad: boolean) => {
       if (document.hidden && !isFirstLoad) return;
@@ -74,7 +74,7 @@ export default function ConversationPanel({
 
     setText('');
     // Refetch the authoritative history rather than manually patching local
-    // state — the server just persisted this exact message, so there's no
+    // state - the server just persisted this exact message, so there's no
     // reason to keep two separate copies of "what was said" in sync by hand.
     load(false);
   }
@@ -107,7 +107,7 @@ export default function ConversationPanel({
             messages.map((m, i) => (
               <div key={i} className={m.role === 'user' ? 'text-left' : 'text-right'}>
                 <div
-                  // whitespace-pre-wrap matters here — bot replies routinely
+                  // whitespace-pre-wrap matters here - bot replies routinely
                   // contain line breaks (lists, multi-line confirmations),
                   // and without it every line just runs together into one
                   // block, which is what "jumbled up" actually was.
@@ -123,7 +123,7 @@ export default function ConversationPanel({
         </div>
 
         {/* Same inline pill pattern as ProductFinder's compose bar, not a
-            stacked textarea+button — consistent with the rest of the app. */}
+            stacked textarea+button - consistent with the rest of the app. */}
         <form onSubmit={handleSend} className="flex gap-2 p-4 border-t border-line shrink-0">
           <input
             value={text}

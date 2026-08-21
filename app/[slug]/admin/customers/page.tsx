@@ -1,7 +1,7 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import CustomersManager from '@/components/CustomersManager';
 
-// There's no separate customers table — every booking just carries its
+// There's no separate customers table - every booking just carries its
 // own customer_name/phone/email/telegram_username, since a customer
 // never creates an account to book. This page is the one place that
 // actually groups those rows back into "people," so a business owner

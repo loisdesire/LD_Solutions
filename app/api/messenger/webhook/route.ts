@@ -16,7 +16,7 @@ type MessengerWebhookPayload = {
   }>;
 };
 
-// GET /api/messenger/webhook — same verification handshake as the WhatsApp
+// GET /api/messenger/webhook - same verification handshake as the WhatsApp
 // route, and deliberately reuses the same app-level verify token/secret
 // (both are properties of the Meta App, not specific to the WhatsApp
 // product) rather than minting new ones per channel.
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse('Forbidden', { status: 403 });
 }
 
-// POST /api/messenger/webhook — one shared URL for every Page connected to
+// POST /api/messenger/webhook - one shared URL for every Page connected to
 // this Meta App, same shape as the WhatsApp route: identify the business by
 // the id in the payload (here, the Page ID), reuse the same channel-
 // agnostic agent, reply through the Send API. Instagram messaging can be
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const psid = event?.sender?.id;
   const text = event?.message?.text?.trim();
 
-  // Ack with 200 for anything not a plain inbound text message — delivery
+  // Ack with 200 for anything not a plain inbound text message - delivery
   // receipts, read events, and our own echoed sends (is_echo) all come
   // through this same webhook and aren't actionable.
   if (!pageId || !psid || !text || event?.message?.is_echo) {

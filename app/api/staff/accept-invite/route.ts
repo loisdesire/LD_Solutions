@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/staff/accept-invite — creates the invitee's auth account and
+// POST /api/staff/accept-invite - creates the invitee's auth account and
 // staff row. Uses the service role because, like /api/signup, this needs
 // to create an auth user, which the anon key can't do.
 export async function POST(req: NextRequest) {

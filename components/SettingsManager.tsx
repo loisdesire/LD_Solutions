@@ -52,7 +52,7 @@ export default function SettingsManager({
     initialCancellationWindowHours
   );
   const [requirePayment, setRequirePayment] = useState(initialRequirePayment);
-  // null/100 both mean "full amount" — one flag (isDeposit) plus a number
+  // null/100 both mean "full amount" - one flag (isDeposit) plus a number
   // kept separately means the percentage field doesn't get wiped out just
   // from toggling "Full amount" on and back off again.
   const [isDeposit, setIsDeposit] = useState(
@@ -222,12 +222,12 @@ export default function SettingsManager({
               </div>
               <p className="text-ink-faint text-[12px] mt-2">
                 From your own Paystack dashboard (Settings → API Keys & Webhooks). Payments go straight to
-                your Paystack account — we never touch the money.
+                your Paystack account. We never touch the money.
               </p>
 
               {/* Only matters once keys are in, so it stays out of the way
                   until then. Without this webhook a chat booking still
-                  works — the customer just has to say "I've paid" for it to
+                  works. The customer just has to say "I've paid" for it to
                   be checked, instead of it confirming by itself. */}
               {paystackSecretKey && (
                 <div className="mt-4 rounded-xl bg-warm-surface p-3.5">

@@ -4,7 +4,7 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { labelClass } from './formStyles';
 
-// `htmlFor` appeared ZERO times across the whole codebase — roughly 40
+// `htmlFor` appeared ZERO times across the whole codebase - roughly 40
 // form controls had a visually adjacent <label> that was not actually
 // associated with its input. Clicking the label didn't focus the field,
 // and a screen reader announced the control unnamed.

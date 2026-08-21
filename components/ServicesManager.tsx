@@ -321,7 +321,7 @@ export default function ServicesManager({
             </svg>
           </div>
           <h2 className="font-display text-[20px]">Nothing bookable yet</h2>
-          <p className="text-ink-soft text-body-sm mt-1.5">Services are what customers pick from when they book — until you add one, your booking page has nothing to offer. Use "Add service" above to start.</p>
+          <p className="text-ink-soft text-body-sm mt-1.5">Services are what customers pick from when they book - until you add one, your booking page has nothing to offer. Use "Add service" above to start.</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
@@ -478,7 +478,7 @@ export default function ServicesManager({
                   {s.price != null && <span className="sm:hidden"> · ₦{s.price.toLocaleString()}</span>}
                 </div>
                 <div className="hidden sm:block font-semibold text-body-sm" style={{ color: 'var(--accent)' }}>
-                  {s.price != null ? `₦${s.price.toLocaleString()}` : '—'}
+                  {s.price != null ? `₦${s.price.toLocaleString()}` : '-'}
                 </div>
                 <div className="hidden sm:block">
                   <span
@@ -602,7 +602,7 @@ export default function ServicesManager({
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">Avg. duration</p>
               <h4 className="font-display text-[16px] font-semibold text-ink truncate">
-                {avgDuration != null ? formatDuration(avgDuration) : '—'}
+                {avgDuration != null ? formatDuration(avgDuration) : '-'}
               </h4>
             </div>
           </div>

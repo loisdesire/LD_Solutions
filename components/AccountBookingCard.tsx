@@ -13,7 +13,7 @@ type Booking = {
   start_time: string;
   status: string;
   // Supabase's inferred type for a to-one join is an array without
-  // generated types (it can't know the relationship's cardinality) — this
+  // generated types (it can't know the relationship's cardinality) - this
   // is normalized to a single object below, same as manage/[bookingId].
   businesses: any;
   services: any;
@@ -124,7 +124,7 @@ export default function AccountBookingCard({
         </>
       )}
 
-      {/* Opens in place — clicking the chat icon above shouldn't navigate
+      {/* Opens in place - clicking the chat icon above shouldn't navigate
           you off /account, it should just open the same widget used on
           the business's own page, right here. */}
       {widgetOpen && business?.id && <WebChatWidget businessId={business.id} defaultOpen />}

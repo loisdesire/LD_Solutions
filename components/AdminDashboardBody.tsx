@@ -43,12 +43,12 @@ const statusStyle: Record<string, string> = {
   no_show: 'bg-error-bg text-error',
 };
 
-// One stat inside the Today strip — not its own bordered card. The strip
+// One stat inside the Today strip - not its own bordered card. The strip
 // itself is the single card; each stat is just a labeled number with a
 // hairline divider between them, so three (or four, with Next
 // appointment) numbers read as one connected summary of the day instead
 // of a row of identical boxes competing for attention. `emphasis` gives
-// "Next up" more visual weight than the other three — it's the one
+// "Next up" more visual weight than the other three - it's the one
 // number that's actually actionable ("what do I need to do right now"),
 // so it shouldn't tie visually with static counts.
 function TodayStat({
@@ -113,7 +113,7 @@ export default function AdminDashboardBody({
 
   // Starts null so the server-rendered markup and the first client render
   // match exactly (a stale server-time "in 45m" badge, or a hydration
-  // mismatch) — fills in a tick after mount, then stays current.
+  // mismatch) - fills in a tick after mount, then stays current.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -125,7 +125,7 @@ export default function AdminDashboardBody({
     nextSlot && now !== null ? Math.round((new Date(nextSlot.start_time).getTime() - now) / 60000) : null;
   const nextSlotLabel =
     nextSlot == null
-      ? '—'
+      ? '-'
       : minutesUntilNext !== null && minutesUntilNext >= 0 && minutesUntilNext <= 180
         ? minutesUntilNext < 60
           ? `In ${Math.max(minutesUntilNext, 1)}m`
@@ -172,7 +172,7 @@ export default function AdminDashboardBody({
               emphasis
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
-            <TodayStat label="Today's revenue" value={todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '—'} />
+            <TodayStat label="Today's revenue" value={todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '-'} />
             <TodayStat
               label="This week"
               value={String(thisWeekCount)}
@@ -189,7 +189,7 @@ export default function AdminDashboardBody({
       )}
 
       {/* Today's appointments used to only ever surface as a count in the
-          stat strip above — finding out WHAT they actually are meant
+          stat strip above - finding out WHAT they actually are meant
           scanning the full upcoming list below. This scopes just today,
           reusing bookings already fetched server-side (no new query). */}
       {todayBookings.length > 0 && (
@@ -228,7 +228,7 @@ export default function AdminDashboardBody({
               <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </div>
-          <h2 className="font-display text-[20px]">No bookings yet — that's normal</h2>
+          <h2 className="font-display text-[20px]">No bookings yet - that's normal</h2>
           <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
             The moment someone books through your page, they'll show up right here with all their
             details.

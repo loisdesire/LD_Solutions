@@ -10,7 +10,7 @@ import { initializePaystackTransaction, verifyPaystackTransaction } from './pays
 import { randomUUID } from 'crypto';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
-// Twilio — it's the same booking logic the web app already uses (services,
+// Twilio - it's the same booking logic the web app already uses (services,
 // availability, bookings), just exposed as functions an AI agent can call
 // by name. lib/whatsappAgent.ts is the only place that knows which AI
 // provider is calling these.
@@ -21,13 +21,13 @@ const supabaseAdmin = createClient(
 
 export type ToolContext = {
   businessId: string;
-  // Opaque per-channel customer identifier — never model-supplied. WhatsApp
+  // Opaque per-channel customer identifier - never model-supplied. WhatsApp
   // uses Twilio's 'whatsapp:+...' From field; Telegram uses 'telegram:<chatId>'.
   // Reusing the same bookings.customer_phone column across channels avoids a
   // schema change; it's just a stable "who to reply to" key, not validated
   // as an actual phone number anywhere in this codebase.
   customerPhone: string;
-  // Telegram-only, and only when the customer has a public username set —
+  // Telegram-only, and only when the customer has a public username set -
   // it's the one thing that makes a Telegram customer actually contactable
   // outside the bot (t.me/<username> opens a real chat; the numeric chat id
   // in customerPhone can't be turned into a clickable link on its own).
@@ -36,7 +36,7 @@ export type ToolContext = {
 
 
 // Meta's Cloud API webhook is shared across every number registered to the
-// same App/WABA — unlike Telegram's per-bot URL, there's no per-business
+// same App/WABA - unlike Telegram's per-bot URL, there's no per-business
 // webhook to route by, so the business is identified by matching the
 // phone_number_id Meta includes in every inbound payload instead.
 export async function getBusinessByMetaPhoneNumberId(phoneNumberId: string) {
@@ -71,7 +71,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 export async function getBusinessContext(businessId: string) {
   // contact_phone/contact_email/instagram_url/facebook_url are already
   // filled in by the business in Settings and shown on the public Contact
-  // page — the AI just never actually got them, so "what's your phone
+  // page - the AI just never actually got them, so "what's your phone
   // number" was unanswerable even though the business had already
   // provided one.
   const [{ data: business }, { data: services }, { data: hours }] = await Promise.all([
@@ -86,7 +86,7 @@ export async function getBusinessContext(businessId: string) {
       .eq('business_id', businessId)
       .eq('active', true)
       .order('name'),
-    // Business-wide hours only (staff_id is null) — enough for FAQ answers
+    // Business-wide hours only (staff_id is null) - enough for FAQ answers
     // like "are you open Sundays", without the agent having to call
     // check_availability just to answer a general hours question.
     supabaseAdmin
@@ -141,7 +141,7 @@ export async function checkAvailability(ctx: ToolContext, args: { serviceName: s
     price: service.price,
     date: args.date,
     // `label` is what to show the customer. `time_24h` is the exact value to
-    // pass back as create_booking's `time` argument — no conversion needed
+    // pass back as create_booking's `time` argument - no conversion needed
     // either direction, removing the model's UTC/local arithmetic entirely.
     available_times: slots.map((iso) => ({
       label: formatLocalTime(iso, timeZone),
@@ -167,12 +167,12 @@ export async function createBooking(
   ]);
 
   // Same defensive fallback used everywhere the payments migration might
-  // not have run yet on a given deployment — a select naming a
+  // not have run yet on a given deployment - a select naming a
   // nonexistent column fails as a whole unit, so this re-queries with
   // just the columns that predate payments. `rules` needs no equivalent
   // fallback: whether it's null because there's genuinely no row yet, or
   // because require_payment doesn't exist as a column, `rules?.require_payment`
-  // reads as falsy either way — exactly the safe "not required" default.
+  // reads as falsy either way - exactly the safe "not required" default.
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('slug, timezone').eq('id', ctx.businessId).single();
     if (fallback.data) business = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null };
@@ -181,20 +181,20 @@ export async function createBooking(
   const timeZone = business?.timezone || 'UTC';
 
   // This tool used to insert a booking here with no idea whether the
-  // business requires payment at all — a customer chatting through
+  // business requires payment at all - a customer chatting through
   // WhatsApp/Telegram/web-chat could book a service completely free even
   // when the exact same service required payment upfront on the web
   // booking page (app/api/bookings/route.ts). There's no interactive
   // checkout inside a chat conversation to collect that payment, so the
-  // fix isn't to collect it here — it's to never let this tool create an
+  // fix isn't to collect it here - it's to never let this tool create an
   // unpaid booking for a service that requires one. Gated on
   // paystack_public_key specifically (not just the require_payment
   // toggle) to match the exact same condition the public booking page
-  // uses to decide whether payment is actually active — a business that
+  // uses to decide whether payment is actually active - a business that
   // switched the toggle on but never connected Paystack isn't actually
   // collecting payment anywhere, on this channel or the web one.
   // Paid services used to be refused outright here with a "book it on the
-  // website" link — correct at the time (a chat has no popup checkout, and
+  // website" link - correct at the time (a chat has no popup checkout, and
   // letting this tool book a paid service free was the actual bug) but a
   // dead end in the conversation. Now the slot is held as 'pending_payment'
   // and the customer gets a hosted Paystack link they can open from the
@@ -244,7 +244,7 @@ export async function createBooking(
 
   // Payment path: the slot is held but nothing is booked yet. Hand back a
   // hosted checkout link instead of a confirmation, and be explicit to the
-  // model that this is NOT a confirmed booking — the single most damaging
+  // model that this is NOT a confirmed booking - the single most damaging
   // thing it could do here is tell a customer they're booked when no money
   // has moved and the hold is about to lapse.
   if (paymentRequired) {
@@ -263,7 +263,7 @@ export async function createBooking(
 
     if (!init) {
       // Don't leave a hold sitting on a slot for a checkout that never
-      // existed — release it immediately rather than waiting 15 minutes.
+      // existed - release it immediately rather than waiting 15 minutes.
       await supabaseAdmin.from('bookings').update({ status: 'cancelled', payment_status: 'failed' }).eq('id', booking.id);
       return { error: "Couldn't start the payment just now. Ask the customer to try again in a moment." };
     }
@@ -280,15 +280,15 @@ export async function createBooking(
       payment_url: init.authorizationUrl,
       holds_slot_for_minutes: 15,
       instructions:
-        `Do NOT say the booking is confirmed — it is not. Tell the customer their ${service.name} slot at ` +
+        `Do NOT say the booking is confirmed - it is not. Tell the customer their ${service.name} slot at ` +
         `${formatLocalDateTime(booking.start_time, timeZone)} is held for 15 minutes, give them this exact link to pay ` +
-        `₦${amountNaira.toLocaleString()}: ${init.authorizationUrl} — and tell them to message you once they have paid so you can confirm it. ` +
+        `₦${amountNaira.toLocaleString()}: ${init.authorizationUrl} - and tell them to message you once they have paid so you can confirm it. ` +
         `If they don't pay within 15 minutes the slot is released.`,
     };
   }
 
   // Same fire-and-forget confirmation email as the web booking flow
-  // (app/api/bookings/route.ts) — failure here never blocks the booking.
+  // (app/api/bookings/route.ts) - failure here never blocks the booking.
   if (args.customerEmail) {
     await sendEmail(
       {
@@ -312,7 +312,7 @@ export async function createBooking(
 // Business-Intelligence-plan-only, and deliberately much narrower than
 // anything in lib/insightsTools.ts: service name and how often it's been
 // booked, nothing else. No revenue, no per-customer data, nothing that
-// identifies any other customer — this is reachable by anyone who can
+// identifies any other customer - this is reachable by anyone who can
 // message the bot, unlike insightsTools.ts which only ever runs behind a
 // staff session. Only wired into the tool list when the business is on the
 // business_intelligence plan (see whatsappAgent.ts).
@@ -356,7 +356,7 @@ export async function checkPayment(ctx: ToolContext) {
 
   if (!booking) return { error: 'No recent booking found for this customer to check payment against.' };
   if (booking.status === 'confirmed') {
-    return { already_confirmed: true, instructions: 'This booking is already confirmed — reassure the customer, do not ask them to pay again.' };
+    return { already_confirmed: true, instructions: 'This booking is already confirmed - reassure the customer, do not ask them to pay again.' };
   }
   if (!booking.payment_reference) return { error: 'That booking has no payment attached to check.' };
 
@@ -401,7 +401,7 @@ export async function confirmPaidBooking(
 
   const timeZone = await getBusinessTimezone(booking.business_id);
 
-  // Already done — a customer paying twice on the same link, or the webhook
+  // Already done - a customer paying twice on the same link, or the webhook
   // and check_payment both landing, must not double-confirm or re-charge.
   if (booking.status === 'confirmed') {
     return { confirmed: true, when: formatLocalDateTime(booking.start_time, timeZone) };
@@ -418,7 +418,7 @@ export async function confirmPaidBooking(
   const verified = await verifyPaystackTransaction(business.paystack_secret_key, reference);
   if (!verified || verified.status !== 'success') return { confirmed: false, reason: 'not_paid' };
 
-  // Never trust an amount reported to us — recompute what was owed and
+  // Never trust an amount reported to us - recompute what was owed and
   // compare against what Paystack says actually settled.
   const expectedKobo = Math.round((service?.price ?? 0) * ((rules?.deposit_percentage ?? 100) / 100)) * 100;
   if (Math.abs(verified.amount - expectedKobo) > 200) return { confirmed: false, reason: 'amount_mismatch' };
@@ -433,7 +433,7 @@ export async function confirmPaidBooking(
 
   if (error) {
     // 23P01 here means the hold lapsed, the sweep cancelled it, and
-    // somebody else has since taken the slot — so this booking can't be
+    // somebody else has since taken the slot - so this booking can't be
     // revived. The customer HAS paid, so this must never fail silently:
     // it stays cancelled-but-paid for the business to see and settle.
     if ((error as { code?: string }).code === '23P01') {
@@ -459,7 +459,7 @@ export async function findCustomerBookings(ctx: ToolContext) {
   const timeZone = await getBusinessTimezone(ctx.businessId);
 
   // payment_status/amount_paid let the bot actually answer "did my
-  // deposit go through" instead of having nothing to check — same
+  // deposit go through" instead of having nothing to check - same
   // defensive fallback as every other payments-column read this session,
   // since a business that never ran that migration would otherwise fail
   // this whole query (and with it, cancel/reschedule, which both call
@@ -487,7 +487,7 @@ export async function findCustomerBookings(ctx: ToolContext) {
   }
 
   return {
-    // No id exposed here on purpose — cancel/reschedule identify a booking
+    // No id exposed here on purpose - cancel/reschedule identify a booking
     // by service + date + time (which the model tracks reliably from natural
     // conversation), not by asking the model to transcribe a UUID it saw in
     // a previous turn. `when` is the only time representation given here too,
@@ -507,7 +507,7 @@ export async function findCustomerBookings(ctx: ToolContext) {
 // human-readable text (see loadConversation/saveConversation below), not
 // prior tool results, so a model-transcribed UUID from a find_customer_
 // bookings call several turns back is exactly the kind of thing an LLM
-// garbles — a copy error there silently looks identical to "not found".
+// garbles - a copy error there silently looks identical to "not found".
 // Service + date + time is what the model naturally tracks correctly in
 // conversation anyway, so this removes that failure mode entirely.
 async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; date: string; time: string }) {

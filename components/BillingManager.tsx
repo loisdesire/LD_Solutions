@@ -26,7 +26,7 @@ const STATUS_COPY: Record<SubscriptionState['phase'], { label: string; pill: str
 };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
@@ -43,7 +43,7 @@ export default function BillingManager({
   const [error, setError] = useState('');
   const [cancelled, setCancelled] = useState(false);
   // Defaults to whatever plan they're already on (or were on before it
-  // lapsed) rather than always resetting to Core — someone re-subscribing
+  // lapsed) rather than always resetting to Core - someone re-subscribing
   // after a failed payment shouldn't get quietly downgraded.
   const [selectedPlan, setSelectedPlan] = useState<Plan>(state.plan);
 
@@ -98,7 +98,7 @@ export default function BillingManager({
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${copy.pill}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {cancelled ? 'Cancelling' : copy.label}
-            {state.phase === 'trial' && ` — ${state.trialDaysLeft} day${state.trialDaysLeft === 1 ? '' : 's'} left`}
+            {state.phase === 'trial' && `, ${state.trialDaysLeft} day${state.trialDaysLeft === 1 ? '' : 's'} left`}
           </span>
 
           <h2 className="font-display text-[22px] mt-3">
@@ -106,7 +106,7 @@ export default function BillingManager({
             <span className="text-[14px] font-normal text-ink-faint"> / month</span>
           </h2>
           <p className="text-ink-soft text-[13.5px] mt-1.5">
-            {PLAN_LABEL[state.plan]} plan — {PLAN_BLURB[state.plan]}
+            {PLAN_LABEL[state.plan]} plan. {PLAN_BLURB[state.plan]}
           </p>
 
           {state.phase === 'active' && (
@@ -116,7 +116,7 @@ export default function BillingManager({
           )}
           {(state.phase === 'cancelling' || cancelled) && (
             <p className="text-ink-faint text-[12.5px] mt-3">
-              Access ends: <span className="text-ink font-medium">{formatDate(state.currentPeriodEnd)}</span> — no further charges.
+              Access ends: <span className="text-ink font-medium">{formatDate(state.currentPeriodEnd)}</span>. No further charges.
             </p>
           )}
           {state.phase === 'trial' && (
@@ -128,7 +128,7 @@ export default function BillingManager({
           )}
           {state.phase === 'past_due' && (
             <p className="text-error text-[12.5px] mt-3">
-              Your last payment didn't go through — subscribe again below to restore access.
+              Your last payment didn't go through. Subscribe again below to restore access.
             </p>
           )}
         </div>
@@ -184,7 +184,7 @@ export default function BillingManager({
         </div>
       </div>
 
-      {/* No mid-cycle plan-swap/proration yet — switching plans reuses the
+      {/* No mid-cycle plan-swap/proration yet - switching plans reuses the
           same tested cancel-then-resubscribe path rather than new billing
           logic, so it's a manual two-step for now. */}
       {(state.phase === 'active' || state.phase === 'cancelling') && !cancelled && (
@@ -196,7 +196,7 @@ export default function BillingManager({
 
       {!state.hasAccess && state.phase !== 'past_due' && (
         <p className="text-ink-faint text-[12.5px] mt-4">
-          Your trial has ended, so the rest of the dashboard is paused until you subscribe —
+          Your trial has ended, so the rest of the dashboard is paused until you subscribe -
           nothing has been deleted, it'll all be right there once you're active again.
         </p>
       )}
@@ -231,7 +231,7 @@ export default function BillingManager({
                   </div>
                 </div>
                 <div className="font-mono text-[13.5px] font-semibold text-ink">
-                  {h.amount != null ? `₦${Number(h.amount).toLocaleString()}` : '—'}
+                  {h.amount != null ? `₦${Number(h.amount).toLocaleString()}` : '-'}
                 </div>
               </div>
             ))}

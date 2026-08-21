@@ -4,7 +4,7 @@ import AdminMobileNav from '@/components/AdminMobileNav';
 import { ToastProvider } from '@/components/Toast';
 import type { Metadata } from 'next';
 
-// Private staff area — never indexed, regardless of what any individual
+// Private staff area - never indexed, regardless of what any individual
 // admin page under here does or doesn't set.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

@@ -4,7 +4,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
 // Uses the service role key because this needs to create both an auth user
-// and rows in businesses/staff — the anon key + RLS policies aren't meant
+// and rows in businesses/staff - the anon key + RLS policies aren't meant
 // to allow that from a public request.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Every step below used to be fire-and-forget (insert, ignore whether it
-  // actually succeeded) — a silent failure on the staff row specifically
+  // actually succeeded) - a silent failure on the staff row specifically
   // left real accounts with a real business but no link between them:
   // login works, but "we couldn't find a business linked to this account"
   // forever. Now every step is checked, and a failure anywhere unwinds
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // explicitly rather than left to the businesses table's column
     // default (which lags behind whatever the platform's own identity
     // currently is, and isn't guaranteed to be one of the Settings
-    // page's own preset swatches) — this is the platform's current
+    // page's own preset swatches) - this is the platform's current
     // primary terracotta, kept in sync by hand whenever the brand changes.
     const { data: business, error: bizError } = await supabaseAdmin
       .from('businesses')
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         .insert({ business_id: business.id });
       if (rulesError) throw new Error(`Failed to create booking rules: ${rulesError.message}`);
 
-      // 6. Start their 14-day trial — this is what the access gate
+      // 6. Start their 14-day trial - this is what the access gate
       // (requireStaffSession) checks to decide whether they're let into the
       // admin area, so every business needs one of these from day one.
       const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);

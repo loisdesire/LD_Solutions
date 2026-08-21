@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// Lightweight scroll-triggered fade/slide-in, no animation library needed —
+// Lightweight scroll-triggered fade/slide-in, no animation library needed -
 // this is the only page in the app that wants scroll-linked motion, so a
 // small IntersectionObserver wrapper is enough rather than a new dependency.
 export default function Reveal({

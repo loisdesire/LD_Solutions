@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-// The gallery grid used to be click-nothing — a photo a customer wanted to
+// The gallery grid used to be click-nothing - a photo a customer wanted to
 // actually look at only ever showed at the same small square-cropped size
 // as every other thumbnail. This adds a simple full-screen lightbox with
 // prev/next, no new data (there's no caption field on gallery_urls, so this

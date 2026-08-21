@@ -1,5 +1,5 @@
 // A faithful mini-mockup of the real admin dashboard's Today strip and
-// appointment list — same structure, same labels, same tokens as the
+// appointment list - same structure, same labels, same tokens as the
 // actual /admin page, not an invented "dashboard-style" illustration.
 // This is what a business owner actually sees, not a promise.
 const SAMPLE_ROWS = [

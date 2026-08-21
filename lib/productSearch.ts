@@ -1,10 +1,10 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
-// Discovery only, deliberately — no ordering, no payment, no inventory
+// Discovery only, deliberately - no ordering, no payment, no inventory
 // writes here. This is a single-shot reasoning call over the business's own
 // catalog (given directly in context, since these are small-catalog small
-// businesses), not an agentic tool-calling loop like lib/whatsappAgent.ts —
+// businesses), not an agentic tool-calling loop like lib/whatsappAgent.ts -
 // there's nothing for the model to *do* here, only something to figure out.
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -49,7 +49,7 @@ export async function searchProducts(businessId: string, query: string, history:
 Here is the full product catalog:
 ${catalogText}
 
-The customer will describe what they're looking for in their own words — they might not know the exact
+The customer will describe what they're looking for in their own words - they might not know the exact
 product name, might describe color, use-case, or vibe instead, or might just be vague. Your job is to figure
 out which real product(s) from the catalog above they mean, the way a good shop assistant would.
 
@@ -60,16 +60,16 @@ Rules:
 - If genuinely ambiguous between two or more real candidates, ask a short clarifying question instead of
   guessing which one they mean.
 - If nothing in the catalog matches at all, say so honestly rather than forcing a match.
-- You can only help the customer find and learn about products — you cannot place an order, take payment, or
+- You can only help the customer find and learn about products - you cannot place an order, take payment, or
   check someone out. If asked how to buy/order/pay, say plainly that you can't process orders yet and they
   should contact ${business?.name ?? 'the business'} directly to complete a purchase. Never claim there's a
-  website, cart, or checkout to order through — none exists. Don't invent a phone number or contact method
+  website, cart, or checkout to order through - none exists. Don't invent a phone number or contact method
   either; just say "contact them directly" unless you were actually given contact info above.
 - Keep replies short and friendly, a sentence or two.
 
 Respond with ONLY a JSON object of this exact shape, no other text before or after it:
 {"reply": "your conversational reply text", "productIds": ["id1", "id2"]}
-productIds should contain the ids of products you are confidently presenting to the customer right now — leave
+productIds should contain the ids of products you are confidently presenting to the customer right now - leave
 it empty if you're asking a clarifying question or nothing matches.`;
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -92,7 +92,7 @@ it empty if you're asking a clarifying question or nothing matches.`;
     parsed = {};
   }
 
-  // Never trust model-supplied ids blindly — filter to what's actually in
+  // Never trust model-supplied ids blindly - filter to what's actually in
   // this business's real catalog, same defensive principle as the booking
   // agent never trusting a model-supplied booking id.
   const catalogIds = new Set(products.map((p) => p.id));
@@ -100,7 +100,7 @@ it empty if you're asking a clarifying question or nothing matches.`;
   const matchedProducts = products.filter((p) => matchedIds.includes(p.id));
 
   return {
-    reply: parsed.reply ?? "Sorry, I couldn't quite catch that — could you try describing it differently?",
+    reply: parsed.reply ?? "Sorry, I couldn't quite catch that - could you try describing it differently?",
     products: matchedProducts,
   };
 }

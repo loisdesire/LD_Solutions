@@ -25,7 +25,7 @@ export default async function AccountPage() {
 
   // Service role: bookings aren't publicly readable, but we've already
   // verified the requester's identity via their authenticated session
-  // above — matching by email is the whole point of this page, not a
+  // above - matching by email is the whole point of this page, not a
   // bypass of it.
   const { data: bookings } = await supabaseAdmin
     .from('bookings')
@@ -38,7 +38,7 @@ export default async function AccountPage() {
   const rows = bookings ?? [];
 
   // Chat history is keyed by (business_id, customer_phone), not by
-  // account/email — a customer might have chatted via a phone number tied
+  // account/email - a customer might have chatted via a phone number tied
   // to one specific booking. Fetch every conversation for the pairs that
   // actually show up in their bookings, then match in memory.
   const pairs = [...new Set(rows.filter((b) => b.customer_phone).map((b) => `${b.business_id}::${b.customer_phone}`))];
@@ -91,7 +91,7 @@ export default async function AccountPage() {
         {rows.length === 0 ? (
           <div className="rounded-3xl bg-warm-surface py-16 text-center px-6">
             <p className="text-ink-soft text-[14px]">
-              No bookings found for this email yet — once you book somewhere, it'll show up here.
+              No bookings found for this email yet - once you book somewhere, it'll show up here.
             </p>
           </div>
         ) : (

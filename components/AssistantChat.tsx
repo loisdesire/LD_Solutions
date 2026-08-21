@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 type Message = { role: 'user' | 'assistant'; content: string };
 
 // Shared chat widget behind both dashboard AI assistants (Insights,
-// Schedule assistant) — was two copies of the identical fetch/state/
+// Schedule assistant) - was two copies of the identical fetch/state/
 // scroll-to-bottom/message-rendering logic, differing only in which
 // endpoint they posted to and their copy. Each caller supplies its own
 // endpoint, suggestions, and copy; this owns the mechanics.

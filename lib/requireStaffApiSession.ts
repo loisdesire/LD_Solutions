@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 
 // API-route equivalent of requireStaffSession (lib/requireStaffSession.ts).
 // That one calls next/navigation's redirect()/notFound(), which only makes
-// sense for page rendering, not a fetch()-consumed API route — hence a
+// sense for page rendering, not a fetch()-consumed API route - hence a
 // separate implementation rather than a wrapper around it. `columns` lets a
 // caller pull back extra business fields it actually needs (e.g.
 // 'id, whatsapp_number, telegram_bot_token') in this same query instead of

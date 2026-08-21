@@ -6,7 +6,7 @@ import { NextRequest } from 'next/server';
 // since each instance would otherwise track its own separate counts.
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
-// Buckets are never explicitly deleted, only overwritten once expired —
+// Buckets are never explicitly deleted, only overwritten once expired -
 // sweep periodically so long-running processes don't accumulate memory
 // from one-off IPs that never come back.
 setInterval(() => {

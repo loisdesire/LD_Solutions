@@ -6,7 +6,7 @@ import type { AgentMessage } from '@/lib/agentLoop';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
-// POST /api/insights/chat — the staff-only business-intelligence chat.
+// POST /api/insights/chat - the staff-only business-intelligence chat.
 // Unlike the WhatsApp/Telegram agent, there's no cross-request conversation
 // to persist server-side: the browser tab holds history in state and resends
 // it each turn, since this is a single staff member in one dashboard session,

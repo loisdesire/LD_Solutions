@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createCustomerServerSupabase } from '@/lib/supabase-server';
 import { SITE_URL } from '@/lib/site';
 
-// GET /account/callback — where the magic-link email points. Exchanges the
+// GET /account/callback - where the magic-link email points. Exchanges the
 // one-time code for a real session (cookie-backed, same client the account
 // dashboard reads via createCustomerServerSupabase), then sends them on to
 // /account.

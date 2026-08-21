@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react';
 
 // Consolidates what was 4+ byte-identical (or near-identical, differing only
-// in size) pill-button className strings copy-pasted across app/page.tsx —
+// in size) pill-button className strings copy-pasted across app/page.tsx -
 // same classes as before, just named once. Purely a dedup, not a new visual
 // design: every variant/size combination here matches an exact className
 // that already existed in the marketing page before this component existed.
@@ -39,8 +39,8 @@ export default function Button(props: ButtonProps) {
   // destructure that builds `rest`. Reading them into consts separately
   // (an earlier version of this file) leaves them in `rest`, and then
   // {...rest} spread onto the element both overrode the computed
-  // className — silently rendering every Button that passed a className
-  // as unstyled plain text — and leaked `variant` onto the DOM as an
+  // className - silently rendering every Button that passed a className
+  // as unstyled plain text - and leaked `variant` onto the DOM as an
   // invalid HTML attribute.
   const { variant = 'primary', size = 'md', className = '', children, ...rest } = props;
 

@@ -145,7 +145,7 @@ export default function ProductsManager({
     setEditingId('');
   }
 
-  // Same search-by-name filtering Services already had — Products was the
+  // Same search-by-name filtering Services already had - Products was the
   // only one of the two near-identical entities with no way to find one
   // item in a long, entirely unpaginated list.
   const filteredProducts = useMemo(() => {
@@ -191,7 +191,7 @@ export default function ProductsManager({
               onChange={(e) => setDescription(e.target.value)}
               className={inputClass}
               rows={2}
-              placeholder="Helps the AI match customer questions to this product — mention color, use-case, size etc."
+              placeholder="Helps the AI match customer questions to this product - mention color, use-case, size etc."
             />
           </div>
           <div>
@@ -242,7 +242,7 @@ export default function ProductsManager({
             </svg>
           </div>
           <h2 className="font-display text-[20px]">No products yet</h2>
-          <p className="text-ink-soft text-body-sm mt-1.5">Products are optional — they show on your page and let the assistant answer questions about what you sell. Use "Add product" above if you want them.</p>
+          <p className="text-ink-soft text-body-sm mt-1.5">Products are optional - they show on your page and let the assistant answer questions about what you sell. Use "Add product" above if you want them.</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
@@ -352,10 +352,10 @@ export default function ProductsManager({
                   </span>
                 </div>
                 <div className="font-mono text-[13px] text-ink-soft">
-                  {p.price != null ? `₦${p.price.toLocaleString()}` : '—'}
+                  {p.price != null ? `₦${p.price.toLocaleString()}` : '-'}
                 </div>
                 <div className="font-mono text-[13px] text-ink-soft">
-                  {p.stock_quantity != null ? p.stock_quantity : '—'}
+                  {p.stock_quantity != null ? p.stock_quantity : '-'}
                 </div>
                 <div className="hidden sm:block">
                   <span

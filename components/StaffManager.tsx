@@ -100,7 +100,7 @@ export default function StaffManager({
     setEditName(member.name);
   }
 
-  // Name only, not role — role changes have real access-control
+  // Name only, not role - role changes have real access-control
   // implications (owner vs. staff) that a quick inline edit isn't the
   // right place to make casually; that stays a deliberate, separate
   // action if it's ever added.

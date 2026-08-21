@@ -22,7 +22,7 @@ export async function createServerSupabase() {
             );
           } catch {
             // Called from a Server Component render with no way to write
-            // the response — safe to ignore, the login/signup flows that
+            // the response - safe to ignore, the login/signup flows that
             // actually need to persist a session run client-side instead.
           }
         },
@@ -31,7 +31,7 @@ export async function createServerSupabase() {
   );
 }
 
-// Server client for the customer account area (/account) — same project,
+// Server client for the customer account area (/account) - same project,
 // but reads/writes a separate cookie name (matching
 // createCustomerBrowserSupabase in lib/supabase.ts) so a customer session
 // never gets confused with a staff session in the same browser.
@@ -52,7 +52,7 @@ export async function createCustomerServerSupabase() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Same as above — safe to ignore from a Server Component render.
+            // Same as above - safe to ignore from a Server Component render.
           }
         },
       },

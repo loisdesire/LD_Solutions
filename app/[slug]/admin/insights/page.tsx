@@ -28,7 +28,7 @@ export default async function InsightsPage({
         </div>
         <h1 className="font-display text-h1 text-ink">Insights</h1>
         <p className="text-ink-soft text-body-sm mt-1">
-          Ask about revenue, top customers, top services, and what's next — in plain language.
+          Ask about revenue, top customers, top services, and what's next - in plain language.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export default async function InsightsPage({
           </div>
           <h2 className="font-display text-[17px] text-ink mb-1.5">Unlock Insights</h2>
           <p className="text-ink-soft text-body-sm mb-5">
-            Upgrade to ask an AI directly about your revenue, top customers, and top services — no spreadsheets.
+            Upgrade to ask an AI directly about your revenue, top customers, and top services - no spreadsheets.
           </p>
           <Link
             href={`/${slug}/admin/billing`}

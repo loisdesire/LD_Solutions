@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/bookings/[id]/cancel — self-serve cancellation. No login: the
+// POST /api/bookings/[id]/cancel - self-serve cancellation. No login: the
 // booking id itself (an unguessable UUID, only ever shown/emailed to the
 // customer who made it) is the "secret" that authorizes this, the same
 // pattern most booking tools use for cancel/reschedule links.

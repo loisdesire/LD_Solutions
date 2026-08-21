@@ -8,7 +8,7 @@ import { friendlyError } from '@/lib/friendlyError';
 // Unlike LoginForm (which already knows which business's /admin to send
 // you to, because the URL itself is /[slug]/login), this is the generic
 // entry point for someone who doesn't remember their own booking page's
-// URL — signs in first, then asks the server which business the account
+// URL - signs in first, then asks the server which business the account
 // actually belongs to, and redirects there.
 export default function PlatformLoginForm() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function PlatformLoginForm() {
       }
 
       // A server-side lookup, not a client-side query run immediately after
-      // sign-in — the client-side version was unreliable, coming back empty
+      // sign-in - the client-side version was unreliable, coming back empty
       // even for accounts that genuinely have a staff row (see route comment
       // for why). Reading the session from cookies server-side, the same way
       // requireStaffSession already does successfully everywhere else, avoids

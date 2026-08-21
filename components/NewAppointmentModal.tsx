@@ -37,7 +37,7 @@ function groupSlots(slots: string[]): [Period, string[]][] {
 }
 
 // A quick-add flow for staff booking a walk-in or phone customer straight
-// from the dashboard — same underlying availability/booking APIs the
+// from the dashboard - same underlying availability/booking APIs the
 // public booking page uses, just collapsed into one modal instead of a
 // multi-step wizard, since staff already know what they're booking and
 // shouldn't have to click through "steps" to enter it.
@@ -177,7 +177,7 @@ export default function NewAppointmentModal({
           </div>
         ) : services.length === 0 ? (
           <div className="px-6 py-10 text-center">
-            <p className="text-ink-soft text-[14px]">You need at least one service before you can book anyone in — add one on the Services page first.</p>
+            <p className="text-ink-soft text-[14px]">You need at least one service before you can book anyone in - add one on the Services page first.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5">

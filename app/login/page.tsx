@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 // The generic entry point for a business owner who doesn't remember their
-// own /[slug]/login URL — signs in here instead, and gets redirected to the
+// own /[slug]/login URL - signs in here instead, and gets redirected to the
 // right business automatically. /[slug]/login still exists and still works
 // (it's what "Book now"-adjacent flows and bookmarks point at), this is
 // just the other door in.

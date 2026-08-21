@@ -16,7 +16,7 @@ export default function SiteFooter({
   business: Business;
   hoursSummary: string | null;
   // Settings' "Contact page" toggle promises these fields only show up
-  // "if the toggle above is on" — that was only ever true for the
+  // "if the toggle above is on" - that was only ever true for the
   // dedicated /contact page; this footer rendered them unconditionally on
   // every page regardless of the toggle. Defaults true so pages that
   // don't pass it (there shouldn't be any left) keep the old behavior

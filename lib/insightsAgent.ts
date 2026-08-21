@@ -16,7 +16,7 @@ import {
   getBillingStatus,
 } from './insightsTools';
 
-// Owner-facing counterpart to whatsappAgent.ts — same tool-calling loop
+// Owner-facing counterpart to whatsappAgent.ts - same tool-calling loop
 // (shared via lib/agentLoop.ts), deliberately kept as a separate agent
 // rather than one that handles both customer and staff chat. Mixing them
 // would mean one system prompt and one set of reachable tools has to
@@ -83,7 +83,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'get_cancellations_and_no_shows',
       description:
-        'Counts of cancelled and no-show bookings (and completed/confirmed, for context), optionally within a date range. Use this for anything about cancellations or no-shows — get_revenue and every other tool here excludes them entirely by design.',
+        'Counts of cancelled and no-show bookings (and completed/confirmed, for context), optionally within a date range. Use this for anything about cancellations or no-shows - get_revenue and every other tool here excludes them entirely by design.',
       parameters: {
         type: 'object',
         properties: {
@@ -106,7 +106,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'find_customer',
       description:
-        'Look up one specific customer by name or phone number — use this instead of get_top_customers when the owner asks about a particular person, since the top-customers list only covers the top few by spend.',
+        'Look up one specific customer by name or phone number - use this instead of get_top_customers when the owner asks about a particular person, since the top-customers list only covers the top few by spend.',
       parameters: {
         type: 'object',
         properties: { query: { type: 'string', description: "The customer's name or phone number (or part of either)." } },
@@ -119,7 +119,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'get_inactive_customers',
       description:
-        'Customers who booked before but haven\'t in a while and have nothing upcoming — for "who am I at risk of losing" / "who hasn\'t come back" type questions.',
+        'Customers who booked before but haven\'t in a while and have nothing upcoming - for "who am I at risk of losing" / "who hasn\'t come back" type questions.',
       parameters: {
         type: 'object',
         properties: {
@@ -134,7 +134,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'compare_revenue_periods',
       description:
-        'Revenue for a date range compared against the immediately preceding period of equal length, with the percent change already computed — use this for any "vs last month/week" type question instead of calling get_revenue twice and subtracting yourself.',
+        'Revenue for a date range compared against the immediately preceding period of equal length, with the percent change already computed - use this for any "vs last month/week" type question instead of calling get_revenue twice and subtracting yourself.',
       parameters: {
         type: 'object',
         properties: {
@@ -200,13 +200,13 @@ export async function runInsightsAgent(params: {
   const { businessId, businessName, history, message } = params;
 
   // Without this, "how much did I make this week" or "last month" gave
-  // the model nothing to compute those ranges from — it had no idea what
+  // the model nothing to compute those ranges from - it had no idea what
   // today even was, so get_revenue's from/to args were pure guesswork.
   const timeZone = await getBusinessTimezone(businessId);
   const today = todayInTimezone(timeZone);
 
   const systemPrompt = `You are the business-insights assistant for ${businessName}, talking directly to the
-business owner or staff — not a customer. Today's date is ${today} (business timezone: ${timeZone}) — use this
+business owner or staff - not a customer. Today's date is ${today} (business timezone: ${timeZone}) - use this
 to work out actual date ranges for relative questions like "this week," "last month," or "yesterday" before
 calling a tool; the tools only ever take explicit dates, never relative phrases. You have read-only access to
 this business's own booking and billing data via tools covering: revenue (including period-over-period
@@ -214,14 +214,14 @@ comparison), top customers, one specific customer by name/phone, customers who h
 top services, cancellations/no-shows, busiest day/time, the next appointment, a quick snapshot, and this
 business's own subscription/billing status.
 
-Answer using the tools whenever the question needs real numbers — never estimate or make up figures. If a
+Answer using the tools whenever the question needs real numbers - never estimate or make up figures. If a
 tool returns no data (e.g. no bookings yet), say so plainly rather than inventing an answer.
 
 Stay strictly in scope: only answer questions about this business's own bookings, customers, services, and
 revenue. You have no access to and must never speculate about other businesses, general business advice
 unrelated to this data, or anything outside what the tools return.
 
-Formatting: plain conversational text, no markdown asterisks or headers. Currency figures are in Naira — write
+Formatting: plain conversational text, no markdown asterisks or headers. Currency figures are in Naira - write
 them as ₦12,000 style. Keep answers concise and direct; this is a working dashboard chat, not a report.`;
 
   return runToolAgent({

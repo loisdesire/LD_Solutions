@@ -5,7 +5,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// The one place that answers "what timezone is this business in" — was a
+// The one place that answers "what timezone is this business in" - was a
 // near-identical inline query repeated across whatsappTools.ts (5x),
 // insightsTools.ts, rescheduleTools.ts, getAvailableSlots.ts, and the
 // booking-reschedule API route. Defaults to UTC on a missing/unknown

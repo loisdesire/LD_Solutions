@@ -3,7 +3,7 @@
 // custom properties are safe. So: table-based layout, every style inline,
 // 600px max width, web-safe font stack. This is deliberately "old" markup.
 //
-// Branding is the BUSINESS's, not Vanova's — the customer booked with
+// Branding is the BUSINESS's, not Vanova's - the customer booked with
 // Glow Salon and has often never heard of the platform. Same split the
 // public booking page already makes (see AccentScope): business brand
 // front of house, platform brand only in the small print.

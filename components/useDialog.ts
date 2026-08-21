@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
-// Every overlay in this app — the new-appointment modal, the conversation
-// drawer, the gallery lightbox, the chat panel, the mobile menus — was
+// Every overlay in this app - the new-appointment modal, the conversation
+// drawer, the gallery lightbox, the chat panel, the mobile menus - was
 // built without dialog semantics: no role, no focus trap, no Escape, and
 // the page behind stayed scrollable. A keyboard user could tab straight
 // out of an open modal into the page underneath and have no idea where
@@ -44,7 +44,7 @@ export function useDialog(open: boolean, onClose: () => void) {
       const first = items[0];
       const last = items[items.length - 1];
 
-      // Wrap at both ends — without this, Tab walks out of the dialog.
+      // Wrap at both ends - without this, Tab walks out of the dialog.
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last.focus();

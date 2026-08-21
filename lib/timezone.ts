@@ -1,10 +1,10 @@
 // Converts a business's local wall-clock time (e.g. "9:00 AM in
 // Africa/Lagos") into the correct UTC instant, regardless of what timezone
 // the server process happens to be running in. Without this, availability
-// was silently computed using the server's local clock — correct on a
+// was silently computed using the server's local clock - correct on a
 // laptop, wrong the moment it's deployed somewhere else.
 //
-// Standard technique (no extra dependency needed — Node's built-in Intl
+// Standard technique (no extra dependency needed - Node's built-in Intl
 // has a full timezone database): make a guess assuming the wall-clock time
 // IS utc, see what that guess actually renders as in the target timezone,
 // and shift by the difference.
@@ -44,7 +44,7 @@ export function zonedTimeToUtc(dateISO: string, timeHHMM: string, timeZone: stri
 }
 
 // "Today" as a YYYY-MM-DD calendar date in the business's timezone, not
-// the server's. Matters right at the day boundary — a business in Lagos
+// the server's. Matters right at the day boundary - a business in Lagos
 // shouldn't have "today" flip over at server-local midnight if the server
 // is running in a different timezone.
 export function todayInTimezone(timeZone: string): string {
@@ -58,7 +58,7 @@ export function todayInTimezone(timeZone: string): string {
 }
 
 // Day of week (0 = Sunday … 6 = Saturday) for a plain calendar date,
-// independent of any timezone — this is just "which weekday is 2026-07-15",
+// independent of any timezone - this is just "which weekday is 2026-07-15",
 // not tied to a specific instant, so it must never go through a
 // server-local Date object.
 export function dayOfWeekForDate(dateISO: string): number {

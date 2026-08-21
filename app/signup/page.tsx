@@ -16,7 +16,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [host, setHost] = useState('');
 
-  // Show the real domain this is running on, not a hardcoded placeholder —
+  // Show the real domain this is running on, not a hardcoded placeholder -
   // window isn't available during server render, so this fills in on mount.
   useEffect(() => {
     setHost(window.location.host);
@@ -62,7 +62,7 @@ export default function SignupPage() {
       });
 
       if (signInError) {
-        setError(friendlyError(signInError, 'Account created, but could not log you in automatically — try logging in.'));
+        setError(friendlyError(signInError, 'Account created, but could not log you in automatically - try logging in.'));
         setLoading(false);
         return;
       }
@@ -81,7 +81,7 @@ export default function SignupPage() {
 
   const features = [
     ['No setup fees.', 'Start taking bookings today.'],
-    ['Your own link.', `${host || 'yoursite.com'}/your-name — share it anywhere.`],
+    ['Your own link.', `${host || 'yoursite.com'}/your-name - share it anywhere.`],
     ['Customers just book.', 'No apps, no accounts, no friction.'],
   ];
 

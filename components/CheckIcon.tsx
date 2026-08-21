@@ -1,4 +1,4 @@
-// Crisp vector checkmark — renders identically on every browser/OS, unlike
+// Crisp vector checkmark - renders identically on every browser/OS, unlike
 // the Unicode ✓ character which different system fonts draw inconsistently
 // (and can look oversized or emoji-like depending on the font).
 export default function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {

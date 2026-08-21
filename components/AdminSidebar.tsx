@@ -97,7 +97,7 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Products isn't part of the MVP — the page/route/data still work for
+  // Products isn't part of the MVP - the page/route/data still work for
   // anyone who already uses it, it's just not promoted in the primary
   // nav alongside the actual core flow (services, hours, staff).
   //
@@ -147,7 +147,7 @@ export default function AdminSidebar({
     );
   }
 
-  // Kept predominantly neutral — a solid brand-color sidebar was tried
+  // Kept predominantly neutral - a solid brand-color sidebar was tried
   // and reads as exactly the "every component orange" overuse the
   // brand direction explicitly warns against. The accent shows up only
   // in the active nav item, matching how restraint is applied

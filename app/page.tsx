@@ -12,7 +12,7 @@ const DEMO_SLUG = 'glow-salon';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
-  // brand entirely rather than appending it — the homepage was therefore
+  // brand entirely rather than appending it - the homepage was therefore
   // rendering with no brand name in the tab or in search results at all.
   title: 'Vanova | An AI receptionist for appointment businesses',
   description:
@@ -124,7 +124,7 @@ const features = [
   },
 ];
 
-// A real sequence — this is the one place on the page a numbered list
+// A real sequence - this is the one place on the page a numbered list
 // actually earns its keep, since these four things genuinely happen in
 // this order, not four unrelated feature bullets.
 const steps = [
@@ -135,8 +135,8 @@ const steps = [
 ];
 
 // Mirrors what the code actually gates. hasBusinessIntelligence() guards
-// exactly two things — the /admin/insights panel and the customer bot's
-// get_popular_services tool — so everything else belongs in Core. Payments,
+// exactly two things - the /admin/insights panel and the customer bot's
+// get_popular_services tool - so everything else belongs in Core. Payments,
 // custom domains and the schedule assistant are deliberately NOT upsells.
 const CORE_INCLUDES = [
   'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
@@ -250,7 +250,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Channel strip — honest about what's live vs. coming, on purpose */}
+      {/* Channel strip - honest about what's live vs. coming, on purpose */}
       <section className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
           <Reveal className="flex flex-col items-center text-center">
@@ -311,7 +311,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works — a connected path keeps the sequence feeling like one
+      {/* How it works - a connected path keeps the sequence feeling like one
           process instead of four separate feature cards. */}
       <section id="how-it-works" className="border-y border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16 sm:py-16">
@@ -393,7 +393,7 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Pricing — one plan, stated plainly, no tiers to compare */}
+      {/* Pricing - one plan, stated plainly, no tiers to compare */}
       <section id="pricing" className="border-t border-line">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
           <Reveal className="text-center mb-12">
@@ -462,7 +462,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-[13px] text-ink-faint mt-8">
-            Not sure? Start on {PLAN_LABEL.core} — you can change plan from your dashboard later.
+            Not sure? Start on {PLAN_LABEL.core}. You can change plan from your dashboard later.
           </p>
         </div>
       </section>
@@ -484,7 +484,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer — deliberately not a four-column link directory. That
+      {/* Footer - deliberately not a four-column link directory. That
           pattern is exactly the "generic template" look the rest of the
           page has been avoiding, and boxed against the CTA section right
           above it (same bg-warm-surface), it just read as one undifferentiated

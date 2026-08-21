@@ -24,7 +24,7 @@ describe('zonedTimeToUtc', () => {
 });
 
 describe('dayOfWeekForDate', () => {
-  it('is independent of server timezone — 2026-07-11 is a Saturday', () => {
+  it('is independent of server timezone - 2026-07-11 is a Saturday', () => {
     expect(dayOfWeekForDate('2026-07-11')).toBe(6);
   });
 

@@ -3,11 +3,11 @@
 import { useId, useState, type ReactNode } from 'react';
 
 // The settings page grew to four full sections, each always fully expanded
-// — that stacked height, not any single section's content, is what made it
+// - that stacked height, not any single section's content, is what made it
 // feel overwhelming. Collapsing to just the header by default lets someone
 // see everything that's configurable at a glance, then open only the one
 // thing they actually came to change. A colored icon per section (rotating
-// through the platform's fixed accent/sage/blue trio — this is admin
+// through the platform's fixed accent/sage/blue trio - this is admin
 // chrome, not a customer-branded page, so multi-color variety is fine
 // here unlike the booking flow) makes the four sections scannable as
 // distinct things instead of four identical gray rows.
@@ -31,7 +31,7 @@ export default function CollapsibleSection({
 
   return (
     <div className="border-b border-line last:border-0">
-      {/* Was a bare <button> — no aria-expanded, no aria-controls, so the
+      {/* Was a bare <button> - no aria-expanded, no aria-controls, so the
           only open/closed signal was a rotating chevron, which is invisible
           to a screen reader. AdminMobileNav already did this correctly. */}
       <button

@@ -3,7 +3,7 @@ import { searchProducts, type ProductChatMessage } from '@/lib/productSearch';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
-// POST /api/products/search — public, called from the product-finder chat
+// POST /api/products/search - public, called from the product-finder chat
 // widget on a business's own booking page. No auth needed (same trust level
 // as viewing the page itself), just rate-limited against abuse/cost.
 export async function POST(req: NextRequest) {

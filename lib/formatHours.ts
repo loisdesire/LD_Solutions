@@ -10,8 +10,8 @@ function formatTime(t: string): string {
   return mStr === '00' ? `${h12} ${period}` : `${h12}:${mStr} ${period}`;
 }
 
-// Condenses "Mon 9-5, Tue 9-5, Wed 9-5, Fri 10-6" into "Mon–Wed · 9 AM–5 PM,
-// Fri · 10 AM–6 PM" — a customer landing on the booking page wants to know
+// Condenses "Mon 9-5, Tue 9-5, Wed 9-5, Fri 10-6" into "Mon-Wed · 9 AM-5 PM,
+// Fri · 10 AM-6 PM" - a customer landing on the booking page wants to know
 // at a glance whether the business is open, not read a 7-row table.
 export function summarizeHours(rows: AvailabilityRow[]): string | null {
   if (rows.length === 0) return null;
@@ -40,12 +40,12 @@ export function summarizeHours(rows: AvailabilityRow[]): string | null {
         continue;
       }
       ranges.push(
-        rangeStart === prev ? DAY_ABBR[rangeStart] : `${DAY_ABBR[rangeStart]}–${DAY_ABBR[prev]}`
+        rangeStart === prev ? DAY_ABBR[rangeStart] : `${DAY_ABBR[rangeStart]}-${DAY_ABBR[prev]}`
       );
       rangeStart = d;
       prev = d;
     }
-    return `${ranges.join(', ')} · ${formatTime(start)}–${formatTime(end)}`;
+    return `${ranges.join(', ')} · ${formatTime(start)}-${formatTime(end)}`;
   });
 
   return parts.join(', ');

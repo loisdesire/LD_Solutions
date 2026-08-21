@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 
 // The signature moment of the whole landing page: instead of a static
-// screenshot of a dashboard, this plays out the actual thing being sold —
+// screenshot of a dashboard, this plays out the actual thing being sold -
 // a customer asks a plain question in chat, the AI checks real
 // availability, and a booking lands on the dashboard with nobody typing
 // "let me check my calendar." Bubble shapes deliberately match
 // WebChatWidget's real ones (accent bubble for the customer, paper bubble
-// for the assistant) — this is a faithful re-enactment of the product,
+// for the assistant) - this is a faithful re-enactment of the product,
 // not a separate illustration invented for marketing.
 type Step =
   | { kind: 'user'; text: string }
@@ -123,8 +123,8 @@ export default function SelfBookingDemo() {
         <p className="font-mono text-[10px] text-ink-faint mb-3">
           {booked ? 'The business owner never typed a word.' : 'This is the real chat, replaying a real booking.'}
         </p>
-        {/* Decorative, not a real input — this card is a replay, not a
-            live chat — but the bar itself is drawn to match the actual
+        {/* Decorative, not a real input - this card is a replay, not a
+            live chat - but the bar itself is drawn to match the actual
             widget's real one exactly, same rounded pill, same send button. */}
         <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 mb-4">
           <span className="flex-1 text-[13px] text-ink-faint">Type a message…</span>

@@ -1,5 +1,5 @@
 // The pill-row tab pattern used for BookingsList's status filter and
-// CustomersManager's sort toggle — same markup was hand-duplicated in
+// CustomersManager's sort toggle - same markup was hand-duplicated in
 // both places before this. One real, reused pattern, not a speculative
 // primitive built ahead of anything using it.
 export default function PillTabs<T extends string>({

@@ -9,12 +9,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/webhooks/paystack — confirms a chat booking the moment its
+// POST /api/webhooks/paystack - confirms a chat booking the moment its
 // payment lands, instead of waiting for the customer to say "I've paid".
 //
 // The signature ordering here is the whole security story and is easy to
 // get backwards. Paystack signs with the SECRET KEY OF THE ACCOUNT THAT
-// SENT IT, and every business connects their own Paystack account — so
+// SENT IT, and every business connects their own Paystack account - so
 // there is no single key to verify against. We cannot know which key to
 // use until we know which business, and we cannot know that without
 // reading a payload we have not verified yet.
@@ -22,7 +22,7 @@ const supabaseAdmin = createClient(
 // So: parse the body as strictly untrusted, use it only to look up which
 // booking it claims to be about, fetch that business's own secret, and
 // only then verify the signature. Nothing is acted on before that check
-// passes. The untrusted read is a lookup key and nothing else — no amount,
+// passes. The untrusted read is a lookup key and nothing else - no amount,
 // no status, no customer data from it is ever believed.
 export async function POST(req: NextRequest) {
   const raw = await req.text();
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const bookingId = payload.data?.metadata?.booking_id;
   const reference = payload.data?.reference;
   if (!bookingId || !reference) {
-    // Nothing actionable — 200 so Paystack stops retrying a payload we
+    // Nothing actionable - 200 so Paystack stops retrying a payload we
     // will never be able to route.
     return NextResponse.json({ ok: true, ignored: 'no booking metadata' });
   }
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ignored: 'business has no paystack key' });
   }
 
-  // Now — and only now — verify this actually came from that business's
+  // Now - and only now - verify this actually came from that business's
   // Paystack account. timingSafeEqual over a length check, so a mismatched
   // length can't throw and can't leak position via timing.
   const expected = crypto

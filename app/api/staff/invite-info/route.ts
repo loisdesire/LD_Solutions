@@ -6,7 +6,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// GET /api/staff/invite-info?token=... — the invitee isn't logged in yet,
+// GET /api/staff/invite-info?token=... - the invitee isn't logged in yet,
 // so this looks the invite up with the service role and returns only the
 // minimum needed to render the accept-invite form (not the whole row).
 export async function GET(req: NextRequest) {

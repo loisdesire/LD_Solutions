@@ -27,7 +27,7 @@ describe('generateSlots', () => {
     ]);
   });
 
-  it('excludes any slot that overlaps an existing booking (regression test — this was silently broken)', () => {
+  it('excludes any slot that overlaps an existing booking (regression test - this was silently broken)', () => {
     const slots = generateSlots({
       ...baseArgs,
       booked: [{ start_time: '2026-07-13T09:45:00.000Z', end_time: '2026-07-13T10:30:00.000Z' }],
@@ -39,7 +39,7 @@ describe('generateSlots', () => {
   });
 
   it('a booking partway through a slot still excludes that slot', () => {
-    // Booking runs 10:00–10:15, which falls inside the 09:45–10:30 slot
+    // Booking runs 10:00-10:15, which falls inside the 09:45-10:30 slot
     const slots = generateSlots({
       ...baseArgs,
       booked: [{ start_time: '2026-07-13T10:00:00.000Z', end_time: '2026-07-13T10:15:00.000Z' }],
@@ -53,7 +53,7 @@ describe('generateSlots', () => {
       bufferMinutes: 30,
       booked: [{ start_time: '2026-07-13T10:30:00.000Z', end_time: '2026-07-13T11:15:00.000Z' }],
     });
-    // With a 30-minute buffer, the booking effectively blocks 10:00–11:45,
+    // With a 30-minute buffer, the booking effectively blocks 10:00-11:45,
     // so both neighboring slots should also be excluded, not just the exact match.
     expect(slots).not.toContain('2026-07-13T09:45:00.000Z'); // ends 10:30, within buffer of booking start
     expect(slots).not.toContain('2026-07-13T10:30:00.000Z');

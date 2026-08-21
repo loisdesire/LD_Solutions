@@ -7,12 +7,12 @@ function sleep(ms: number) {
 // A real bug traced back to an earlier version of this code: the AI would
 // generate the correct reply and save it, but a single transient network
 // blip calling out to Telegram/Twilio meant that reply never reached the
-// customer — they'd see a generic fallback instead, even though the right
+// customer - they'd see a generic fallback instead, even though the right
 // answer was sitting in the database the whole time. Retrying a couple of
 // times, and checking the provider's own response instead of only catching
 // network-level exceptions, closes that gap. Shared by the webhook route
 // (agent replies) and the admin "message this customer" route (human
-// replies) — the same failure mode applies to both, so the fix needs to
+// replies) - the same failure mode applies to both, so the fix needs to
 // live in one place, not be re-patched per call site.
 export async function sendTelegramMessage(
   botToken: string,
@@ -41,7 +41,7 @@ export async function sendTelegramMessage(
   return false;
 }
 
-// Meta's Cloud API, not Twilio — `to` is expected in this codebase's usual
+// Meta's Cloud API, not Twilio - `to` is expected in this codebase's usual
 // 'whatsapp:+234...' internal format (same as customer_phone everywhere
 // else), and this strips it down to the bare-digits form Meta's Graph API
 // actually wants (no 'whatsapp:' prefix, no leading '+') so every other
@@ -83,7 +83,7 @@ export async function sendWhatsappMessage(
   return false;
 }
 
-// Facebook Messenger Send API — `psid` is the customer's page-scoped ID
+// Facebook Messenger Send API - `psid` is the customer's page-scoped ID
 // from the webhook payload (sender.id), not a phone number. Uses a Page
 // Access Token, unlike WhatsApp's phone-number-scoped token.
 export async function sendMessengerMessage(

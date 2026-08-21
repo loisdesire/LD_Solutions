@@ -8,7 +8,7 @@ const BASE_COLUMNS =
 // Every business page calls this to load only its own data.
 export async function getBusinessBySlug(slug: string) {
   // paystack_public_key is a *public* key by design (Paystack's own docs
-  // have it embedded straight in client-side checkout code) —
+  // have it embedded straight in client-side checkout code) -
   // paystack_secret_key never appears in this public-facing loader, only
   // in the service-role-scoped route that actually verifies a payment.
   let { data: business, error } = await supabasePublic
@@ -17,7 +17,7 @@ export async function getBusinessBySlug(slug: string) {
     .eq('slug', slug)
     .single();
 
-  // 42703 = Postgres "column does not exist" — the payments migration
+  // 42703 = Postgres "column does not exist" - the payments migration
   // hasn't been run against this database yet. Falls back to the same
   // query without it rather than taking every public booking page down
   // in the meantime; payment collection just stays off until it's run.

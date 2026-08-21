@@ -33,7 +33,7 @@ function addDays(iso: string, n: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-// A button, not a static card — every other list in the app (BookingsList,
+// A button, not a static card - every other list in the app (BookingsList,
 // CustomersManager) makes a booking's contact clickable to open the same
 // conversation panel; the calendar was the one place that broke that
 // pattern and just showed a read-only summary.
@@ -92,7 +92,7 @@ export default function CalendarView({
 
   const rangeLabel =
     mode === 'week'
-      ? `${new Date(weekStart + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${new Date(
+      ? `${new Date(weekStart + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${new Date(
           addDays(weekStart, 6) + 'T00:00:00'
         ).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
       : new Date(anchor + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -137,14 +137,14 @@ export default function CalendarView({
       </div>
 
       {mode === 'week' ? (
-        // Horizontal scroll below `sm` instead of stacking to one column —
+        // Horizontal scroll below `sm` instead of stacking to one column -
         // a vertically-stacked "week" on mobile was just Day view repeated
         // seven times, which loses the actual point of a week view (seeing
         // the whole week at a glance) rather than serving it worse.
         <div className="flex sm:grid sm:grid-cols-7 gap-3 overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
           {weekDays.map((day, i) => {
             // Cancelled bookings are shown (dimmed + struck through), not
-            // hidden — Day view already did this; Week view silently
+            // hidden - Day view already did this; Week view silently
             // dropping them was an inconsistency between the two modes of
             // the same page, not a deliberate choice.
             const dayBookings = byDay.get(day) ?? [];
@@ -165,7 +165,7 @@ export default function CalendarView({
                 </div>
                 <div className="space-y-1.5 min-h-[60px]">
                   {dayBookings.length === 0 ? (
-                    <div className="text-label text-ink-faint px-1">—</div>
+                    <div className="text-label text-ink-faint px-1">-</div>
                   ) : (
                     dayBookings.map((b) => <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />)
                   )}
@@ -178,7 +178,7 @@ export default function CalendarView({
         <div className="space-y-2 max-w-xl">
           {(byDay.get(anchor) ?? []).length === 0 ? (
             <div className="border-2 border-dashed border-line-strong rounded-2xl py-10 text-center text-body-sm text-ink-faint">
-              Nothing booked this day — a free day, or one worth filling.
+              Nothing booked this day - a free day, or one worth filling.
             </div>
           ) : (
             (byDay.get(anchor) ?? []).map((b) => <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />)

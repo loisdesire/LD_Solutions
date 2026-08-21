@@ -35,7 +35,7 @@ export default async function LoginPage({
             Your day's <span className="italic">waiting.</span>
           </h1>
           <p className="text-ink-soft text-[14px] mt-5 max-w-sm">
-            Check today's schedule, manage your services, and keep your calendar tidy — all
+            Check today's schedule, manage your services, and keep your calendar tidy - all
             in one place.
           </p>
         </div>

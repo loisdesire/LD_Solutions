@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 
 // A chat booking awaiting payment sits at status 'pending_payment', which
 // the no_overlapping_bookings constraint treats like any other live
-// booking — deliberately, since that's what holds the slot while the
+// booking - deliberately, since that's what holds the slot while the
 // customer pays. The flip side is that an abandoned payment would hold it
 // forever, so holds carry an expiry and get released here.
 //
@@ -33,12 +33,12 @@ async function expireStalePaymentHolds(businessId: string) {
 }
 
 // Given a business, a service, and a date, work out which time slots are
-// actually free — this is what real availability logic looks like, instead
+// actually free - this is what real availability logic looks like, instead
 // of letting a customer type any date/time they want.
 export async function getAvailableSlots(
   businessId: string,
   serviceId: string,
-  dateISO: string // e.g. '2026-07-15' — a calendar date in the business's own timezone
+  dateISO: string // e.g. '2026-07-15' - a calendar date in the business's own timezone
 ) {
   await expireStalePaymentHolds(businessId);
 
@@ -105,7 +105,7 @@ export async function getAvailableSlots(
     booked: existingBookings ?? [],
   });
 
-  // generateSlots only knows about the calendar date, not the clock — it'll
+  // generateSlots only knows about the calendar date, not the clock - it'll
   // happily hand back 9am as "available" at 8pm the same day, since nothing
   // upstream excludes a date-that's-today from also being time-that's-past.
   // Slot start times are already real UTC instants, so this comparison is

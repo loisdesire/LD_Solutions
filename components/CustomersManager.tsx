@@ -37,7 +37,7 @@ function relativeDay(iso: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Same identifier logic as parseContact relies on — customer_phone is
+// Same identifier logic as parseContact relies on - customer_phone is
 // already an opaque per-channel id (a real phone number for a direct
 // web booking, `whatsapp:<number>` / `telegram:<chatId>` for a bot
 // conversation), so it's the most reliable thing to group by. Falls
@@ -72,7 +72,7 @@ function aggregate(bookings: Booking[]): Customer[] {
     existing.bookingCount += 1;
     existing.totalSpent += spent;
     // Bookings arrive sorted ascending by start_time, so the last one
-    // processed for a given customer is genuinely their most recent —
+    // processed for a given customer is genuinely their most recent -
     // that's what should win for display name and "last visit".
     if (new Date(b.start_time) >= new Date(existing.lastVisit)) {
       existing.lastVisit = b.start_time;
@@ -112,7 +112,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
         </div>
         <h2 className="font-display text-[20px]">No customers yet</h2>
         <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
-          The moment someone books, they'll show up here — with every visit and how much they've
+          The moment someone books, they'll show up here - with every visit and how much they've
           spent, not just the one appointment.
         </p>
       </div>
@@ -191,11 +191,11 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                         {c.email}
                       </a>
                     ) : (
-                      <span className="text-ink-faint">—</span>
+                      <span className="text-ink-faint">-</span>
                     )}
                   </div>
                   {/* One compact meta line on mobile instead of three
-                      separate stacked blocks — matches how BookingsList
+                      separate stacked blocks - matches how BookingsList
                       groups related fields on a single row instead of
                       stacking every grid column individually. */}
                   <div className="font-mono text-label text-ink-faint sm:hidden">
@@ -207,7 +207,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                     {c.bookingCount} {c.bookingCount === 1 ? 'visit' : 'visits'}
                   </div>
                   <div className="hidden sm:block font-mono text-body-sm font-semibold" style={{ color: 'var(--accent)' }}>
-                    {c.totalSpent ? `₦${c.totalSpent.toLocaleString()}` : '—'}
+                    {c.totalSpent ? `₦${c.totalSpent.toLocaleString()}` : '-'}
                   </div>
                   <div className="hidden sm:block text-[13px] text-ink-soft">{relativeDay(c.lastVisit)}</div>
                 </div>

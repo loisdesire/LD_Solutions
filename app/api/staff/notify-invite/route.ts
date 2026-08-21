@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/staff/notify-invite — fires the invite email. Best-effort, same
+// POST /api/staff/notify-invite - fires the invite email. Best-effort, same
 // pattern as the booking confirmation email: if RESEND_API_KEY isn't set,
 // this silently no-ops and the invite still works via its shareable link.
 export async function POST(req: NextRequest) {

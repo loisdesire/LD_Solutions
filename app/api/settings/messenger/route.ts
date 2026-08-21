@@ -9,12 +9,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// POST /api/settings/messenger — a business owner pastes a Page Access
+// POST /api/settings/messenger - a business owner pastes a Page Access
 // Token generated from their own Meta App dashboard (Messenger > Settings
-// > Access Tokens — no OAuth popup needed, unlike WhatsApp's Embedded
+// > Access Tokens - no OAuth popup needed, unlike WhatsApp's Embedded
 // Signup). We validate it against the Page, then subscribe our webhook to
 // that page's messaging events directly via the Graph API, the same way
-// the Telegram flow self-registers its own webhook — fully self-serve
+// the Telegram flow self-registers its own webhook - fully self-serve
 // once you have the token.
 export async function POST(req: NextRequest) {
   if (!rateLimit(`settings-messenger:${getClientIp(req)}`, 10, 5 * 60_000)) {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const me = meRes ? await meRes.json().catch(() => null) : null;
   if (!me?.id) {
     return NextResponse.json(
-      { error: "That doesn't look like a valid Page Access Token — generate one from your Meta App's Messenger settings." },
+      { error: "That doesn't look like a valid Page Access Token - generate one from your Meta App's Messenger settings." },
       { status: 400 }
     );
   }

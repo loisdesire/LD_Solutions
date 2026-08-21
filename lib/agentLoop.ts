@@ -6,7 +6,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export type AgentMessage = { role: 'user' | 'assistant'; content: string };
 
 // The one OpenAI tool-calling loop shared by every agent in this codebase
-// (lib/whatsappAgent.ts, lib/insightsAgent.ts, lib/rescheduleAgent.ts) —
+// (lib/whatsappAgent.ts, lib/insightsAgent.ts, lib/rescheduleAgent.ts) -
 // was three copies of the identical request/response plumbing, differing
 // only in system prompt, tool schemas, and what a tool call actually does.
 // Each agent file still owns those real differences (that's the point of
@@ -20,7 +20,7 @@ export async function runToolAgent(params: {
   tools: OpenAI.Chat.Completions.ChatCompletionTool[];
   executeTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   // Applied to the model's final plain-text reply only (never to tool
-  // arguments/results) — whatsappAgent.ts uses this to strip markdown
+  // arguments/results) - whatsappAgent.ts uses this to strip markdown
   // before a reply reaches a chat app with no markdown rendering; the
   // dashboard agents don't need it, so it defaults to a no-op.
   postProcess?: (text: string) => string;
@@ -70,7 +70,7 @@ export async function runToolAgent(params: {
       } catch {
         args = {};
       }
-      // A tool that throws used to take the entire request down with it —
+      // A tool that throws used to take the entire request down with it -
       // executeTool was awaited unguarded, so one bad date string became a
       // 500 for the user instead of a sentence from the assistant. Hand the
       // failure back to the model as a tool result: it can apologise or try

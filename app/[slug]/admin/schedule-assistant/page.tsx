@@ -23,7 +23,7 @@ export default async function ScheduleAssistantPage({
         </div>
         <h1 className="font-display text-h1 text-ink">Schedule assistant</h1>
         <p className="text-ink-soft text-body-sm mt-1">
-          Tell it when you need time blocked off — it moves affected bookings and messages customers for you.
+          Tell it when you need time blocked off - it moves affected bookings and messages customers for you.
         </p>
       </div>
 
@@ -41,7 +41,7 @@ export default async function ScheduleAssistantPage({
             </svg>
             <p className="text-ink-soft text-caption leading-relaxed">
               It'll always show you exactly who's affected and their new times before moving anything or messaging
-              a single customer — nothing happens until you say yes.
+              a single customer - nothing happens until you say yes.
             </p>
           </div>
         }

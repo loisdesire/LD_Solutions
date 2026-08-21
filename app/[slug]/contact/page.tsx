@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const data = await getBusinessBySlug(slug);
-  return { title: data ? `Contact — ${data.business.name}` : 'Contact' };
+  return { title: data ? `Contact ${data.business.name}` : 'Contact' };
 }
 
 const iconProps = {
@@ -116,7 +116,7 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {methods.length === 0 ? (
-            <p className="text-center text-ink-faint text-[14px]">No contact details have been added yet — the quickest way to reach us is to book, or to ask in the chat.</p>
+            <p className="text-center text-ink-faint text-[14px]">No contact details have been added yet. The quickest way to reach us is to book, or to ask in the chat.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
               {methods.map((m) => (

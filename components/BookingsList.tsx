@@ -42,13 +42,13 @@ function relativeDay(date: Date, today: Date): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// For whatsapp:/telegram: contacts, deliberately NOT a wa.me/t.me link —
+// For whatsapp:/telegram: contacts, deliberately NOT a wa.me/t.me link -
 // those open the *owner's own personal* WhatsApp/Telegram, a different
 // identity than the bot the customer was actually talking to (a WhatsApp
 // Business API number can't double as a normal consumer WhatsApp account
 // on someone's phone, so there's no way around that via a link). Clicking
 // the contact itself opens the conversation panel instead, which sends
-// through the bot's real identity — the customer sees it as the same
+// through the bot's real identity - the customer sees it as the same
 // thread continuing. Plain web-form phone numbers have no bot involved at
 // all, so a normal tel: link is correct and sufficient there.
 function ContactCell({
@@ -93,7 +93,7 @@ export default function BookingsList({
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Same "upcoming vs past" rule used on the customer account page — a
+  // Same "upcoming vs past" rule used on the customer account page - a
   // booking is only genuinely upcoming if it hasn't happened yet AND
   // hasn't been cancelled; everything else (elapsed, or cancelled at any
   // date) is history. This was the actual bug: the list never filtered by
@@ -149,7 +149,7 @@ export default function BookingsList({
         />
       </div>
 
-      {/* Deliberately not a bordered box anymore — a top rule plus row
+      {/* Deliberately not a bordered box anymore - a top rule plus row
           dividers reads as a schedule, not another card among cards, and
           it's the section that matters most on the page, so it shouldn't
           compete visually with everything boxed around it. */}
@@ -219,7 +219,7 @@ export default function BookingsList({
                     )}
                   </div>
 
-                  <div className="text-[13px] text-ink-soft truncate">{staffName ?? '—'}</div>
+                  <div className="text-[13px] text-ink-soft truncate">{staffName ?? '-'}</div>
 
                   <div className="flex items-center justify-between sm:block">
                     <span className="font-mono text-caption sm:text-[13px] truncate">

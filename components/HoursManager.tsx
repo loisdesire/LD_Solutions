@@ -45,7 +45,7 @@ export default function HoursManager({
     setError('');
     const day = days[index];
 
-    // Business-wide hours only (staff_id null) — replace whatever was
+    // Business-wide hours only (staff_id null) - replace whatever was
     // there for this day of week with the single window in the form.
     const { error: deleteError } = await supabase
       .from('availability')
@@ -79,8 +79,8 @@ export default function HoursManager({
 
     setSavingDay(null);
     setSavedDay(index);
-    // Keeps the inline "Saved ✓" on the button too (more precise — shows
-    // exactly which day just saved) — the toast adds the same
+    // Keeps the inline "Saved ✓" on the button too (more precise - shows
+    // exactly which day just saved) - the toast adds the same
     // cross-page confirmation pattern every other manager uses, on top
     // of that, not instead of it.
     showToast(`${DAY_NAMES[index]}'s hours saved`);
