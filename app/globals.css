@@ -3,82 +3,52 @@
 @tailwind utilities;
 
 :root {
-   /* Shared application tokens. The landing page overrides these locally. */
-  --paper: #faf8f3;
-  --surface: #ffffff;
-  --warm-surface: #f5efe4;
-  --cream-surface: #f3e8bc;
+  /* Vanova Hub Design Tokens */
+  --paper: #FAF9F7;
+  --surface: #FFFFFF;
+  --surface-warm: #F8F6F2;
+  --surface-neutral: #F3F1EE;
+  
+  --ink: #171A1F;
+  --ink-soft: #555B63;
+  --ink-faint: #8E95A0;
+  --ink-wash: rgba(23, 26, 31, 0.04);
+  
+  --line: #E8E5DF;
+  --line-strong: #D5D0C6;
 
-  --ink: #202020;
-  --ink-soft: #6b6b6b;
-  /* #9b9691 computes to ~3.6:1 against --paper/--surface — below AA's
-     4.5:1 for normal text, fine for the low-priority metadata/timestamp
-     role this is actually used for site-wide, never body copy. */
-  --ink-faint: #9b9691;
+  /* Primary Brand Accent: Coral Orange */
+  --accent: #FF5A3D;
+  --accent-hover: #E54B30;
+  --accent-active: #CC3F27;
+  --accent-contrast: #FFFFFF;
+  --accent-soft: rgba(255, 90, 61, 0.08);
+  --accent-glow: rgba(255, 90, 61, 0.2);
 
-  --line: #ede6d9;
-  --line-strong: #ddd0bb;
+  /* Deep Slate Brand Surface */
+  --dark-slate: #171A1F;
+  --dark-slate-hover: #22262E;
+  --dark-slate-line: #2E333D;
 
-  /* Baked-in alpha, not a Tailwind opacity modifier — `bg-ink/5` and
-     friends silently generate ZERO css on a color that's a `var()`
-     reference (Tailwind can't decompose it into RGB channels at build
-     time to blend an opacity onto it), so every "inactive" status pill
-     using that pattern was rendering with no background at all. This is
-     a real color value the browser can use directly. */
-  --ink-wash: rgba(32, 32, 32, 0.05);
+  /* Semantic Status Colors */
+  --success: #10B981;
+  --success-bg: #ECFDF5;
+  --success-border: #A7F3D0;
+  --warning: #F59E0B;
+  --warning-bg: #FFFBEB;
+  --warning-border: #FDE68A;
+  --error: #EF4444;
+  --error-bg: #FEF2F2;
+  --error-border: #FECACA;
+  --info: #3B82F6;
+  --info-bg: #EFF6FF;
+  --info-border: #BFDBFE;
 
-  /* Primary brand — burnt orange/terracotta. Platform default;
-     businesses can still override this for their own public page via
-     AccentScope.
-
-     Convention for HOW to apply --accent in a className vs. inline style,
-     so this doesn't stay an arbitrary per-file choice: on pages where
-     AccentScope can rescope this variable per business (public/[slug]
-     pages, the booking flow, anything rendered inside AccentScope) use
-     inline `style={{ color: 'var(--accent)' }}` — Tailwind's `text-accent`
-     utility is generated once at build time from this file's value, so it
-     can't react to a runtime-scoped override the way a raw var() read at
-     paint time can. Everywhere else (the marketing site, admin chrome) —
-     contexts where --accent is always this one static value — prefer the
-     `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
-     get Tailwind's normal tooling (autocomplete, purge) for free. */
-  --accent: #c4512d;
-  --accent-hover: #a8431f;
-  --accent-active: #8e3a1c;
-  --accent-contrast: #ffffff;
-  --accent-soft: rgba(196, 81, 45, 0.1);
-
-  /* Warm human accent — cream. Used with restraint: highlight cards,
-     booking confirmations, occasional secondary buttons — never
-     general chrome, so it stays a genuine accent rather than a second
-     background color. */
-  --cream: #f3e8bc;
-  --cream-hover: #e9dba1;
-  --cream-contrast: #202020;
-
-  /* Muted warm brown — a secondary, lower-key accent for decorative
-     differentiation only (e.g. telling apart a few dashboard stat
-     cards), never a second meaning-bearing brand color. */
-  --tertiary: #8e6a4a;
-  --secondary-dark: #171717;
-
-  /* Semantic status colors — intentionally independent of the brand
-     palette, so "confirmed" always reads as success-green and "failed"
-     always reads as error-red regardless of what a business's own
-     accent color is set to. Status is never conveyed by color alone
-     anywhere these are used — always paired with a label. */
-  --success: #16803c;
-  --success-bg: #eaf7ee;
-  --success-border: #a9ddb8;
-  --warning: #9a6700;
-  --warning-bg: #fff7d6;
-  --warning-border: #e8cf76;
-  --error: #c62828;
-  --error-bg: #fdecec;
-  --error-border: #f3b5b5;
-  --info: #1769aa;
-  --info-bg: #eaf4fb;
-  --info-border: #a9d2ed;
+  /* Restrained Radiuses */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 }
 
 .landing .font-display {

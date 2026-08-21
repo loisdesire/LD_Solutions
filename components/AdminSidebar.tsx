@@ -106,22 +106,21 @@ export default function AdminSidebar({
   // about how customers/staff reach the business (channels, the
   // scheduling assistant that messages customers); Account groups the
   // business-as-a-whole concerns (analytics, billing, configuration).
-  const manage = [
+  const mainNav = [
     { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
     { href: `/${slug}/admin/calendar`, label: 'Calendar', key: 'calendar' },
     { href: `/${slug}/admin/customers`, label: 'Customers', key: 'customers' },
     { href: `/${slug}/admin/services`, label: 'Services', key: 'services' },
-    { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
-    { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
+    { href: `/${slug}/admin/products`, label: 'Products', key: 'products' },
   ];
-  const connect = [
+  const operationsNav = [
     { href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels' },
-    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule assistant', key: 'scheduleAssistant' },
-  ];
-  const account = [
     { href: `/${slug}/admin/insights`, label: 'Insights', key: 'insights' },
-    { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
+    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule Assistant', key: 'scheduleAssistant' },
+  ];
+  const settingsNav = [
     { href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' },
+    { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
   ];
 
   async function handleSignOut() {
@@ -136,57 +135,69 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
-        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-body-sm transition-colors ${
-          active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
+        className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] transition-all duration-150 ${
+          active 
+            ? 'font-medium text-ink bg-surface-neutral shadow-sm border border-line/60' 
+            : 'text-ink-soft hover:bg-surface-neutral/60 hover:text-ink'
         }`}
-        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
-        {icons[iconKey]}
+        <span className={active ? 'text-accent' : 'text-ink-faint'}>
+          {icons[iconKey]}
+        </span>
         {label}
+        {active && (
+          <span className="absolute left-0 top-2 bottom-2 w-1 bg-accent rounded-r-full" />
+        )}
       </Link>
     );
   }
 
-  // Kept predominantly neutral — a solid brand-color sidebar was tried
-  // and reads as exactly the "every component orange" overuse the
-  // brand direction explicitly warns against. The accent shows up only
-  // in the active nav item, matching how restraint is applied
-  // everywhere else in the product.
   return (
     <aside className="hidden md:flex md:w-[240px] shrink-0 bg-surface border-r border-line flex-col py-6 px-4 sticky top-0 h-screen overflow-y-auto">
-      <div className="mb-8 px-1">
-        <div className="font-display text-[19px] font-semibold text-ink tracking-tight">{businessName}</div>
-        <div className="font-mono text-[10.5px] text-ink-faint mt-0.5">
-          {businessType ? `${businessType} · ` : ''}/{slug}
+      {/* Brand Header */}
+      <div className="mb-6 px-2 flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-dark-slate text-white flex items-center justify-center font-display text-[15px] font-bold shrink-0 shadow-sm">
+          V
+        </div>
+        <div className="min-w-0">
+          <div className="font-display text-[15px] font-bold text-ink truncate tracking-tight">{businessName}</div>
+          <div className="text-[11px] font-mono text-ink-faint truncate">
+            {businessType ? `${businessType}` : `/${slug}`}
+          </div>
         </div>
       </div>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Manage
-      </div>
-      <nav className="flex flex-col gap-0.5 mb-5">
-        {manage.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
-        ))}
-      </nav>
+      <div className="flex flex-col space-y-6">
+        <div>
+          <nav className="flex flex-col gap-0.5">
+            {mainNav.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+            ))}
+          </nav>
+        </div>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Connect
-      </div>
-      <nav className="flex flex-col gap-0.5 mb-5">
-        {connect.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
-        ))}
-      </nav>
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint px-3 mb-2 font-semibold">
+            Operations
+          </div>
+          <nav className="flex flex-col gap-0.5">
+            {operationsNav.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+            ))}
+          </nav>
+        </div>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Account
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint px-3 mb-2 font-semibold">
+            Settings
+          </div>
+          <nav className="flex flex-col gap-0.5">
+            {settingsNav.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+            ))}
+          </nav>
+        </div>
       </div>
-      <nav className="flex flex-col gap-0.5">
-        {account.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
-        ))}
-      </nav>
 
       <div className="mt-auto pt-5 border-t border-line flex items-center gap-2.5 px-1">
         <div

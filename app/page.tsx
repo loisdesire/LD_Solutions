@@ -2,26 +2,22 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import SelfBookingDemo from '@/components/SelfBookingDemo';
-import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
 import Button from '@/components/Button';
 import { SITE_URL } from '@/lib/site';
-import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
+import { PLAN_PRICE_NGN } from '@/lib/subscription';
 
 const DEMO_SLUG = 'glow-salon';
 
 export const metadata: Metadata = {
-  // The root layout uses `template: '%s'`, so a page title replaces the
-  // brand entirely rather than appending it — the homepage was therefore
-  // rendering with no brand name in the tab or in search results at all.
-  title: 'Vanova | An AI receptionist for appointment businesses',
+  title: 'Vanova Hub | Your business has a digital front desk',
   description:
-    'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram today, WhatsApp and Messenger coming soon. Every booking lands on one dashboard. 14 days free.',
+    'Vanova Hub answers customer booking requests, checks your real availability, confirms appointments, and keeps your schedule organized — so you can focus on running your business.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'Vanova | An AI receptionist for appointment businesses',
+    title: 'Vanova Hub | Digital Front Desk for Appointment Businesses',
     description:
-      'Your customers ask for a time, the AI books it. Every channel, one dashboard. 14 days free.',
+      'Customers ask. Vanova answers. Appointments get booked. Intelligent digital receptionist for salons, clinics, coaches, and studios.',
     url: SITE_URL,
     type: 'website',
   },
@@ -30,12 +26,12 @@ export const metadata: Metadata = {
 const homepageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Vanova',
+  name: 'Vanova Hub',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   url: SITE_URL,
   description:
-    'An AI booking receptionist that answers customer questions, checks real availability, and books appointments for service businesses.',
+    'Digital front desk for appointment-based businesses that answers customer booking requests, checks real availability, and confirms appointments automatically.',
   offers: {
     '@type': 'AggregateOffer',
     lowPrice: PLAN_PRICE_NGN.core,
@@ -45,488 +41,597 @@ const homepageJsonLd = {
   },
   audience: {
     '@type': 'BusinessAudience',
-    audienceType: 'Appointment-based small businesses',
+    audienceType: 'Appointment-based service businesses',
   },
 };
 
+const AUDIENCE_TAGS = [
+  'Salons',
+  'Barbers',
+  'Coaches',
+  'Consultants',
+  'Photographers',
+  'Wellness',
+  'Studios',
+  'Clinics',
+];
+
+const BUSINESS_TYPES = [
+  { title: 'Salon', desc: 'Hair, nails & beauty studios handling high daily client inquiries.', icon: '✂️' },
+  { title: 'Barbershop', desc: 'Fast, seamless appointment booking without stopping a haircut.', icon: '💈' },
+  { title: 'Beauty & Wellness', desc: 'Spas, skincare & massage therapists requiring calm scheduling.', icon: '🌿' },
+  { title: 'Coach', desc: 'Executive, life, and career coaches managing recurring 1:1 sessions.', icon: '🎯' },
+  { title: 'Consultant', desc: 'Advisors and strategists booking paid client consultations.', icon: '📊' },
+  { title: 'Photographer', desc: 'Studio & portrait photographers scheduling shoots & viewings.', icon: '📷' },
+  { title: 'Personal Trainer', desc: 'Fitness coaches managing workout sessions & client slots.', icon: '⚡' },
+  { title: 'Clinic / Therapist', desc: 'Private medical, dental & health practitioners.', icon: '🩺' },
+];
+
 const CHANNELS = [
-  { label: 'Website chat', status: 'live' as const },
-  { label: 'Telegram', status: 'live' as const },
-  { label: 'WhatsApp', status: 'soon' as const },
-  { label: 'Messenger', status: 'soon' as const },
-];
-
-const features = [
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16v12H8l-4 4V4z" />
-        <path d="M8 9h8M8 12h5" />
-      </svg>
-    ),
-    title: 'Customers just ask',
-    description: 'No forms, no menus. They type what they want, the AI checks real availability and books it.',
+    name: 'Website Chat',
+    status: 'Live & Integrated',
+    desc: 'Conversational booking assistant embedded directly on your branded website.',
+    active: true,
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="17" rx="2" />
-        <path d="M3 9h18M8 2v4M16 2v4" />
-      </svg>
-    ),
-    title: 'Real-time availability',
-    description: 'Respects your hours, buffer times, and existing bookings. No double-bookings, ever.',
+    name: 'Telegram Bot',
+    status: 'Live & Integrated',
+    desc: 'Instant messaging booking assistant active 24/7 inside Telegram.',
+    active: true,
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="M3 7l9 6 9-6" />
-      </svg>
-    ),
-    title: 'Automatic confirmations',
-    description: 'The moment someone books, they get an email confirming it. You never have to follow up.',
+    name: 'WhatsApp Business',
+    status: 'Channel Connector',
+    desc: 'Connect your business WhatsApp number to handle client requests.',
+    active: false,
   },
   {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="7" height="7" rx="1.5" />
-        <rect x="14" y="4" width="7" height="7" rx="1.5" />
-        <rect x="3" y="13" width="7" height="7" rx="1.5" />
-        <rect x="14" y="13" width="7" height="7" rx="1.5" />
-      </svg>
-    ),
-    title: 'Every booking, one dashboard',
-    description: 'Website, Telegram, and soon WhatsApp. Wherever the message came from, it lands in the same place.',
+    name: 'Facebook Messenger',
+    status: 'Channel Connector',
+    desc: 'Receive booking requests directly from your Facebook Business page.',
+    active: false,
   },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none" />
-        <circle cx="8.5" cy="13" r="1.2" fill="currentColor" stroke="none" />
-        <circle cx="15.5" cy="13" r="1.2" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-    title: 'Your brand, your page',
-    description: 'Your own accent color, logo, and URL. It reads as your business, not a template.',
-  },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="11" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M17 3.13A4 4 0 0117 11" />
-      </svg>
-    ),
-    title: 'Team management',
-    description: 'Invite staff by email, manage roles, and let your whole team work off one shared calendar.',
-  },
-];
-
-// A real sequence — this is the one place on the page a numbered list
-// actually earns its keep, since these four things genuinely happen in
-// this order, not four unrelated feature bullets.
-const steps = [
-  { title: 'They ask', description: 'A customer messages you on your website, or on Telegram.' },
-  { title: 'It checks', description: 'The AI checks your real availability, instantly, against your actual calendar.' },
-  { title: 'It books', description: "It's confirmed and booked. No back-and-forth, no waiting on you." },
-  { title: 'You see it', description: 'The appointment lands on your dashboard automatically. You never touch it.' },
-];
-
-// Mirrors what the code actually gates. hasBusinessIntelligence() guards
-// exactly two things — the /admin/insights panel and the customer bot's
-// get_popular_services tool — so everything else belongs in Core. Payments,
-// custom domains and the schedule assistant are deliberately NOT upsells.
-const CORE_INCLUDES = [
-  'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
-  'Unlimited bookings and services',
-  'One dashboard for every appointment',
-  'Automatic email confirmations and reminders',
-  'Take deposits and payments with Paystack',
-  'Your own branded booking page and custom domain',
-  'Team accounts for your staff',
-];
-
-const BI_INCLUDES = [
-  'Ask your data anything: revenue, top customers, busiest hours',
-  'Spot cancellations, no-shows and customers drifting away',
-  'Compare this month to last, in plain language',
-  "Your AI tells customers what's actually popular, from real bookings",
-];
-
-const businessTypes = [
-  'Hair salons & barbershops',
-  'Therapy & wellness clinics',
-  'Private tutors & coaches',
-  'Consultants & advisors',
-  'Photographers & studios',
-  'Personal trainers',
-  'Massage therapists',
-  'Music teachers',
 ];
 
 export default function LandingPage() {
   return (
-    <div className="landing min-h-screen bg-paper">
+    <div className="min-h-screen bg-paper text-ink font-body selection:bg-accent/20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageJsonLd) }}
       />
-      {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
-        style={{ background: 'color-mix(in srgb, var(--paper) 80%, transparent)' }}
-      >
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-              <span className="text-white text-[13px] font-bold">V</span>
+
+      {/* HEADER / NAVIGATION */}
+      <header className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-18 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="h-9 w-9 rounded-xl bg-accent text-white flex items-center justify-center font-display font-bold text-base shadow-sm group-hover:scale-105 transition-transform">
+              V
             </div>
-            <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#how-it-works" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+            <span className="font-display font-bold text-lg text-ink tracking-tight">
+              Vanova Hub
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-[13.5px] font-medium text-ink-soft">
+            <a href="#product" className="hover:text-ink transition-colors">
+              Product
+            </a>
+            <a href="#how-it-works" className="hover:text-ink transition-colors">
               How it works
             </a>
-            <a href="#features" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
-              Features
+            <a href="#businesses" className="hover:text-ink transition-colors">
+              For businesses
             </a>
-            <a href="#pricing" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+            <a href="#pricing" className="hover:text-ink transition-colors">
               Pricing
             </a>
-          </div>
-          <div className="flex items-center gap-5">
-            <a
-              href={`/${DEMO_SLUG}`}
-              className="text-[13.5px] text-ink-soft hover:text-ink transition-colors hidden sm:inline"
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors hidden sm:inline"
             >
-              See a live demo
-            </a>
-            <Button href="/signup" size="sm">
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="px-5 py-2.5 rounded-full bg-accent text-white text-[13.5px] font-semibold hover:bg-accent-hover active:scale-95 transition-all shadow-sm"
+            >
               Get started
-            </Button>
+            </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 pt-12 sm:pt-16 pb-16 sm:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-14 items-center">
-          <Reveal>
-            <h1 className="font-display leading-[0.92] tracking-[-0.06em] mb-4 max-w-[700px]">
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
-                &ldquo;Do you have an
-              </span>
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
-                opening tomorrow?&rdquo;
-              </span>
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium mt-2" style={{ color: 'var(--accent)' }}>
-                Already booked.
-              </span>
-            </h1>
+      {/* HERO SECTION */}
+      <section className="relative overflow-hidden pt-14 pb-20 lg:pt-20 lg:pb-28 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-soft text-accent text-[12px] font-mono font-semibold uppercase tracking-wider mb-6">
+                <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                Digital Front Desk Operating System
+              </div>
 
-            <p className="text-[16px] text-ink-soft leading-relaxed mb-8 max-w-md">
-              Meet your new AI receptionist. It answers instantly, checks your real
-              availability, and books the appointment on your website and Telegram, 24/7.
-            </p>
+              <h1 className="font-display text-[clamp(2.4rem,5vw,4.2rem)] font-extrabold leading-[1.02] tracking-tight text-ink uppercase mb-6">
+                YOUR BUSINESS <br />
+                HAS A DIGITAL <br />
+                <span className="text-accent">FRONT DESK.</span>
+              </h1>
 
-            <div className="flex flex-wrap items-center gap-3.5">
-              <Button href="/signup">
-                Start free for 14 days
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </Button>
-              <Button href={`/${DEMO_SLUG}`} variant="outline">
-                See it live
-              </Button>
-            </div>
-          </Reveal>
+              <p className="text-lg text-ink-soft leading-relaxed max-w-xl mb-8">
+                Vanova Hub answers customer booking requests, checks your real availability, confirms appointments, and keeps your schedule organized — so you can focus on running your business.
+              </p>
 
-          <Reveal delay={100}>
-            <SelfBookingDemo />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Channel strip — honest about what's live vs. coming, on purpose */}
-      <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
-          <Reveal className="flex flex-col items-center text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-6">
-              One receptionist. Every channel your customers already use.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-              {CHANNELS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.05em]">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
-                  />
-                  <span className={c.status === 'live' ? 'text-ink' : 'text-ink-faint'}>{c.label}</span>
-                  {c.status === 'soon' && <span className="text-ink-faint">· soon</span>}
-                </span>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Dashboard preview follows the channel separation: customers ask,
-          the AI books, and the owner sees the appointment immediately. */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-14 items-center">
-          <Reveal>
-            <h2 className="font-display text-4xl sm:text-5xl text-ink mb-5 leading-[0.95] tracking-[-0.04em]">
-              Your whole day, <span className="italic" style={{ color: 'var(--accent)' }}>at a glance.</span>
-            </h2>
-            <p className="text-[15px] text-ink-soft leading-relaxed mb-6 max-w-md">
-              Once the AI books an appointment, it appears here automatically. See what&rsquo;s
-              coming up, who&rsquo;s next, and how the day is shaping up without chasing messages
-              or checking calendars.
-            </p>
-          </Reveal>
-          <Reveal delay={100}>
-            <DashboardPreview />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Before / after */}
-      <section className="border-t border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-12 max-w-xl mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
-            Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
-          </h2>
-          <p className="text-[15px] text-ink-soft leading-relaxed">
-            This is the actual difference an AI receptionist makes, not a feature list, just
-            the same customer asking the same thing.
-          </p>
-        </Reveal>
-        <Reveal delay={80}>
-          <BeforeAfterCompare />
-        </Reveal>
-        </div>
-      </section>
-
-      {/* How it works — a connected path keeps the sequence feeling like one
-          process instead of four separate feature cards. */}
-      <section id="how-it-works" className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16 sm:py-16">
-          <Reveal className="mb-10 max-w-xl mx-auto text-center">
-            <h2 className="font-display text-3xl sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
-            <p className="text-[15px] text-ink-soft">A simple path from the first question to a confirmed appointment.</p>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-9 lg:gap-x-12">
-            {steps.map((step, i) => (
-              <Reveal key={step.title} delay={i * 60} className="relative">
-                <div className="flex items-baseline gap-3 mb-3">
-                  <span className="font-display text-[24px] font-normal leading-none" style={{ color: 'var(--accent)' }}>{String(i + 1).padStart(2, '0')}</span>
-                  <h3 className="font-display text-[20px] font-normal text-ink leading-tight">{step.title}</h3>
-                </div>
-                <p className="text-[15px] text-ink-soft leading-relaxed max-w-[230px]">{step.description}</p>
-                {i < steps.length - 1 && (
-                  <svg aria-hidden="true" className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 w-11 h-3 text-ink-faint" viewBox="0 0 44 12" fill="none">
-                    <path d="M1 6h38M35 1l5 5-5 5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href="/signup"
+                  className="px-7 py-3.5 rounded-full bg-accent text-white text-base font-semibold hover:bg-accent-hover active:scale-95 transition-all shadow-sm flex items-center gap-2"
+                >
+                  Get started
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M13 5l7 7-7 7" />
                   </svg>
-                )}
-              </Reveal>
+                </Link>
+                <a
+                  href="#how-it-works"
+                  className="px-7 py-3.5 rounded-full bg-surface border border-line text-ink text-base font-medium hover:bg-surface-neutral transition-all"
+                >
+                  See how it works
+                </a>
+              </div>
+            </div>
+
+            {/* REAL PRODUCT DEMO INTERACTION */}
+            <div className="relative">
+              <div className="absolute -inset-4 bg-accent/5 rounded-[28px] blur-2xl -z-10" />
+              <SelfBookingDemo />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST / AUDIENCE STRIP */}
+      <section className="py-10 bg-surface border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-faint font-semibold mb-6">
+            BUILT FOR BUSINESSES THAT RUN ON APPOINTMENTS
+          </p>
+
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4">
+            {AUDIENCE_TAGS.map((tag) => (
+              <span
+                key={tag}
+                className="px-4 py-2 rounded-full bg-paper border border-line text-ink text-[13.5px] font-medium shadow-2xs hover:border-accent/40 transition-colors"
+              >
+                {tag}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12 mx-auto text-center">
-            <h2 className="font-display text-3xl text-ink mb-2 sm:whitespace-nowrap">
-              The work gets lighter, <span className="italic" style={{ color: 'var(--accent)' }}>the bookings keep coming.</span>
+      {/* PROBLEM & WORKFLOW SECTION */}
+      <section className="py-20 lg:py-28 bg-surface-neutral/40 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="max-w-3xl mb-16">
+            <div className="font-mono text-[11px] uppercase tracking-widest text-accent font-semibold mb-3">
+              Workflow Transformation
+            </div>
+            <h2 className="font-display text-[clamp(2rem,3.5vw,3rem)] font-bold text-ink leading-tight tracking-tight uppercase">
+              BOOKINGS SHOULDN'T <br />
+              INTERRUPT YOUR WORK.
             </h2>
-            <p className="text-[15px] text-ink-soft">
-              The essentials for running an appointment business, without the busywork around them.
-            </p>
-          </Reveal>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
-            {features.map((feature, index) => (
-              <Reveal key={feature.title} delay={index * 50}>
-                <div className="h-full border-t-2 border-line pt-5">
-                  <div className="flex items-start gap-3.5">
-                    <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                      <div className="h-[16px] w-[16px]">{feature.icon}</div>
-                    </div>
-                    <div>
-                      <h3 className="font-display text-[18px] font-semibold text-ink mb-1.5">{feature.title}</h3>
-                      <p className="text-[15px] text-ink-soft leading-relaxed">{feature.description}</p>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Old Manual Workflow */}
+            <div className="p-8 rounded-2xl bg-surface border border-line shadow-xs">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
+                <span className="font-mono text-xs uppercase tracking-wider text-error font-semibold">The Old Manual Way</span>
+                <span className="text-xs text-ink-faint">Fragmented & Interruptive</span>
+              </div>
+              <ul className="space-y-4 text-sm text-ink-soft">
+                <li className="flex items-start gap-3">
+                  <span className="text-error font-bold">✕</span>
+                  <span>Customer sends a DM asking for availability</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-error font-bold">✕</span>
+                  <span>Owner stops client work to open calendar</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-error font-bold">✕</span>
+                  <span>Replies back with 2 potential times</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-error font-bold">✕</span>
+                  <span>Waits for client to check their own schedule</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-error font-bold">✕</span>
+                  <span>Confirms booking and manually enters appointment</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Vanova Automated Front Desk */}
+            <div className="p-8 rounded-2xl bg-dark-slate text-white shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-dark-slate-line">
+                <span className="font-mono text-xs uppercase tracking-wider text-accent font-semibold">With Vanova Hub</span>
+                <span className="text-xs text-slate-400">Automated & Instant</span>
+              </div>
+              <ul className="space-y-4 text-sm text-slate-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-accent font-bold">✓</span>
+                  <span>Customer asks for a booking time in plain language</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-accent font-bold">✓</span>
+                  <span>Vanova checks real availability against your working hours</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-accent font-bold">✓</span>
+                  <span>Appointment gets instantly confirmed and locked</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-accent font-bold">✓</span>
+                  <span>Dashboard updates live while you stay focused on your work</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Who it's for */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-10 mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug sm:whitespace-nowrap">
-            Built for businesses that <span className="italic">take appointments.</span>
-          </h2>
-          <p className="text-[15px] text-ink-soft leading-relaxed">
-            Whether you run a salon, clinic, tutoring service, or consulting practice,
-            if your customers need to book time with you, this is for you.
-          </p>
-        </Reveal>
-        <Reveal delay={80} className="flex flex-wrap justify-center gap-3">
-          {businessTypes.map((biz) => (
-            <span
-              key={biz}
-              className="px-5 py-2.5 rounded-full border-2 border-line bg-surface text-[13px] text-ink-soft"
-            >
-              {biz}
-            </span>
-          ))}
-        </Reveal>
-      </section>
-
-      {/* Pricing — one plan, stated plainly, no tiers to compare */}
-      <section id="pricing" className="border-t border-line">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="text-center mb-12">
-            <h2 className="font-display text-3xl text-ink mb-2">Two plans. Both start free.</h2>
-            <p className="text-[15px] text-ink-soft">
-              Everything you need to take bookings is in the first one. The second adds an AI that answers questions about your business.
+      {/* PRODUCT DEMONSTRATION: 3 STEPS */}
+      <section id="product" className="py-20 lg:py-28 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              FROM CONVERSATION <br />
+              TO CONFIRMED APPOINTMENT.
+            </h2>
+            <p className="text-ink-soft text-base">
+              Customers ask. Vanova answers. Appointments get booked — without manual back and forth.
             </p>
-          </Reveal>
-
-          <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
-            <Reveal delay={80}>
-              <div className="rounded-3xl bg-surface border-2 border-line p-8 h-full flex flex-col">
-                <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint">
-                  {PLAN_LABEL.core}
-                </div>
-                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
-                  ₦{PLAN_PRICE_NGN.core.toLocaleString()}
-                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
-                </div>
-                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
-
-                <div className="text-left mt-7 space-y-3 flex-1">
-                  {CORE_INCLUDES.map((item) => (
-                    <div key={item} className="flex items-start gap-2.5">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
-                      <span className="text-body-sm text-ink-soft">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button href="/signup" variant="outline" className="mt-8 w-full">
-                  Start free for 14 days
-                </Button>
-              </div>
-            </Reveal>
-            <Reveal delay={140}>
-              <div className="rounded-3xl bg-surface border-2 border-accent p-8 h-full flex flex-col">
-                <div className="font-mono text-label uppercase tracking-[0.14em] " style={{ color: 'var(--accent)' }}>
-                  {PLAN_LABEL.business_intelligence}
-                </div>
-                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
-                  ₦{PLAN_PRICE_NGN.business_intelligence.toLocaleString()}
-                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
-                </div>
-                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
-
-                <div className="text-left mt-7 space-y-3 flex-1">
-                  <p className="text-body-sm font-semibold text-ink">Everything in {PLAN_LABEL.core}, plus:</p>
-                  {BI_INCLUDES.map((item) => (
-                    <div key={item} className="flex items-start gap-2.5">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
-                      <span className="text-body-sm text-ink-soft">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button href="/signup" className="mt-8 w-full">
-                  Start free for 14 days
-                </Button>
-              </div>
-            </Reveal>
           </div>
 
-          <p className="text-center text-[13px] text-ink-faint mt-8">
-            Not sure? Start on {PLAN_LABEL.core} — you can change plan from your dashboard later.
-          </p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20 text-center">
-          <Reveal>
-            <h2 className="font-display text-4xl text-ink mb-8">
-              Ready to stop typing <span className="italic">&ldquo;what time works?&rdquo;</span>
-            </h2>
-            <Button href="/signup">
-              Start free trial
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
-            </Button>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Footer — deliberately not a four-column link directory. That
-          pattern is exactly the "generic template" look the rest of the
-          page has been avoiding, and boxed against the CTA section right
-          above it (same bg-warm-surface), it just read as one undifferentiated
-          block with a hairline in the middle. Plain bg-paper gives it real
-          separation; links sit as two quiet grouped rows instead of
-          column headers, closer to how the rest of this page actually talks. */}
-      <footer className="border-t border-line bg-paper">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 pt-14 pb-8">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 mb-10">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                  <span className="text-white text-[13px] font-bold">V</span>
-                </div>
-                <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
-              </div>
-              <p className="text-[13px] text-ink-soft leading-relaxed">
-                An AI receptionist for appointment businesses. Your customers ask, it books.
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-2xl bg-surface border border-line relative">
+              <span className="font-mono text-4xl font-extrabold text-accent/30 block mb-4">01</span>
+              <h3 className="font-display text-xl font-bold text-ink mb-2">Customer Asks</h3>
+              <p className="text-ink-soft text-sm leading-relaxed">
+                A client messages your receptionist on your website or chat channel asking for a specific day or service.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 md:items-end">
-              <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
-                <a href="#how-it-works" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">How it works</a>
-                <a href="#features" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Features</a>
-                <a href="#pricing" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Pricing</a>
-                <a href={`/${DEMO_SLUG}`} className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Live demo</a>
-              </nav>
-              <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
-                <Link href="/signup" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Create an account</Link>
-                <Link href="/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Business login</Link>
-                <Link href="/account/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">My bookings</Link>
-              </nav>
+            <div className="p-8 rounded-2xl bg-surface border border-line relative">
+              <span className="font-mono text-4xl font-extrabold text-accent/30 block mb-4">02</span>
+              <h3 className="font-display text-xl font-bold text-ink mb-2">Vanova Checks Availability</h3>
+              <p className="text-ink-soft text-sm leading-relaxed">
+                The digital front desk checks existing bookings, working hours, and buffer times to present exact open slots.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-surface border border-line relative">
+              <span className="font-mono text-4xl font-extrabold text-accent/30 block mb-4">03</span>
+              <h3 className="font-display text-xl font-bold text-ink mb-2">Appointment Booked</h3>
+              <p className="text-ink-soft text-sm leading-relaxed">
+                The appointment is confirmed, details are saved to your dashboard, and email notifications fire automatically.
+              </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="font-mono text-[11px] text-ink-faint">
-              © {new Date().getFullYear()} Vanova Hub. All rights reserved.
-            </p>
-            <p className="font-mono text-[11px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
+      {/* AI RECEPTIONIST SECTION */}
+      <section className="py-20 lg:py-28 bg-dark-slate text-white border-b border-dark-slate-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="font-mono text-xs uppercase tracking-widest text-accent font-semibold mb-3">
+                Intelligent Front Desk
+              </div>
+              <h2 className="font-display text-[clamp(2rem,3.5vw,3rem)] font-bold uppercase tracking-tight mb-6">
+                YOUR DIGITAL FRONT DESK. <br />
+                <span className="text-accent">ALWAYS READY.</span>
+              </h2>
+              <p className="text-slate-300 text-base leading-relaxed mb-6">
+                Vanova can answer customer questions, understand appointment requests, check real availability, and complete bookings without requiring the business owner to manually respond to every single request.
+              </p>
+              <ul className="space-y-3 text-sm text-slate-300 mb-8">
+                <li className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-accent" />
+                  <span>Understands natural human booking requests</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-accent" />
+                  <span>Prevents double-bookings automatically</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-accent" />
+                  <span>Respects staff availability and business operating hours</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-surface text-ink p-6 rounded-2xl border border-line shadow-xl">
+              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-line">
+                <div className="h-9 w-9 rounded-xl bg-accent text-white flex items-center justify-center font-bold font-display text-sm">
+                  V
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-ink">Vanova Receptionist</div>
+                  <div className="text-xs text-ink-faint">Digital Front Desk</div>
+                </div>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="bg-surface-neutral p-3 rounded-xl max-w-[85%]">
+                  "Hi! Do you have any openings for a haircut tomorrow around 3 PM?"
+                </div>
+                <div className="bg-accent/10 text-ink p-3 rounded-xl max-w-[85%] ml-auto border border-accent/20">
+                  "Hello! Tomorrow we have 2:30 PM and 4:00 PM available for Haircuts. Would 2:30 PM work for you?"
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* MULTI-CHANNEL SECTION */}
+      <section className="py-20 lg:py-28 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              MEET CUSTOMERS <br />
+              WHERE THEY ALREADY ARE.
+            </h2>
+            <p className="text-ink-soft text-base">
+              Connect multiple communication channels into one unified booking system.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {CHANNELS.map((ch) => (
+              <div key={ch.name} className="p-6 rounded-2xl bg-surface border border-line shadow-xs">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="font-display font-bold text-base text-ink">{ch.name}</span>
+                  <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full ${ch.active ? 'bg-success-bg text-success border border-success-border' : 'bg-surface-neutral text-ink-faint'}`}>
+                    {ch.status}
+                  </span>
+                </div>
+                <p className="text-xs text-ink-soft leading-relaxed">{ch.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BRANDED BOOKING WEBSITE SECTION */}
+      <section className="py-20 lg:py-28 bg-surface-neutral/30 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="max-w-2xl mb-16">
+            <div className="font-mono text-xs uppercase tracking-widest text-accent font-semibold mb-3">Custom Experience</div>
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              YOUR BOOKING EXPERIENCE. <br />
+              YOUR BRAND.
+            </h2>
+            <p className="text-ink-soft text-base">
+              Every business gets its own branded booking page featuring your logo, custom theme colors, service catalog, business hours, and AI chat assistant.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-2xl bg-surface border border-line shadow-sm">
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-line">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-ink text-white flex items-center justify-center font-bold">
+                  G
+                </div>
+                <div>
+                  <h4 className="font-bold text-base text-ink">Glow Hair Studio</h4>
+                  <p className="text-xs text-ink-faint">vanovahub.com/glow-salon</p>
+                </div>
+              </div>
+              <span className="px-4 py-1.5 rounded-full bg-accent text-white text-xs font-semibold">
+                Book Appointment
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+              <div className="p-4 rounded-xl bg-surface-neutral">
+                <div className="font-bold text-ink mb-1">Hair Styling & Cut</div>
+                <div className="text-xs text-ink-soft">45 mins · ₦15,000</div>
+              </div>
+              <div className="p-4 rounded-xl bg-surface-neutral">
+                <div className="font-bold text-ink mb-1">Full Color Treatment</div>
+                <div className="text-xs text-ink-soft">90 mins · ₦35,000</div>
+              </div>
+              <div className="p-4 rounded-xl bg-surface-neutral">
+                <div className="font-bold text-ink mb-1">Bridal Consultation</div>
+                <div className="text-xs text-ink-soft">60 mins · ₦25,000</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DASHBOARD SECTION */}
+      <section className="py-20 lg:py-28 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              EVERY APPOINTMENT. <br />
+              ONE PLACE.
+            </h2>
+            <p className="text-ink-soft text-base">
+              A unified operating dashboard giving business owners immediate clarity over today's schedule, next clients, and revenue metrics.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-surface border border-line shadow-md">
+            <DashboardPreview />
+          </div>
+        </div>
+      </section>
+
+      {/* BUSINESS TYPES */}
+      <section id="businesses" className="py-20 lg:py-28 bg-surface-neutral/40 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              BUILT FOR BUSINESSES <br />
+              THAT RUN ON APPOINTMENTS.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {BUSINESS_TYPES.map((b) => (
+              <div key={b.title} className="p-6 rounded-2xl bg-surface border border-line shadow-2xs hover:border-accent/30 transition-colors">
+                <span className="text-3xl mb-3 block">{b.icon}</span>
+                <h3 className="font-display font-bold text-base text-ink mb-1">{b.title}</h3>
+                <p className="text-xs text-ink-soft leading-relaxed">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="py-20 lg:py-28 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              HOW IT WORKS.
+            </h2>
+            <p className="text-ink-soft text-base">Get your digital front desk up and running in minutes.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="p-6">
+              <div className="h-12 w-12 rounded-full bg-accent text-white font-mono font-bold text-lg flex items-center justify-center mx-auto mb-4">
+                1
+              </div>
+              <h3 className="font-display font-bold text-lg text-ink mb-2">Connect Your Business</h3>
+              <p className="text-xs text-ink-soft leading-relaxed">
+                Add your services, duration, prices, and working hours in your setup dashboard.
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="h-12 w-12 rounded-full bg-accent text-white font-mono font-bold text-lg flex items-center justify-center mx-auto mb-4">
+                2
+              </div>
+              <h3 className="font-display font-bold text-lg text-ink mb-2">Let Customers Book</h3>
+              <p className="text-xs text-ink-soft leading-relaxed">
+                Share your branded booking link or embed your AI receptionist on your website & chat channels.
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="h-12 w-12 rounded-full bg-accent text-white font-mono font-bold text-lg flex items-center justify-center mx-auto mb-4">
+                3
+              </div>
+              <h3 className="font-display font-bold text-lg text-ink mb-2">Run Your Business</h3>
+              <p className="text-xs text-ink-soft leading-relaxed">
+                Focus on delivering great service while Vanova handles reservations and sends confirmations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="py-20 lg:py-28 bg-surface-neutral/30 border-b border-line">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="text-center max-w-xl mx-auto mb-16">
+            <h2 className="font-display text-[clamp(2rem,3.5vw,2.8rem)] font-bold text-ink uppercase tracking-tight mb-4">
+              ONE SIMPLE SUBSCRIPTION. <br />
+              YOUR BOOKINGS, HANDLED.
+            </h2>
+            <p className="text-ink-soft text-base">
+              Transparent platform pricing for your software subscription. Payments collected from your clients go 100% directly to your business.
+            </p>
+          </div>
+
+          <div className="max-w-md mx-auto p-8 rounded-3xl bg-surface border-2 border-accent shadow-xl relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-white text-[11px] font-mono font-bold uppercase tracking-wider px-4 py-1 rounded-full">
+              Vanova Core Subscription
+            </div>
+            <div className="text-center my-6">
+              <span className="font-display text-4xl font-extrabold text-ink">₦15,000</span>
+              <span className="text-ink-soft text-sm"> / month</span>
+            </div>
+            <ul className="space-y-3.5 text-xs text-ink mb-8">
+              <li className="flex items-center gap-3">
+                <span className="text-accent font-bold">✓</span>
+                <span>AI Receptionist on Website & Telegram</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-accent font-bold">✓</span>
+                <span>Unlimited appointments & service catalog</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-accent font-bold">✓</span>
+                <span>Unified real-time schedule dashboard</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-accent font-bold">✓</span>
+                <span>Automatic email confirmations</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-accent font-bold">✓</span>
+                <span>Direct client payment collection via Paystack</span>
+              </li>
+            </ul>
+            <Link
+              href="/signup"
+              className="block w-full text-center py-3.5 rounded-full bg-accent text-white font-semibold text-sm hover:bg-accent-hover active:scale-95 transition-all shadow-sm"
+            >
+              Start 14-day free trial
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-24 bg-dark-slate text-white text-center">
+        <div className="max-w-4xl mx-auto px-6 lg:px-10">
+          <h2 className="font-display text-[clamp(2.2rem,4vw,3.5rem)] font-extrabold uppercase tracking-tight mb-6">
+            READY TO GIVE YOUR <br />
+            BUSINESS A <span className="text-accent">DIGITAL FRONT DESK?</span>
+          </h2>
+          <p className="text-slate-300 text-base max-w-xl mx-auto mb-8">
+            Start automating customer booking requests and keeping your schedule organized today.
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-4">
+            <Link
+              href="/signup"
+              className="px-8 py-4 rounded-full bg-accent text-white font-semibold text-base hover:bg-accent-hover active:scale-95 transition-all shadow-md"
+            >
+              Get started
+            </Link>
+            <Link
+              href={`/${DEMO_SLUG}`}
+              className="px-8 py-4 rounded-full bg-dark-slate-hover border border-dark-slate-line text-white font-medium text-base hover:bg-slate-800 transition-all"
+            >
+              See a demo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-8 bg-paper border-t border-line text-xs text-ink-faint">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 font-display font-semibold text-ink">
+            <div className="h-6 w-6 rounded-lg bg-accent text-white flex items-center justify-center text-xs">V</div>
+            <span>Vanova Hub</span>
+          </div>
+          <div>© {new Date().getFullYear()} Vanova Hub. Digital Front Desk Operating System.</div>
         </div>
       </footer>
     </div>
