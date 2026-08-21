@@ -185,17 +185,14 @@ export default function AdminDashboardBody({
         />
       </div>
 
-      {/* The interface refresh cooled --warm-surface from #f5efe4 to #f1eee8
-          and --line from #ede6d9 to #e7e2da. That suits the rest of the app,
-          but this strip is the first thing read every morning and the
-          warmer, slightly stronger-edged version holds together better as a
-          single panel. Hardcoded here rather than scoped to a class:
-          restyling the whole admin area changed far more than intended. */}
+      {/* Sits on --warm-surface on desktop and --paper on mobile, so it
+          needs to lift off both. A hardcoded cream (#f5efe4) was tried and
+          clashed: it was warm against a palette that had been cooled.
+          White with a hairline is the same treatment every other card in
+          the app uses, so it reads as elevated and cannot drift out of
+          step with the tokens again. */}
       {all.length > 0 && (
-        <div
-          className="rounded-2xl px-5 py-5 mb-8 border"
-          style={{ background: '#f5efe4', borderColor: '#ede6d9' }}
-        >
+        <div className="rounded-2xl bg-surface border border-line px-5 py-5 mb-8 shadow-soft">
           <div className="flex flex-wrap gap-x-8 gap-y-5">
             <TodayStat
               label="Next up"

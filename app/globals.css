@@ -45,7 +45,7 @@
   --accent-hover: #9f4028;
   --accent-active: #86341f;
   --accent-contrast: #ffffff;
-  --accent-soft: rgba(196, 81, 45, 0.1);
+  --accent-soft: rgba(185, 79, 50, 0.1);
 
   /* Warm human accent - cream. Used with restraint: highlight cards,
      booking confirmations, occasional secondary buttons - never
