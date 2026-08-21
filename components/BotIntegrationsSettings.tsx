@@ -57,7 +57,28 @@ export default function BotIntegrationsSettings({
   );
 }
 
+// A channel that is not connected shows one line and a button, rather than
+// unfurling its whole setup form. Three unconnected channels used to fill
+// the page with instructions nobody had asked for yet, while the statuses
+// this page exists to show got pushed off screen.
+function NotConnectedRow({ onConnect }: { onConnect: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-2 border-dashed border-line rounded-xl px-4 py-3">
+      <p className="text-body-sm text-ink-faint">Not connected</p>
+      <button
+        type="button"
+        onClick={onConnect}
+        className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg transition-colors hover:bg-warm-surface"
+        style={{ color: 'var(--accent)' }}
+      >
+        Set up
+      </button>
+    </div>
+  );
+}
+
 function MessengerSection({ slug, initialPageName }: { slug: string; initialPageName: string | null }) {
+  const [expanded, setExpanded] = useState(false);
   const [pageName, setPageName] = useState(initialPageName);
   const [token, setToken] = useState('');
   const [saving, setSaving] = useState(false);
@@ -138,6 +159,8 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
             Disconnect
           </button>
         </div>
+      ) : !expanded ? (
+        <NotConnectedRow onConnect={() => setExpanded(true)} />
       ) : (
         <form onSubmit={handleConnect} className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
@@ -168,6 +191,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
 }
 
 function TelegramSection({ slug, initialUsername }: { slug: string; initialUsername: string | null }) {
+  const [expanded, setExpanded] = useState(false);
   const [username, setUsername] = useState(initialUsername);
   const [token, setToken] = useState('');
   const [saving, setSaving] = useState(false);
@@ -234,7 +258,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
 
       {username ? (
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="text-[13.5px] text-ink-soft">
+          <p className="text-body-sm text-ink-soft">
             Connected as <span className="font-mono text-ink">@{username}</span>
           </p>
           <button
@@ -245,6 +269,8 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
             Disconnect
           </button>
         </div>
+      ) : !expanded ? (
+        <NotConnectedRow onConnect={() => setExpanded(true)} />
       ) : (
         <form onSubmit={handleConnect} className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
@@ -275,6 +301,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
 }
 
 function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber: string | null }) {
+  const [expanded, setExpanded] = useState(false);
   const [number, setNumber] = useState(initialNumber);
   const [connecting, setConnecting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -407,7 +434,9 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
 
       {number ? (
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="font-mono text-[13.5px] text-ink">{number}</p>
+          <p className="text-body-sm text-ink-soft">
+            Connected as <span className="font-mono text-ink">{number}</span>
+          </p>
           <button
             onClick={handleDisconnect}
             disabled={saving}
@@ -416,6 +445,8 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
             Disconnect
           </button>
         </div>
+      ) : !expanded ? (
+        <NotConnectedRow onConnect={() => setExpanded(true)} />
       ) : (
         <div className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
