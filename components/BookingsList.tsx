@@ -105,6 +105,27 @@ export default function BookingsList({
   // date) is history. This was the actual bug: the list never filtered by
   // time at all, so a booking from 12 days ago just sat at the top under
   // an "Upcoming" label that had nothing to do with what was shown.
+  // A solo business assigns every booking to the same person, or to nobody,
+  // so the Staff column is a column of one repeated name or a column of
+  // dashes. Only worth its width once there is actually more than one
+  // person to tell apart.
+  const staffNames = new Set(
+    bookings
+      .map((b: any) => (Array.isArray(b.staff) ? b.staff[0]?.name : b.staff?.name))
+      .filter(Boolean)
+  );
+  const showStaff = staffNames.size > 1;
+  // Both variants written out in full, including the sm: prefix. Tailwind
+  // only generates classes it can see literally in the source, so building
+  // one with `sm:${...}` at runtime would produce a class that has no CSS
+  // behind it and silently collapse the grid.
+  const GRID_HEAD = showStaff
+    ? 'grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
+    : 'grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
+  const GRID_ROW = showStaff
+    ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
+    : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
+
   const isPast = filter === 'past';
 
   const upcoming = bookings.filter((b) => b.status !== 'cancelled' && new Date(b.start_time) >= now);
@@ -214,11 +235,11 @@ export default function BookingsList({
           it's the section that matters most on the page, so it shouldn't
           compete visually with everything boxed around it. */}
       <div className="border-t-2 border-line">
-        <div className="hidden sm:grid grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px] gap-4 px-2 py-2.5 border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+        <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
           <div>Time</div>
           <div>Customer</div>
           <div>Service</div>
-          <div>Staff</div>
+          {showStaff && <div>Staff</div>}
           <div>Contact</div>
           <div>Status</div>
         </div>
@@ -237,7 +258,7 @@ export default function BookingsList({
                   i !== filtered.length - 1 ? 'border-b border-line' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
-                <div className="flex flex-col gap-2.5 sm:grid sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px] sm:gap-4 sm:items-center">
+                <div className={`flex flex-col gap-2.5 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>
                   <div className="flex items-center justify-between sm:block">
                     <div>
                       <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
@@ -279,7 +300,7 @@ export default function BookingsList({
                     )}
                   </div>
 
-                  <div className="text-[13px] text-ink-soft truncate">{staffName ?? '-'}</div>
+                  {showStaff && <div className="text-body-sm text-ink-soft truncate">{staffName ?? '-'}</div>}
 
                   <div className="flex items-center justify-between sm:block">
                     <span className="font-mono text-caption sm:text-[13px] truncate">
