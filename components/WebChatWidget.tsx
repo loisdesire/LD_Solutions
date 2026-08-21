@@ -24,9 +24,15 @@ function getSessionId(businessId: string): string {
 
 export default function WebChatWidget({
   businessId,
+  businessName,
+  serviceNames = [],
   defaultOpen = false,
 }: {
   businessId: string;
+  /** The chat speaks as the business, not as "an assistant". */
+  businessName?: string;
+  /** Openers are drawn from what this business actually sells. */
+  serviceNames?: string[];
   // Set when this widget is mounted on demand from somewhere that already
   // represents "open the chat" as its own action (e.g. clicking a chat
   // icon on /account) - skips relying on the #chat hash trick, which is
@@ -34,6 +40,13 @@ export default function WebChatWidget({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Real services beat a hardcoded example: "Do you do Braids?" only makes
+  // sense if that business offers braids.
+  const openers = [
+    'What times are free tomorrow?',
+    serviceNames[0] ? `How much is ${serviceNames[0]}?` : 'What do you charge?',
+    'Are you open at the weekend?',
+  ];
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [value, setValue] = useState('');
@@ -90,8 +103,10 @@ export default function WebChatWidget({
     return () => clearInterval(id);
   }, [thinking]);
 
-  async function send() {
-    const text = value.trim();
+  // Takes an optional message so a tapped opener can be sent directly,
+  // rather than being typed into the box first.
+  async function send(preset?: string) {
+    const text = (preset ?? value).trim();
     if (!text || thinking || !sessionId) return;
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setValue('');
@@ -113,7 +128,18 @@ export default function WebChatWidget({
   return (
     <>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => {
+            // Closing clears the #chat hash. Without this, a second click on
+            // a "Chat with us" link pointing at the same hash fires no
+            // hashchange, so the chat never reopens: it works once, then
+            // appears broken.
+            if (v && window.location.hash === '#chat') {
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+            return !v;
+          });
+        }}
         aria-label={open ? 'Close chat' : 'Open chat'}
         className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'var(--accent)' }}
@@ -137,15 +163,35 @@ export default function WebChatWidget({
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v12H8l-4 4V4z" /></svg>
             </div>
             <div>
-              <div className="font-display text-[14.5px] font-semibold text-ink">Ask us anything</div>
-              <div className="text-[11px] text-ink-faint">Check availability, book, or ask a question</div>
+              <div className="font-display text-[14.5px] font-semibold text-ink">
+                {businessName ? `Message ${businessName}` : 'Ask us anything'}
+              </div>
+              <div className="text-[11px] text-ink-faint">Usually replies instantly</div>
             </div>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             {messages.length === 0 && !thinking && (
-              <div className="text-center text-[13px] text-ink-faint px-4 py-6">
-                Try &ldquo;What&apos;s open tomorrow?&rdquo; or &ldquo;I&apos;d like to book a haircut&rdquo;
+              // Tappable openers, drawn from this business's own services.
+              // The old line hardcoded "haircut", which is wrong for a
+              // clinic or a tutor, and asked people to compose a question
+              // from nothing.
+              <div className="px-1 py-4">
+                <p className="text-[13px] text-ink-soft text-center mb-3.5">
+                  Ask anything, or start here
+                </p>
+                <div className="flex flex-col gap-2">
+                  {openers.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => send(o)}
+                      className="text-left rounded-xl border border-line px-3.5 py-2.5 text-[13px] text-ink-soft hover:border-accent hover:text-accent transition-colors"
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((m, i) => (
@@ -182,7 +228,7 @@ export default function WebChatWidget({
                 className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint"
               />
               <button
-                onClick={send}
+                onClick={() => send()}
                 disabled={!value.trim() || thinking}
                 aria-label="Send"
                 className="h-8 w-8 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity disabled:opacity-30"

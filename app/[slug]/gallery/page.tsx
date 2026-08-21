@@ -46,7 +46,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
         </div>
       </main>
       <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />
-      <WebChatWidget businessId={business.id} />
+      <WebChatWidget businessId={business.id} businessName={business.name} />
     </AccentScope>
   );
 }

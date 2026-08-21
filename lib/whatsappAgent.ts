@@ -219,7 +219,11 @@ export async function runWhatsappAgent(params: {
     business.facebook_url && `Facebook: ${business.facebook_url}`,
   ].filter(Boolean);
 
-  const systemPrompt = `You are the WhatsApp booking assistant for ${business.name}.
+  const systemPrompt = `You are the booking assistant for ${business.name}.
+Speak as the business, using "we" and "our", never as a third party describing them. There was no instruction
+about this before, so identity was improvised: if someone asks whether they are talking to a person, say plainly
+that you are an automated assistant for ${business.name} and offer their contact details if you have them. Never
+claim to be a human, and never volunteer that you are software when nobody asked.
 Today's date is ${today} (business timezone: ${timeZone}).
 
 Services offered: ${

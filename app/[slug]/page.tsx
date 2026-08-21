@@ -175,20 +175,26 @@ export default async function BusinessBookingPage({
             <div className="flex flex-wrap items-center gap-3 mt-8">
               <a
                 href="#book"
-                className="px-6 py-3 rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                className="px-6 py-3 min-h-[48px] flex items-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
               >
-                Book now
+                Book an appointment
               </a>
+              {/* Two doors, not a button and a fallback. Someone who knows
+                  what they want books; someone who does not asks. The chat
+                  used to be a thin outline against a solid Book now, which
+                  read as the lesser option - and it is the thing this
+                  product is actually for. */}
               <a
                 href="#chat"
-                className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-[14px] text-white border-2 border-white/70 transition-colors hover:bg-white/10 active:scale-95"
+                className="flex items-center gap-2 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', border: '2px solid rgba(255,255,255,0.9)', textShadow: 'none' }}
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 4h16v12H8l-4 4V4z" />
                   <path d="M8 9h8M8 12h5" />
                 </svg>
-                Chat with us
+                Not sure? Just ask
               </a>
             </div>
           </div>
@@ -219,7 +225,11 @@ export default async function BusinessBookingPage({
       </main>
 
       <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />
-      <WebChatWidget businessId={business.id} />
+      <WebChatWidget
+        businessId={business.id}
+        businessName={business.name}
+        serviceNames={services.map((s: { name: string }) => s.name)}
+      />
     </AccentScope>
   );
 }
