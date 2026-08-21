@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useDialog } from './useDialog';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -78,14 +79,17 @@ export default function ConversationPanel({
     load(false);
   }
 
+  const dialogRef = useDialog(true, onClose);
+
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Customer conversation" ref={dialogRef}>
       <div className="absolute inset-0" style={{ background: 'color-mix(in srgb, var(--ink) 20%, transparent)' }} onClick={onClose} />
       <div className="relative w-full max-w-sm bg-surface h-full flex flex-col shadow-soft border-l border-line">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between shrink-0">
           <div className="min-w-0">
             <p className="font-display text-[17px] truncate">{customerLabel}</p>
-            <p className="font-mono text-[10.5px] text-ink-faint mt-0.5">Conversation with the bot</p>
+            <p className="font-mono text-[10.5px] text-ink-faint mt-0.5">Conversation with your assistant</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -98,7 +102,7 @@ export default function ConversationPanel({
           {loading ? (
             <p className="text-[13px] text-ink-faint">Loading…</p>
           ) : messages.length === 0 ? (
-            <p className="text-[13px] text-ink-faint">No conversation yet.</p>
+            <p className="text-[13px] text-ink-faint">No messages yet. When this customer messages your assistant, the conversation appears here.</p>
           ) : (
             messages.map((m, i) => (
               <div key={i} className={m.role === 'user' ? 'text-left' : 'text-right'}>
@@ -124,7 +128,7 @@ export default function ConversationPanel({
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Reply as the bot..."
+            placeholder="Reply as your business…"
             className="flex-1 rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />
           <button

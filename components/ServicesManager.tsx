@@ -320,8 +320,8 @@ export default function ServicesManager({
               />
             </svg>
           </div>
-          <h2 className="font-display text-[20px]">No services yet</h2>
-          <p className="text-ink-soft text-body-sm mt-1.5">Add your first one above.</p>
+          <h2 className="font-display text-[20px]">Nothing bookable yet</h2>
+          <p className="text-ink-soft text-body-sm mt-1.5">Services are what customers pick from when they book — until you add one, your booking page has nothing to offer. Use "Add service" above to start.</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">

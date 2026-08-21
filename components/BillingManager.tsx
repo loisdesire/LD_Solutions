@@ -201,6 +201,12 @@ export default function BillingManager({
         </p>
       )}
 
+      {history.length === 0 && (
+        <p className="text-ink-faint text-caption mt-8">
+          No payments yet. Once your first monthly charge goes through, it&apos;ll be listed here.
+        </p>
+      )}
+
       {history.length > 0 && (
         <div className="mt-8">
           <h3 className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">

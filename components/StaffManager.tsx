@@ -164,6 +164,12 @@ export default function StaffManager({
         Team
       </div>
       <div className="space-y-2 mb-8">
+        {staff.length === 0 && (
+          <p className="text-ink-soft text-body-sm py-3">
+            No one on the team yet. Invite a staff member and they&apos;ll be able to see the calendar and manage
+            their own bookings.
+          </p>
+        )}
         {staff.map((s) =>
           editingId === s.id ? (
             <div key={s.id} className="flex flex-col gap-3 border-2 border-line rounded-2xl p-4 bg-surface">

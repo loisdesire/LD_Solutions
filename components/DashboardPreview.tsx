@@ -13,8 +13,8 @@ export default function DashboardPreview() {
     <div className="rounded-3xl bg-surface border-2 border-line shadow-[0_24px_60px_-20px_rgba(32,32,32,0.16)] overflow-hidden">
       <div className="flex bg-paper">
         <aside className="hidden sm:block w-[154px] shrink-0 bg-surface border-r border-line px-3.5 py-5">
-        <div className="font-display text-[15px] font-semibold text-ink truncate">Glow Salon</div>
-        <div className="font-mono text-[8px] text-ink-faint mt-0.5 mb-6 truncate">Hair salon · /glow-salon</div>
+        <div className="font-display text-[15px] font-semibold text-ink truncate">Your business</div>
+        <div className="font-mono text-[8px] text-ink-faint mt-0.5 mb-6 truncate">Appointment business · /your-business</div>
         <div className="font-mono text-[8px] uppercase tracking-[0.12em] text-ink-faint px-2 mb-1.5">Manage</div>
         <nav className="flex flex-col gap-0.5 text-[11px]">
           <div className="rounded-lg px-2 py-2 font-semibold" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>Dashboard</div>
@@ -32,7 +32,7 @@ export default function DashboardPreview() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
               <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
             </svg>
-            <span className="text-[10px] text-ink-faint truncate">Search clients or bookings...</span>
+            <span className="text-[10px] text-ink-faint truncate">Search customers or bookings…</span>
           </div>
           <span className="rounded-lg bg-accent px-3 py-2 text-[10px] font-semibold text-white shrink-0">New appointment</span>
         </div>

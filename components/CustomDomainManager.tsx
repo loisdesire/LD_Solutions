@@ -40,7 +40,7 @@ export default function CustomDomainManager({
       if ((updateError as { code?: string }).code === '23505') {
         setError('That domain is already connected to a business.');
       } else if ((updateError as { code?: string }).code === '42703') {
-        setError('Custom domains aren\'t enabled on this deployment yet — check back soon.');
+        setError('Custom domains aren\'t switched on for your account yet — check back soon.');
       } else {
         setError(updateError.message);
       }

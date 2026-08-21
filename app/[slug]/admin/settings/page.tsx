@@ -77,7 +77,7 @@ export default async function SettingsPage({
         </div>
         <h1 className="font-display text-h1 text-ink">Settings</h1>
         <p className="text-ink-soft text-body-sm mt-1">
-          Make this feel like your business.
+          Your branding, your booking rules, payments, and your own domain.
         </p>
       </div>
 
@@ -147,8 +147,8 @@ export default async function SettingsPage({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Booking rules"
-          description="Keep your schedule sane with buffers and limits."
+          title="Booking rules and payments"
+          description="Buffers, how far ahead people can book, cancellation notice — and taking deposits with Paystack."
           color="var(--tertiary)"
           icon={
             <svg {...iconProps}>
@@ -172,7 +172,7 @@ export default async function SettingsPage({
 
         <CollapsibleSection
           title="Custom domain"
-          description="Serve your booking page from your own domain instead of the platform's."
+          description="Use your own web address instead of ours. Your public pages only — you still log in here."
           color="var(--accent)"
           icon={
             <svg {...iconProps}>

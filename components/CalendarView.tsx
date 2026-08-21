@@ -178,7 +178,7 @@ export default function CalendarView({
         <div className="space-y-2 max-w-xl">
           {(byDay.get(anchor) ?? []).length === 0 ? (
             <div className="border-2 border-dashed border-line-strong rounded-2xl py-10 text-center text-body-sm text-ink-faint">
-              Nothing booked this day.
+              Nothing booked this day — a free day, or one worth filling.
             </div>
           ) : (
             (byDay.get(anchor) ?? []).map((b) => <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />)

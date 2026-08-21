@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 
 // The settings page grew to four full sections, each always fully expanded
 // — that stacked height, not any single section's content, is what made it
@@ -27,11 +27,17 @@ export default function CollapsibleSection({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const panelId = useId();
 
   return (
     <div className="border-b border-line last:border-0">
+      {/* Was a bare <button> — no aria-expanded, no aria-controls, so the
+          only open/closed signal was a rotating chevron, which is invisible
+          to a screen reader. AdminMobileNav already did this correctly. */}
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={panelId}
         className="group w-full flex items-center gap-4 py-5 text-left"
       >
         <div
@@ -59,7 +65,7 @@ export default function CollapsibleSection({
         </svg>
       </button>
       {open && (
-        <div className="pb-8 pt-1 pl-[60px]">
+        <div id={panelId} className="pb-8 pt-1 pl-0 sm:pl-[60px]">
           <div className="max-w-2xl">{children}</div>
         </div>
       )}

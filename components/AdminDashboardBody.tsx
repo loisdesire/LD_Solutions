@@ -148,7 +148,7 @@ export default function AdminDashboardBody({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search clients or bookings…"
+            placeholder="Search customers or bookings…"
             className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
           />
         </div>

@@ -27,7 +27,7 @@ LD Solutions is not only a calendar or a website builder. It combines a branded 
 
 Every business has a public URL based on its unique slug, for example:
 
-`yourdomain.com/glow-salon`
+`yourdomain.com/your-business`
 
 The public site can include:
 

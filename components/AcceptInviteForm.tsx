@@ -39,7 +39,7 @@ export default function AcceptInviteForm({ token }: { token: string }) {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       setLoading(false);
       return;
     }

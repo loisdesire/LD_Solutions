@@ -129,7 +129,7 @@ export default function SignupPage() {
                   setSlug(slugify(e.target.value));
                 }}
                 className={inputClass}
-                placeholder="Glow Salon"
+                placeholder="Your business name"
               />
             </div>
 

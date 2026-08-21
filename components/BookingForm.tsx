@@ -525,7 +525,7 @@ export default function BookingForm({
           <p className="text-[14.5px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
             <div className="max-w-lg mx-auto text-center py-12">
-              <p className="text-ink-soft text-[14px]">This business hasn&apos;t listed any services yet.</p>
+              <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat — we can still help.</p>
             </div>
           ) : (
             <div className="max-w-2xl mx-auto border-y border-line">

@@ -130,3 +130,50 @@ body {
 .font-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
+
+/* ============================================
+   Keyboard focus
+   ============================================
+   `focus-visible` appeared zero times in this codebase, while
+   `outline-none` was applied unconditionally in ~20 files. Inputs
+   compensated with their own focus ring, but no button or link anywhere
+   had any focus style at all — so a keyboard user could not see where
+   they were. Icon buttons, nav links, slot pills, tab pills, gallery
+   thumbnails and modal close buttons were all invisible.
+
+   :focus-visible (not :focus) means mouse users never see a ring, so
+   there's no visual cost to fixing this. Declared here rather than
+   per-component so a new component can't forget it. */
+:where(a, button, [role='button'], [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Inputs already set their own border+ring on focus; keep that, but make
+   sure keyboard focus is never *only* a colour change. */
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ============================================
+   Reduced motion
+   ============================================
+   25 animate-* usages ran at full strength regardless of the OS setting —
+   including an infinite shimmer and a scale-punch on every time-slot tap.
+   For people who get motion sickness or vestibular symptoms this is not a
+   preference, it's an accessibility requirement.
+
+   Animations are neutralised rather than removed: opacity-based reveals
+   still resolve to visible, so nothing ends up stuck at opacity 0. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

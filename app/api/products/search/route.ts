@@ -28,6 +28,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     logError('api/products/search', err, { businessId });
-    return NextResponse.json({ error: 'Something went wrong, please try again.' }, { status: 500 });
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }

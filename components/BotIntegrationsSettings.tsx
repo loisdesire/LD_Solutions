@@ -29,6 +29,25 @@ export default function BotIntegrationsSettings({
         <h3 className="font-display text-[16px] text-ink mb-1">Connected channels</h3>
         <p className="text-[12.5px] text-ink-faint">Connect the places where customers already message you.</p>
       </div>
+
+      {/* Website chat has no connect step — it is live on every public page
+          the moment a business exists. Leaving it off this page made the
+          list read as "you have nothing connected" when in fact the most
+          reliable channel was already running. */}
+      <div className="flex items-center justify-between gap-4 rounded-2xl bg-warm-surface px-4 py-3.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-[14px] font-semibold text-ink">Website chat</p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+              Always on
+            </span>
+          </div>
+          <p className="text-[12.5px] text-ink-soft mt-0.5">
+            Live on your booking page already — nothing to set up.
+          </p>
+        </div>
+      </div>
       <TelegramSection slug={slug} initialUsername={initialTelegramUsername} />
       <div className="border-t border-dashed border-line" />
       <MessengerSection slug={slug} initialPageName={initialMessengerPageName} />
@@ -400,8 +419,10 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
       ) : (
         <div className="space-y-2.5">
           <p className="text-ink-faint text-[12px]">
-            Connect the WhatsApp number you already message customers from. Heads up: linking it here
-            deactivates the regular WhatsApp app on that number's phone — the bot takes over replying there.
+            Connect the WhatsApp number you already message customers from. You&apos;ll sign in with Facebook and
+            need a Meta Business account — if you don&apos;t have one yet, Meta walks you through creating it, which
+            can take a day or two to be approved. Heads up: linking a number here deactivates the regular WhatsApp
+            app on that phone — your assistant takes over replying there.
           </p>
           <button
             onClick={handleConnect}

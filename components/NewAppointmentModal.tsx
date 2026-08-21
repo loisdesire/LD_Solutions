@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import CalendarPicker from './CalendarPicker';
+import { useDialog } from './useDialog';
 
 type Service = {
   id: string;
@@ -117,8 +118,11 @@ export default function NewAppointmentModal({
     'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
   const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
 
+  const dialogRef = useDialog(true, onClose);
+
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-label="New appointment" ref={dialogRef}>
       <div className="absolute inset-0 backdrop-blur-sm animate-fade" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }} onClick={onClose} />
 
       <div className="relative w-full max-w-lg max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
@@ -173,7 +177,7 @@ export default function NewAppointmentModal({
           </div>
         ) : services.length === 0 ? (
           <div className="px-6 py-10 text-center">
-            <p className="text-ink-soft text-[14px]">Add a service before booking an appointment.</p>
+            <p className="text-ink-soft text-[14px]">You need at least one service before you can book anyone in — add one on the Services page first.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5">

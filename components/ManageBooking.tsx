@@ -106,7 +106,7 @@ export default function ManageBooking({
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       return;
     }
 
@@ -128,7 +128,7 @@ export default function ManageBooking({
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       return;
     }
 
@@ -160,7 +160,7 @@ export default function ManageBooking({
     return (
       <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">Your booking has been rescheduled.</p>
-        <p className="text-ink-soft text-[13px] mt-1">Refresh this page to see the new time.</p>
+        <p className="text-ink-soft text-[13px] mt-1">Your new time is confirmed.</p>
       </div>
     );
   }

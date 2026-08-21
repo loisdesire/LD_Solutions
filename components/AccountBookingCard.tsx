@@ -104,7 +104,7 @@ export default function AccountBookingCard({
             onClick={() => setShowChat((v) => !v)}
             className="w-full text-left px-4 py-2.5 border-t border-dashed border-line text-[12.5px] font-medium text-ink-faint hover:text-ink transition-colors"
           >
-            {showChat ? 'Hide' : 'View'} conversation with the bot ({messages.length} messages)
+            {showChat ? 'Hide' : 'View'} conversation ({messages.length} messages)
           </button>
           {showChat && (
             <div className="px-4 pb-4 space-y-2.5 max-h-64 overflow-y-auto">

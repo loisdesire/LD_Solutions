@@ -242,7 +242,7 @@ export default function ProductsManager({
             </svg>
           </div>
           <h2 className="font-display text-[20px]">No products yet</h2>
-          <p className="text-ink-soft text-body-sm mt-1.5">Add your first one above.</p>
+          <p className="text-ink-soft text-body-sm mt-1.5">Products are optional — they show on your page and let the assistant answer questions about what you sell. Use "Add product" above if you want them.</p>
         </div>
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
@@ -268,7 +268,7 @@ export default function ProductsManager({
             <div />
           </div>
           {filteredProducts.length === 0 && (
-            <div className="px-5 py-8 text-center text-body-sm text-ink-faint">No products match "{search}".</div>
+            <div className="px-5 py-8 text-center text-body-sm text-ink-faint">No products match &ldquo;{search}&rdquo;.</div>
           )}
           {filteredProducts.map((p, i) =>
             editingId === p.id ? (
