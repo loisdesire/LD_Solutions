@@ -17,9 +17,17 @@ const PLATFORM_HOSTNAME = (() => {
   }
 })();
 
+// Matches the platform's own hostname with or without a leading "www.",
+// in both directions. Vercel serves whichever of the two you set primary
+// and 308-redirects the other, so the host that actually arrives here may
+// not be the one SITE_URL is written with — and a mismatch means every
+// request to the marketing site falls through to the custom-domain
+// lookup below and pays for a Supabase round trip it can never use.
 function isPlatformHost(hostname: string): boolean {
+  const bare = hostname.replace(/^www\./, '');
+  const platformBare = PLATFORM_HOSTNAME.replace(/^www\./, '');
   return (
-    hostname === PLATFORM_HOSTNAME ||
+    bare === platformBare ||
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.endsWith('.vercel.app')
