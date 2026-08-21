@@ -37,3 +37,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Scratch patch scripts used during edits — never part of the app
+_*.cjs
+_*.mjs
