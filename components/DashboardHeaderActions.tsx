@@ -16,13 +16,11 @@ type Service = { id: string; name: string; duration_minutes: number; price: numb
 
 export default function DashboardHeaderActions({
   slug,
-  rows = [],
   businessId,
   services,
   maxAdvanceDays,
 }: {
   slug: string;
-  rows?: ExportRow[];
   businessId: string;
   services: Service[];
   maxAdvanceDays: number;
@@ -36,28 +34,11 @@ export default function DashboardHeaderActions({
     setTimeout(() => setCopied(false), 1500);
   }
 
+  // Was built here from whatever the dashboard had already loaded, which
+  // forced the page to fetch every booking a business had ever taken just
+  // in case someone pressed this. The route builds it on demand instead.
   function handleExport() {
-    const header = ['Customer', 'Email', 'Phone', 'When', 'Service', 'Status'];
-    const lines = rows.map((r) =>
-      [
-        r.customer_name,
-        r.customer_email ?? '',
-        r.customer_phone ?? '',
-        new Date(r.start_time).toLocaleString(),
-        r.service_name ?? '',
-        r.status,
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(',')
-    );
-    const csv = [header.join(','), ...lines].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${slug}-bookings.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    window.location.href = `/api/bookings/export?slug=${encodeURIComponent(slug)}`;
   }
 
   return (
@@ -77,18 +58,16 @@ export default function DashboardHeaderActions({
           </svg>
         )}
       </button>
-      {rows.length > 0 && (
-        <button
+      <button
           onClick={handleExport}
           aria-label="Export CSV"
           title="Export CSV"
           className="h-10 w-10 flex items-center justify-center rounded-full text-ink-faint hover:bg-paper hover:text-ink transition-colors"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" />
           </svg>
         </button>
-      )}
       <button
         onClick={() => setShowNewAppointment(true)}
         className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"

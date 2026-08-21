@@ -19,15 +19,6 @@ type Booking = {
   staff?: any;
 };
 
-type ExportRow = {
-  customer_name: string;
-  customer_email: string | null;
-  customer_phone: string | null;
-  start_time: string;
-  status: string;
-  service_name: string | null;
-};
-
 // One stat inside the Today strip - not its own bordered card. The strip
 // itself is the single card; each stat is just a labeled number with a
 // hairline divider between them, so three (or four, with Next
@@ -75,7 +66,6 @@ export default function AdminDashboardBody({
   businessId,
   services,
   maxAdvanceDays,
-  exportRows,
   all,
   todayBookings,
   todayCount,
@@ -91,7 +81,6 @@ export default function AdminDashboardBody({
   businessId: string;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
-  exportRows: ExportRow[];
   all: Booking[];
   todayBookings: Booking[];
   todayCount: number;
@@ -178,7 +167,6 @@ export default function AdminDashboardBody({
         </div>
         <DashboardHeaderActions
           slug={slug}
-          rows={exportRows}
           businessId={businessId}
           services={services}
           maxAdvanceDays={maxAdvanceDays}

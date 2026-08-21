@@ -5,6 +5,7 @@ import ConversationPanel from './ConversationPanel';
 import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
 import PillTabs from './PillTabs';
 import { parseContact } from '@/lib/contact';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Booking = {
   id: string;
@@ -77,8 +78,22 @@ export default function BookingsList({
   // the status pills because that is how it reads to a user: another way
   // to narrow the same list, not a separate screen to navigate to.
   const [filter, setFilter] = useState('all');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  // The range lives in the URL rather than component state, because the
+  // server query reads it. Changing a date re-runs the query against the
+  // database instead of filtering a list the browser already holds.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromDate = searchParams.get('from') ?? '';
+  const toDate = searchParams.get('to') ?? '';
+
+  function setRange(next: { from?: string; to?: string }) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(next)) {
+      if (v) params.set(k, v);
+      else params.delete(k);
+    }
+    router.replace(params.toString() ? `?${params.toString()}` : '?', { scroll: false });
+  }
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
   const now = new Date();
@@ -98,18 +113,10 @@ export default function BookingsList({
   // Past defaults to the last 7 days. Showing everything ever booked made
   // the recent few rows, which are the ones anyone actually wants, sit
   // under a growing pile of history. A date range opens the rest.
-  const rangeStart = fromDate ? new Date(`${fromDate}T00:00:00`) : null;
-  const rangeEnd = toDate ? new Date(`${toDate}T23:59:59`) : null;
-  const usingRange = Boolean(rangeStart || rangeEnd);
+  const usingRange = Boolean(fromDate || toDate);
 
-  const past = usingRange
-    ? allPast.filter((b) => {
-        const t = new Date(b.start_time).getTime();
-        if (rangeStart && t < rangeStart.getTime()) return false;
-        if (rangeEnd && t > rangeEnd.getTime()) return false;
-        return true;
-      })
-    : allPast.filter((b) => new Date(b.start_time).getTime() >= now.getTime() - 7 * 86400000);
+  // Already windowed by the server query, so nothing to narrow here.
+  const past = allPast;
 
   const scoped = isPast ? past : upcoming;
 
@@ -142,15 +149,12 @@ export default function BookingsList({
           onChange={(f) => {
             setFilter(f);
             // Leaving Past should not keep a range applied invisibly.
-            if (f !== 'past') {
-              setFromDate('');
-              setToDate('');
-            }
+            if (f !== 'past') setRange({ from: '', to: '' });
           }}
           options={[
             { key: 'all', label: 'All', count: upcoming.length },
             ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s], count: counts[s] })),
-            { key: 'past', label: 'Past', count: allPast.length },
+            { key: 'past', label: 'Past' },
           ]}
         />
       </div>
@@ -166,7 +170,7 @@ export default function BookingsList({
               type="date"
               value={fromDate}
               max={toDate || undefined}
-              onChange={(e) => setFromDate(e.target.value)}
+              onChange={(e) => setRange({ from: e.target.value })}
               className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
             />
           </div>
@@ -179,17 +183,14 @@ export default function BookingsList({
               type="date"
               value={toDate}
               min={fromDate || undefined}
-              onChange={(e) => setToDate(e.target.value)}
+              onChange={(e) => setRange({ to: e.target.value })}
               className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
             />
           </div>
           {usingRange ? (
             <button
               type="button"
-              onClick={() => {
-                setFromDate('');
-                setToDate('');
-              }}
+              onClick={() => setRange({ from: '', to: '' })}
               className="px-3.5 py-2 min-h-[40px] rounded-lg text-caption font-semibold transition-colors hover:bg-surface"
               style={{ color: 'var(--accent)' }}
             >

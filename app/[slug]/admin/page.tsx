@@ -3,7 +3,6 @@ import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import AdminDashboardBody from '@/components/AdminDashboardBody';
-import { formatContactForExport } from '@/lib/contact';
 import { todayInTimezone, zonedTimeToUtc } from '@/lib/timezone';
 
 // Server-side only: bookings contain customer PII, so this uses the service
@@ -25,20 +24,44 @@ export async function generateMetadata({
 
 export default async function AdminDashboard({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const { slug } = await params;
+  const { from, to } = await searchParams;
   const { business } = await requireStaffSession(slug);
 
-  const [{ data: bookings }, { data: bookableServices }, { data: rules }] =
+  // The page used to load every booking a business had ever taken, then
+  // throw most of it away in the browser. That is fine at a few dozen and
+  // painful at a few thousand, and it grows with every booking they take.
+  //
+  // Two bounded windows instead. `windowStart` reaches back far enough to
+  // cover last week, which is the earliest data any stat on this page
+  // needs, and everything upcoming comes along with it. The past list is
+  // its own range, defaulting to the last 7 days.
+  const BOOKING_COLUMNS =
+    'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes), staff(name)';
+
+  const nowMs = Date.now();
+  const pastFrom = from ? new Date(`${from}T00:00:00`) : new Date(nowMs - 7 * 86400000);
+  const pastTo = to ? new Date(`${to}T23:59:59`) : new Date(nowMs);
+
+  const [{ data: recent }, { data: pastRows }, { data: bookableServices }, { data: rules }] =
     await Promise.all([
       supabaseAdmin
         .from('bookings')
-        .select(
-          'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes), staff(name)'
-        )
+        .select(BOOKING_COLUMNS)
         .eq('business_id', business.id)
+        .gte('start_time', new Date(nowMs - 14 * 86400000).toISOString())
+        .order('start_time', { ascending: true }),
+      supabaseAdmin
+        .from('bookings')
+        .select(BOOKING_COLUMNS)
+        .eq('business_id', business.id)
+        .gte('start_time', pastFrom.toISOString())
+        .lte('start_time', pastTo.toISOString())
         .order('start_time', { ascending: true }),
       // For the "New appointment" modal - staff picking a service to book a
       // walk-in/phone customer into, same set a customer would see.
@@ -55,7 +78,18 @@ export default async function AdminDashboard({
         .maybeSingle(),
     ]);
 
-  const all = bookings ?? [];
+  // One list for the table, deduped: the two windows overlap by design, so
+  // a booking from the last few days appears in both.
+  const seen = new Set<string>();
+  const all = [...(recent ?? []), ...(pastRows ?? [])]
+    .filter((b: any) => {
+      if (seen.has(b.id)) return false;
+      seen.add(b.id);
+      return true;
+    })
+    // Each query returns sorted, but concatenating two sorted lists does
+    // not. nextSlot takes the first upcoming row it finds, so order matters.
+    .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
   const now = new Date();
   // "Today"/"this week" boundaries in the business's own timezone, not the
   // server's - otherwise a business in Lagos gets its stats flipping over
@@ -92,14 +126,6 @@ export default async function AdminDashboard({
     prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : null;
   const nextSlot = active.find((b) => new Date(b.start_time) >= now);
 
-  const exportRows = all.map((b: any) => ({
-    customer_name: b.customer_name,
-    customer_email: b.customer_email,
-    customer_phone: formatContactForExport(b.customer_phone, b.customer_telegram_username),
-    start_time: b.start_time,
-    status: b.status,
-    service_name: b.services?.name ?? null,
-  }));
 
   return (
     <AdminDashboardBody
@@ -108,7 +134,6 @@ export default async function AdminDashboard({
       businessId={business.id}
       services={bookableServices ?? []}
       maxAdvanceDays={rules?.max_advance_days ?? 30}
-      exportRows={exportRows}
       all={all}
       todayBookings={todayBookings}
       todayCount={todayCount}
