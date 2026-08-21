@@ -11,12 +11,15 @@ import { MONTHLY_PRICE_NGN } from '@/lib/subscription';
 const DEMO_SLUG = 'glow-salon';
 
 export const metadata: Metadata = {
-  title: 'An AI receptionist for appointment businesses',
+  // The root layout uses `template: '%s'`, so a page title replaces the
+  // brand entirely rather than appending it — the homepage was therefore
+  // rendering with no brand name in the tab or in search results at all.
+  title: 'Vanova | An AI receptionist for appointment businesses',
   description:
     'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram today, WhatsApp and Messenger coming soon. Every booking lands on one dashboard. 14 days free.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'An AI receptionist for appointment businesses',
+    title: 'Vanova | An AI receptionist for appointment businesses',
     description:
       'Your customers ask for a time, the AI books it. Every channel, one dashboard. 14 days free.',
     url: SITE_URL,
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
 const homepageJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'LD Solutions',
+  name: 'Vanova',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   url: SITE_URL,
@@ -164,9 +167,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-              <span className="text-white text-[11px] font-bold">LD</span>
+              <span className="text-white text-[13px] font-bold">V</span>
             </div>
-            <span className="text-[14px] font-semibold text-ink tracking-tight">LD Solutions</span>
+            <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#how-it-works" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
@@ -440,9 +443,9 @@ export default function LandingPage() {
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                  <span className="text-white text-[11px] font-bold">LD</span>
+                  <span className="text-white text-[13px] font-bold">V</span>
                 </div>
-                <span className="text-[14px] font-semibold text-ink tracking-tight">LD Solutions</span>
+                <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
               </div>
               <p className="text-[13px] text-ink-soft leading-relaxed">
                 An AI receptionist for appointment businesses. Your customers ask, it books.
@@ -466,7 +469,7 @@ export default function LandingPage() {
 
           <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="font-mono text-[11px] text-ink-faint">
-              © {new Date().getFullYear()} LD Solutions. All rights reserved.
+              © {new Date().getFullYear()} Vanova Hub. All rights reserved.
             </p>
             <p className="font-mono text-[11px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
           </div>

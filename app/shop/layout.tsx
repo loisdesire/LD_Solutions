@@ -9,7 +9,7 @@ import type { Metadata } from 'next';
 // shop.ldsolutions.com into this /shop path prefix, so nothing here needs to
 // change when that happens — this is already the right shape for that.
 export const metadata: Metadata = {
-  title: 'LD Solutions — Shop',
+  title: 'Vanova — Shop',
 };
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {

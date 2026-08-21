@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendTelegramMessage, sendWhatsappMessage, sendMessengerMessage } from './channelSend';
 import { sendEmail } from './email';
+import { renderEmail } from './emailTemplate';
 import { parseContact } from './contact';
 
 const supabaseAdmin = createClient(
@@ -20,6 +21,11 @@ export type NotifyBusinessCreds = {
   whatsapp_access_token: string | null;
   whatsapp_phone_number_id: string | null;
   messenger_access_token: string | null;
+  // Optional so existing callers that only pass credentials still compile;
+  // the email falls back to unbranded-but-correct when they're absent.
+  name?: string | null;
+  accent_color?: string | null;
+  logo_url?: string | null;
 };
 
 export type NotifyCustomerContact = {
@@ -57,7 +63,24 @@ export async function notifyCustomer(
   if (customer.customer_email) {
     // sendEmail already no-ops (returns false) when RESEND_API_KEY isn't
     // configured, so this can be called unconditionally.
-    return sendEmail({ to: customer.customer_email, subject: emailSubject, html: `<p>${text}</p>` }, logContext, meta);
+    // The bot channels take plain text; email gets the same words wrapped
+    // in the shared branded template rather than a bare <p>.
+    return sendEmail(
+      {
+        to: customer.customer_email,
+        subject: emailSubject,
+        html: renderEmail({
+          businessName: business.name ?? emailSubject,
+          accentColor: business.accent_color,
+          logoUrl: business.logo_url,
+          preheader: text.slice(0, 140),
+          heading: emailSubject,
+          intro: text,
+        }),
+      },
+      logContext,
+      meta
+    );
   }
   return false;
 }
@@ -75,18 +98,20 @@ export async function notifyCustomer(
 export async function getNotifyCreds(businessId: string): Promise<NotifyBusinessCreds & { name: string | null }> {
   const { data, error } = await supabaseAdmin
     .from('businesses')
-    .select('name, telegram_bot_token, whatsapp_access_token, whatsapp_phone_number_id, messenger_access_token')
+    .select('name, accent_color, logo_url, telegram_bot_token, whatsapp_access_token, whatsapp_phone_number_id, messenger_access_token')
     .eq('id', businessId)
     .maybeSingle();
 
   if (error?.code === '42703') {
     const fallback = await supabaseAdmin
       .from('businesses')
-      .select('name, telegram_bot_token, messenger_access_token')
+      .select('name, accent_color, logo_url, telegram_bot_token, messenger_access_token')
       .eq('id', businessId)
       .maybeSingle();
     return {
       name: fallback.data?.name ?? null,
+      accent_color: fallback.data?.accent_color ?? null,
+      logo_url: fallback.data?.logo_url ?? null,
       telegram_bot_token: fallback.data?.telegram_bot_token ?? null,
       messenger_access_token: fallback.data?.messenger_access_token ?? null,
       whatsapp_access_token: null,
@@ -97,6 +122,8 @@ export async function getNotifyCreds(businessId: string): Promise<NotifyBusiness
   return (
     data ?? {
       name: null,
+      accent_color: null,
+      logo_url: null,
       telegram_bot_token: null,
       whatsapp_access_token: null,
       whatsapp_phone_number_id: null,

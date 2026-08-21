@@ -1,9 +1,16 @@
 import { logError } from './logger';
 
-// Resend's shared test sender — works without domain verification, but
-// restricts delivery to the Resend account's own verified email until a
-// real domain is verified. Swap for bookings@<yourdomain> once one exists.
-const FROM_ADDRESS = 'onboarding@resend.dev';
+// Set RESEND_FROM to a verified sender (e.g. bookings@vanovahub.com) once
+// the domain is verified in Resend. Until then this falls back to Resend's
+// shared test sender, which needs no verification but only ever delivers to
+// the Resend account's own address — so real customers get nothing.
+//
+// Deliberately env-driven rather than hardcoded to the real domain:
+// Resend rejects a From on an unverified domain outright, so hardcoding it
+// ahead of verification would silently break EVERY email the product sends
+// (booking confirmations, reminders, reschedule notices) with no code path
+// left to fall back on.
+const FROM_ADDRESS = process.env.RESEND_FROM || 'onboarding@resend.dev';
 
 // A rejected send (bad address, restricted recipient, rate limit) comes
 // back from Resend as a normal non-2xx response, not a thrown exception —

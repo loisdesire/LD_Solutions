@@ -13,7 +13,7 @@ const PLATFORM_HOSTNAME = (() => {
   try {
     return new URL(SITE_URL).hostname;
   } catch {
-    return 'ld-solutions.vercel.app';
+    return 'vanovahub.com';
   }
 })();
 

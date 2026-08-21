@@ -24,7 +24,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'LD Solutions | AI booking receptionist for appointment businesses',
+    default: 'Vanova | AI booking receptionist for appointment businesses',
     template: '%s',
   },
   description:
@@ -37,20 +37,20 @@ export const metadata: Metadata = {
     'real-time appointment scheduling',
     'customer booking automation',
   ],
-  applicationName: 'LD Solutions',
+  applicationName: 'Vanova',
   category: 'business',
   alternates: { canonical: SITE_URL },
   openGraph: {
-    title: 'LD Solutions | Your AI booking receptionist',
+    title: 'Vanova | Your AI booking receptionist',
     description:
       'Let customers ask for an appointment, check real availability, and book without the back-and-forth.',
     url: SITE_URL,
-    siteName: 'LD Solutions',
+    siteName: 'Vanova',
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'LD Solutions | Your AI booking receptionist',
+    title: 'Vanova | Your AI booking receptionist',
     description:
       'Appointment booking that answers customers, checks real availability, and confirms the booking.',
   },

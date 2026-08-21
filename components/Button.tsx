@@ -35,28 +35,42 @@ type ButtonProps =
   | (CommonProps & { href?: undefined } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'>);
 
 export default function Button(props: ButtonProps) {
-  const { variant = 'primary', size = 'md', className = '', children } = props;
-  const classes = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all ${VARIANTS[variant]} ${SIZES[size]} ${className}`.trim();
+  // variant/size/className/children MUST be pulled out in the same
+  // destructure that builds `rest`. Reading them into consts separately
+  // (an earlier version of this file) leaves them in `rest`, and then
+  // {...rest} spread onto the element both overrode the computed
+  // className — silently rendering every Button that passed a className
+  // as unstyled plain text — and leaked `variant` onto the DOM as an
+  // invalid HTML attribute.
+  const { variant = 'primary', size = 'md', className = '', children, ...rest } = props;
 
-  if ('href' in props && props.href) {
-    const { href, external, ...rest } = props as CommonProps & { href: string; external?: boolean };
+  const classes =
+    `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all ${VARIANTS[variant]} ${SIZES[size]} ${className}`.trim();
+
+  if ('href' in rest && rest.href) {
+    const { href, external, ...anchorProps } = rest as {
+      href: string;
+      external?: boolean;
+    } & AnchorHTMLAttributes<HTMLAnchorElement>;
+
+    // className is passed after the spread as a second guard, so a stray
+    // className surviving in the rest props can never clobber it again.
     if (external) {
       return (
-        <a href={href} className={classes} {...(rest as AnchorHTMLAttributes<HTMLAnchorElement>)}>
+        <a {...anchorProps} href={href} className={classes}>
           {children}
         </a>
       );
     }
     return (
-      <Link href={href} className={classes} {...(rest as AnchorHTMLAttributes<HTMLAnchorElement>)}>
+      <Link {...anchorProps} href={href} className={classes}>
         {children}
       </Link>
     );
   }
 
-  const { ...rest } = props as CommonProps & ButtonHTMLAttributes<HTMLButtonElement>;
   return (
-    <button className={classes} {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}>
+    <button {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)} className={classes}>
       {children}
     </button>
   );

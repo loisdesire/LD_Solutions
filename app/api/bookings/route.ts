@@ -6,6 +6,8 @@ import { logError } from '@/lib/logger';
 import { sendEmail } from '@/lib/email';
 import { canAcceptBookings } from '@/lib/subscription-server';
 import { verifyPaystackTransaction } from '@/lib/paystack';
+import { renderEmail } from '@/lib/emailTemplate';
+import { SITE_URL } from '@/lib/site';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`
@@ -57,8 +59,8 @@ export async function POST(req: NextRequest) {
       .select('webhook_url, max_advance_days, require_payment, deposit_percentage')
       .eq('business_id', businessId)
       .maybeSingle(),
-    supabaseAdmin.from('businesses').select('timezone, paystack_secret_key').eq('id', businessId).single(),
-    supabaseAdmin.from('services').select('price').eq('id', serviceId).maybeSingle(),
+    supabaseAdmin.from('businesses').select('timezone, paystack_secret_key, name, accent_color, logo_url, slug').eq('id', businessId).single(),
+    supabaseAdmin.from('services').select('price, name').eq('id', serviceId).maybeSingle(),
   ]);
 
   // A Postgres select fails as one unit if ANY selected column is
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
     if (fallback.data) rules = { ...fallback.data, require_payment: false, deposit_percentage: null };
   }
   if (business === null) {
-    const fallback = await supabaseAdmin.from('businesses').select('timezone').eq('id', businessId).single();
+    const fallback = await supabaseAdmin.from('businesses').select('timezone, name, accent_color, logo_url, slug').eq('id', businessId).single();
     if (fallback.data) business = { ...fallback.data, paystack_secret_key: null };
   }
 
@@ -181,14 +183,32 @@ export async function POST(req: NextRequest) {
   // time could show a different hour in the email if the server (e.g. a
   // US-region Vercel deploy) runs in a different zone.
   if (customerEmail) {
-    const paidLine = amountPaid
-      ? `<p>We received your payment of ₦${amountPaid.toLocaleString()}.</p>`
-      : '';
+    const whenLabel = start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' });
+    const bizName = business?.name ?? 'Your appointment';
+
+    const rows = [
+      { label: 'Service', value: service?.name ?? 'Appointment' },
+      { label: 'When', value: whenLabel },
+    ];
+    if (amountPaid) rows.push({ label: 'Paid', value: `₦${amountPaid.toLocaleString()}` });
+
     await sendEmail(
       {
         to: customerEmail,
-        subject: 'Your appointment is confirmed',
-        html: `<p>Hi ${customerName}, your appointment is confirmed for ${start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' })}.</p>${paidLine}`,
+        subject: `Your ${bizName} appointment is confirmed`,
+        html: renderEmail({
+          businessName: bizName,
+          accentColor: business?.accent_color,
+          logoUrl: business?.logo_url,
+          preheader: `${service?.name ?? 'Your appointment'} — ${whenLabel}`,
+          heading: "You're booked",
+          intro: `Hi ${customerName}, your appointment is confirmed. Here are the details.`,
+          rows,
+          cta: business?.slug
+            ? { label: 'Manage this booking', url: `${SITE_URL}/${business.slug}/manage/${booking.id}` }
+            : null,
+          footerNote: 'Need to reschedule or cancel? Use the link above.',
+        }),
       },
       'api/bookings:confirmation-email',
       { businessId }
