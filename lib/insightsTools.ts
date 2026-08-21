@@ -308,9 +308,25 @@ export async function getInactiveCustomers(businessId: string, args: { days?: nu
 // "the same length period right before this one") itself, which is
 // exactly the kind of thing worth not trusting an LLM to get right twice
 // in a row.
-export async function compareRevenuePeriods(businessId: string, args: { from: string; to: string }) {
-  const from = new Date(args.from);
-  const to = new Date(args.to);
+export async function compareRevenuePeriods(
+  businessId: string,
+  args: { from?: string; to?: string } = {}
+) {
+  // "How am I doing this month vs last?" is the overwhelmingly common form
+  // of this question, so it's the default rather than an error. Previously
+  // a call with no arguments (or an unparseable date) reached
+  // .toISOString() on an Invalid Date and threw, which — before agentLoop
+  // caught tool errors — 500'd the whole conversation.
+  const now = new Date();
+  const to = args.to ? new Date(args.to) : now;
+  const from = args.from
+    ? new Date(args.from)
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    return { error: 'Those dates could not be understood. Use ISO format, e.g. 2026-08-01.' };
+  }
+
   const lengthMs = to.getTime() - from.getTime();
   if (lengthMs <= 0) return { error: 'to must be after from.' };
 
@@ -318,7 +334,7 @@ export async function compareRevenuePeriods(businessId: string, args: { from: st
   const prevFrom = new Date(from.getTime() - lengthMs);
 
   const [current, previous] = await Promise.all([
-    fetchBookings(businessId, args.from, args.to),
+    fetchBookings(businessId, from.toISOString(), to.toISOString()),
     fetchBookings(businessId, prevFrom.toISOString(), prevTo.toISOString()),
   ]);
 
@@ -329,7 +345,7 @@ export async function compareRevenuePeriods(businessId: string, args: { from: st
     previousRevenue > 0 ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 1000) / 10 : null;
 
   return {
-    current_period: { from: args.from, to: args.to, revenue: currentRevenue, bookings: current.length },
+    current_period: { from: from.toISOString(), to: to.toISOString(), revenue: currentRevenue, bookings: current.length },
     previous_period: { from: prevFrom.toISOString(), to: prevTo.toISOString(), revenue: previousRevenue, bookings: previous.length },
     pct_change: pctChange,
   };

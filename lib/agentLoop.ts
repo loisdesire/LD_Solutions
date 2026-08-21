@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logError } from './logger';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -69,7 +70,18 @@ export async function runToolAgent(params: {
       } catch {
         args = {};
       }
-      const result = await executeTool(toolCall.function.name, args);
+      // A tool that throws used to take the entire request down with it —
+      // executeTool was awaited unguarded, so one bad date string became a
+      // 500 for the user instead of a sentence from the assistant. Hand the
+      // failure back to the model as a tool result: it can apologise or try
+      // a different call, which is always better than the whole turn dying.
+      let result: unknown;
+      try {
+        result = await executeTool(toolCall.function.name, args);
+      } catch (err) {
+        logError('agentLoop:executeTool', err, { tool: toolCall.function.name });
+        result = { error: 'That lookup failed. Tell the user you could not retrieve it right now, and do not retry the same call.' };
+      }
       conversation.push({
         role: 'tool',
         tool_call_id: toolCall.id,

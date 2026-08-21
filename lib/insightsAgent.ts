@@ -138,10 +138,12 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: {
         type: 'object',
         properties: {
-          from: { type: 'string', description: 'ISO date/time, start of the period to check.' },
-          to: { type: 'string', description: 'ISO date/time, end of the period to check.' },
+          from: { type: 'string', description: 'Optional ISO date/time, start of the period. Omit for the current month.' },
+          to: { type: 'string', description: 'Optional ISO date/time, end of the period. Omit for now.' },
         },
-        required: ['from', 'to'],
+        // from/to are optional: omitted means this month vs last month, the
+        // common case, handled inside the tool.
+
       },
     },
   },
@@ -176,7 +178,12 @@ async function executeTool(name: string, args: Record<string, unknown>, business
     case 'get_inactive_customers':
       return getInactiveCustomers(businessId, { days: args.days as number | undefined, limit: args.limit as number | undefined });
     case 'compare_revenue_periods':
-      return compareRevenuePeriods(businessId, { from: String(args.from), to: String(args.to) });
+      // Not String(args.from): String(undefined) is the literal "undefined",
+      // which is truthy and would defeat the tool's own defaulting.
+      return compareRevenuePeriods(businessId, {
+        from: args.from ? String(args.from) : undefined,
+        to: args.to ? String(args.to) : undefined,
+      });
     case 'get_billing_status':
       return getBillingStatus(businessId);
     default:
