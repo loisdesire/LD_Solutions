@@ -110,8 +110,11 @@ export default function AdminDashboardBody({
   nextSlot: Booking | undefined;
 }) {
   const [search, setSearch] = useState('');
-  const [now, setNow] = useState<number | null>(null);
 
+  // Starts null so the server-rendered markup and the first client render
+  // match exactly (a stale server-time "in 45m" badge, or a hydration
+  // mismatch) — fills in a tick after mount, then stays current.
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 60000);
@@ -122,7 +125,7 @@ export default function AdminDashboardBody({
     nextSlot && now !== null ? Math.round((new Date(nextSlot.start_time).getTime() - now) / 60000) : null;
   const nextSlotLabel =
     nextSlot == null
-      ? 'No more today'
+      ? '—'
       : minutesUntilNext !== null && minutesUntilNext >= 0 && minutesUntilNext <= 180
         ? minutesUntilNext < 60
           ? `In ${Math.max(minutesUntilNext, 1)}m`
@@ -130,147 +133,125 @@ export default function AdminDashboardBody({
         : new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      {/* Header & Quick Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
-        <div>
-          <div className="text-[12px] font-mono text-accent uppercase tracking-widest font-semibold mb-1">
-            Digital Front Desk · Live
-          </div>
-          <h1 className="font-display text-[26px] font-bold text-ink tracking-tight">
-            Good morning
-          </h1>
-          <p className="text-[13.5px] text-ink-soft">
-            Here is your schedule breakdown and current front-desk activity.
-          </p>
-        </div>
+    <div>
+      <div className="mb-6">
+        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">Manage</div>
+        <h1 className="font-display text-h1 text-ink">Dashboard</h1>
+      </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-surface border border-line rounded-xl px-3.5 py-2 w-full md:w-72 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-all">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search appointments or customers…"
-              className="bg-transparent border-none outline-none text-[13px] text-ink placeholder-ink-faint w-full"
-            />
-          </div>
-          <DashboardHeaderActions
-            slug={slug}
-            rows={exportRows}
-            businessId={businessId}
-            services={services}
-            maxAdvanceDays={maxAdvanceDays}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 w-full sm:w-96 transition-colors focus-within:border-[var(--accent)]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customers or bookings…"
+            className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
           />
         </div>
+        <DashboardHeaderActions
+          slug={slug}
+          rows={exportRows}
+          businessId={businessId}
+          services={services}
+          maxAdvanceDays={maxAdvanceDays}
+        />
       </div>
 
-      {/* Compact Overview Summary Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-surface border border-line shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 bottom-0 w-1 bg-accent" />
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-faint mb-1">Today's Appointments</div>
-          <div className="font-display text-[26px] font-bold text-ink">{todayCount}</div>
-          <div className="text-[12px] text-ink-soft mt-1 truncate">
-            {todayCount > 0 ? `${todayBookings.filter(b => b.status === 'confirmed').length} confirmed` : 'No bookings today'}
+      {all.length > 0 && (
+        <div className="rounded-2xl bg-warm-surface px-5 py-5 mb-8">
+          <div className="flex flex-wrap gap-x-8 gap-y-5">
+            <TodayStat
+              label="Next up"
+              value={nextSlotLabel}
+              sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
+              color="var(--accent)"
+              emphasis
+            />
+            <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
+            <TodayStat label="Today's revenue" value={todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '—'} />
+            <TodayStat
+              label="This week"
+              value={String(thisWeekCount)}
+              sub={
+                weekRevenue
+                  ? `₦${weekRevenue.toLocaleString()}${revenuePctDelta ? ` (${revenuePctDelta > 0 ? '+' : ''}${revenuePctDelta}%)` : ''}`
+                  : weekCountDelta !== 0
+                    ? `${weekCountDelta > 0 ? '+' : ''}${weekCountDelta} vs last week`
+                    : undefined
+              }
+            />
           </div>
         </div>
+      )}
 
-        <div className="p-4 rounded-xl bg-surface border border-line shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-faint mb-1">Next Appointment</div>
-          <div className="font-display text-[22px] font-bold text-accent truncate">{nextSlotLabel}</div>
-          <div className="text-[12px] text-ink-soft mt-1 truncate">
-            {nextSlot ? `${nextSlot.customer_name} (${(nextSlot as any).services?.name ?? 'Booking'})` : 'Schedule clear'}
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface border border-line shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-faint mb-1">Today's Revenue</div>
-          <div className="font-display text-[26px] font-bold text-ink">
-            {todayRevenue ? `₦${todayRevenue.toLocaleString()}` : '₦0'}
-          </div>
-          <div className="text-[12px] text-ink-soft mt-1">Confirmed earnings</div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface border border-line shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-faint mb-1">This Week</div>
-          <div className="font-display text-[26px] font-bold text-ink">{thisWeekCount}</div>
-          <div className="text-[12px] text-ink-soft mt-1 truncate">
-            {weekRevenue ? `₦${weekRevenue.toLocaleString()}` : 'Booked appointments'}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Layout: Priority Schedule & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
-        {/* Priority: TODAY'S SCHEDULE */}
-        <div className="bg-surface rounded-2xl border border-line p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5 pb-4 border-b border-line">
-            <div>
-              <h2 className="font-display text-[18px] font-bold text-ink">Today's Schedule</h2>
-              <p className="text-[12.5px] text-ink-soft">Chronological list of all appointments for today</p>
-            </div>
-            <span className="px-3 py-1 rounded-full bg-accent-soft text-accent text-[12px] font-semibold font-mono">
-              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-            </span>
-          </div>
-
-          {todayBookings.length > 0 ? (
-            <div className="divide-y divide-line">
-              {todayBookings
-                .slice()
-                .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-                .map((b) => (
-                  <div key={b.id} className="py-4 flex items-center justify-between gap-4 hover:bg-surface-warm/50 transition-colors rounded-lg px-2">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="text-center shrink-0 min-w-[70px]">
-                        <span className="font-mono text-[14px] font-bold text-accent block">
-                          {new Date(b.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                        </span>
-                        <span className="text-[10px] font-mono text-ink-faint uppercase">
-                          {(b as any).services?.duration_minutes ? `${(b as any).services.duration_minutes}m` : '30m'}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-[14.5px] text-ink truncate">{b.customer_name}</p>
-                        <p className="text-[12.5px] text-ink-soft truncate">
-                          {(b as any).services?.name ?? 'Appointment'} · {b.customer_phone || b.customer_email || 'Direct customer'}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider ${statusStyle[b.status] ?? 'bg-surface-neutral text-ink-soft'}`}>
-                      {STATUS_LABELS[b.status] ?? b.status}
+      {/* Today's appointments used to only ever surface as a count in the
+          stat strip above — finding out WHAT they actually are meant
+          scanning the full upcoming list below. This scopes just today,
+          reusing bookings already fetched server-side (no new query). */}
+      {todayBookings.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-display text-[17px] text-ink mb-3">Today's schedule</h2>
+          <div className="border-t border-line">
+            {todayBookings
+              .slice()
+              .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+              .map((b) => (
+                <div key={b.id} className="flex items-center justify-between gap-4 py-3 border-b border-line">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <span className="font-mono text-[13px] text-accent shrink-0 w-[68px]">
+                      {new Date(b.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                    <span className="text-body-sm text-ink truncate">
+                      {b.customer_name}
+                      <span className="text-ink-faint"> · {(b as any).services?.name ?? 'Appointment'}</span>
                     </span>
                   </div>
-                ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center border-2 border-dashed border-line rounded-xl bg-surface-warm/30">
-              <p className="text-[14px] font-medium text-ink">No appointments scheduled for today</p>
-              <p className="text-[12.5px] text-ink-soft mt-1">Your AI receptionist is active and accepting bookings.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar Column: Upcoming & Quick Links */}
-        <div className="space-y-6">
-          <div className="bg-surface rounded-2xl border border-line p-5 shadow-sm">
-            <h3 className="font-display text-[15px] font-bold text-ink mb-3">All Appointments</h3>
-            <p className="text-[12px] text-ink-soft mb-4">Search, filter, or manage all customer bookings.</p>
-
-            {all.length === 0 ? (
-              <div className="p-6 text-center border border-dashed border-line rounded-xl">
-                <p className="text-[13px] text-ink-soft">No bookings in the system yet.</p>
-              </div>
-            ) : (
-              <BookingsList slug={slug} bookings={all} search={search} />
-            )}
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.04em] ${statusStyle[b.status] ?? 'bg-ink-wash text-ink-faint'}`}>
+                    {STATUS_LABELS[b.status] ?? b.status}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {all.length === 0 ? (
+        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
+            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h2 className="font-display text-[20px]">No bookings yet — that's normal</h2>
+          <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
+            The moment someone books through your page, they'll show up right here with all their
+            details.
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <Link
+              href={`/${slug}/admin/services`}
+              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+            >
+              Add a service
+            </Link>
+            <Link
+              href={`/${slug}/admin/hours`}
+              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+            >
+              Set your hours
+            </Link>
+          </div>
+          <div className="font-mono text-[10.5px] text-ink-faint mt-6 tracking-[0.05em]">/{slug}</div>
+        </div>
+      ) : (
+        <BookingsList slug={slug} bookings={all} search={search} />
+      )}
     </div>
   );
 }

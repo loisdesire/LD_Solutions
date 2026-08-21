@@ -14,14 +14,11 @@ export function friendlyError(err: unknown, fallback = 'Something went wrong. Pl
     typeof (err as { message: unknown }).message === 'string'
   ) {
     const message = (err as { message: string }).message.trim();
-    
-    if (message.toLowerCase().includes('failed to fetch')) {
-      return 'Unable to reach the login server. Please check your internet connection or verify your Supabase database is active.';
-    }
-
     // A real Supabase/API error message reads as a sentence. "{}" (or
     // similar) means something upstream serialized an empty object
-    // instead of a real error.
+    // instead of a real error — confirmed live: Supabase's SMTP relay
+    // failing produced exactly this, not a helpful string. Treat
+    // anything that's just JSON-object-shaped punctuation as no message.
     if (message && !/^[{}[\]\s]*$/.test(message)) {
       return message;
     }
