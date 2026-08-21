@@ -104,6 +104,7 @@ export default async function AdminDashboard({
   return (
     <AdminDashboardBody
       slug={slug}
+      businessName={business.name}
       businessId={business.id}
       services={bookableServices ?? []}
       maxAdvanceDays={rules?.max_advance_days ?? 30}

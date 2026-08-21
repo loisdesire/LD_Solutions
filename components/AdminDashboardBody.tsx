@@ -80,6 +80,7 @@ function TodayStat({
 
 export default function AdminDashboardBody({
   slug,
+  businessName,
   businessId,
   services,
   maxAdvanceDays,
@@ -95,6 +96,7 @@ export default function AdminDashboardBody({
   nextSlot,
 }: {
   slug: string;
+  businessName: string;
   businessId: string;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
@@ -132,11 +134,39 @@ export default function AdminDashboardBody({
           : `In ${Math.floor(minutesUntilNext / 60)}h ${minutesUntilNext % 60}m`
         : new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
+  const hour = now ? new Date(now).getHours() : null;
+  const greeting =
+    hour === null ? '' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  // One sentence instead of making them read four stat tiles to work out
+  // whether anything needs them today.
+  const nextIsToday =
+    nextSlot && new Date(nextSlot.start_time).toDateString() === new Date(now ?? Date.now()).toDateString();
+  const daySummary =
+    todayCount === 0
+      ? 'Nothing booked today. A good day to get ahead of things.'
+      : nextIsToday
+        ? `${todayCount} ${todayCount === 1 ? 'appointment' : 'appointments'} today. Next is ${nextSlot!.customer_name} at ${new Date(nextSlot!.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}.`
+        : `${todayCount} ${todayCount === 1 ? 'appointment' : 'appointments'} today, all done.`;
+
   return (
     <div>
+      {/* Was an eyebrow reading "Manage" over the word "Dashboard", which
+          tells the owner nothing they did not already know. A greeting, the
+          date, and one plain sentence about the day answers the question
+          they actually opened this page with. `now` is null until the
+          effect runs, so the server never renders a time-dependent
+          greeting and there is no hydration mismatch. */}
       <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">Manage</div>
-        <h1 className="font-display text-h1 text-ink">Dashboard</h1>
+        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+          {now
+            ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+            : 'Today'}
+        </div>
+        <h1 className="font-display text-h1 text-ink">
+          {now ? `${greeting}, ${businessName}` : businessName}
+        </h1>
+        <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
       </div>
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

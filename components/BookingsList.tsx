@@ -86,7 +86,9 @@ export default function BookingsList({
   bookings: Booking[];
   search?: string;
 }) {
-  const [scope, setScope] = useState<'upcoming' | 'past'>('upcoming');
+  // One filter, not a scope toggle plus a filter. "past" sits alongside
+  // the status pills because that is how it reads to a user: another way
+  // to narrow the same list, not a separate screen to navigate to.
   const [filter, setFilter] = useState('all');
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
@@ -99,19 +101,21 @@ export default function BookingsList({
   // date) is history. This was the actual bug: the list never filtered by
   // time at all, so a booking from 12 days ago just sat at the top under
   // an "Upcoming" label that had nothing to do with what was shown.
-  const scoped = bookings.filter((b) =>
-    scope === 'upcoming'
-      ? b.status !== 'cancelled' && new Date(b.start_time) >= now
-      : b.status === 'cancelled' || new Date(b.start_time) < now
-  );
+  const isPast = filter === 'past';
 
-  const counts = scoped.reduce<Record<string, number>>((acc, b) => {
+  const upcoming = bookings.filter((b) => b.status !== 'cancelled' && new Date(b.start_time) >= now);
+  const past = bookings.filter((b) => b.status === 'cancelled' || new Date(b.start_time) < now);
+  const scoped = isPast ? past : upcoming;
+
+  // Counts come from the upcoming list even while Past is selected, so the
+  // status pills do not renumber or vanish as you move between them.
+  const counts = upcoming.reduce<Record<string, number>>((acc, b) => {
     acc[b.status] = (acc[b.status] ?? 0) + 1;
     return acc;
   }, {});
 
   const visibleStatuses = Object.keys(STATUS_LABELS).filter((s) => counts[s] > 0);
-  const statusFiltered = filter === 'all' ? scoped : scoped.filter((b) => b.status === filter);
+  const statusFiltered = filter === 'all' || isPast ? scoped : scoped.filter((b) => b.status === filter);
   const query = search.trim().toLowerCase();
   const filtered = query
     ? statusFiltered.filter(
@@ -124,27 +128,16 @@ export default function BookingsList({
   return (
     <div>
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
-        <div className="flex items-center gap-2.5">
-          <h2 className="font-display text-[19px] font-semibold text-ink">
-            {scope === 'upcoming' ? 'Upcoming bookings' : 'Past bookings'}
-          </h2>
-          <button
-            onClick={() => {
-              setScope((s) => (s === 'upcoming' ? 'past' : 'upcoming'));
-              setFilter('all');
-            }}
-            className="text-caption font-medium hover:underline"
-            style={{ color: 'var(--accent)' }}
-          >
-            {scope === 'upcoming' ? 'View past →' : '← Back to upcoming'}
-          </button>
-        </div>
+        <h2 className="font-display text-[19px] font-semibold text-ink">
+          {isPast ? 'Past bookings' : 'Upcoming bookings'}
+        </h2>
         <PillTabs
           active={filter}
           onChange={setFilter}
           options={[
-            { key: 'all', label: 'All', count: scoped.length },
+            { key: 'all', label: 'All', count: upcoming.length },
             ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s], count: counts[s] })),
+            { key: 'past', label: 'Past', count: past.length },
           ]}
         />
       </div>
@@ -165,7 +158,7 @@ export default function BookingsList({
 
         {filtered.length === 0 ? (
           <div className="px-2 py-10 text-center text-body-sm text-ink-faint">
-            No {filter === 'all' ? scope : STATUS_LABELS[filter]?.toLowerCase()} bookings.
+            No {isPast ? 'past' : filter === 'all' ? 'upcoming' : STATUS_LABELS[filter]?.toLowerCase()} bookings.
           </div>
         ) : (
           filtered.map((b, i) => {
