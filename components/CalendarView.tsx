@@ -107,7 +107,11 @@ export default function CalendarView({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      {/* Sticks to the top of the scroll area. A week of bookings is taller
+          than the viewport, so reaching next week meant scrolling back up
+          past everything you had just read. The controls stay with you
+          instead. Sits under the admin mobile bar, which is z-40. */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-paper md:bg-warm-surface flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAnchor((a) => addDays(a, mode === 'week' ? -7 : -1))}
