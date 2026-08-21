@@ -134,43 +134,50 @@ export default function AdminDashboardBody({
 
   return (
     <div>
-      {/* Was an eyebrow reading "Manage" over the word "Dashboard", which
-          tells the owner nothing they did not already know. A greeting, the
-          date, and one plain sentence about the day answers the question
-          they actually opened this page with. `now` is null until the
-          effect runs, so the server never renders a time-dependent
-          greeting and there is no hydration mismatch. */}
-      <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          {now
-            ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-            : 'Today'}
+      {/* Two rows became one. The greeting sat alone above a row holding
+          only the search box and the action buttons, so the page spent
+          roughly 140px before any of the day's information. `now` is null
+          until the effect runs, so the server never renders a
+          time-dependent greeting and there is no hydration mismatch. */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+            {now
+              ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+              : 'Today'}
+          </div>
+          <h1 className="font-display text-h1 text-ink">
+            {now ? `${greeting}, ${businessName}` : businessName}
+          </h1>
+          <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
         </div>
-        <h1 className="font-display text-h1 text-ink">
-          {now ? `${greeting}, ${businessName}` : businessName}
-        </h1>
-        <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
-      </div>
 
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 w-full sm:w-96 transition-colors focus-within:border-[var(--accent)]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search customers or bookings…"
-            className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
+        <div className="flex items-center gap-3 shrink-0 lg:pt-1">
+          {/* Search only earns its place once there is enough to search
+              through. Below that it is a permanent empty box on a page
+              whose whole job is showing you a short list. */}
+          {all.length > 8 && (
+            <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 min-h-[44px] flex-1 lg:flex-none lg:w-64 transition-colors focus-within:border-[var(--accent)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" />
+              </svg>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search customers or bookings"
+                placeholder="Search"
+                className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
+              />
+            </div>
+          )}
+          <DashboardHeaderActions
+            slug={slug}
+            businessId={businessId}
+            services={services}
+            maxAdvanceDays={maxAdvanceDays}
           />
         </div>
-        <DashboardHeaderActions
-          slug={slug}
-          businessId={businessId}
-          services={services}
-          maxAdvanceDays={maxAdvanceDays}
-        />
       </div>
 
       {/* Sits on --warm-surface on desktop and --paper on mobile, so it
