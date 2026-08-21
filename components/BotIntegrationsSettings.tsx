@@ -25,34 +25,38 @@ export default function BotIntegrationsSettings({
 }) {
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="font-display text-[16px] text-ink mb-1">Connected channels</h3>
-        <p className="text-[12.5px] text-ink-faint">Connect the places where customers already message you.</p>
-      </div>
+      {/* The page header already says what this is; a second heading
+          underneath repeated it. */}
 
       {/* Website chat has no connect step - it is live on every public page
           the moment a business exists. Leaving it off this page made the
-          list read as "you have nothing connected" when in fact the most
-          reliable channel was already running. */}
-      <div className="flex items-center justify-between gap-4 rounded-2xl bg-warm-surface px-4 py-3.5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-[14px] font-semibold text-ink">Website chat</p>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-              <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-              Always on
-            </span>
-          </div>
-          <p className="text-[12.5px] text-ink-soft mt-0.5">
-            Live on your booking page already. Nothing to set up.
-          </p>
+          list read as "you have nothing connected" when the most reliable
+          channel was already running. Shaped exactly like the others, so it
+          reads as one of the channels rather than a notice about them. */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-[14px] font-semibold text-ink">Website chat</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+            Always on
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
+          <p className="text-body-sm text-ink-soft">Live on your booking page. Nothing to set up.</p>
+          <button
+            type="button"
+            disabled
+            className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg text-ink-faint cursor-default"
+          >
+            Set up
+          </button>
         </div>
       </div>
+      <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} />
+      <div className="border-t border-dashed border-line" />
       <TelegramSection slug={slug} initialUsername={initialTelegramUsername} />
       <div className="border-t border-dashed border-line" />
       <MessengerSection slug={slug} initialPageName={initialMessengerPageName} />
-      <div className="border-t border-dashed border-line" />
-      <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} />
     </div>
   );
 }
@@ -247,7 +251,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <p className="text-[14px] font-semibold text-ink">Telegram bot</p>
+        <p className="text-[14px] font-semibold text-ink">Telegram</p>
         {username && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -423,7 +427,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <p className="text-[14px] font-semibold text-ink">WhatsApp number</p>
+        <p className="text-[14px] font-semibold text-ink">WhatsApp</p>
         {number && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
