@@ -25,7 +25,7 @@ export default async function AdminLayout({
 
   return (
     <ToastProvider>
-      <div className="admin-root min-h-screen bg-warm-surface md:flex">
+      <div className="min-h-screen bg-warm-surface md:flex">
         <AdminSidebar
           slug={slug}
           businessName={business.name}

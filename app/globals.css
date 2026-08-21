@@ -200,29 +200,3 @@ textarea {
   }
 }
 
-/* ============================================
-   Admin palette
-   ============================================
-   The interface refresh cooled the global tokens: paper, warm-surface,
-   line and line-strong all moved greyer, and the accent shifted slightly.
-   That reads well on the marketing site and the public booking page, but
-   the dashboard is a working surface someone stares at all day, and the
-   warmer, higher-contrast set it had before is easier to sit with.
-
-   Scoped rather than reverted, so the refresh stays everywhere else. Same
-   approach as the .landing block above, which has always overridden these
-   tokens locally. */
-.admin-root {
-  --paper: #faf8f3;
-  --warm-surface: #f5efe4;
-  --cream-surface: #f3e8bc;
-  --ink: #202020;
-  --ink-soft: #6b6b6b;
-  --ink-faint: #9b9691;
-  --line: #ede6d9;
-  --line-strong: #ddd0bb;
-  --accent: #c4512d;
-  --accent-hover: #a8431f;
-  --accent-active: #8e3a1c;
-  --accent-soft: rgba(196, 81, 45, 0.1);
-}

@@ -185,8 +185,17 @@ export default function AdminDashboardBody({
         />
       </div>
 
+      {/* The interface refresh cooled --warm-surface from #f5efe4 to #f1eee8
+          and --line from #ede6d9 to #e7e2da. That suits the rest of the app,
+          but this strip is the first thing read every morning and the
+          warmer, slightly stronger-edged version holds together better as a
+          single panel. Hardcoded here rather than scoped to a class:
+          restyling the whole admin area changed far more than intended. */}
       {all.length > 0 && (
-        <div className="rounded-2xl bg-warm-surface px-5 py-5 mb-8">
+        <div
+          className="rounded-2xl px-5 py-5 mb-8 border"
+          style={{ background: '#f5efe4', borderColor: '#ede6d9' }}
+        >
           <div className="flex flex-wrap gap-x-8 gap-y-5">
             <TodayStat
               label="Next up"
