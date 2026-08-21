@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { runToolAgent, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { todayInTimezone } from './timezone';
-import { proposeReschedule, applyReschedule } from './rescheduleTools';
+import { proposeReschedule, proposeBookingMove, applyReschedule } from './rescheduleTools';
 
 // Third owner-facing agent alongside lib/insightsAgent.ts (read-only
 // analytics) and lib/whatsappAgent.ts (customer-facing booking) — all
@@ -34,6 +34,24 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
+      name: 'propose_booking_move',
+      description:
+        "Work out a new time for ONE named customer's upcoming booking, rather than everyone inside a time window. Use this when the owner names a person (\"move Ada to Monday\", \"push Chidi's appointment back\"). Read-only — moves nothing and messages nobody. If several upcoming bookings match the name it returns them for you to disambiguate instead of guessing.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string', description: 'Customer name, or part of it, as the owner said it' },
+          new_date: { type: 'string', description: 'Optional YYYY-MM-DD to move it to. Omit to use the next free slot.' },
+          new_time: { type: 'string', description: 'Optional 24-hour HH:MM, business local time. Only meaningful with new_date.' },
+          reason: { type: 'string', description: 'Optional, e.g. "double booked".' },
+        },
+        required: ['customer_name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'apply_reschedule',
       description:
         'Actually moves every booking in the plan you most recently proposed and messages the affected customers. Only call this after the owner has explicitly confirmed the plan you showed them in this conversation — never on your own judgment, never speculatively, never for a plan the owner has not seen. plan_id is optional: if you still have it from earlier in this exact conversation, pass it; if the confirmation came in a later message and you no longer have it (this chat only keeps plain text between turns, not the ID), omit it entirely — it automatically applies to this business\'s most recently proposed plan, so leaving it out is expected and fine, not a reason to avoid calling this.',
@@ -54,6 +72,13 @@ async function executeTool(name: string, args: Record<string, unknown>, business
         date: String(args.date),
         startTime: String(args.start_time),
         endTime: String(args.end_time),
+        reason: args.reason ? String(args.reason) : undefined,
+      });
+    case 'propose_booking_move':
+      return proposeBookingMove(businessId, {
+        customerName: String(args.customer_name),
+        newDate: args.new_date ? String(args.new_date) : undefined,
+        newTime: args.new_time ? String(args.new_time) : undefined,
         reason: args.reason ? String(args.reason) : undefined,
       });
     case 'apply_reschedule':
@@ -82,7 +107,14 @@ Today's date is ${today} (business timezone: ${timeZone}) — work out the actua
 propose_reschedule if the owner says something relative like "tomorrow" or "next Tuesday"; the tool only ever
 takes an explicit YYYY-MM-DD, never a relative phrase.
 
-You help with one thing: when they need to block off time (they're out sick, closing early, a public holiday, etc.),
+You handle two kinds of change, and the same confirm-before-acting rule covers both:
+
+A. Blocking off a stretch of time (out sick, closing early, a public holiday) — use propose_reschedule with the
+   date and start/end of the window.
+B. Moving ONE named person's appointment ("move Ada to Monday") — use propose_booking_move with their name. If it
+   comes back needing disambiguation, show the owner the matches and ask which one; never pick for them.
+
+For A: when they need to block off time (they're out sick, closing early, a public holiday, etc.),
 you find every booking that falls inside that window, work out a new time for each one, and — only once they've
 explicitly approved the plan — move those bookings and message the affected customers.
 

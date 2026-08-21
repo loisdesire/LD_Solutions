@@ -161,6 +161,130 @@ export async function proposeReschedule(
 // back and apply a long-abandoned one.
 const PENDING_PLAN_MAX_AGE_MS = 60 * 60_000;
 
+// Single-booking counterpart to proposeReschedule. Same output shape and
+// the same reschedule_plans row, so applyReschedule handles both without
+// knowing which built the plan — the only thing that differs is how the
+// moves get selected ("everyone in this window" vs "this one person").
+//
+// Deliberately returns candidates instead of guessing when a name matches
+// more than one upcoming booking: picking the wrong one moves a real
+// customer's appointment and messages them about it, which is not
+// something to resolve with a coin flip.
+export async function proposeBookingMove(
+  businessId: string,
+  args: { customerName: string; newDate?: string; newTime?: string; reason?: string }
+) {
+  const timeZone = await getBusinessTimezone(businessId);
+
+  const { data: matches } = await supabaseAdmin
+    .from('bookings')
+    .select(
+      'id, customer_name, customer_phone, customer_telegram_username, customer_email, start_time, end_time, service_id, services(name, duration_minutes)'
+    )
+    .eq('business_id', businessId)
+    .neq('status', 'cancelled')
+    .gte('start_time', new Date().toISOString())
+    .ilike('customer_name', `%${args.customerName}%`)
+    .order('start_time');
+
+  const found = matches ?? [];
+
+  if (found.length === 0) {
+    return { error: `No upcoming booking found for anyone matching "${args.customerName}". Check the spelling, or ask the owner which date it's on.` };
+  }
+
+  if (found.length > 1) {
+    return {
+      needs_disambiguation: true,
+      matches: found.map((b) => {
+        const svc = Array.isArray(b.services) ? b.services[0] : b.services;
+        return { customer: b.customer_name, service: svc?.name ?? 'appointment', when: formatLocalDateTime(b.start_time, timeZone) };
+      }),
+      instructions:
+        'More than one upcoming booking matches that name. Show these to the owner and ask which one they mean, ' +
+        'then call this tool again with the exact customer name. Do not guess.',
+    };
+  }
+
+  const booking = found[0];
+  const svc = Array.isArray(booking.services) ? booking.services[0] : booking.services;
+  const duration = svc?.duration_minutes ?? 30;
+
+  // Two modes: an explicit target time the owner named (which must be
+  // genuinely free), or "wherever it next fits" if they only said move it.
+  let newStart: string | null;
+  if (args.newDate && args.newTime) {
+    const wanted = zonedTimeToUtc(args.newDate, args.newTime, timeZone);
+    const slots = await getAvailableSlots(businessId, booking.service_id, args.newDate);
+    const isFree = slots.some((iso) => new Date(iso).getTime() === wanted.getTime());
+    if (!isFree) {
+      return {
+        error: `${formatLocalDateTime(wanted.toISOString(), timeZone)} isn't free for ${svc?.name ?? 'that service'}.`,
+        available_that_day: slots.slice(0, 8).map((iso) => formatLocalDateTime(iso, timeZone)),
+        instructions: 'Tell the owner that time is taken and offer the listed alternatives. Do not move anything.',
+      };
+    }
+    newStart = wanted.toISOString();
+  } else {
+    const after = args.newDate ? zonedTimeToUtc(args.newDate, '00:00', timeZone).toISOString() : booking.end_time;
+    newStart = await findNextAvailableSlot(businessId, booking.service_id, timeZone, after);
+  }
+
+  const move: Move = {
+    booking_id: booking.id,
+    customer_name: booking.customer_name,
+    customer_phone: booking.customer_phone,
+    customer_telegram_username: booking.customer_telegram_username,
+    customer_email: booking.customer_email,
+    service_id: booking.service_id,
+    service_name: svc?.name ?? 'appointment',
+    duration_minutes: duration,
+    old_start: booking.start_time,
+    old_when: formatLocalDateTime(booking.start_time, timeZone),
+    new_start: newStart,
+    new_when: newStart ? formatLocalDateTime(newStart, timeZone) : null,
+  };
+
+  // window_* describe the slot being vacated — for a single move that's
+  // just the booking's own time, which keeps the row shape identical to a
+  // window-based plan.
+  const { data: plan, error } = await supabaseAdmin
+    .from('reschedule_plans')
+    .insert({
+      business_id: businessId,
+      window_start: booking.start_time,
+      window_end: booking.end_time,
+      reason: args.reason ?? null,
+      moves: [move],
+      status: 'pending',
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST205') {
+      return { error: "The scheduling assistant isn't fully set up on this account yet. Ask the business to check back soon." };
+    }
+    return { error: error.message };
+  }
+
+  return {
+    plan_id: plan.id,
+    affected_bookings: 1,
+    moves: [
+      {
+        customer: move.customer_name,
+        service: move.service_name,
+        from: move.old_when,
+        to: move.new_when ?? 'No open slot found in the next 3 weeks — this one needs manual handling.',
+      },
+    ],
+    instructions:
+      'Show this to the owner and ask them to confirm before doing anything else. Only call apply_reschedule ' +
+      'once they have explicitly said yes.',
+  };
+}
+
 export async function applyReschedule(businessId: string, args: { planId?: string }) {
   let plan: any = null;
 
