@@ -138,8 +138,19 @@ textarea {
   font-family: var(--font-display), system-ui, -apple-system, sans-serif;
 }
 
+/* Monospace was dropped from the product. Against a geometric sans like
+   Outfit and Plus Jakarta, IBM Plex Mono in uppercase read as stiff and
+   technical rather than friendly, and it was a whole extra font file to
+   download on every page load.
+
+   The class name is kept so the ~173 existing usages did not all need
+   editing. It now means "the small label treatment" rather than
+   "monospaced". tabular-nums preserves the one thing monospace was
+   genuinely earning: times and amounts still line up in a column. */
 .font-mono {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* ============================================
@@ -187,4 +198,31 @@ textarea {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================
+   Admin palette
+   ============================================
+   The interface refresh cooled the global tokens: paper, warm-surface,
+   line and line-strong all moved greyer, and the accent shifted slightly.
+   That reads well on the marketing site and the public booking page, but
+   the dashboard is a working surface someone stares at all day, and the
+   warmer, higher-contrast set it had before is easier to sit with.
+
+   Scoped rather than reverted, so the refresh stays everywhere else. Same
+   approach as the .landing block above, which has always overridden these
+   tokens locally. */
+.admin-root {
+  --paper: #faf8f3;
+  --warm-surface: #f5efe4;
+  --cream-surface: #f3e8bc;
+  --ink: #202020;
+  --ink-soft: #6b6b6b;
+  --ink-faint: #9b9691;
+  --line: #ede6d9;
+  --line-strong: #ddd0bb;
+  --accent: #c4512d;
+  --accent-hover: #a8431f;
+  --accent-active: #8e3a1c;
+  --accent-soft: rgba(196, 81, 45, 0.1);
 }

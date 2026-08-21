@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
+import Toggle from './Toggle';
 
 // A grid of real photo uploads instead of a textarea where you paste
 // URLs blind and only find out something's broken when you check the
@@ -107,28 +108,6 @@ function GalleryUploader({
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleSelect} className="hidden" />
       {error && <p className="text-[12px] text-error mt-2">{error}</p>}
     </div>
-  );
-}
-
-function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!on)}
-      aria-pressed={on}
-      className="flex items-center gap-2 shrink-0"
-    >
-      <span
-        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-line-strong'}`}
-      >
-        <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-            on ? 'translate-x-[18px]' : 'translate-x-0.5'
-          }`}
-        />
-      </span>
-      <span className="text-[12px] font-medium text-ink-soft">{on ? `${label} on` : `${label} off`}</span>
-    </button>
   );
 }
 

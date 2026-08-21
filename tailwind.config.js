@@ -6,7 +6,10 @@ module.exports = {
       fontFamily: {
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        // --font-mono no longer exists: the product dropped monospace. Kept
+        // as an alias of the body face so the ~173 existing `font-mono`
+        // usages keep working and mean "small label", not "monospaced".
+        mono: ['var(--font-body)', 'system-ui', 'sans-serif'],
       },
       // Named steps for the sizes already in near-universal use across the
       // app as one-off arbitrary values (text-[13.5px], text-[11px], etc.)

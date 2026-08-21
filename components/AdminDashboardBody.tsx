@@ -63,11 +63,7 @@ function TodayStat({
       </div>
       <div className={`flex items-baseline gap-1.5 mt-1 ${emphasis ? 'max-w-[220px]' : ''}`}>
         {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
-        {delta && (
-          <span className="text-caption font-semibold shrink-0" style={{ color: delta.up ? 'var(--success)' : 'var(--error)' }}>
-            {delta.value}
-          </span>
-        )}
+        {delta && <span className="text-caption text-ink-faint shrink-0">{delta.value}</span>}
       </div>
     </div>
   );
@@ -269,13 +265,13 @@ export default function AdminDashboardBody({
           <div className="flex items-center justify-center gap-3 mt-6">
             <Link
               href={`/${slug}/admin/services`}
-              className="inline-flex items-center rounded-full border-2 border-line-strong px-5 py-2.5 min-h-[44px] text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Add a service
             </Link>
             <Link
               href={`/${slug}/admin/hours`}
-              className="inline-flex items-center rounded-full border-2 border-line-strong px-5 py-2.5 min-h-[44px] text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Set your hours
             </Link>
