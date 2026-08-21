@@ -69,11 +69,10 @@ export default function StaffManager({
     fetch('/api/staff/notify-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: data.email,
-        businessName,
-        inviteUrl: inviteUrl(data.token),
-      }),
+      // Only the token goes over the wire now. The recipient, the business
+      // name and the link are all resolved server-side, so none of them can
+      // be chosen by whoever calls the endpoint.
+      body: JSON.stringify({ slug, token: data.token }),
     }).catch(() => {});
   }
 
