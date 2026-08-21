@@ -6,7 +6,7 @@ import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
 import Button from '@/components/Button';
 import { SITE_URL } from '@/lib/site';
-import { MONTHLY_PRICE_NGN } from '@/lib/subscription';
+import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 
 const DEMO_SLUG = 'glow-salon';
 
@@ -37,9 +37,11 @@ const homepageJsonLd = {
   description:
     'An AI booking receptionist that answers customer questions, checks real availability, and books appointments for service businesses.',
   offers: {
-    '@type': 'Offer',
-    price: MONTHLY_PRICE_NGN,
+    '@type': 'AggregateOffer',
+    lowPrice: PLAN_PRICE_NGN.core,
+    highPrice: PLAN_PRICE_NGN.business_intelligence,
     priceCurrency: 'NGN',
+    offerCount: 2,
   },
   audience: {
     '@type': 'BusinessAudience',
@@ -132,13 +134,25 @@ const steps = [
   { title: 'You see it', description: 'The appointment lands on your dashboard automatically. You never touch it.' },
 ];
 
-const PLAN_INCLUDES = [
+// Mirrors what the code actually gates. hasBusinessIntelligence() guards
+// exactly two things — the /admin/insights panel and the customer bot's
+// get_popular_services tool — so everything else belongs in Core. Payments,
+// custom domains and the schedule assistant are deliberately NOT upsells.
+const CORE_INCLUDES = [
   'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
   'Unlimited bookings and services',
   'One dashboard for every appointment',
-  'Automatic email confirmations',
-  'Your own branded booking page',
+  'Automatic email confirmations and reminders',
+  'Take deposits and payments with Paystack',
+  'Your own branded booking page and custom domain',
   'Team accounts for your staff',
+];
+
+const BI_INCLUDES = [
+  'Ask your data anything: revenue, top customers, busiest hours',
+  'Spot cancellations, no-shows and customers drifting away',
+  'Compare this month to last, in plain language',
+  "Your AI tells customers what's actually popular, from real bookings",
 ];
 
 const businessTypes = [
@@ -383,33 +397,73 @@ export default function LandingPage() {
       <section id="pricing" className="border-t border-line">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
           <Reveal className="text-center mb-12">
-            <h2 className="font-display text-3xl text-ink mb-2">One price. Everything included.</h2>
-            <p className="text-[15px] text-ink-soft">No tiers to compare, no add-ons to figure out.</p>
+            <h2 className="font-display text-3xl text-ink mb-2">Two plans. Both start free.</h2>
+            <p className="text-[15px] text-ink-soft">
+              Everything you need to take bookings is in the first one. The second adds an AI that answers questions about your business.
+            </p>
           </Reveal>
-          <Reveal delay={80} className="max-w-md mx-auto">
-            <div className="rounded-3xl bg-surface border-2 border-line p-8 text-center">
-              <div className="font-display text-[44px] font-bold text-ink leading-none">
-                ₦{MONTHLY_PRICE_NGN.toLocaleString()}
-                <span className="text-[16px] font-normal text-ink-faint"> /month</span>
-              </div>
-              <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
 
-              <div className="text-left mt-8 space-y-3">
-                {PLAN_INCLUDES.map((item) => (
-                  <div key={item} className="flex items-start gap-2.5">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
-                      <path d="M5 12l4 4 10-10" />
-                    </svg>
-                    <span className="text-[13.5px] text-ink-soft">{item}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
+            <Reveal delay={80}>
+              <div className="rounded-3xl bg-surface border-2 border-line p-8 h-full flex flex-col">
+                <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint">
+                  {PLAN_LABEL.core}
+                </div>
+                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
+                  ₦{PLAN_PRICE_NGN.core.toLocaleString()}
+                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
+                </div>
+                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
 
-              <Button href="/signup" className="mt-8 w-full">
-                Start free for 14 days
-              </Button>
-            </div>
-          </Reveal>
+                <div className="text-left mt-7 space-y-3 flex-1">
+                  {CORE_INCLUDES.map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                        <path d="M5 12l4 4 10-10" />
+                      </svg>
+                      <span className="text-body-sm text-ink-soft">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button href="/signup" variant="outline" className="mt-8 w-full">
+                  Start free for 14 days
+                </Button>
+              </div>
+            </Reveal>
+            <Reveal delay={140}>
+              <div className="rounded-3xl bg-surface border-2 border-accent p-8 h-full flex flex-col">
+                <div className="font-mono text-label uppercase tracking-[0.14em] " style={{ color: 'var(--accent)' }}>
+                  {PLAN_LABEL.business_intelligence}
+                </div>
+                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
+                  ₦{PLAN_PRICE_NGN.business_intelligence.toLocaleString()}
+                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
+                </div>
+                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
+
+                <div className="text-left mt-7 space-y-3 flex-1">
+                  <p className="text-body-sm font-semibold text-ink">Everything in {PLAN_LABEL.core}, plus:</p>
+                  {BI_INCLUDES.map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                        <path d="M5 12l4 4 10-10" />
+                      </svg>
+                      <span className="text-body-sm text-ink-soft">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button href="/signup" className="mt-8 w-full">
+                  Start free for 14 days
+                </Button>
+              </div>
+            </Reveal>
+          </div>
+
+          <p className="text-center text-[13px] text-ink-faint mt-8">
+            Not sure? Start on {PLAN_LABEL.core} — you can change plan from your dashboard later.
+          </p>
         </div>
       </section>
 
