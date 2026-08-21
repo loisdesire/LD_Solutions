@@ -32,14 +32,6 @@ export type ToolContext = {
   customerUsername?: string;
 };
 
-export async function getBusinessByWhatsappNumber(whatsappNumber: string) {
-  const { data } = await supabaseAdmin
-    .from('businesses')
-    .select('id, name, timezone')
-    .eq('whatsapp_number', whatsappNumber)
-    .maybeSingle();
-  return data;
-}
 
 // Meta's Cloud API webhook is shared across every number registered to the
 // same App/WABA — unlike Telegram's per-bot URL, there's no per-business
