@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 
 const icons: Record<string, React.ReactNode> = {
@@ -95,6 +95,7 @@ export default function AdminSidebar({
   role: string;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
   // Products isn't part of the MVP - the page/route/data still work for
@@ -117,6 +118,16 @@ export default function AdminSidebar({
   const connect = [
     { href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels' },
   ];
+  // Settings has four unrelated areas behind one nav item, so landing there
+  // always meant a second choice on the page. They hang off the nav item
+  // instead: visible when you are in Settings, one click from anywhere.
+  const settingsSections = [
+    { key: 'profile', label: 'Business profile' },
+    { key: 'content', label: 'Website content' },
+    { key: 'rules', label: 'Booking rules and payments' },
+    { key: 'domain', label: 'Custom domain' },
+  ];
+
   const account = [
     { href: `/${slug}/admin/assistant`, label: 'Assistant', key: 'insights' },
     { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
@@ -190,7 +201,32 @@ export default function AdminSidebar({
       </div>
       <nav className="flex flex-col gap-0.5">
         {account.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+          <div key={tab.href}>
+            <NavLink href={tab.href} label={tab.label} iconKey={tab.key} />
+            {/* Only while you are actually in Settings. Showing four
+                sub-items permanently would make the sidebar look like it
+                has ten destinations instead of three. */}
+            {tab.key === 'settings' && pathname === tab.href && (
+              <div className="ml-[34px] mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
+                {settingsSections.map((sec) => {
+                  const on = (searchParams.get('section') ?? 'profile') === sec.key;
+                  return (
+                    <Link
+                      key={sec.key}
+                      href={`${tab.href}?section=${sec.key}`}
+                      aria-current={on ? 'page' : undefined}
+                      className={`rounded-lg px-2.5 py-2 text-caption transition-colors ${
+                        on ? 'font-semibold' : 'text-ink-soft hover:text-ink hover:bg-warm-surface'
+                      }`}
+                      style={on ? { color: 'var(--accent)' } : undefined}
+                    >
+                      {sec.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
 

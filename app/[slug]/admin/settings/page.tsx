@@ -7,10 +7,14 @@ import SettingsSections from '@/components/SettingsSections';
 
 export default async function SettingsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ section?: string }>;
 }) {
   const { slug } = await params;
+  // Which section to show is decided by the sidebar, via the URL.
+  const { section } = await searchParams;
   const { business, supabase } = await requireStaffSession(slug);
 
   let [{ data: rules }, { data: bizRow }] = await Promise.all([
@@ -80,6 +84,7 @@ export default async function SettingsPage({
       )}
 
       <SettingsSections
+        active={section}
         sections={[
           {
             key: 'profile',

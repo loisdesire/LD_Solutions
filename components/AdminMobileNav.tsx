@@ -37,6 +37,15 @@ export default function AdminMobileNav({
   const connect = [
     { href: `/${slug}/admin/channels`, label: 'Channels' },
   ];
+  // Same four sections as the sidebar. There is no sidebar on a phone, so
+  // without these the only way into a section is the Settings page itself.
+  const settingsSections = [
+    { key: 'profile', label: 'Business profile' },
+    { key: 'content', label: 'Website content' },
+    { key: 'rules', label: 'Booking rules and payments' },
+    { key: 'domain', label: 'Custom domain' },
+  ];
+
   const account = [
     { href: `/${slug}/admin/assistant`, label: 'Assistant' },
     { href: `/${slug}/admin/billing`, label: 'Billing' },
@@ -130,7 +139,23 @@ export default function AdminMobileNav({
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
             {account.map((tab) => (
-              <NavLink key={tab.href} href={tab.href} label={tab.label} />
+              <div key={tab.href}>
+                <NavLink href={tab.href} label={tab.label} />
+                {tab.href.endsWith('/settings') && (
+                  <div className="ml-4 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
+                    {settingsSections.map((sec) => (
+                      <Link
+                        key={sec.key}
+                        href={`${tab.href}?section=${sec.key}`}
+                        onClick={() => setMenuOpen(false)}
+                        className="rounded-lg px-2.5 py-2.5 min-h-[40px] text-caption text-ink-soft hover:text-ink transition-colors"
+                      >
+                        {sec.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
