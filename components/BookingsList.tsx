@@ -77,6 +77,8 @@ export default function BookingsList({
   // the status pills because that is how it reads to a user: another way
   // to narrow the same list, not a separate screen to navigate to.
   const [filter, setFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
 
   const now = new Date();
@@ -91,7 +93,24 @@ export default function BookingsList({
   const isPast = filter === 'past';
 
   const upcoming = bookings.filter((b) => b.status !== 'cancelled' && new Date(b.start_time) >= now);
-  const past = bookings.filter((b) => b.status === 'cancelled' || new Date(b.start_time) < now);
+  const allPast = bookings.filter((b) => b.status === 'cancelled' || new Date(b.start_time) < now);
+
+  // Past defaults to the last 7 days. Showing everything ever booked made
+  // the recent few rows, which are the ones anyone actually wants, sit
+  // under a growing pile of history. A date range opens the rest.
+  const rangeStart = fromDate ? new Date(`${fromDate}T00:00:00`) : null;
+  const rangeEnd = toDate ? new Date(`${toDate}T23:59:59`) : null;
+  const usingRange = Boolean(rangeStart || rangeEnd);
+
+  const past = usingRange
+    ? allPast.filter((b) => {
+        const t = new Date(b.start_time).getTime();
+        if (rangeStart && t < rangeStart.getTime()) return false;
+        if (rangeEnd && t > rangeEnd.getTime()) return false;
+        return true;
+      })
+    : allPast.filter((b) => new Date(b.start_time).getTime() >= now.getTime() - 7 * 86400000);
+
   const scoped = isPast ? past : upcoming;
 
   // Counts come from the upcoming list even while Past is selected, so the
@@ -120,14 +139,69 @@ export default function BookingsList({
         </h2>
         <PillTabs
           active={filter}
-          onChange={setFilter}
+          onChange={(f) => {
+            setFilter(f);
+            // Leaving Past should not keep a range applied invisibly.
+            if (f !== 'past') {
+              setFromDate('');
+              setToDate('');
+            }
+          }}
           options={[
             { key: 'all', label: 'All', count: upcoming.length },
             ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s], count: counts[s] })),
-            { key: 'past', label: 'Past', count: past.length },
+            { key: 'past', label: 'Past', count: allPast.length },
           ]}
         />
       </div>
+
+      {isPast && (
+        <div className="flex flex-wrap items-end gap-3 mb-4 rounded-xl bg-warm-surface px-4 py-3">
+          <div>
+            <label htmlFor="past-from" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
+              From
+            </label>
+            <input
+              id="past-from"
+              type="date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
+            />
+          </div>
+          <div>
+            <label htmlFor="past-to" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
+              To
+            </label>
+            <input
+              id="past-to"
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
+            />
+          </div>
+          {usingRange ? (
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate('');
+                setToDate('');
+              }}
+              className="px-3.5 py-2 min-h-[40px] rounded-lg text-caption font-semibold transition-colors hover:bg-surface"
+              style={{ color: 'var(--accent)' }}
+            >
+              Back to last 7 days
+            </button>
+          ) : (
+            <p className="text-caption text-ink-faint pb-2.5">
+              Showing the last 7 days. Pick dates to look further back.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Deliberately not a bordered box anymore - a top rule plus row
           dividers reads as a schedule, not another card among cards, and
