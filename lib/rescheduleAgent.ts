@@ -12,7 +12,7 @@ import { proposeReschedule, proposeBookingMove, applyReschedule } from './resche
 // one is the one place that's allowed to move real bookings and message
 // real customers. Mixing that into either of the others would blur
 // exactly the guarantee each one is built to hold.
-const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+export const RESCHEDULE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -65,7 +65,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-async function executeTool(name: string, args: Record<string, unknown>, businessId: string) {
+export async function executeRescheduleTool(name: string, args: Record<string, unknown>, businessId: string) {
   switch (name) {
     case 'propose_reschedule':
       return proposeReschedule(businessId, {
@@ -143,7 +143,7 @@ Formatting: plain conversational text, no markdown asterisks or headers. Keep it
     systemPrompt,
     history,
     message,
-    tools: TOOLS,
-    executeTool: (name, args) => executeTool(name, args, businessId),
+    tools: RESCHEDULE_TOOLS,
+    executeTool: (name, args) => executeRescheduleTool(name, args, businessId),
   });
 }

@@ -25,7 +25,7 @@ import {
 // structurally apart removes an entire class of prompt-injection/
 // scope-confusion risk rather than relying on the model to always pick
 // the right hat.
-const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+export const INSIGHTS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -157,7 +157,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-async function executeTool(name: string, args: Record<string, unknown>, businessId: string) {
+export async function executeInsightsTool(name: string, args: Record<string, unknown>, businessId: string) {
   switch (name) {
     case 'get_revenue':
       return getRevenue(businessId, { from: args.from as string | undefined, to: args.to as string | undefined });
@@ -228,7 +228,7 @@ them as ₦12,000 style. Keep answers concise and direct; this is a working dash
     systemPrompt,
     history,
     message,
-    tools: TOOLS,
-    executeTool: (name, args) => executeTool(name, args, businessId),
+    tools: INSIGHTS_TOOLS,
+    executeTool: (name, args) => executeInsightsTool(name, args, businessId),
   });
 }

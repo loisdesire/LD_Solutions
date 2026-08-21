@@ -36,10 +36,9 @@ export default function AdminMobileNav({
   ];
   const connect = [
     { href: `/${slug}/admin/channels`, label: 'Channels' },
-    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule assistant' },
   ];
   const account = [
-    { href: `/${slug}/admin/insights`, label: 'Insights' },
+    { href: `/${slug}/admin/assistant`, label: 'Assistant' },
     { href: `/${slug}/admin/billing`, label: 'Billing' },
     { href: `/${slug}/admin/settings`, label: 'Settings' },
   ];

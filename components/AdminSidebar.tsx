@@ -116,10 +116,9 @@ export default function AdminSidebar({
   ];
   const connect = [
     { href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels' },
-    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule assistant', key: 'scheduleAssistant' },
   ];
   const account = [
-    { href: `/${slug}/admin/insights`, label: 'Insights', key: 'insights' },
+    { href: `/${slug}/admin/assistant`, label: 'Assistant', key: 'insights' },
     { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
     { href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' },
   ];
