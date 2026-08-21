@@ -6,6 +6,7 @@ import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
 
 export default function SettingsManager({
+  slug,
   businessId,
   initialWebhookUrl,
   initialBufferMinutes,
@@ -16,6 +17,7 @@ export default function SettingsManager({
   initialPaystackPublicKey,
   initialPaystackSecretKey,
 }: {
+  slug: string;
   businessId: string;
   initialWebhookUrl: string | null;
   initialBufferMinutes: number;
@@ -46,6 +48,11 @@ export default function SettingsManager({
   const [paystackSecretKey, setPaystackSecretKey] = useState(initialPaystackSecretKey ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [keyMode, setKeyMode] = useState<string | null>(
+    // Derived on first render so the warning shows for keys saved earlier,
+    // not only after a fresh save.
+    () => (initialPaystackSecretKey?.startsWith('sk_live_') ? 'live' : initialPaystackSecretKey ? 'test' : null)
+  );
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
@@ -57,6 +64,30 @@ export default function SettingsManager({
     setSaving(true);
     setError('');
     setSaved(false);
+    setKeyMode(null);
+
+    // Check the keys with Paystack before storing them. A wrong secret key
+    // otherwise surfaces only when a real customer fails to pay, and test
+    // keys never surface at all: checkout looks normal, the customer sees
+    // success, the booking confirms, and the business is paid nothing.
+    try {
+      const res = await fetch('/api/settings/paystack/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, secretKey: paystackSecretKey, publicKey: paystackPublicKey }),
+      });
+      const check = await res.json();
+      if (!res.ok || !check.ok) {
+        setSaving(false);
+        setError(check.error ?? 'Could not check those Paystack keys. Nothing was saved.');
+        return;
+      }
+      setKeyMode(check.mode ?? null);
+    } catch {
+      setSaving(false);
+      setError("Couldn't reach the server to check your Paystack keys. Nothing was saved.");
+      return;
+    }
 
     const [{ error: rulesError }, { error: bizError }] = await Promise.all([
       supabase
@@ -201,6 +232,21 @@ export default function SettingsManager({
                   className={inputClass}
                 />
               </div>
+              {keyMode === 'test' && (
+                <div role="alert" className="mt-3 rounded-xl bg-warning-bg border border-warning-border px-3.5 py-3">
+                  <p className="text-caption text-warning">
+                    <strong className="font-semibold">These are test keys.</strong> Checkout will look completely
+                    normal to your customers and their bookings will confirm, but no money is collected and nothing
+                    reaches your account. Swap them for your live keys before taking real bookings.
+                  </p>
+                </div>
+              )}
+              {keyMode === 'live' && (
+                <p className="text-caption mt-3" style={{ color: 'var(--success)' }}>
+                  Live keys checked and accepted by Paystack.
+                </p>
+              )}
+
               <p className="text-ink-faint text-[12px] mt-2">
                 From your own Paystack dashboard (Settings → API Keys & Webhooks). Payments go straight to
                 your Paystack account. We never touch the money.

@@ -123,6 +123,7 @@ export default async function SettingsPage({
             description: 'Buffers, how far ahead people can book, cancellation notice, and taking deposits.',
             content: (
               <SettingsManager
+                slug={slug}
                 businessId={business.id}
                 initialWebhookUrl={rules?.webhook_url ?? null}
                 initialBufferMinutes={rules?.buffer_minutes ?? 0}
