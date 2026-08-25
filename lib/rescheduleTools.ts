@@ -330,11 +330,12 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
     const newStart = new Date(move.new_start);
     const newEnd = new Date(newStart.getTime() + move.duration_minutes * 60000);
 
-    const { error } = await supabaseAdmin
+    const { data: updated, error } = await supabaseAdmin
       .from('bookings')
       .update({ start_time: newStart.toISOString(), end_time: newEnd.toISOString() })
       .eq('id', move.booking_id)
-      .neq('status', 'cancelled');
+      .neq('status', 'cancelled')
+      .select('id');
 
     if (error) {
       // 23P01 here means the slot this plan picked got taken by something
@@ -345,6 +346,23 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
         ? 'That slot got booked by someone else in the meantime - needs manual rescheduling.'
         : error.message;
       results.push({ customer: move.customer_name, service: move.service_name, applied: false, notified: false, detail });
+      continue;
+    }
+
+    // .update() with no matching row is NOT an error in Supabase - it just
+    // returns an empty array. Without this check, a booking the customer
+    // cancelled themselves between propose and apply (the .neq above then
+    // matches nothing) fell straight through to "applied: true" below, and
+    // the customer got texted that their (still-cancelled) appointment had
+    // been moved.
+    if (!updated || updated.length === 0) {
+      results.push({
+        customer: move.customer_name,
+        service: move.service_name,
+        applied: false,
+        notified: false,
+        detail: "This booking is no longer active - it may have been cancelled since this plan was made. Nothing was moved.",
+      });
       continue;
     }
 

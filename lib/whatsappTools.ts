@@ -357,6 +357,40 @@ export async function getPopularServices(businessId: string, args: { limit?: num
   return { popular_services: sorted.map(([name]) => name) };
 }
 
+// Answers "when are you busiest/quietest" for a customer trying to plan
+// around a crowd, not for revenue analysis - the owner-facing equivalent
+// (lib/insightsTools.ts's getBusiestTimes) is a separate, BI-gated tool
+// that returns exact per-slot booking counts alongside customer names and
+// service prices; this is a deliberately thinner, PII-free version that a
+// customer can safely be handed. Same reasoning as getPopularServices just
+// above: day NAMES only, no counts - telling a stranger "you had 2 bookings
+// last Tuesday" reveals how quiet the business actually is, which isn't
+// this tool's business to give away. Available on every plan (not BI-gated)
+// since "which day should I avoid" is basic customer service, not the kind
+// of revenue/customer analytics Business Intelligence exists to sell.
+export async function getBusyTimes(businessId: string) {
+  const timeZone = await getBusinessTimezone(businessId);
+  const { data } = await supabaseAdmin
+    .from('bookings')
+    .select('start_time')
+    .eq('business_id', businessId)
+    .neq('status', 'cancelled');
+
+  const byDay = new Map<string, number>();
+  for (const row of data ?? []) {
+    const dayName = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long' }).format(new Date(row.start_time));
+    byDay.set(dayName, (byDay.get(dayName) ?? 0) + 1);
+  }
+
+  if (byDay.size === 0) return { busiest_day: null, quietest_day: null };
+
+  const ranked = [...byDay.entries()].sort((a, b) => b[1] - a[1]);
+  return {
+    busiest_day: ranked[0][0],
+    quietest_day: ranked[ranked.length - 1][0],
+  };
+}
+
 // Confirms a held booking once the customer says they've paid. This is the
 // no-setup path: the Paystack webhook is faster and needs no prompting,
 // but it only fires for businesses that have pasted the webhook URL into

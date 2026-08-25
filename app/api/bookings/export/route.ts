@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('slug');
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
-  const auth = await requireStaffApiSession(slug, 'id');
+  const auth = await requireStaffApiSession(req, slug, 'id');
   if (auth.error) return auth.error;
 
   const { data: bookings, error } = await supabaseAdmin

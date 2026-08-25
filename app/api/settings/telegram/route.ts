@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing slug or bot token' }, { status: 400 });
   }
 
-  const auth = await requireStaffApiSession(slug, 'id', { requireOwner: true });
+  const auth = await requireStaffApiSession(req, slug, 'id', { requireOwner: true });
   if (auth.error) return auth.error;
   const { business } = auth;
 
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest) {
   const { slug } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
-  const auth = await requireStaffApiSession(slug, 'id, telegram_bot_token', { requireOwner: true });
+  const auth = await requireStaffApiSession(req, slug, 'id, telegram_bot_token', { requireOwner: true });
   if (auth.error) return auth.error;
   const { business } = auth;
 

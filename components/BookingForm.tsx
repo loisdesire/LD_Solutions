@@ -848,26 +848,17 @@ export default function BookingForm({
             </Field>
           </div>
 
-          {/* The one sentence that ties the whole flow together right
-              before anything is charged or booked - a customer scrolling
-              straight to the submit button (skipping the summary bar
-              above, or with it out of view on a short viewport) should
-              still see exactly what they're about to commit to. */}
-          {selectedSlot && (
-            <p className="text-[13px] text-ink-soft text-center mb-4">
-              You&rsquo;re booking <span className="font-semibold text-ink">{selectedService.name}</span> with{' '}
-              <span className="font-semibold text-ink">{businessName}</span> on{' '}
-              <span className="font-semibold text-ink">
-                {new Date(selectedSlot).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-                {' at '}
-                {formatTime(selectedSlot)}
-              </span>
-              {tzLabel && ` (${tzLabel})`}.
-            </p>
-          )}
-
+          {/* Was three separate blocks of prose stacked right before the
+              pay button (a summary sentence, the deposit box, then a
+              cancellation-policy paragraph) - "too much text" right at the
+              money moment, and the summary sentence was fully redundant
+              with the sticky bar above (which shows the same service, date,
+              time and price, and is genuinely sticky - it never scrolls out
+              of view, the case that sentence was written to cover). Down to
+              one block: the amount, and everything else folded into a
+              single tightened caption underneath it. */}
           {paymentActive && (
-            <div className="rounded-2xl bg-warm-surface p-4 mb-4">
+            <div className="rounded-2xl bg-warm-surface p-4 mb-6">
               <div className="flex items-center justify-between text-[13.5px]">
                 <span className="text-ink-soft">
                   {depositPercentage < 100 ? `Deposit (${depositPercentage}%) to confirm` : 'Due to confirm'}
@@ -877,24 +868,26 @@ export default function BookingForm({
                 </span>
               </div>
               <p className="text-ink-faint text-[11.5px] mt-1.5">
-                Paid securely through Paystack. Card or bank transfer.
+                Paid via Paystack (card or bank transfer).
                 {depositPercentage < 100 && selectedService.price != null && (
-                  <> The remaining {formatMoney(selectedService.price - amountDue)} is due at your visit.</>
+                  <> {formatMoney(selectedService.price - amountDue)} due at your visit.</>
                 )}
+                {' '}Free to cancel or reschedule up to {cancellationWindowHours} hour
+                {cancellationWindowHours === 1 ? '' : 's'} before.
               </p>
             </div>
           )}
 
-          {/* Cancellation/reschedule terms, stated before commitment rather
-              than left for someone to discover after paying - "what
-              happens after payment" and "can I get my money back" are
-              exactly the questions the audit flagged this flow as never
-              answering. */}
-          <p className="text-ink-faint text-[11.5px] text-center mb-6">
-            Need to change your mind? You can cancel or reschedule from your confirmation up to{' '}
-            {cancellationWindowHours} hour{cancellationWindowHours === 1 ? '' : 's'} before your appointment. After
-            that, contact {businessName} directly.
-          </p>
+          {/* No payment in play here, so there's no box for a cancellation
+              note to live inside - still worth the one line on its own,
+              just without the deposit/Paystack text that only applies when
+              money's actually moving. */}
+          {!paymentActive && (
+            <p className="text-ink-faint text-[11.5px] text-center mb-6">
+              Free to cancel or reschedule up to {cancellationWindowHours} hour
+              {cancellationWindowHours === 1 ? '' : 's'} before your appointment.
+            </p>
+          )}
 
           <button
             type="button"

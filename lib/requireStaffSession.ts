@@ -2,6 +2,7 @@ import { getBusinessBySlug } from './getBusinessBySlug';
 import { createServerSupabase } from './supabase-server';
 import { getSubscriptionState } from './subscription';
 import { notFound, redirect } from 'next/navigation';
+import { DEMO_VIEWER_AUTH_ID } from './demo';
 
 // Shared by every /[slug]/admin/* page: confirms the visitor is logged in
 // and is staff for THIS business, then hands back a session-aware Supabase
@@ -58,5 +59,11 @@ export async function requireStaffSession(
     }
   }
 
-  return { business, supabase, staff: staffRow, user };
+  // Surfaced so pages can show a "this is a live demo" banner - the actual
+  // write-blocking happens elsewhere (requireStaffApiSession, and the DB
+  // trigger for direct-from-browser writes), this is purely so the visitor
+  // finds out before they try, not just after.
+  const isDemoReadOnly = user.id === DEMO_VIEWER_AUTH_ID;
+
+  return { business, supabase, staff: staffRow, user, isDemoReadOnly };
 }

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const { slug, secretKey, publicKey } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
-  const auth = await requireStaffApiSession(slug, 'id', { requireOwner: true });
+  const auth = await requireStaffApiSession(req, slug, 'id', { requireOwner: true });
   if (auth.error) return auth.error;
 
   const sk = (secretKey ?? '').trim();

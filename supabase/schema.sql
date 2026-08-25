@@ -601,3 +601,68 @@ create policy "owner can delete invites"
 -- exists. lib/formatMoney.ts reads this - see that file for the plan on
 -- retrofitting the 18 hardcoded call sites incrementally.
 alter table businesses add column if not exists currency text not null default 'NGN';
+
+-- ============================================
+-- Demo viewer: block writes at the database itself
+-- ============================================
+-- "See the dashboard" on the marketing homepage drops a visitor into a
+-- real, logged-in admin session (see lib/demo.ts) - the actual app, not a
+-- mockup, so it stays honest about what the product looks like. Most
+-- writes that session could attempt are already caught server-side
+-- (lib/requireStaffApiSession.ts auto-rejects any non-GET request from
+-- this account), but several admin screens (Business profile, Hours,
+-- Services, Products, Staff, Booking rules, Custom domain) write straight
+-- from the browser to Supabase with no API route in between - the only
+-- place left to stop those is here.
+--
+-- One trigger function, reused across every table one of those screens
+-- writes to, rather than a policy rewrite per table - additive, doesn't
+-- touch any existing RLS policy's logic. The exception message is a real
+-- sentence on purpose: it surfaces as-is through error-handling code every
+-- one of those forms already has (see lib/friendlyError.ts), so nothing
+-- in the UI needed to change for this to show up correctly.
+create or replace function reject_demo_viewer_writes()
+returns trigger
+language plpgsql
+as $$
+begin
+  if auth.uid() = '8b3df1a8-a927-47b1-bc33-f948ca9afd9c' then
+    raise exception 'This is a live demo account - changes are not saved. Explore freely, nothing here is permanent.';
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists reject_demo_writes on businesses;
+create trigger reject_demo_writes before insert or update or delete on businesses
+  for each row execute function reject_demo_viewer_writes();
+
+drop trigger if exists reject_demo_writes on booking_rules;
+create trigger reject_demo_writes before insert or update or delete on booking_rules
+  for each row execute function reject_demo_viewer_writes();
+
+drop trigger if exists reject_demo_writes on availability;
+create trigger reject_demo_writes before insert or update or delete on availability
+  for each row execute function reject_demo_viewer_writes();
+
+drop trigger if exists reject_demo_writes on products;
+create trigger reject_demo_writes before insert or update or delete on products
+  for each row execute function reject_demo_viewer_writes();
+
+drop trigger if exists reject_demo_writes on services;
+create trigger reject_demo_writes before insert or update or delete on services
+  for each row execute function reject_demo_viewer_writes();
+
+-- staff needs care: this demo account's OWN row lives in this table (it's
+-- how it gets owner-level admin access at all) - blocking every write
+-- would also block the normal login flow reading it. Triggers only fire
+-- on insert/update/delete, never on select, so reading it to log in is
+-- unaffected; this only stops the demo account from *changing* the staff
+-- list (inviting/removing/renaming someone).
+drop trigger if exists reject_demo_writes on staff;
+create trigger reject_demo_writes before insert or update or delete on staff
+  for each row execute function reject_demo_viewer_writes();
+
+drop trigger if exists reject_demo_writes on staff_invites;
+create trigger reject_demo_writes before insert or update or delete on staff_invites
+  for each row execute function reject_demo_viewer_writes();

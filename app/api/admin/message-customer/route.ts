@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing slug or customerPhone' }, { status: 400 });
   }
 
-  const auth = await requireStaffApiSession(slug);
+  const auth = await requireStaffApiSession(req, slug);
   if (auth.error) return auth.error;
 
   const messages = await loadConversation(auth.business.id, customerPhone);
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing slug, customerPhone, or message' }, { status: 400 });
   }
 
-  const auth = await requireStaffApiSession(slug, 'id');
+  const auth = await requireStaffApiSession(req, slug, 'id');
   if (auth.error) return auth.error;
   // Fetched separately (rather than in the same select as the auth check)
   // because whatsapp_access_token is currently missing from the live

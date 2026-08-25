@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!slug || !token) return NextResponse.json({ error: 'Missing slug or token' }, { status: 400 });
 
   // Only someone already on this business's staff can trigger an invite email.
-  const auth = await requireStaffApiSession(slug, 'id, name, accent_color, logo_url', { requireOwner: true });
+  const auth = await requireStaffApiSession(req, slug, 'id, name, accent_color, logo_url', { requireOwner: true });
   if (auth.error) return auth.error;
   const { business } = auth;
 

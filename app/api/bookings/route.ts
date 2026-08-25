@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
   }
 
   const start = new Date(startTime);
-  const end = new Date(start.getTime() + durationMinutes * 60000);
 
   // Enforce max_advance_days server-side too - the date picker already
   // caps this in the UI, but that's bypassable by calling this route
@@ -61,8 +60,25 @@ export async function POST(req: NextRequest) {
       .eq('business_id', businessId)
       .maybeSingle(),
     supabaseAdmin.from('businesses').select('timezone, paystack_secret_key, name, accent_color, logo_url, slug').eq('id', businessId).single(),
-    supabaseAdmin.from('services').select('price, name').eq('id', serviceId).maybeSingle(),
+    supabaseAdmin.from('services').select('price, name, duration_minutes').eq('id', serviceId).maybeSingle(),
   ]);
+
+  if (!service) {
+    return NextResponse.json({ error: 'That service could not be found.' }, { status: 400 });
+  }
+
+  // The client's durationMinutes was previously trusted outright and used
+  // to compute end_time - a request that sent a short/zero/negative value
+  // for a real service produced a booking whose stored end_time didn't
+  // match the service's actual length, which is exactly what the
+  // exclusion-constraint/availability-check machinery relies on being
+  // correct: a manipulated duration made the slot immediately after this
+  // booking look free when it wasn't, defeating the double-booking
+  // protection. The service's own duration is the only value trusted now;
+  // whatever the client sent is ignored (kept here only so callers that
+  // still send it don't error on an unused field).
+  void durationMinutes;
+  const end = new Date(start.getTime() + service.duration_minutes * 60000);
 
   // A Postgres select fails as one unit if ANY selected column is
   // missing, not just the new ones - so before the payments migration

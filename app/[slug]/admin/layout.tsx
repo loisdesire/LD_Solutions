@@ -44,7 +44,7 @@ export default async function AdminLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { business, user, staff, supabase } = await requireStaffSession(slug);
+  const { business, user, staff, supabase, isDemoReadOnly } = await requireStaffSession(slug);
 
   // Nav status signals - cheap enough to run on every admin navigation
   // (all indexed single-row/count lookups), and this is the one place
@@ -95,6 +95,21 @@ export default async function AdminLayout({
             navStatus={navStatus}
             role={staff.role ?? 'staff'}
           />
+          {/* Told before they try, not just after - the actual blocking
+              happens server-side (requireStaffApiSession + the DB trigger
+              in supabase/schema.sql), this is just so hitting Save doesn't
+              come as a surprise. Persistent across every admin page, since
+              this shell wraps all of them. */}
+          {isDemoReadOnly && (
+            <div className="bg-accent-soft border-b border-line px-5 sm:px-8 lg:px-12 py-2.5 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" className="shrink-0" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" strokeLinecap="round" />
+              </svg>
+              <p className="text-[12.5px] font-medium" style={{ color: 'var(--accent)' }}>
+                You&rsquo;re viewing a live demo. Look around freely - nothing you change here is saved.
+              </p>
+            </div>
+          )}
           <main className="max-w-[1180px] px-5 sm:px-8 lg:px-12 py-7 sm:py-10">{children}</main>
         </div>
       </div>

@@ -260,6 +260,21 @@ export default function LandingPage() {
                 See it live
               </Button>
             </div>
+
+            {/* "See it live" only ever showed the customer's side of this -
+                book an appointment, chat with the AI. The other half of
+                the pitch is what the business owner sees every morning,
+                and there was no way to show that without asking someone
+                to sign up first. This drops a visitor straight into the
+                real admin, logged in, no signup - same underlying account
+                every time, so nothing here is ever actually saved. */}
+            <a
+              href="/api/demo-login"
+              className="inline-flex items-center gap-1.5 mt-4 text-[13px] font-medium text-ink-faint hover:text-ink transition-colors"
+            >
+              Or see the dashboard - no signup needed
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+            </a>
           </Reveal>
 
           {/* Side-by-side with the text now, not offset below it. The

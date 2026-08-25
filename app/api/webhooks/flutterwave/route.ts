@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import { logError } from '@/lib/logger';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,8 +15,29 @@ const supabaseAdmin = createClient(
 // the Flutterwave dashboard's webhook settings (Settings → Webhooks) - NOT
 // the same thing as the secret API key.
 export async function POST(req: NextRequest) {
+  // This is the one webhook in the app that had no rate limit at all, on a
+  // route that also compared its secret with plain string inequality -
+  // together, an unlimited number of timed guesses at the real secret.
+  // Same budget as the other webhooks.
+  if (!rateLimit(`webhook:flutterwave:${getClientIp(req)}`, 30, 60_000)) {
+    return new NextResponse('Too many requests', { status: 429 });
+  }
+
   const signature = req.headers.get('verif-hash');
-  if (!signature || signature !== process.env.FLUTTERWAVE_SECRET_HASH) {
+  const expected = process.env.FLUTTERWAVE_SECRET_HASH ?? '';
+  // Constant-time compare, same reasoning as the Paystack webhook: a plain
+  // !== short-circuits on the first differing byte, which leaks how many
+  // leading characters an attacker's guess got right through response
+  // timing. Length is checked first because timingSafeEqual throws (rather
+  // than just returning false) on a length mismatch.
+  const signatureBuf = Buffer.from(signature ?? '');
+  const expectedBuf = Buffer.from(expected);
+  const valid =
+    signature != null &&
+    expected.length > 0 &&
+    signatureBuf.length === expectedBuf.length &&
+    crypto.timingSafeEqual(signatureBuf, expectedBuf);
+  if (!valid) {
     logError('api/webhooks/flutterwave:signature', new Error('Invalid Flutterwave webhook signature'));
     return new NextResponse('Forbidden', { status: 403 });
   }

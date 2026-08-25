@@ -34,7 +34,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
-  const auth = await requireStaffApiSession(slug);
+  const auth = await requireStaffApiSession(req, slug);
   if (auth.error) return auth.error;
   const { business } = auth;
 

@@ -59,6 +59,14 @@ export async function POST(
 
   const duration = (booking.services as any)?.duration_minutes ?? 30;
   const newStart = new Date(newStartTime);
+  // A missing/malformed newStartTime parses to an Invalid Date, whose
+  // getTime() is NaN - every comparison below (daysOut, the overlap check)
+  // is silently false against NaN, so those guards would let it straight
+  // through to the update, which then throws on .toISOString(). Reject it
+  // here instead, with the same clean 400 every other bad-input case gets.
+  if (Number.isNaN(newStart.getTime())) {
+    return NextResponse.json({ error: 'That is not a valid time' }, { status: 400 });
+  }
   const newEnd = new Date(newStart.getTime() + duration * 60000);
 
   const today = todayInTimezone(timeZone);

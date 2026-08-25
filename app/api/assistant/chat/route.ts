@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const { slug, message, history } = await req.json();
   if (!slug || !message) return NextResponse.json({ error: 'Missing slug or message' }, { status: 400 });
 
-  const auth = await requireStaffApiSession(slug, 'id, name');
+  const auth = await requireStaffApiSession(req, slug, 'id, name');
   if (auth.error) return auth.error;
   const { business } = auth;
 

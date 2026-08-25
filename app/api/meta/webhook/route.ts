@@ -43,10 +43,17 @@ export async function POST(req: NextRequest) {
 
   // Meta signs the raw request body with the App Secret - verifying this
   // is what proves the request actually came from Meta, not a spoofed call.
-  const signature = req.headers.get('x-hub-signature-256');
+  const signature = req.headers.get('x-hub-signature-256') ?? '';
   const expected =
     'sha256=' + crypto.createHmac('sha256', process.env.META_APP_SECRET!).update(rawBody).digest('hex');
-  if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  // Length check before timingSafeEqual - it throws on a length mismatch
+  // rather than returning false, so a malformed/truncated header used to
+  // 500 instead of hitting the 403 below (same fix as the Paystack
+  // webhook already has).
+  const valid =
+    signature.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  if (!valid) {
     logError('api/meta/webhook:signature', new Error('Invalid Meta webhook signature'));
     return new NextResponse('Forbidden', { status: 403 });
   }

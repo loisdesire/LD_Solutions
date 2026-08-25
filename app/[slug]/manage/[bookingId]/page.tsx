@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import ManageBooking from '@/components/ManageBooking';
 import { AccentScope } from '@/components/AccentScope';
 import { formatMoney } from '@/lib/formatMoney';
+import { STATUS_LABELS } from '@/lib/bookingStatus';
 import type { Metadata } from 'next';
 
 const supabaseAdmin = createClient(
@@ -60,12 +61,6 @@ export default async function ManageBookingPage({
 
   const business = booking.businesses as any;
   const service = booking.services as any;
-  const statusLabel: Record<string, string> = {
-    confirmed: 'Confirmed',
-    cancelled: 'Cancelled',
-    completed: 'Completed',
-    no_show: 'No-show',
-  };
 
   return (
     <AccentScope color={business?.accent_color ?? '#B5502F'} className="min-h-screen bg-paper">
@@ -102,7 +97,7 @@ export default async function ManageBookingPage({
                 style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                {statusLabel[booking.status] ?? booking.status}
+                {STATUS_LABELS[booking.status] ?? booking.status}
               </span>
               <h1 className="font-display text-[24px] font-bold mt-3">{service?.name}</h1>
             </div>

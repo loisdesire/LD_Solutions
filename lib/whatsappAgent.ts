@@ -8,6 +8,7 @@ import {
   rescheduleBooking,
   getBusinessContext,
   getPopularServices,
+  getBusyTimes,
   loadConversation,
   saveConversation,
   type ToolContext,
@@ -119,6 +120,15 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: { type: 'object', properties: {} },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_busy_times',
+      description:
+        "The business's busiest and quietest days of the week, based on real booking volume - use this for questions like \"when should I avoid coming\" or \"what's your quietest day\". Returns day names only, not booking counts.",
+      parameters: { type: 'object', properties: {} },
+    },
+  },
 ];
 
 // Only offered to the model when the business is on the business_intelligence
@@ -172,6 +182,8 @@ async function executeTool(name: string, args: Record<string, unknown>, ctx: Too
       });
     case 'check_payment':
       return checkPayment(ctx);
+    case 'get_busy_times':
+      return getBusyTimes(ctx.businessId);
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -253,6 +265,8 @@ Always confirm the service, date, and time back to the customer in plain languag
 If asked something you have no info for (address, parking, payment methods, etc.), say so plainly and suggest
 contacting the business directly - never invent details.
 ${biEnabled ? '\nIf asked what\'s popular or recommended, you can call get_popular_services to answer with real booking data instead of guessing.\n' : ''}
+If asked when the business is busiest or quietest (e.g. "when should I avoid coming", "what's a slow day"), call
+get_busy_times rather than guessing - it's real data, not something to estimate from services or hours alone.
 
 Stay in scope. You only handle things related to booking appointments at ${business.name} - services, hours,
 availability, and the customer's own bookings. If someone asks something unrelated (general knowledge, other

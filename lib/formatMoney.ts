@@ -1,20 +1,18 @@
 // Prep for international payments (Stripe, for businesses Paystack can't
-// onboard - see businesses.currency in supabase/schema.sql). Every one of
-// the ~18 sites that currently hand-format `₦${amount.toLocaleString()}`
-// assumes Naira and the visitor's own browser locale - the same amount
-// literally reads as "₦12.000" for a de-DE visitor and "₦12,000" for
-// everyone else, since bare `toLocaleString()` follows *their* locale, not
-// a fixed one. This is the replacement: one function, a currency actually
-// read from the business, and a pinned locale per currency so the same
-// number reads identically no matter who's looking at it.
+// onboard - see businesses.currency in supabase/schema.sql). Also fixes a
+// real bug the ~18 old hand-formatted `₦${amount.toLocaleString()}` sites
+// all had: bare `toLocaleString()` follows the *visitor's* browser locale,
+// not a fixed one, so the same amount literally read as "₦12.000" for a
+// de-DE visitor and "₦12,000" for everyone else. One function, a currency
+// actually read from the business, and a pinned locale per currency so the
+// same number reads identically no matter who's looking at it.
 //
-// Retrofit plan, not done yet: this file only adds the capability - the
-// 18 existing hardcoded call sites (grep `₦` across app/ and components/)
-// still need to switch to this one at a time, threading `business.currency`
-// down to each. Left as follow-up rather than a rushed mechanical sweep
-// here, since several of those sites (BillingManager, ServicesManager,
-// AdminDashboardBody) are exactly the kind of money-display code that
-// deserves a real look per file, not a find-and-replace.
+// Retrofit done: every real call site now goes through this (BillingManager,
+// ServicesManager, ProductsManager, CustomersManager, AdminDashboardBody,
+// BookingForm, the booking API routes, and both marketing pages). The two
+// remaining `₦` literals in the tree are DashboardPreview.tsx's static
+// marketing mockup (never a real amount) and a code comment - neither is a
+// live call site needing migration.
 const CURRENCY_LOCALE: Record<string, string> = {
   NGN: 'en-NG',
   USD: 'en-US',
