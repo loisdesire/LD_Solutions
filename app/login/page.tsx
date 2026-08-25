@@ -16,8 +16,14 @@ export const metadata: Metadata = {
 export default function PlatformLoginPage() {
   return (
     <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-paper">
+      {/* justify-center, not justify-between - this panel used to carry a
+          third element at the bottom (a "New here?" link), which is why it
+          was spread top/bottom. That link moved into the main column below
+          (see its own comment), so this is just the eyebrow and headline
+          now - centering them as one unit reads as intentional, not like
+          something is missing from the bottom of the panel. */}
       <div
-        className="hidden lg:flex flex-col justify-between p-14 border-r border-line"
+        className="hidden lg:flex flex-col justify-center gap-6 p-14 border-r border-line"
         style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 65%)' }}
       >
         <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">
@@ -30,12 +36,6 @@ export default function PlatformLoginPage() {
             Your day's <span className="italic">waiting.</span>
           </h1>
         </div>
-        <div className="font-mono text-[11px] text-ink-faint">
-          New here?{' '}
-          <Link href="/signup" className="underline hover:text-ink">
-            Create a booking page
-          </Link>
-        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-14">
@@ -45,19 +45,23 @@ export default function PlatformLoginPage() {
           </div>
           <h2 className="font-display text-[26px] mb-7">Log in</h2>
           <PlatformLoginForm />
-          <p className="text-ink-faint text-[12px] mt-5 lg:hidden">
+          {/* Both doors, same column, same weight, at every screen width -
+              this used to bury "Create a booking page" in the decorative
+              left panel (desktop only, small gray text at the very bottom)
+              while "Find your bookings" sat right here in the main column.
+              Backwards: driving signups matters more than a reminder to
+              check a booking, and neither should depend on how wide the
+              screen is. */}
+          <p className="text-ink-faint text-[12px] mt-5">
             New here?{' '}
             <Link href="/signup" className="font-medium text-accent hover:underline">
               Create a booking page
             </Link>
           </p>
-          {/* The other door - someone who followed a link meant for their
-              own bookings, not a business they run, ends up here more
-              often than the URL choice would suggest. */}
           <p className="text-ink-faint text-[12px] mt-2.5">
-            Looking for a booking you made, not managing a business?{' '}
+            Booked with a business instead?{' '}
             <Link href="/account/login" className="font-medium text-accent hover:underline">
-              Find your bookings
+              Find your booking
             </Link>
           </p>
         </div>

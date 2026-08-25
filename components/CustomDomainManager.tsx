@@ -94,18 +94,17 @@ export default function CustomDomainManager({
       )}
 
       <div className="flex items-center gap-3">
+        {/* Saved state now lives inside the button itself, matching every
+            other manager on this page (Profile, Content, Rules, Payments) -
+            this one used to show it as a separate element next to the
+            button instead, the only section that did. */}
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
         >
-          {saving ? 'Saving…' : 'Save domain'}
+          {saving ? 'Saving…' : saved ? <>Saved <CheckIcon className="h-3.5 w-3.5" /></> : 'Save domain'}
         </button>
-        {saved && (
-          <span className="flex items-center gap-1.5 text-success text-[13px] font-medium">
-            <CheckIcon /> Saved
-          </span>
-        )}
         {error && <span className="text-error text-[13px]">{error}</span>}
       </div>
     </form>

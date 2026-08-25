@@ -74,16 +74,13 @@ export default async function SettingsPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Business
-        </div>
-        <h1 className="font-display text-h1 text-ink">Settings</h1>
-        <p className="text-ink-soft text-body-sm mt-1">
-          Your branding, your booking rules, payments, and your own domain.
-        </p>
-      </div>
-
+      {/* Was a page-level "Settings" heading + subtitle here, immediately
+          followed by SettingsSections rendering its OWN heading + subtitle
+          for whichever section is active - two stacked title blocks, one
+          generic and one specific, before any real content. The sidebar
+          already put you here by name ("Payments", "Business profile"...),
+          so the generic one was pure repetition. SettingsSections owns the
+          page's one real heading now. */}
       {loadFailed && (
         <div role="alert" className="mb-6 rounded-xl bg-error-bg border border-error-border px-4 py-3">
           <p className="text-body-sm text-error">

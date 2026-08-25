@@ -122,7 +122,7 @@ export default function BusinessProfileManager({
         </div>
       </div>
 
-      <div className="border-t border-line pt-7">
+      <div className="border-t border-line pt-6">
         <h3 className={sectionHeadingClass}>Booking page appearance</h3>
         <div className="space-y-5">
           <Field

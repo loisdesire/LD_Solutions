@@ -135,9 +135,10 @@ const steps = [
 ];
 
 // Mirrors what the code actually gates. hasBusinessIntelligence() guards
-// exactly two things - the /admin/insights panel and the customer bot's
-// get_popular_services tool - so everything else belongs in Core. Payments,
-// custom domains and the schedule assistant are deliberately NOT upsells.
+// exactly two things - the analytics half of the owner's assistant and the
+// customer bot's get_popular_services tool - so everything else belongs in
+// Core. Payments, custom domains and rescheduling are deliberately NOT
+// upsells.
 const CORE_INCLUDES = [
   'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
   'Unlimited bookings and services',

@@ -54,9 +54,11 @@ export default function AdminMobileNav({
     { href: `/${slug}/admin/hours`, label: 'Hours', badge: false },
     ...(isOwner ? [{ href: `/${slug}/admin/staff`, label: 'Staff', badge: false }] : []),
   ];
+  // One "Assistant" destination, not split into "Ask"/"Schedule" - see
+  // AdminSidebar's comment. /admin/assistant already handles both halves
+  // in one thread.
   const automate = [
-    { href: `/${slug}/admin/insights`, label: 'Ask', badge: false },
-    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule', badge: false },
+    { href: `/${slug}/admin/assistant`, label: 'Assistant', badge: false },
     ...(isOwner ? [{ href: `/${slug}/admin/channels`, label: 'Channels', badge: navStatus.channelsDisconnected }] : []),
   ];
   // Promoted to top-level, same as the desktop sidebar - these used to

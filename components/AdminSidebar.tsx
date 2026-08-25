@@ -105,13 +105,6 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
     </svg>
   ),
-  scheduleAssistant: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M3 9.5H21M8 3V6.5M16 3V6.5" strokeLinecap="round" />
-      <path d="M8 13.5l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
 };
 
 type NavStatus = { setupIncomplete: boolean; channelsDisconnected: boolean; trialEndingSoon: boolean };
@@ -175,15 +168,17 @@ export default function AdminSidebar({
     { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours', badge: false },
     ...(isOwner ? [{ href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff', badge: false }] : []),
   ];
-  // Split back into two destinations - "Assistant" as one item combined
-  // two different jobs (answer a question vs. change the schedule),
-  // exactly what the audit called out. Each links to its own page now;
-  // the merged /admin/assistant still exists underneath for the
-  // dashboard's quick-ask bar, it's just not the primary nav entry
-  // anymore.
+  // Was two destinations (Ask / Schedule) briefly, after an earlier audit
+  // flagged one combined "Assistant" item as ambiguous about which job it
+  // did. That split turned out to be the wrong fix: the assistant can do
+  // far more than either of those two names implies (it is the same
+  // agent that talks to customers on WhatsApp/Telegram/web chat, with the
+  // owner-only tools added on top), so boxing it into "ask" or "schedule"
+  // undersold it rather than clarifying it. One destination again -
+  // /admin/assistant already handles both halves in a single thread
+  // (see lib/assistantAgent.ts), and always did; only the nav was split.
   const automate: NavItem[] = [
-    { href: `/${slug}/admin/insights`, label: 'Ask', key: 'insights', badge: false },
-    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule', key: 'scheduleAssistant', badge: false },
+    { href: `/${slug}/admin/assistant`, label: 'Assistant', key: 'insights', badge: false },
     ...(isOwner
       ? [{ href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels', badge: navStatus.channelsDisconnected }]
       : []),
