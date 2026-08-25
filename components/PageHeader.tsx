@@ -19,11 +19,14 @@ export default function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+    <div className="mb-7 flex items-start justify-between gap-4 flex-wrap">
       <div className="min-w-0">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">{eyebrow}</div>
-        <h1 className="font-display text-h1 text-ink">{title}</h1>
-        {description && <p className="text-ink-soft text-body-sm mt-1">{description}</p>}
+        {/* Colored kicker, sentence case - not the tiny-mono-uppercase
+            treatment every label in the previous system used regardless
+            of role. Ties to the brand accent without a whole badge. */}
+        <div className="text-[13px] font-semibold mb-1" style={{ color: 'var(--accent)' }}>{eyebrow}</div>
+        <h1 className="font-display text-h1 font-semibold text-ink tracking-tight">{title}</h1>
+        {description && <p className="text-ink-soft text-body-sm mt-1.5">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

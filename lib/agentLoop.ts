@@ -5,6 +5,23 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export type AgentMessage = { role: 'user' | 'assistant'; content: string };
 
+// Every agent's system prompt already says "no markdown" - that instruction
+// is not reliably followed on its own (confirmed live: the dashboard
+// assistant produced "**Promotions and Discounts:**" style bold markup
+// despite its prompt explicitly forbidding it), and none of these surfaces
+// render markdown - WhatsApp/Telegram show it as literal asterisks, and the
+// admin chat UIs (AssistantChat.tsx) are a plain whitespace-pre-wrap bubble,
+// not a markdown renderer. Shared here (was previously copied only inside
+// whatsappAgent.ts) so every runToolAgent caller can pass it as
+// `postProcess` and get the same deterministic guarantee, rather than
+// re-trusting the prompt in each new agent.
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*/g, '')
+    .replace(/^#{1,6}\s+/gm, '');
+}
+
 // The one OpenAI tool-calling loop shared by every agent in this codebase
 // (lib/whatsappAgent.ts, lib/insightsAgent.ts, lib/rescheduleAgent.ts) -
 // was three copies of the identical request/response plumbing, differing
@@ -20,9 +37,11 @@ export async function runToolAgent(params: {
   tools: OpenAI.Chat.Completions.ChatCompletionTool[];
   executeTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   // Applied to the model's final plain-text reply only (never to tool
-  // arguments/results) - whatsappAgent.ts uses this to strip markdown
-  // before a reply reaches a chat app with no markdown rendering; the
-  // dashboard agents don't need it, so it defaults to a no-op.
+  // arguments/results). Every agent in this file's callers passes
+  // stripMarkdown (below) - none of their surfaces render markdown, chat
+  // app or dashboard alike. Left as a plain default-to-no-op parameter
+  // rather than hardcoding the strip into the loop itself, so a future
+  // agent with an actual markdown-capable surface isn't forced through it.
   postProcess?: (text: string) => string;
   maxIterations?: number;
   model?: string;

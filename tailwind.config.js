@@ -71,10 +71,30 @@ module.exports = {
         'info-bg': 'var(--info-bg)',
         'info-border': 'var(--info-border)',
       },
+      // Tighter than Tailwind's defaults (xl: 12px→10px, 2xl: 16px→14px,
+      // 3xl: 24px→20px) - the previous system reached for 2xl/3xl on
+      // nearly everything, which read as soft/editorial rather than
+      // precise. Cascades everywhere `rounded-2xl` etc. is already used,
+      // no per-file changes needed. `full` is untouched - pills/avatars
+      // only, used more sparingly now rather than as the default badge
+      // treatment.
+      borderRadius: {
+        lg: '8px',
+        xl: '10px',
+        '2xl': '14px',
+        '3xl': '20px',
+      },
       boxShadow: {
-        soft: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
-        card: '0 0 0 1px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.03), 0 12px 40px rgba(0,0,0,0.06)',
-        glow: '0 0 20px var(--accent-soft), 0 8px 32px -8px var(--accent-soft)',
+        // Slightly cooler-toned and crisper than a pure-black shadow -
+        // cards read as lifted surfaces (elevation), not just boxes with
+        // borders, which is a real part of what makes this feel more
+        // premium/contemporary than the previous flat-bordered system.
+        soft: '0 1px 2px rgba(15,17,25,0.04), 0 2px 8px rgba(15,17,25,0.05)',
+        card: '0 0 0 1px rgba(15,17,25,0.04), 0 1px 2px rgba(15,17,25,0.04), 0 16px 40px -12px rgba(15,17,25,0.12)',
+        glow: '0 0 24px var(--accent-soft), 0 8px 32px -8px var(--accent-soft)',
+        // New: a subtler, tighter lift for interactive rows/small cards
+        // that shouldn't compete with a page's primary card.
+        lift: '0 1px 2px rgba(15,17,25,0.06)',
       },
       keyframes: {
         rise: {

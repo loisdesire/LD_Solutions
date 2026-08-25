@@ -43,30 +43,38 @@ export default function DashboardHeaderActions({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* Icon-only on mobile (no room to spare), a visible label alongside
+          it from sm up - these read as decorative on a first look
+          otherwise, not like the two most useful utility actions on the
+          page. */}
       <button
         onClick={handleCopy}
         aria-label="Copy booking link"
         title={copied ? 'Copied' : 'Copy booking link'}
-        className="h-10 w-10 flex items-center justify-center rounded-full text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+        className="h-10 sm:h-auto flex items-center justify-center sm:justify-start gap-2 rounded-full px-0 sm:px-4 sm:py-2.5 w-10 sm:w-auto text-ink-faint hover:bg-paper hover:text-ink transition-colors"
       >
         {copied ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5" /></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><path d="M20 6L9 17l-5-5" /></svg>
         ) : (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0">
             <path d="M10 13a5 5 0 007.07 0l2.83-2.83a5 5 0 00-7.07-7.07L11.5 4.5" />
             <path d="M14 11a5 5 0 00-7.07 0L4.1 13.83a5 5 0 007.07 7.07L12.5 19.5" />
           </svg>
         )}
+        <span className="hidden sm:inline text-[13.5px] font-medium whitespace-nowrap">
+          {copied ? 'Copied' : 'Copy link'}
+        </span>
       </button>
       <button
           onClick={handleExport}
           aria-label="Export CSV"
           title="Export CSV"
-          className="h-10 w-10 flex items-center justify-center rounded-full text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+          className="h-10 sm:h-auto flex items-center justify-center sm:justify-start gap-2 rounded-full px-0 sm:px-4 sm:py-2.5 w-10 sm:w-auto text-ink-faint hover:bg-paper hover:text-ink transition-colors"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0" aria-hidden="true">
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" />
           </svg>
+          <span className="hidden sm:inline text-[13.5px] font-medium whitespace-nowrap">Export CSV</span>
         </button>
       <button
         onClick={() => setShowNewAppointment(true)}

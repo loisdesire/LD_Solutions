@@ -6,6 +6,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
+import EmptyState from '@/components/EmptyState';
 
 export async function generateMetadata({
   params,
@@ -112,11 +113,44 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
         <div className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20">
           <div className="text-center mb-12">
             <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-3">Get in touch</h1>
-            <p className="text-[15px] text-ink-soft">We&apos;d love to hear from you.</p>
+            {/* Actual hours, not filler - "We'd love to hear from you"
+                said nothing a visitor could act on. hoursSummary was
+                already fetched for the footer on this exact page. */}
+            {hoursSummary ? (
+              <p className="text-[15px] text-ink-soft">{hoursSummary}</p>
+            ) : (
+              <p className="text-[15px] text-ink-soft">We&apos;d love to hear from you.</p>
+            )}
           </div>
 
           {methods.length === 0 ? (
-            <p className="text-center text-ink-faint text-[14px]">No contact details have been added yet. The quickest way to reach us is to book, or to ask in the chat.</p>
+            <EmptyState
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+                  <path d="M4 4h16v12H8l-4 4V4z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                  <path d="M8 9h8M8 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              }
+              title="No contact details listed yet"
+              description="The quickest way to reach us is to book directly, or ask a question in chat."
+              action={
+                <div className="flex flex-wrap justify-center gap-3">
+                  <a
+                    href={`/${slug}#book`}
+                    className="rounded-full px-5 py-2.5 min-h-[44px] flex items-center text-body-sm font-semibold text-white transition-opacity hover:opacity-90"
+                    style={{ background: 'var(--accent)' }}
+                  >
+                    Book an appointment
+                  </a>
+                  <a
+                    href="#chat"
+                    className="rounded-full border-2 border-line-strong px-5 py-2.5 min-h-[44px] flex items-center text-body-sm font-semibold text-ink hover:border-accent hover:text-accent transition-colors"
+                  >
+                    Chat with us
+                  </a>
+                </div>
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
               {methods.map((m) => (
@@ -154,6 +188,21 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
                   </svg>
                 </a>
               ))}
+            </div>
+          )}
+
+          {methods.length > 0 && (
+            <div className="mt-12 text-center">
+              <a
+                href={`/${slug}#book`}
+                className="inline-flex items-center gap-1.5 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] text-white transition-opacity hover:opacity-90 active:scale-95"
+                style={{ background: 'var(--accent)' }}
+              >
+                Book an appointment
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+              </a>
             </div>
           )}
         </div>

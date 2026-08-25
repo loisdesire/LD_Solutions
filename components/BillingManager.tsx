@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import type { SubscriptionState, Plan } from '@/lib/subscription';
+import EmptyState from './EmptyState';
+import ConfirmDialog from './ConfirmDialog';
+import { formatMoney } from '@/lib/formatMoney';
 
 const PLAN_BLURB: Record<Plan, string> = {
   core: 'Bookings, the AI receptionist, everything you need to run the calendar.',
@@ -42,6 +45,7 @@ export default function BillingManager({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cancelled, setCancelled] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   // Defaults to whatever plan they're already on (or were on before it
   // lapsed) rather than always resetting to Core - someone re-subscribing
   // after a failed payment shouldn't get quietly downgraded.
@@ -77,9 +81,7 @@ export default function BillingManager({
   }
 
   async function handleCancel() {
-    if (!confirm('Cancel your subscription? You\'ll keep access until the end of your current billing period.')) {
-      return;
-    }
+    setConfirmingCancel(false);
     setLoading(true);
     setError('');
 
@@ -116,7 +118,7 @@ export default function BillingManager({
           </span>
 
           <h2 className="font-display text-[22px] mt-3">
-            ₦{PLAN_PRICE_NGN[state.plan].toLocaleString()}
+            {formatMoney(PLAN_PRICE_NGN[state.plan])}
             <span className="text-[14px] font-normal text-ink-faint"> / month</span>
           </h2>
           <p className="text-ink-soft text-[13.5px] mt-1.5">
@@ -152,7 +154,7 @@ export default function BillingManager({
             <div className="flex items-center justify-between gap-3">
               <p className="text-[13.5px] text-ink-soft">You're all set.</p>
               <button
-                onClick={handleCancel}
+                onClick={() => setConfirmingCancel(true)}
                 disabled={loading}
                 className="text-[13px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
               >
@@ -179,7 +181,7 @@ export default function BillingManager({
                       {PLAN_LABEL[plan]}
                     </div>
                     <div className="font-display text-[17px] text-ink mt-0.5">
-                      ₦{PLAN_PRICE_NGN[plan].toLocaleString()}
+                      {formatMoney(PLAN_PRICE_NGN[plan])}
                     </div>
                     <p className="text-[11.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB[plan]}</p>
                   </button>
@@ -216,9 +218,19 @@ export default function BillingManager({
       )}
 
       {history.length === 0 && (
-        <p className="text-ink-faint text-caption mt-8">
-          No payments yet. Once your first monthly charge goes through, it&apos;ll be listed here.
-        </p>
+        <div className="mt-8">
+          <EmptyState
+            compact
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M2 10h20" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            }
+            title="No payments yet"
+            description="Once your first monthly charge goes through, it'll be listed here."
+          />
+        </div>
       )}
 
       {history.length > 0 && (
@@ -245,13 +257,24 @@ export default function BillingManager({
                   </div>
                 </div>
                 <div className="font-mono text-[13.5px] font-semibold text-ink">
-                  {h.amount != null ? `₦${Number(h.amount).toLocaleString()}` : '-'}
+                  {formatMoney(h.amount != null ? Number(h.amount) : null)}
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmingCancel}
+        title="Cancel your subscription?"
+        message="You'll keep access until the end of your current billing period, then the rest of the dashboard pauses until you subscribe again."
+        confirmLabel="Cancel subscription"
+        cancelLabel="Keep subscription"
+        pending={loading}
+        onConfirm={handleCancel}
+        onCancel={() => setConfirmingCancel(false)}
+      />
     </div>
   );
 }

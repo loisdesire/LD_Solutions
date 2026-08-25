@@ -49,18 +49,23 @@ export default function SiteHeader({
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-xl">
       <nav className="flex justify-between items-center w-full px-5 sm:px-8 py-3.5 max-w-6xl mx-auto">
-        <a href={`/${slug}`} className="flex items-center gap-2.5 min-w-0">
+        <a href={`/${slug}`} className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           {business.logo_url ? (
-            <img src={business.logo_url} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
+            <img src={business.logo_url} alt="" className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-cover shrink-0" />
           ) : (
             <div
-              className="h-9 w-9 rounded-xl flex items-center justify-center font-display text-[14px] font-semibold shrink-0"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-display text-[13px] sm:text-[14px] font-semibold shrink-0"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
               {business.name?.[0]?.toUpperCase()}
             </div>
           )}
-          <span className="font-display text-[16px] font-semibold text-ink truncate">{business.name}</span>
+          {/* Smaller on mobile, not just truncated sooner - the sticky
+              header also carries a "Book now" button and the menu
+              trigger on small screens, so the name has less room to
+              begin with; a size step buys back a few characters before
+              the ellipsis has to do the rest of the work. */}
+          <span className="font-display text-[14.5px] sm:text-[16px] font-semibold text-ink truncate">{business.name}</span>
         </a>
 
         {/* Desktop nav - unchanged */}
@@ -83,10 +88,10 @@ export default function SiteHeader({
         </div>
 
         {/* Mobile: book button always visible, everything else behind a menu */}
-        <div className="flex sm:hidden items-center gap-2">
+        <div className="flex sm:hidden items-center gap-1.5 shrink-0">
           <a
             href={`/${slug}#book`}
-            className="px-4 py-2 rounded-xl font-semibold text-[13px] text-white"
+            className="px-3.5 py-2 rounded-xl font-semibold text-[13px] text-white whitespace-nowrap"
             style={{ background: 'var(--accent)' }}
           >
             Book now
@@ -94,7 +99,7 @@ export default function SiteHeader({
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            className="p-2 text-ink shrink-0"
+            className="p-1.5 text-ink shrink-0"
           >
             {menuOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>

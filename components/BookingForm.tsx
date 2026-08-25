@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import CalendarPicker from './CalendarPicker';
 import Skeleton from './Skeleton';
+import Field from './Field';
+import { googleCalendarUrl } from '@/lib/googleCalendar';
+import { formatMoney } from '@/lib/formatMoney';
 
 type Service = {
   id: string;
@@ -63,23 +66,6 @@ function groupSlots(slots: string[]): [Period, string[]][] {
 // the progress bar and the page named the same step differently.
 const STEP_LABELS = ['What you want', 'When', 'Your details'];
 
-// Google Calendar rather than an .ics download: data:-URI downloads are
-// blocked in many in-app browsers (Instagram, WhatsApp) which is exactly
-// where a lot of these bookings happen. A plain https link degrades to
-// "opens a web page" at worst, instead of silently doing nothing.
-function googleCalendarUrl(opts: { title: string; startISO: string; minutes: number; details: string }): string {
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const start = new Date(opts.startISO);
-  const end = new Date(start.getTime() + opts.minutes * 60000);
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: opts.title,
-    dates: `${fmt(start)}/${fmt(end)}`,
-    details: opts.details,
-  });
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
-}
-
 function StepIndicator({ step }: { step: number }) {
   return (
     <div className="max-w-xs mx-auto mb-10">
@@ -131,6 +117,8 @@ export default function BookingForm({
   requirePayment = false,
   depositPercentage = 100,
   paystackPublicKey,
+  timezone,
+  cancellationWindowHours = 24,
 }: {
   businessId: string;
   slug: string;
@@ -140,6 +128,8 @@ export default function BookingForm({
   requirePayment?: boolean;
   depositPercentage?: number;
   paystackPublicKey?: string | null;
+  timezone?: string;
+  cancellationWindowHours?: number;
 }) {
   const [step, setStep] = useState<Step>('service');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -158,6 +148,11 @@ export default function BookingForm({
   // can never succeed without refetching slots first.
   const [errorMessage, setErrorMessage] = useState('');
   const [bookingId, setBookingId] = useState('');
+  // Whether the confirmation email actually sent, not just whether we
+  // asked the server to try - the screen used to claim "A confirmation
+  // has been sent to {email}" unconditionally, even though sendEmail is
+  // fire-and-await but its result was discarded server-side.
+  const [emailSent, setEmailSent] = useState(false);
   const [paystackReady, setPaystackReady] = useState(false);
   // Distinguishes "this day is genuinely fully booked" from "we couldn't
   // load availability" - before this, a network failure or a 429 rendered
@@ -173,6 +168,23 @@ export default function BookingForm({
   // so this business's toggle can't apply to it no matter what.
   const paymentActive = requirePayment && Boolean(selectedService?.price) && Boolean(paystackPublicKey);
   const amountDue = paymentActive ? Math.round(selectedService!.price! * (depositPercentage / 100)) : 0;
+
+  // A short zone label ("WAT", "GMT+1") rather than the raw IANA string -
+  // readable at a glance, and it's the one honest way to answer "is that
+  // MY time or theirs" for a customer booking a business in a different
+  // timezone from their own device. Falls back to the IANA name itself if
+  // the runtime can't resolve an abbreviation for it.
+  const tzLabel = useMemo(() => {
+    if (!timezone) return null;
+    try {
+      const part = new Intl.DateTimeFormat(undefined, { timeZone: timezone, timeZoneName: 'short' })
+        .formatToParts(new Date())
+        .find((p) => p.type === 'timeZoneName');
+      return part?.value ?? timezone;
+    } catch {
+      return timezone;
+    }
+  }, [timezone]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -252,6 +264,13 @@ export default function BookingForm({
 
   async function createBooking(paymentReference?: string) {
     const paymentTaken = Boolean(paymentReference);
+    // Trimmed here, once, rather than on every keystroke - a name typed
+    // as " Amaka" (leading space) used to survive `required` (it isn't
+    // empty) and then broke the confirmation screen's greeting, since
+    // " Amaka".split(' ')[0] is '', not 'Amaka'.
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -259,9 +278,9 @@ export default function BookingForm({
         body: JSON.stringify({
           businessId,
           serviceId: selectedService!.id,
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
+          customerName: trimmedName,
+          customerEmail: trimmedEmail,
+          customerPhone: trimmedPhone,
           startTime: selectedSlot,
           durationMinutes: selectedService!.duration_minutes,
           paymentReference,
@@ -272,11 +291,13 @@ export default function BookingForm({
 
       if (res.ok && data?.booking?.id) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('ld-booking-name', name);
-          localStorage.setItem('ld-booking-email', email);
-          localStorage.setItem('ld-booking-phone', phone);
+          localStorage.setItem('ld-booking-name', trimmedName);
+          localStorage.setItem('ld-booking-email', trimmedEmail);
+          localStorage.setItem('ld-booking-phone', trimmedPhone);
         }
+        setName(trimmedName);
         setBookingId(data.booking.id);
+        setEmailSent(Boolean(data.emailSent));
         setErrorMessage('');
         setStatus('idle');
         setStep('confirmed');
@@ -380,7 +401,11 @@ export default function BookingForm({
             <h2 className="font-display text-[28px] sm:text-[32px] font-bold text-ink">
               You&rsquo;re all set, {name.split(' ')[0]}!
             </h2>
-            <p className="text-ink-soft text-[14px] mt-2">A confirmation has been sent to {email}</p>
+            <p className="text-ink-soft text-[14px] mt-2">
+              {emailSent
+                ? `A confirmation has been sent to ${email}`
+                : 'Save your booking code below - your confirmation email may take a moment, or not arrive at all.'}
+            </p>
           </div>
 
           <div className="px-6 sm:px-8 py-5">
@@ -400,17 +425,17 @@ export default function BookingForm({
             <ConfirmationRow label="Time" value={selectedSlot ? formatTime(selectedSlot) : ''} />
             {paymentActive ? (
               <>
-                <ConfirmationRow label="Paid now" value={`₦${amountDue.toLocaleString()}`} />
+                <ConfirmationRow label="Paid now" value={formatMoney(amountDue)} />
                 {depositPercentage < 100 && selectedService?.price != null && (
                   <ConfirmationRow
                     label="Balance due at your visit"
-                    value={`₦${(selectedService.price - amountDue).toLocaleString()}`}
+                    value={formatMoney(selectedService.price - amountDue)}
                   />
                 )}
               </>
             ) : (
               selectedService?.price != null && (
-                <ConfirmationRow label="Price" value={`₦${selectedService.price.toLocaleString()}`} />
+                <ConfirmationRow label="Price" value={formatMoney(selectedService.price)} />
               )
             )}
           </div>
@@ -471,15 +496,29 @@ export default function BookingForm({
       <StepIndicator step={stepNum} />
 
       {step !== 'service' && selectedService && (
-        <div className="max-w-xl mx-auto rounded-2xl bg-warm-surface overflow-hidden mb-6 animate-rise">
-          <div className="px-4 py-3 flex items-center justify-between">
+        // Sticky, not just present - the calendar and slot list below can
+        // run taller than the viewport, and this is the one thing that
+        // should never scroll out of view while money and a time slot are
+        // both in play. `top-16` clears the site's own sticky header
+        // (SiteHeader.tsx) rather than sitting underneath it; z-30 keeps it
+        // below that header's z-50 so the two never fight for a corner.
+        <div className="sticky top-16 z-30 max-w-xl mx-auto rounded-2xl bg-warm-surface overflow-hidden mb-6 animate-rise shadow-soft">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
-              {selectedService.price != null && (
-                <span className="text-[12px] text-ink-faint block">
-                  ₦{selectedService.price.toLocaleString()}
-                </span>
-              )}
+              <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-ink-faint">
+                <span>{formatDuration(selectedService.duration_minutes)}</span>
+                {selectedService.price != null && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      {paymentActive && depositPercentage < 100
+                        ? `${formatMoney(selectedService.price)} total`
+                        : formatMoney(selectedService.price)}
+                    </span>
+                  </>
+                )}
+              </div>
               {selectedSlot && (
                 <span className="text-[12px] text-ink-faint">
                   {new Date(selectedSlot).toLocaleDateString(undefined, {
@@ -489,6 +528,12 @@ export default function BookingForm({
                   })}
                   {' · '}
                   {formatTime(selectedSlot)}
+                  {tzLabel && ` ${tzLabel}`}
+                </span>
+              )}
+              {paymentActive && (
+                <span className="text-[12px] font-semibold block mt-0.5" style={{ color: 'var(--accent)' }}>
+                  {depositPercentage < 100 ? `Deposit due: ${formatMoney(amountDue)}` : `Due: ${formatMoney(amountDue)}`}
                 </span>
               )}
             </div>
@@ -528,7 +573,10 @@ export default function BookingForm({
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
-            <div className="max-w-2xl mx-auto border-y border-line">
+            // max-w-xl, matching steps 2 and 3 - was max-w-2xl here only, a
+            // visible column-width jump the instant you picked a service
+            // and the page moved on to the next step.
+            <div className="max-w-xl mx-auto border-y border-line">
               {services.map((s) => (
                 <button
                   key={s.id}
@@ -548,7 +596,7 @@ export default function BookingForm({
                   <div className="flex items-center gap-3 shrink-0">
                     {s.price != null ? (
                       <span className="font-display text-[17px] font-semibold" style={{ color: 'var(--accent)' }}>
-                        ₦{s.price.toLocaleString()}
+                        {formatMoney(s.price)}
                       </span>
                     ) : (
                       <span className="text-[12.5px] font-medium text-ink-faint">Ask for pricing</span>
@@ -597,7 +645,10 @@ export default function BookingForm({
       {step === 'datetime' && selectedService && (
         <div className="animate-rise max-w-xl mx-auto">
           <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">When works for you?</h2>
-          <p className="text-[14px] text-ink-faint mb-6 text-center">Select a date and an available slot</p>
+          <p className={`text-[14px] text-ink-faint text-center ${tzLabel ? 'mb-1' : 'mb-6'}`}>Select a date and an available slot</p>
+          {tzLabel && (
+            <p className="text-[12px] text-ink-faint mb-6 text-center">Times shown in {businessName}&rsquo;s timezone ({tzLabel})</p>
+          )}
 
           {/* A 409 (slot taken while they were filling in details) sends
               them back here - without this banner they'd arrive with no
@@ -618,6 +669,8 @@ export default function BookingForm({
               }}
               today={today}
               maxDate={maxDate}
+              businessId={businessId}
+              serviceId={selectedService.id}
             />
           </div>
 
@@ -748,39 +801,100 @@ export default function BookingForm({
           <p className="text-[14px] text-ink-faint mb-6 text-center">We&apos;ll send your confirmation here</p>
 
           <div className="space-y-4 mb-6">
-            {[
-              { label: 'Full name', value: name, onChange: setName, type: 'text' },
-              { label: 'Email', value: email, onChange: setEmail, type: 'email' },
-              { label: 'Phone', value: phone, onChange: setPhone, type: 'tel' },
-            ].map((field) => (
-              <div key={field.label}>
-                <label className="block text-[13px] font-medium text-ink-soft mb-1.5">{field.label}</label>
+            {/* Field gives each input a real htmlFor/id pair - the label
+                and input here were only ever visually adjacent, so a
+                screen reader announced the control unnamed and clicking
+                the label text did nothing. autoComplete/inputMode are
+                new too: without them this was a plain-text keyboard on
+                every field on mobile (no @ row for email, no numeric pad
+                for phone) and no browser autofill offer at all. */}
+            <Field label="Full name" required>
+              {(props) => (
                 <input
-                  required
-                  type={field.type}
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  {...props}
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
                 />
-              </div>
-            ))}
+              )}
+            </Field>
+            <Field label="Email" required>
+              {(props) => (
+                <input
+                  {...props}
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+                />
+              )}
+            </Field>
+            <Field label="Phone" required>
+              {(props) => (
+                <input
+                  {...props}
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+                />
+              )}
+            </Field>
           </div>
 
+          {/* The one sentence that ties the whole flow together right
+              before anything is charged or booked - a customer scrolling
+              straight to the submit button (skipping the summary bar
+              above, or with it out of view on a short viewport) should
+              still see exactly what they're about to commit to. */}
+          {selectedSlot && (
+            <p className="text-[13px] text-ink-soft text-center mb-4">
+              You&rsquo;re booking <span className="font-semibold text-ink">{selectedService.name}</span> with{' '}
+              <span className="font-semibold text-ink">{businessName}</span> on{' '}
+              <span className="font-semibold text-ink">
+                {new Date(selectedSlot).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                {' at '}
+                {formatTime(selectedSlot)}
+              </span>
+              {tzLabel && ` (${tzLabel})`}.
+            </p>
+          )}
+
           {paymentActive && (
-            <div className="rounded-2xl bg-warm-surface p-4 mb-6">
+            <div className="rounded-2xl bg-warm-surface p-4 mb-4">
               <div className="flex items-center justify-between text-[13.5px]">
                 <span className="text-ink-soft">
                   {depositPercentage < 100 ? `Deposit (${depositPercentage}%) to confirm` : 'Due to confirm'}
                 </span>
                 <span className="font-display font-bold text-[17px]" style={{ color: 'var(--accent)' }}>
-                  ₦{amountDue.toLocaleString()}
+                  {formatMoney(amountDue)}
                 </span>
               </div>
               <p className="text-ink-faint text-[11.5px] mt-1.5">
                 Paid securely through Paystack. Card or bank transfer.
+                {depositPercentage < 100 && selectedService.price != null && (
+                  <> The remaining {formatMoney(selectedService.price - amountDue)} is due at your visit.</>
+                )}
               </p>
             </div>
           )}
+
+          {/* Cancellation/reschedule terms, stated before commitment rather
+              than left for someone to discover after paying - "what
+              happens after payment" and "can I get my money back" are
+              exactly the questions the audit flagged this flow as never
+              answering. */}
+          <p className="text-ink-faint text-[11.5px] text-center mb-6">
+            Need to change your mind? You can cancel or reschedule from your confirmation up to{' '}
+            {cancellationWindowHours} hour{cancellationWindowHours === 1 ? '' : 's'} before your appointment. After
+            that, contact {businessName} directly.
+          </p>
 
           <button
             type="button"
@@ -804,7 +918,7 @@ export default function BookingForm({
                 Confirming…
               </span>
             ) : paymentActive ? (
-              `Pay ₦${amountDue.toLocaleString()} & confirm`
+              `Pay ${formatMoney(amountDue)} & confirm`
             ) : (
               'Confirm booking'
             )}

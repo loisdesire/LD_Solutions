@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
+import { inputClass, labelClass } from './formStyles';
+import Field from './Field';
 
 export default function LoginForm({ slug }: { slug: string }) {
   const router = useRouter();
+  const passwordId = useId();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,32 +42,33 @@ export default function LoginForm({ slug }: { slug: string }) {
     }
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className={labelClass}>Email</label>
-        <input
-          required
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
-          placeholder="you@example.com"
-        />
-      </div>
+      <Field label="Email" required>
+        {(props) => (
+          <input
+            {...props}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="you@example.com"
+          />
+        )}
+      </Field>
 
       <div>
+        {/* "Forgot?" link sits in the label row, so this doesn't fit
+            Field's own label+input layout - real htmlFor/id wired by
+            hand instead. */}
         <div className="flex items-center justify-between mb-1.5">
-          <label className={labelClass}>Password</label>
+          <label htmlFor={passwordId} className={labelClass}>Password</label>
           <Link href={`/${slug}/forgot-password`} className="text-[12px] font-medium text-accent hover:underline">
             Forgot?
           </Link>
         </div>
         <input
+          id={passwordId}
           required
           type="password"
           value={password}

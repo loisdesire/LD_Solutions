@@ -7,6 +7,7 @@ import { sendEmail } from './email';
 import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
 import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
+import { formatMoney } from './formatMoney';
 import { randomUUID } from 'crypto';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
@@ -64,6 +65,27 @@ export async function getBusinessByTelegramToken(botToken: string) {
     .eq('telegram_bot_token', botToken)
     .maybeSingle();
   return data;
+}
+
+// "Last active" per channel - previously nothing tracked this anywhere, so
+// the Channels page could only ever say "Connected", never "and it's
+// actually being used." Called once per inbound message, after the
+// business is already resolved. Deliberately best-effort and silent: this
+// is a dashboard nicety, never something a real customer's conversation
+// should be allowed to fail over. If the *_last_active_at column hasn't
+// been added yet (see supabase/schema.sql), this just no-ops - same
+// "reads/writes an optional column, absence isn't fatal" shape as the
+// 42703 fallbacks used throughout the rest of this codebase, just without
+// the fallback query since there's nothing to fall back TO for a write.
+export async function markChannelActive(businessId: string, channel: 'telegram' | 'whatsapp' | 'messenger') {
+  try {
+    await supabaseAdmin
+      .from('businesses')
+      .update({ [`${channel}_last_active_at`]: new Date().toISOString() })
+      .eq('id', businessId);
+  } catch {
+    // Best-effort only.
+  }
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -282,7 +304,7 @@ export async function createBooking(
       instructions:
         `Do NOT say the booking is confirmed - it is not. Tell the customer their ${service.name} slot at ` +
         `${formatLocalDateTime(booking.start_time, timeZone)} is held for 15 minutes, give them this exact link to pay ` +
-        `₦${amountNaira.toLocaleString()}: ${init.authorizationUrl} - and tell them to message you once they have paid so you can confirm it. ` +
+        `${formatMoney(amountNaira)}: ${init.authorizationUrl} - and tell them to message you once they have paid so you can confirm it. ` +
         `If they don't pay within 15 minutes the slot is released.`,
     };
   }

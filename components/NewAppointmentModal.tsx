@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import CalendarPicker from './CalendarPicker';
 import { useDialog } from './useDialog';
+import Field from './Field';
+import { inputClass, labelClass } from './formStyles';
 
 type Service = {
   id: string;
@@ -114,10 +116,6 @@ export default function NewAppointmentModal({
     }
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-
   const dialogRef = useDialog(true, onClose);
 
 
@@ -182,7 +180,8 @@ export default function NewAppointmentModal({
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5">
             <div className="mb-5">
-              <label className={labelClass}>Service</label>
+              {/* Captions a button-group, not one input. */}
+              <span className={labelClass}>Service</span>
               <div className="flex flex-wrap gap-2">
                 {services.map((s) => {
                   const isSel = s.id === serviceId;
@@ -209,7 +208,7 @@ export default function NewAppointmentModal({
 
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2.5">
-                <label className={labelClass}>Available times</label>
+                <span className={labelClass}>Available times</span>
                 {!loadingSlots && <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>}
               </div>
               {loadingSlots ? (
@@ -248,19 +247,22 @@ export default function NewAppointmentModal({
             </div>
 
             <div className="space-y-3.5 mb-5">
-              <div>
-                <label className={labelClass}>Customer name</label>
-                <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Jane Doe" />
-              </div>
+              <Field label="Customer name" required>
+                {(props) => (
+                  <input {...props} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} placeholder="Jane Doe" />
+                )}
+              </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Phone</label>
-                  <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder="080…" />
-                </div>
-                <div>
-                  <label className={labelClass}>Email (optional)</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="jane@…" />
-                </div>
+                <Field label="Phone" required>
+                  {(props) => (
+                    <input {...props} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder="080…" />
+                  )}
+                </Field>
+                <Field label="Email (optional)">
+                  {(props) => (
+                    <input {...props} type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="jane@…" />
+                  )}
+                </Field>
               </div>
             </div>
 

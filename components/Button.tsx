@@ -1,19 +1,25 @@
 import Link from 'next/link';
 import type { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'react';
 
-// Consolidates what was 4+ byte-identical (or near-identical, differing only
-// in size) pill-button className strings copy-pasted across app/page.tsx -
-// same classes as before, just named once. Purely a dedup, not a new visual
-// design: every variant/size combination here matches an exact className
-// that already existed in the marketing page before this component existed.
+// Rectangular (rounded-xl), not the fully-pill treatment every button in
+// the previous system used regardless of context - a pill reads as a
+// single decorative choice; distinguishing shape by weight (solid vs.
+// bordered vs. soft-tinted) is what actually communicates hierarchy.
+// `primary` lifts on hover (shadow + a slight rise) rather than just
+// dimming opacity, which is what makes an interaction feel considered
+// rather than just "less visible."
 const VARIANTS = {
-  primary: 'text-white bg-accent shadow-sm hover:opacity-90 active:scale-95',
-  outline: 'text-ink border-2 border-line-strong hover:border-accent hover:text-accent',
+  primary: 'text-white bg-accent shadow-lift hover:bg-accent-hover hover:shadow-soft hover:-translate-y-px active:translate-y-0 active:bg-accent-active',
+  outline: 'text-ink border-[1.5px] border-line-strong bg-surface hover:border-accent hover:text-accent',
+  // Soft-tinted, no border - a middle-weight action that isn't the page's
+  // primary CTA but shouldn't read as a plain link either.
+  secondary: 'text-accent bg-accent-soft hover:bg-accent/[0.16]',
 } as const;
 
 const SIZES = {
-  sm: 'px-5 py-2.5 text-[13.5px]',
-  md: 'px-6 py-3 text-[14px]',
+  sm: 'px-4 py-2.5 text-[13.5px]',
+  md: 'px-5 py-3 text-[14px]',
+  lg: 'px-7 py-3.5 text-[15px]',
 } as const;
 
 type ButtonVariant = keyof typeof VARIANTS;
@@ -45,7 +51,7 @@ export default function Button(props: ButtonProps) {
   const { variant = 'primary', size = 'md', className = '', children, ...rest } = props;
 
   const classes =
-    `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all ${VARIANTS[variant]} ${SIZES[size]} ${className}`.trim();
+    `inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-150 ${VARIANTS[variant]} ${SIZES[size]} ${className}`.trim();
 
   if ('href' in rest && rest.href) {
     const { href, external, ...anchorProps } = rest as {

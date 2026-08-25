@@ -1,5 +1,8 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import CalendarView from '@/components/CalendarView';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Calendar' };
 
 export default async function CalendarPage({
   params,
@@ -21,7 +24,7 @@ export default async function CalendarPage({
     <div>
       <div className="mb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
+          Today
         </div>
         <h1 className="font-display text-[26px] text-ink">Calendar</h1>
         <p className="text-ink-soft text-[13.5px] mt-1">Your schedule, week by week.</p>

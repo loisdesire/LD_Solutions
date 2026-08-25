@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
+import { inputClass } from './formStyles';
+import Field from './Field';
 
-export default function AcceptInviteForm({ token }: { token: string }) {
+export default function AcceptInviteForm({ token, slug }: { token: string; slug: string }) {
   const router = useRouter();
   const [info, setInfo] = useState<{ email: string; businessName: string } | null>(null);
   const [password, setPassword] = useState('');
@@ -51,7 +55,7 @@ export default function AcceptInviteForm({ token }: { token: string }) {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(friendlyError(signInError));
       setLoading(false);
       return;
     }
@@ -59,9 +63,6 @@ export default function AcceptInviteForm({ token }: { token: string }) {
     router.push(`/${data.slug}/admin`);
     router.refresh();
   }
-
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
   if (checking) {
     return <p className="text-ink-soft text-[13.5px]">Checking invite…</p>;
@@ -71,6 +72,12 @@ export default function AcceptInviteForm({ token }: { token: string }) {
     return (
       <div className="border-2 border-line rounded-2xl p-5 bg-surface">
         <p className="text-sm text-error">{error || 'This invite is invalid or already used'}</p>
+        <p className="text-ink-soft text-[13px] mt-2">
+          If you&apos;ve already accepted it before, you already have an account for this team.
+        </p>
+        <Link href={`/${slug}/login`} className="inline-block mt-3 text-[13px] font-semibold text-accent hover:underline">
+          Go to login
+        </Link>
       </div>
     );
   }
@@ -82,20 +89,19 @@ export default function AcceptInviteForm({ token }: { token: string }) {
         <p className="text-ink-faint font-mono text-[11.5px] mt-1">Joining {info.businessName}</p>
       </div>
 
-      <div>
-        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
-          Set a password
-        </label>
-        <input
-          required
-          type="password"
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-          placeholder="At least 8 characters"
-        />
-      </div>
+      <Field label="Set a password" required>
+        {(props) => (
+          <input
+            {...props}
+            type="password"
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={inputClass}
+            placeholder="At least 8 characters"
+          />
+        )}
+      </Field>
 
       <button
         type="submit"

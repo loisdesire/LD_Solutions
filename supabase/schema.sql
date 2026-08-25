@@ -292,6 +292,16 @@ alter table businesses add column if not exists messenger_page_name text;
 -- auth/routing, telegram_bot_token is the only thing that matters for that.
 alter table businesses add column if not exists telegram_bot_username text;
 
+-- "Connected" alone never said whether a channel was actually being used -
+-- set (best-effort, fire-and-forget) by the corresponding webhook route on
+-- every real inbound customer message, and shown on the Channels page.
+-- Absence isn't fatal to anything: markChannelActive() in
+-- lib/whatsappTools.ts silently no-ops if this migration hasn't run yet,
+-- same as every other optional-column read/write in this codebase.
+alter table businesses add column if not exists telegram_last_active_at timestamptz;
+alter table businesses add column if not exists whatsapp_last_active_at timestamptz;
+alter table businesses add column if not exists messenger_last_active_at timestamptz;
+
 -- ============================================
 -- Appointment reminders
 -- ============================================
@@ -460,3 +470,134 @@ create table if not exists reschedule_plans (
 );
 
 alter table reschedule_plans enable row level security;
+
+-- ============================================
+-- Owner-only enforcement
+-- ============================================
+-- "role text default 'staff' -- 'owner' | 'staff'" has existed on the
+-- `staff` table since the start, but nothing ever actually checked it.
+-- Every policy below used to read "any staff at this business", with no
+-- role distinction at all - "staff can update own business" let a
+-- non-owner staff member rewrite the Paystack secret key, the
+-- Telegram/WhatsApp/Messenger tokens, and the custom domain from their
+-- own authenticated session, entirely bypassing the app's own UI (RLS is
+-- the real boundary here; the Next.js page/route gating around it is
+-- defense-in-depth, not the actual enforcement, and this migration is
+-- what the rest of that gating now actually relies on).
+--
+-- The `staff` table also had no UPDATE or DELETE policy at all, for any
+-- role - meaning renaming or removing a team member has been silently
+-- broken by RLS default-deny for the owner too, this whole time. This
+-- fixes both problems in the same pass: it's now enforced AND it works.
+
+-- Every create below is now preceded by a matching drop-if-exists for
+-- ITS OWN name too, not just the old policy it replaces - this migration
+-- got run partway (at least "owner can update own business" landed)
+-- before something after it failed, and the original version had no way
+-- to safely re-run past a statement that had already succeeded. This
+-- version can be pasted and run as many times as needed.
+drop policy if exists "staff can update own business" on businesses;
+drop policy if exists "owner can update own business" on businesses;
+create policy "owner can update own business"
+  on businesses for update
+  using (
+    id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+drop policy if exists "staff can manage own booking_rules" on booking_rules;
+drop policy if exists "owner can manage own booking_rules" on booking_rules;
+create policy "owner can manage own booking_rules"
+  on booking_rules for all
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+drop policy if exists "owner can update own staff" on staff;
+create policy "owner can update own staff"
+  on staff for update
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+drop policy if exists "owner can remove own staff" on staff;
+create policy "owner can remove own staff"
+  on staff for delete
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+-- staff_invites isn't declared anywhere else in this file - it was
+-- added directly against the live database at some point, outside this
+-- reference, so its exact current policy names aren't known here.
+-- `create table if not exists` makes this safe to run whether or not it
+-- already exists; the DO block drops every existing policy on it by
+-- its ACTUAL name (whatever that is) before the owner-only ones below
+-- are created, so no old unrestricted policy can silently survive under
+-- a name this migration doesn't know to target directly - the risk
+-- otherwise being that an old permissive "any staff" policy stays active
+-- alongside a new restrictive one, and Postgres OR's permissive RLS
+-- policies together, so the old one would still win.
+create table if not exists staff_invites (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  email text not null,
+  token uuid not null default gen_random_uuid(),
+  accepted boolean not null default false,
+  created_at timestamptz default now()
+);
+alter table staff_invites enable row level security;
+
+do $$
+declare
+  pol record;
+begin
+  for pol in select policyname from pg_policies where tablename = 'staff_invites'
+  loop
+    execute format('drop policy if exists %I on staff_invites', pol.policyname);
+  end loop;
+end $$;
+
+create policy "owner can view own business invites"
+  on staff_invites for select
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+create policy "owner can create invites"
+  on staff_invites for insert
+  with check (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+create policy "owner can delete invites"
+  on staff_invites for delete
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid() and role = 'owner'
+    )
+  );
+
+-- ============================================
+-- Currency (prep for international payments)
+-- ============================================
+-- Every business has been assumed to be Naira-priced everywhere in the
+-- app - 18 files hand-format `₦${amount.toLocaleString()}` directly
+-- rather than reading a currency from anywhere. Defaults to NGN so every
+-- existing business's behavior is completely unchanged; this column
+-- just gives a business a real place to say otherwise once a second
+-- payment rail (Stripe, for businesses Paystack can't onboard) actually
+-- exists. lib/formatMoney.ts reads this - see that file for the plan on
+-- retrofitting the 18 hardcoded call sites incrementally.
+alter table businesses add column if not exists currency text not null default 'NGN';

@@ -1,5 +1,8 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import BotIntegrationsSettings from '@/components/BotIntegrationsSettings';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Channels' };
 
 // Split out of Settings - connection status for the channels your AI
 // receptionist actually answers on is core product functionality, not
@@ -11,19 +14,39 @@ export default async function ChannelsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { business, supabase } = await requireStaffSession(slug);
+  // Connecting/disconnecting Telegram, WhatsApp, and Messenger means
+  // handling real bot credentials - the same risk class as a payment key,
+  // so this is owner-only too.
+  const { business, supabase } = await requireStaffSession(slug, { requireOwner: true });
 
-  const { data: bizRow, error: bizError } = await supabase
+  let { data: bizRow, error: bizError } = await supabase
     .from('businesses')
-    .select('telegram_bot_username, whatsapp_display_number, messenger_page_name')
+    .select(
+      'telegram_bot_username, whatsapp_display_number, messenger_page_name, telegram_last_active_at, whatsapp_last_active_at, messenger_last_active_at'
+    )
     .eq('id', business.id)
     .single();
+
+  // 42703 = the last-active-timestamp migration hasn't run yet - the
+  // combined select fails as one unit, so fall back to the columns that
+  // definitely exist rather than showing every channel as disconnected.
+  if (bizError?.code === '42703') {
+    const fallback = await supabase
+      .from('businesses')
+      .select('telegram_bot_username, whatsapp_display_number, messenger_page_name')
+      .eq('id', business.id)
+      .single();
+    bizRow = fallback.data
+      ? { ...fallback.data, telegram_last_active_at: null, whatsapp_last_active_at: null, messenger_last_active_at: null }
+      : null;
+    bizError = fallback.error;
+  }
 
   return (
     <div>
       <div className="mb-6">
         <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
+          Automate
         </div>
         <h1 className="font-display text-h1 text-ink">Channels</h1>
         <p className="text-ink-soft text-body-sm mt-1">
@@ -49,6 +72,9 @@ export default async function ChannelsPage({
         initialTelegramUsername={bizRow?.telegram_bot_username ?? null}
         initialWhatsappNumber={bizRow?.whatsapp_display_number ?? null}
         initialMessengerPageName={bizRow?.messenger_page_name ?? null}
+        telegramLastActiveAt={bizRow?.telegram_last_active_at ?? null}
+        whatsappLastActiveAt={bizRow?.whatsapp_last_active_at ?? null}
+        messengerLastActiveAt={bizRow?.messenger_last_active_at ?? null}
       />
     </div>
   );

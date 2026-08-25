@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getBusinessByMessengerPageId } from '@/lib/whatsappTools';
+import { getBusinessByMessengerPageId, markChannelActive } from '@/lib/whatsappTools';
 import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { sendMessengerMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   const accessToken = business.messenger_access_token;
+  // Not awaited - never let a dashboard-only timestamp affect the reply.
+  markChannelActive(business.id, 'messenger');
 
   if (!rateLimit(`messenger:${psid}`, 20, 5 * 60_000)) {
     await sendMessengerMessage(accessToken, psid, "You're sending messages a little fast, please wait a moment and try again.");

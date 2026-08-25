@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PlatformLoginForm from '@/components/PlatformLoginForm';
+import AuthMark from '@/components/AuthMark';
 
 export const metadata: Metadata = {
   title: 'Log in',
@@ -39,12 +40,24 @@ export default function PlatformLoginPage() {
 
       <div className="flex items-center justify-center p-6 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
+          <div className="lg:hidden">
+            <AuthMark name="Vanova" label="Business owner login" />
+          </div>
           <h2 className="font-display text-[26px] mb-7">Log in</h2>
           <PlatformLoginForm />
           <p className="text-ink-faint text-[12px] mt-5 lg:hidden">
             New here?{' '}
             <Link href="/signup" className="font-medium text-accent hover:underline">
               Create a booking page
+            </Link>
+          </p>
+          {/* The other door - someone who followed a link meant for their
+              own bookings, not a business they run, ends up here more
+              often than the URL choice would suggest. */}
+          <p className="text-ink-faint text-[12px] mt-2.5">
+            Looking for a booking you made, not managing a business?{' '}
+            <Link href="/account/login" className="font-medium text-accent hover:underline">
+              Find your bookings
             </Link>
           </p>
         </div>

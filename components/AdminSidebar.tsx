@@ -1,8 +1,41 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
+
+// Both sidebar widths (the 72px rail and the full 256px one) used to
+// hard-code a solid accent square with the business's first letter in
+// it, full stop - a business that had actually gone and uploaded a real
+// logo (Settings -> Business profile) never saw it anywhere in its own
+// nav, the one place they look at all day. Same fallback either way: no
+// logo just means the letter square, exactly as before this existed.
+function BusinessMark({
+  logoUrl,
+  businessName,
+  className,
+}: {
+  logoUrl?: string | null;
+  businessName: string;
+  className: string;
+}) {
+  if (logoUrl) {
+    return (
+      <div className={`relative overflow-hidden shrink-0 border border-line ${className}`}>
+        <Image src={logoUrl} alt="" fill sizes="40px" className="object-cover" />
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`flex items-center justify-center text-white font-display font-semibold shrink-0 ${className}`}
+      style={{ background: 'var(--accent)' }}
+    >
+      {businessName?.[0]?.toUpperCase()}
+    </div>
+  );
+}
 
 const icons: Record<string, React.ReactNode> = {
   bookings: (
@@ -81,18 +114,24 @@ const icons: Record<string, React.ReactNode> = {
   ),
 };
 
+type NavStatus = { setupIncomplete: boolean; channelsDisconnected: boolean; trialEndingSoon: boolean };
+
 export default function AdminSidebar({
   slug,
   businessName,
   businessType,
+  logoUrl,
   userEmail,
   role,
+  navStatus,
 }: {
   slug: string;
   businessName: string;
   businessType: string | null;
+  logoUrl?: string | null;
   userEmail: string;
   role: string;
+  navStatus: NavStatus;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -102,37 +141,83 @@ export default function AdminSidebar({
   // anyone who already uses it, it's just not promoted in the primary
   // nav alongside the actual core flow (services, hours, staff).
   //
-  // Three groups instead of two: the old single "Manage" bucket had 9
-  // unrelated items with no sub-structure. Connect groups the two things
-  // about how customers/staff reach the business (channels, the
-  // scheduling assistant that messages customers); Account groups the
-  // business-as-a-whole concerns (analytics, billing, configuration).
-  const manage = [
-    { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings' },
-    { href: `/${slug}/admin/calendar`, label: 'Calendar', key: 'calendar' },
-    { href: `/${slug}/admin/customers`, label: 'Customers', key: 'customers' },
-    { href: `/${slug}/admin/services`, label: 'Services', key: 'services' },
-    { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours' },
-    { href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff' },
+  // Regrouped from "Manage / Connect / Account" (implementation
+  // categories - nothing there told an owner which bucket held what they
+  // needed) to four groups named after the job, not the system area:
+  // what you check today, what you set up once, what runs on its own,
+  // and whole-business concerns. Assistant sits under Automate rather
+  // than Business - it's the thing customers and staff actively talk to,
+  // not a report you check once a month.
+  // `badge` marks a nav item that wants a small attention dot - computed
+  // once in the shared admin layout (app/[slug]/admin/layout.tsx) from
+  // real data (the same three setup signals SetupChecklist uses, whether
+  // any bot channel is connected, whether the trial is about to end), not
+  // decorative. Only three items ever carry one; everything else is
+  // undefined/false and renders with no dot at all.
+  type NavItem = { href: string; label: string; key: string; badge: boolean; active?: boolean };
+
+  const today: NavItem[] = [
+    { href: `/${slug}/admin`, label: 'Dashboard', key: 'bookings', badge: navStatus.setupIncomplete },
+    { href: `/${slug}/admin/calendar`, label: 'Calendar', key: 'calendar', badge: false },
+    { href: `/${slug}/admin/customers`, label: 'Customers', key: 'customers', badge: false },
   ];
-  const connect = [
-    { href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels' },
+  // Staff, Channels, and the Settings sections below all redirect a
+  // non-owner straight back to the dashboard (requireStaffSession's
+  // `requireOwner` check, backed by owner-only RLS policies on the
+  // actual data) - showing the link at all would just be a click that
+  // goes nowhere. Billing stays visible for everyone: that page handles
+  // a non-owner inline with a plain message instead of redirecting, so
+  // there's no dead link there.
+  const isOwner = role === 'owner';
+
+  const setup: NavItem[] = [
+    { href: `/${slug}/admin/services`, label: 'Services', key: 'services', badge: false },
+    { href: `/${slug}/admin/hours`, label: 'Hours', key: 'hours', badge: false },
+    ...(isOwner ? [{ href: `/${slug}/admin/staff`, label: 'Staff', key: 'staff', badge: false }] : []),
   ];
-  // Settings has four unrelated areas behind one nav item, so landing there
-  // always meant a second choice on the page. They hang off the nav item
-  // instead: visible when you are in Settings, one click from anywhere.
+  // Split back into two destinations - "Assistant" as one item combined
+  // two different jobs (answer a question vs. change the schedule),
+  // exactly what the audit called out. Each links to its own page now;
+  // the merged /admin/assistant still exists underneath for the
+  // dashboard's quick-ask bar, it's just not the primary nav entry
+  // anymore.
+  const automate: NavItem[] = [
+    { href: `/${slug}/admin/insights`, label: 'Ask', key: 'insights', badge: false },
+    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule', key: 'scheduleAssistant', badge: false },
+    ...(isOwner
+      ? [{ href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels', badge: navStatus.channelsDisconnected }]
+      : []),
+  ];
+  // Promoted to top-level destinations, per the audit's original ask -
+  // these previously hung off one "Settings" nav item, visible only once
+  // you were already in Settings. Each is its own line here now, same
+  // page underneath (?section= still does the routing), just not nested.
   const settingsSections = [
     { key: 'profile', label: 'Business profile' },
     { key: 'content', label: 'Website content' },
-    { key: 'rules', label: 'Booking rules and payments' },
+    { key: 'rules', label: 'Booking rules' },
+    { key: 'payments', label: 'Payments' },
     { key: 'domain', label: 'Custom domain' },
   ];
+  const settingsHref = `/${slug}/admin/settings`;
+  const activeSection = searchParams.get('section') ?? 'profile';
 
-  const account = [
-    { href: `/${slug}/admin/assistant`, label: 'Assistant', key: 'insights' },
-    { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing' },
-    { href: `/${slug}/admin/settings`, label: 'Settings', key: 'settings' },
+  const business: NavItem[] = [
+    { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing', badge: navStatus.trialEndingSoon },
+    ...(isOwner
+      ? settingsSections.map((sec) => ({
+          href: `${settingsHref}?section=${sec.key}`,
+          label: sec.label,
+          key: 'settings',
+          badge: false,
+          active: pathname === settingsHref && activeSection === sec.key,
+        }))
+      : []),
   ];
+
+  // Flat list for the compact rail (see below) - same items, no group
+  // headers, since there's no room for them in a 72px-wide column.
+  const allNavItems = [...today, ...setup, ...automate, ...business];
 
   async function handleSignOut() {
     const supabase = createBrowserSupabase();
@@ -141,18 +226,88 @@ export default function AdminSidebar({
     router.refresh();
   }
 
-  function NavLink({ href, label, iconKey }: { href: string; label: string; iconKey: string }) {
-    const active = pathname === href;
+  function NavLink({
+    href,
+    label,
+    iconKey,
+    badge,
+    active: activeOverride,
+  }: {
+    href: string;
+    label: string;
+    iconKey: string;
+    badge?: boolean;
+    /** For items that share a pathname and differ only by query string (the promoted Settings sections) - `pathname === href` can't tell them apart on its own. */
+    active?: boolean;
+  }) {
+    const active = activeOverride ?? pathname === href;
     return (
       <Link
         href={href}
-        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-body-sm transition-colors ${
+        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body-sm transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
         }`}
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
-        {icons[iconKey]}
+        {/* A left indicator bar on top of the soft fill, not instead of it -
+            the combination is what modern dashboard apps (Linear, Vercel)
+            use for "current location," and it reads more precise than a
+            flat color fill alone. */}
+        {active && (
+          <span
+            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full"
+            style={{ background: 'var(--accent)' }}
+            aria-hidden="true"
+          />
+        )}
+        <span className="relative shrink-0">
+          {icons[iconKey]}
+          {badge && (
+            <span
+              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-surface"
+              style={{ background: 'var(--warning)' }}
+              aria-hidden="true"
+            />
+          )}
+        </span>
         {label}
+        {badge && <span className="sr-only"> - needs attention</span>}
+      </Link>
+    );
+  }
+
+  // The compact rail (below, 768-900px) has no room for a label next to
+  // the icon - just the icon, a tooltip via `title`, and the same dot.
+  function RailLink({
+    href,
+    label,
+    iconKey,
+    badge,
+    active: activeOverride,
+  }: {
+    href: string;
+    label: string;
+    iconKey: string;
+    badge?: boolean;
+    active?: boolean;
+  }) {
+    const active = activeOverride ?? pathname === href;
+    return (
+      <Link
+        href={href}
+        title={label}
+        aria-label={badge ? `${label} - needs attention` : label}
+        className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
+        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+      >
+        <span className={active ? '' : 'text-ink-soft'}>{icons[iconKey]}</span>
+        {badge && (
+          <span
+            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full border border-surface"
+            style={{ background: 'var(--warning)' }}
+            aria-hidden="true"
+          />
+        )}
       </Link>
     );
   }
@@ -163,70 +318,83 @@ export default function AdminSidebar({
   // in the active nav item, matching how restraint is applied
   // everywhere else in the product.
   return (
-    <aside className="hidden md:flex md:w-[256px] shrink-0 bg-surface border-r border-line flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
+    <>
+    {/* Compact icon-only rail for the 768-900px dead zone - that width was
+        getting the full mobile hamburger menu despite having room for a
+        persistent nav, just not the full 256px sidebar's worth. Same
+        destinations, same active/badge state, no group labels or business
+        name (no room for either at 72px wide). */}
+    <aside className="hidden md:flex min-[900px]:hidden w-[72px] shrink-0 bg-surface border-r border-line flex-col items-center py-5 gap-1.5 sticky top-0 h-screen overflow-y-auto">
+      <div title={businessName} className="mb-4">
+        <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-9 w-9 rounded-xl text-[14px]" />
+      </div>
+      {allNavItems.map((tab) => (
+        <RailLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} active={tab.active} />
+      ))}
+      <button
+        onClick={handleSignOut}
+        aria-label="Sign out"
+        title="Sign out"
+        className="mt-auto h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+        </svg>
+      </button>
+    </aside>
+
+    <aside className="hidden min-[900px]:flex md:w-[256px] shrink-0 bg-surface border-r border-line flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
+      {/* Was "Salon · /glow-salon" underneath the name, permanently - a
+          url slug an owner already knows (it's their own business) and
+          has no reason to be reminded of on every single glance at their
+          own nav. The real use for it (sharing/copying the link) already
+          has a dedicated Copy link action on the dashboard header. Just
+          the business type now, and only when there is one. */}
       <div className="mb-10 px-2">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-display text-[14px] font-semibold shrink-0" style={{ background: 'var(--accent)' }}>
-            {businessName?.[0]?.toUpperCase()}
-          </div>
+          <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
           <div className="min-w-0">
             <div className="font-display text-[17px] font-semibold text-ink tracking-tight truncate">{businessName}</div>
-            <div className="font-mono text-[10px] text-ink-faint mt-0.5 truncate">
-              {businessType ? `${businessType} · ` : ''}/{slug}
-            </div>
+            {businessType && (
+              <div className="text-[12px] text-ink-faint mt-0.5 truncate">{businessType}</div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Manage
+      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+        Today
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
-        {manage.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+        {today.map((tab) => (
+          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
         ))}
       </nav>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Connect
+      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+        Set up
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
-        {connect.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} />
+        {setup.map((tab) => (
+          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
         ))}
       </nav>
 
-      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-        Account
+      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+        Automate
+      </div>
+      <nav className="flex flex-col gap-0.5 mb-5">
+        {automate.map((tab) => (
+          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
+        ))}
+      </nav>
+
+      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+        Business
       </div>
       <nav className="flex flex-col gap-0.5">
-        {account.map((tab) => (
-          <div key={tab.href}>
-            <NavLink href={tab.href} label={tab.label} iconKey={tab.key} />
-            {/* Only while you are actually in Settings. Showing four
-                sub-items permanently would make the sidebar look like it
-                has ten destinations instead of three. */}
-            {tab.key === 'settings' && pathname === tab.href && (
-              <div className="ml-[34px] mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
-                {settingsSections.map((sec) => {
-                  const on = (searchParams.get('section') ?? 'profile') === sec.key;
-                  return (
-                    <Link
-                      key={sec.key}
-                      href={`${tab.href}?section=${sec.key}`}
-                      aria-current={on ? 'page' : undefined}
-                      className={`rounded-lg px-2.5 py-2 text-caption transition-colors ${
-                        on ? 'font-semibold' : 'text-ink-soft hover:text-ink hover:bg-warm-surface'
-                      }`}
-                      style={on ? { color: 'var(--accent)' } : undefined}
-                    >
-                      {sec.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+        {business.map((tab) => (
+          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} active={tab.active} />
         ))}
       </nav>
 
@@ -252,5 +420,6 @@ export default function AdminSidebar({
         </button>
       </div>
     </aside>
+    </>
   );
 }

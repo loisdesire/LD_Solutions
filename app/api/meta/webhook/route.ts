@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getBusinessByMetaPhoneNumberId } from '@/lib/whatsappTools';
+import { getBusinessByMetaPhoneNumberId, markChannelActive } from '@/lib/whatsappTools';
 import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { sendWhatsappMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
@@ -77,6 +77,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   const accessToken = business.whatsapp_access_token;
+  // Not awaited - never let a dashboard-only timestamp affect the reply.
+  markChannelActive(business.id, 'whatsapp');
 
   if (!rateLimit(`meta-whatsapp:${from}`, 20, 5 * 60_000)) {
     await sendWhatsappMessage(

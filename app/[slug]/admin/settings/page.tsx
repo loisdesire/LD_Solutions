@@ -1,9 +1,13 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
+import type { Metadata } from 'next';
 import BusinessProfileManager from '@/components/BusinessProfileManager';
 import SiteContentManager from '@/components/SiteContentManager';
-import SettingsManager from '@/components/SettingsManager';
+import BookingRulesManager from '@/components/BookingRulesManager';
+import PaymentsManager from '@/components/PaymentsManager';
 import CustomDomainManager from '@/components/CustomDomainManager';
 import SettingsSections from '@/components/SettingsSections';
+
+export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage({
   params,
@@ -15,7 +19,13 @@ export default async function SettingsPage({
   const { slug } = await params;
   // Which section to show is decided by the sidebar, via the URL.
   const { section } = await searchParams;
-  const { business, supabase } = await requireStaffSession(slug);
+  // Business profile, site content, booking/payment rules, and the
+  // custom domain are all owner-level configuration - the managers on
+  // this page write straight to Supabase client-side, so the database's
+  // own RLS policies are the real boundary; this redirect just keeps a
+  // non-owner from landing on a page that would only fail once they
+  // tried to save something.
+  const { business, supabase } = await requireStaffSession(slug, { requireOwner: true });
 
   let [{ data: rules }, { data: bizRow }] = await Promise.all([
     supabase
@@ -66,7 +76,7 @@ export default async function SettingsPage({
     <div>
       <div className="mb-6">
         <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Configure
+          Business
         </div>
         <h1 className="font-display text-h1 text-ink">Settings</h1>
         <p className="text-ink-soft text-body-sm mt-1">
@@ -124,16 +134,30 @@ export default async function SettingsPage({
           },
           {
             key: 'rules',
-            label: 'Booking rules and payments',
-            description: 'Buffers, how far ahead people can book, cancellation notice, and taking deposits.',
+            label: 'Booking rules',
+            description: 'Buffers, how far ahead people can book, cancellation notice, and the Zapier webhook.',
             content: (
-              <SettingsManager
-                slug={slug}
+              <BookingRulesManager
                 businessId={business.id}
                 initialWebhookUrl={rules?.webhook_url ?? null}
                 initialBufferMinutes={rules?.buffer_minutes ?? 0}
                 initialMaxAdvanceDays={rules?.max_advance_days ?? 30}
                 initialCancellationWindowHours={rules?.cancellation_window_hours ?? 24}
+              />
+            ),
+          },
+          {
+            // Split out of "Booking rules and payments" - a live Paystack
+            // secret key used to share one Save button with a buffer-time
+            // number field and a Zapier URL. Money handling gets its own
+            // section and its own save action now.
+            key: 'payments',
+            label: 'Payments',
+            description: 'Take a deposit or full payment at booking time, and connect Paystack.',
+            content: (
+              <PaymentsManager
+                slug={slug}
+                businessId={business.id}
                 initialRequirePayment={rules?.require_payment ?? false}
                 initialDepositPercentage={rules?.deposit_percentage ?? null}
                 initialPaystackPublicKey={bizRow?.paystack_public_key ?? null}

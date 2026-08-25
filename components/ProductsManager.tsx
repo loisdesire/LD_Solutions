@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { useToast } from './Toast';
+import { friendlyError } from '@/lib/friendlyError';
+import { formatMoney } from '@/lib/formatMoney';
 import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
+import ConfirmDialog from './ConfirmDialog';
 
 type Product = {
   id: string;
@@ -33,7 +36,13 @@ export default function ProductsManager({
 
   const [editingId, setEditingId] = useState('');
   const [editDraft, setEditDraft] = useState({ name: '', description: '', price: '', stock_quantity: '' });
+  const nameId = useId();
+  const descriptionId = useId();
+  const priceId = useId();
+  const stockId = useId();
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const supabase = createBrowserSupabase();
   const showToast = useToast();
@@ -58,7 +67,7 @@ export default function ProductsManager({
     setSaving(false);
 
     if (insertError) {
-      setError(insertError.message);
+      setError(friendlyError(insertError));
       return;
     }
 
@@ -86,13 +95,16 @@ export default function ProductsManager({
     }
   }
 
-  async function handleDelete(id: string) {
-    const product = products.find((p) => p.id === id);
-    if (!confirm(`Delete ${product?.name ?? 'this product'}? This can't be undone.`)) return;
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { id, name } = deleteTarget;
+    setDeleting(true);
     const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
+    setDeleting(false);
+    setDeleteTarget(null);
     if (!deleteError) {
       setProducts((prev) => prev.filter((p) => p.id !== id));
-      showToast(`${product?.name ?? 'Product'} deleted`);
+      showToast(`${name} deleted`);
     } else {
       showToast('Could not delete that product', 'error');
     }
@@ -125,7 +137,7 @@ export default function ProductsManager({
     setEditSaving(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyError(updateError));
       return;
     }
 
@@ -174,8 +186,9 @@ export default function ProductsManager({
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-2 border-line rounded-2xl p-5 mb-4 bg-surface"
         >
           <div className="sm:col-span-2">
-            <label className={labelClass}>Product name</label>
+            <label htmlFor={nameId} className={labelClass}>Product name</label>
             <input
+              id={nameId}
               required
               autoFocus
               value={name}
@@ -185,8 +198,9 @@ export default function ProductsManager({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className={labelClass}>Description</label>
+            <label htmlFor={descriptionId} className={labelClass}>Description</label>
             <textarea
+              id={descriptionId}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={inputClass}
@@ -195,8 +209,9 @@ export default function ProductsManager({
             />
           </div>
           <div>
-            <label className={labelClass}>Price</label>
+            <label htmlFor={priceId} className={labelClass}>Price</label>
             <input
+              id={priceId}
               type="number"
               min={0}
               value={price}
@@ -206,8 +221,9 @@ export default function ProductsManager({
             />
           </div>
           <div>
-            <label className={labelClass}>Stock quantity</label>
+            <label htmlFor={stockId} className={labelClass}>Stock quantity</label>
             <input
+              id={stockId}
               type="number"
               min={0}
               value={stock}
@@ -280,12 +296,14 @@ export default function ProductsManager({
                 style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
                 <input
+                  aria-label="Product name"
                   value={editDraft.name}
                   onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
                   className={smallInputClass}
                   placeholder="Name"
                 />
                 <textarea
+                  aria-label="Description"
                   value={editDraft.description}
                   onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))}
                   className={smallInputClass}
@@ -296,6 +314,7 @@ export default function ProductsManager({
                   <input
                     type="number"
                     min={0}
+                    aria-label="Price"
                     value={editDraft.price}
                     onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
                     placeholder="Price"
@@ -304,6 +323,7 @@ export default function ProductsManager({
                   <input
                     type="number"
                     min={0}
+                    aria-label="Stock quantity"
                     value={editDraft.stock_quantity}
                     onChange={(e) => setEditDraft((d) => ({ ...d, stock_quantity: e.target.value }))}
                     placeholder="Stock"
@@ -352,7 +372,7 @@ export default function ProductsManager({
                   </span>
                 </div>
                 <div className="font-mono text-[13px] text-ink-soft">
-                  {p.price != null ? `₦${p.price.toLocaleString()}` : '-'}
+                  {formatMoney(p.price)}
                 </div>
                 <div className="font-mono text-[13px] text-ink-soft">
                   {p.stock_quantity != null ? p.stock_quantity : '-'}
@@ -389,7 +409,7 @@ export default function ProductsManager({
                     )}
                   </button>
                   <button
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => setDeleteTarget(p)}
                     aria-label="Delete"
                     className={`${iconBtnClass} hover:border-error hover:text-error`}
                   >
@@ -403,6 +423,17 @@ export default function ProductsManager({
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete product?"
+        message={`Delete ${deleteTarget?.name ?? 'this product'}? This can't be undone.`}
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        pending={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

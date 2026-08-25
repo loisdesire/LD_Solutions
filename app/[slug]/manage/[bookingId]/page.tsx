@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import ManageBooking from '@/components/ManageBooking';
 import { AccentScope } from '@/components/AccentScope';
+import { formatMoney } from '@/lib/formatMoney';
 import type { Metadata } from 'next';
 
 const supabaseAdmin = createClient(
@@ -24,23 +25,38 @@ export default async function ManageBookingPage({
 }) {
   const { slug, bookingId } = await params;
 
-  const { data: booking } = await supabaseAdmin
+  const BOOKING_COLUMNS =
+    'id, customer_name, start_time, status, business_id, service_id, payment_status, amount_paid, services(name, duration_minutes, price), businesses(name, slug, accent_color)';
+
+  let { data: booking, error: bookingError } = await supabaseAdmin
     .from('bookings')
-    .select(
-      'id, customer_name, start_time, status, business_id, service_id, services(name, duration_minutes), businesses(name, accent_color)'
-    )
+    .select(BOOKING_COLUMNS)
     .eq('id', bookingId)
     .maybeSingle();
+
+  // 42703 = the payments migration hasn't run on this database yet - same
+  // reasoning as everywhere else this pattern appears: the combined select
+  // fails as one unit, so fall back to the pre-payments column set rather
+  // than take this page down for every booking, paid or not.
+  if (bookingError?.code === '42703') {
+    const fallback = await supabaseAdmin
+      .from('bookings')
+      .select('id, customer_name, start_time, status, business_id, service_id, services(name, duration_minutes, price), businesses(name, slug, accent_color)')
+      .eq('id', bookingId)
+      .maybeSingle();
+    booking = fallback.data ? { ...fallback.data, payment_status: null, amount_paid: null } : null;
+  }
 
   if (!booking) notFound();
 
   const { data: rules } = await supabaseAdmin
     .from('booking_rules')
-    .select('max_advance_days')
+    .select('max_advance_days, cancellation_window_hours')
     .eq('business_id', booking.business_id)
     .maybeSingle();
 
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
+  const cancellationWindowHours = rules?.cancellation_window_hours ?? 24;
 
   const business = booking.businesses as any;
   const service = booking.services as any;
@@ -114,12 +130,35 @@ export default async function ManageBookingPage({
                   })}
                 </span>
               </div>
-              <div className="flex justify-between py-2.5 text-[13.5px]">
+              <div className={`flex justify-between py-2.5 text-[13.5px] ${service?.price != null || booking.payment_status ? 'border-b border-dashed border-line' : ''}`}>
                 <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
                   Booked for
                 </span>
                 <span className="font-semibold">{booking.customer_name}</span>
               </div>
+              {/* Price and payment state - previously absent entirely, so
+                  a customer checking on a paid booking had no way to
+                  confirm their payment actually went through from this
+                  page. */}
+              {(service?.price != null || booking.payment_status) && (
+                <div className="flex justify-between py-2.5 text-[13.5px]">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint self-center">
+                    {booking.payment_status === 'paid' ? 'Paid' : 'Price'}
+                  </span>
+                  <span className="font-semibold">
+                    {booking.payment_status === 'paid' && booking.amount_paid != null
+                      ? formatMoney(Number(booking.amount_paid))
+                      : service?.price != null
+                        ? formatMoney(service.price)
+                        : '-'}
+                    {booking.payment_status === 'pending' && (
+                      <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.05em]" style={{ color: 'var(--warning)' }}>
+                        Awaiting payment
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="mx-5 sm:mx-6 border-t-2 border-dashed border-line" />
@@ -133,8 +172,16 @@ export default async function ManageBookingPage({
             </div>
           </div>
 
+          {booking.status !== 'cancelled' && new Date(booking.start_time).getTime() > Date.now() && (
+            <p className="text-ink-faint text-[12px] text-center mt-4">
+              Free to cancel or reschedule up to {cancellationWindowHours} hour
+              {cancellationWindowHours === 1 ? '' : 's'} before your appointment.
+            </p>
+          )}
+
           <div className="mt-4">
             <ManageBooking
+              slug={slug}
               bookingId={booking.id}
               businessId={booking.business_id}
               serviceId={booking.service_id}

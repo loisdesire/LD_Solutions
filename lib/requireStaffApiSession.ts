@@ -14,7 +14,18 @@ const supabaseAdmin = createClient(
 // caller pull back extra business fields it actually needs (e.g.
 // 'id, whatsapp_number, telegram_bot_token') in this same query instead of
 // a second round trip right after this one.
-export async function requireStaffApiSession(slug: string, columns = 'id') {
+//
+// `requireOwner: true` 403s a non-owner staff member - defense-in-depth
+// alongside the database's own RLS policies (supabase/schema.sql's
+// "Owner-only enforcement" section), which are the real boundary for
+// anything written straight to Supabase. This is what actually stops a
+// non-owner from reaching routes that write through the service role
+// (billing, settings) instead, since those bypass RLS entirely by design.
+export async function requireStaffApiSession(
+  slug: string,
+  columns = 'id',
+  options: { requireOwner?: boolean } = {}
+) {
   const supabase = await createServerSupabase();
   const [{ data: business }, userResult] = await Promise.all([
     supabaseAdmin.from('businesses').select(columns).eq('slug', slug).maybeSingle(),
@@ -27,11 +38,15 @@ export async function requireStaffApiSession(slug: string, columns = 'id') {
 
   const { data: staffRow } = await supabase
     .from('staff')
-    .select('id')
+    .select('id, role')
     .eq('business_id', (business as any).id)
     .eq('auth_id', user.id)
     .maybeSingle();
   if (!staffRow) return { error: NextResponse.json({ error: 'Not authorized' }, { status: 403 }) };
 
-  return { business: business as any };
+  if (options.requireOwner && staffRow.role !== 'owner') {
+    return { error: NextResponse.json({ error: 'Only the business owner can do this' }, { status: 403 }) };
+  }
+
+  return { business: business as any, staff: staffRow };
 }

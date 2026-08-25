@@ -113,3 +113,130 @@ export async function getAvailableSlots(
   const now = Date.now();
   return slots.filter((iso) => new Date(iso).getTime() > now);
 }
+
+function addDaysToDateStr(dateISO: string, n: number): string {
+  const [y, m, d] = dateISO.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+}
+
+// Every enabled date on the calendar used to look identically bookable -
+// a customer had no way to tell "closed" or "fully booked" from "wide
+// open" without clicking in and waiting for that date's slots to load,
+// one date at a time. This answers "does this date have ANY open slot"
+// for a whole visible range in one call, without the N+1 that would come
+// from just calling getAvailableSlots once per day: working hours and
+// bookings are each fetched ONCE for the whole range, then the same
+// generateSlots logic that powers a single day's real availability runs
+// in memory per date. generateSlots compares absolute UTC instants, so
+// handing it every booking in the range (not just that day's) is safe -
+// a booking on another day can never overlap a candidate slot on this
+// one.
+//
+// Capped at 42 days (a full 6-week month grid, the largest range
+// CalendarPicker's month view ever needs) so a crafted start/end can't
+// force this into computing months of slots in one request.
+const MAX_RANGE_DAYS = 42;
+
+export async function getAvailabilityForRange(
+  businessId: string,
+  serviceId: string,
+  startISO: string,
+  endISO: string
+): Promise<Record<string, boolean>> {
+  await expireStalePaymentHolds(businessId);
+
+  const timeZone = await getBusinessTimezone(businessId);
+
+  const { data: service } = await supabaseAdmin
+    .from('services')
+    .select('duration_minutes')
+    .eq('id', serviceId)
+    .single();
+
+  if (!service) return {};
+
+  const { data: rules } = await supabaseAdmin
+    .from('booking_rules')
+    .select('buffer_minutes, max_advance_days')
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  const bufferMinutes = rules?.buffer_minutes ?? 0;
+  const maxAdvanceDays = rules?.max_advance_days ?? 30;
+  const today = todayInTimezone(timeZone);
+
+  // Build the actual list of dates to answer for, clamped to the same
+  // 42-day ceiling regardless of what the caller asked for.
+  const dates: string[] = [];
+  let cursor = startISO;
+  while (cursor <= endISO && dates.length < MAX_RANGE_DAYS) {
+    dates.push(cursor);
+    cursor = addDaysToDateStr(cursor, 1);
+  }
+
+  const result: Record<string, boolean> = {};
+  const bookableDates = dates.filter((d) => {
+    const daysOut = daysBetween(today, d);
+    if (daysOut < 0 || daysOut > maxAdvanceDays) {
+      result[d] = false;
+      return false;
+    }
+    return true;
+  });
+
+  if (bookableDates.length === 0) return result;
+
+  // All seven days of week in one query, not one query per date - most
+  // date ranges only span 1-2 distinct days-of-week's worth of variation
+  // anyway (a week or month grid repeats Mon-Sun), so this is the whole
+  // working-hours picture in a single round trip.
+  const { data: allHours } = await supabaseAdmin
+    .from('availability')
+    .select('day_of_week, start_time, end_time')
+    .eq('business_id', businessId);
+
+  const hoursByDow = new Map<number, { start_time: string; end_time: string }[]>();
+  for (const h of allHours ?? []) {
+    const list = hoursByDow.get(h.day_of_week) ?? [];
+    list.push({ start_time: h.start_time, end_time: h.end_time });
+    hoursByDow.set(h.day_of_week, list);
+  }
+
+  // One bookings query spanning the whole range, widened by the same 36h
+  // margin getAvailableSlots uses per-day (a business's calendar day
+  // doesn't line up with the UTC day once timezones are involved).
+  const rangeStart = zonedTimeToUtc(bookableDates[0], '00:00', timeZone);
+  const rangeEnd = new Date(
+    zonedTimeToUtc(bookableDates[bookableDates.length - 1], '00:00', timeZone).getTime() + 36 * 3600000
+  );
+
+  const { data: allBookings } = await supabaseAdmin
+    .from('bookings')
+    .select('start_time, end_time')
+    .eq('business_id', businessId)
+    .neq('status', 'cancelled')
+    .gte('start_time', rangeStart.toISOString())
+    .lte('start_time', rangeEnd.toISOString());
+
+  const now = Date.now();
+  for (const d of bookableDates) {
+    const hours = hoursByDow.get(dayOfWeekForDate(d)) ?? [];
+    if (hours.length === 0) {
+      result[d] = false;
+      continue;
+    }
+    const slots = generateSlots({
+      dateISO: d,
+      timeZone,
+      hours,
+      durationMinutes: service.duration_minutes,
+      bufferMinutes,
+      booked: allBookings ?? [],
+    });
+    result[d] = slots.some((iso) => new Date(iso).getTime() > now);
+  }
+
+  return result;
+}

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
+import { inputClass } from './formStyles';
+import Field from './Field';
 
 // Unlike LoginForm (which already knows which business's /admin to send
 // you to, because the URL itself is /[slug]/login), this is the generic
@@ -56,35 +58,33 @@ export default function PlatformLoginForm() {
     }
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className={labelClass}>Email</label>
-        <input
-          required
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
-          placeholder="you@example.com"
-        />
-      </div>
+      <Field label="Email" required>
+        {(props) => (
+          <input
+            {...props}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="you@example.com"
+          />
+        )}
+      </Field>
 
-      <div>
-        <label className={labelClass}>Password</label>
-        <input
-          required
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-          placeholder="••••••••"
-        />
-      </div>
+      <Field label="Password" required>
+        {(props) => (
+          <input
+            {...props}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={inputClass}
+            placeholder="••••••••"
+          />
+        )}
+      </Field>
 
       <button
         type="submit"

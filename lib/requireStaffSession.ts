@@ -10,9 +10,17 @@ import { notFound, redirect } from 'next/navigation';
 // `skipSubscriptionCheck: true` only from the billing page itself, since
 // that's the one page a business with an expired trial still needs to
 // reach in order to pay and regain access.
+//
+// `requireOwner: true` redirects a non-owner staff member back to the
+// dashboard - this is defense-in-depth, not the real boundary: the
+// database's own RLS policies (see the "Owner-only enforcement" section
+// of supabase/schema.sql) are what actually stop a non-owner from
+// writing owner-only data even if they bypass this page entirely and
+// call Supabase directly. This just keeps a staff member from landing on
+// a page that would only fail once they tried to use it.
 export async function requireStaffSession(
   slug: string,
-  options: { skipSubscriptionCheck?: boolean } = {}
+  options: { skipSubscriptionCheck?: boolean; requireOwner?: boolean } = {}
 ) {
   const data = await getBusinessBySlug(slug);
   if (!data) notFound();
@@ -33,6 +41,10 @@ export async function requireStaffSession(
     .maybeSingle();
 
   if (!staffRow) redirect(`/${slug}/login`);
+
+  if (options.requireOwner && staffRow.role !== 'owner') {
+    redirect(`/${slug}/admin`);
+  }
 
   if (!options.skipSubscriptionCheck) {
     const { data: sub } = await supabase

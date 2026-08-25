@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PillTabs from './PillTabs';
 import ConversationPanel from './ConversationPanel';
 import { todayInTimezone, dayOfWeekForDate } from '@/lib/timezone';
@@ -33,6 +33,95 @@ function addDays(iso: string, n: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Minutes since local midnight, in the business's own timezone rather than
+// the browser's - two people looking at the same calendar from different
+// timezones need to see the same appointment sit at the same visual hour.
+function minutesOfDay(iso: string, timezone: string): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const h = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
+  const m = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
+  // Midnight formats as "24:00" in en-GB with hour12:false in some engines -
+  // normalize back to 0 rather than let it fall outside a 0-1440 range.
+  return (h % 24) * 60 + m;
+}
+
+function formatHourLabel(hour: number): string {
+  const h = hour % 24;
+  const period = h < 12 ? 'AM' : 'PM';
+  const display = h % 12 === 0 ? 12 : h % 12;
+  return `${display} ${period}`;
+}
+
+const HOUR_HEIGHT = 60; // px per hour in the day time-grid
+const PX_PER_MIN = HOUR_HEIGHT / 60;
+const MIN_BLOCK_HEIGHT = 26; // a 10-minute booking still needs to be readable/tappable
+
+type PositionedBooking = Booking & { _top: number; _height: number; _left: number; _width: number };
+
+// Same overlap-layout approach most calendar UIs use: sweep bookings in
+// start order, greedily reuse a column once its previous occupant has
+// ended, open a new column otherwise. Bookings that never overlap anything
+// get a full-width column of one. This is what actually answers "do I have
+// a double-booking here" at a glance - two chips stacked in a plain list
+// (the old Day view) look identical whether they're back-to-back or
+// genuinely clashing.
+function layoutDay(dayBookings: Booking[], rangeStartMin: number, timezone: string): PositionedBooking[] {
+  const withTimes = dayBookings
+    .map((b) => ({
+      booking: b,
+      start: minutesOfDay(b.start_time, timezone),
+      end: Math.max(minutesOfDay(b.end_time, timezone), minutesOfDay(b.start_time, timezone) + 10),
+    }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const result: PositionedBooking[] = [];
+  let cluster: typeof withTimes = [];
+  let clusterEnd = -Infinity;
+
+  const flushCluster = () => {
+    if (!cluster.length) return;
+    const colEnds: number[] = [];
+    const colOf = new Map<string, number>();
+    for (const item of cluster) {
+      let col = colEnds.findIndex((end) => end <= item.start);
+      if (col === -1) {
+        col = colEnds.length;
+        colEnds.push(item.end);
+      } else {
+        colEnds[col] = item.end;
+      }
+      colOf.set(item.booking.id, col);
+    }
+    const colCount = colEnds.length;
+    for (const item of cluster) {
+      const col = colOf.get(item.booking.id)!;
+      result.push({
+        ...item.booking,
+        _top: (item.start - rangeStartMin) * PX_PER_MIN,
+        _height: Math.max((item.end - item.start) * PX_PER_MIN, MIN_BLOCK_HEIGHT),
+        _left: (col / colCount) * 100,
+        _width: (1 / colCount) * 100,
+      });
+    }
+    cluster = [];
+    clusterEnd = -Infinity;
+  };
+
+  for (const item of withTimes) {
+    if (cluster.length && item.start >= clusterEnd) flushCluster();
+    cluster.push(item);
+    clusterEnd = Math.max(clusterEnd, item.end);
+  }
+  flushCluster();
+
+  return result;
+}
+
 // A button, not a static card - every other list in the app (BookingsList,
 // CustomersManager) makes a booking's contact clickable to open the same
 // conversation panel; the calendar was the one place that broke that
@@ -60,6 +149,49 @@ function Chip({ booking, onOpen }: { booking: Booking; onOpen: () => void }) {
   );
 }
 
+// Absolutely positioned within the grid's relative container, sized to the
+// booking's actual duration and offset to its actual start time - see
+// `layoutDay` above for how `_left`/`_width` handle two overlapping
+// bookings sitting side by side instead of on top of each other.
+function GridBlock({ booking, onOpen }: { booking: PositionedBooking; onOpen: () => void }) {
+  const staffName = Array.isArray(booking.staff) ? booking.staff[0]?.name : booking.staff?.name;
+  const serviceName = Array.isArray(booking.services) ? booking.services[0]?.name : booking.services?.name;
+  const cancelled = booking.status === 'cancelled';
+  const compact = booking._height < 44;
+
+  return (
+    <button
+      onClick={onOpen}
+      className={`absolute rounded-lg border-2 bg-surface px-2 py-1 text-left overflow-hidden transition-shadow hover:z-20 hover:shadow-md ${cancelled ? 'opacity-50' : ''}`}
+      style={{
+        top: booking._top,
+        height: booking._height,
+        left: `calc(${booking._left}% + 2px)`,
+        width: `calc(${booking._width}% - 4px)`,
+        borderColor: STATUS_DOT[booking.status] ?? 'var(--line)',
+      }}
+    >
+      <div className={`flex items-baseline gap-1.5 min-w-0 ${compact ? '' : 'flex-col items-start gap-0'}`}>
+        <span
+          className={`font-mono text-[10px] font-semibold shrink-0 ${cancelled ? 'line-through' : ''}`}
+          style={{ color: 'var(--accent)' }}
+        >
+          {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+        </span>
+        <span className={`text-[12px] font-medium truncate ${cancelled ? 'line-through' : ''}`}>
+          {booking.customer_name}
+        </span>
+      </div>
+      {!compact && (
+        <div className="text-[10.5px] text-ink-faint truncate">
+          {serviceName}
+          {staffName ? ` · ${staffName}` : ''}
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function CalendarView({
   slug,
   timezone,
@@ -73,6 +205,15 @@ export default function CalendarView({
   const [mode, setMode] = useState<'week' | 'day'>('week');
   const [anchor, setAnchor] = useState(today); // a date inside the currently viewed week/day
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
+
+  // Only for the current-time line in Day view - starts null so server and
+  // first client render match, same reasoning as the dashboard's clock.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const weekStart = useMemo(() => addDays(anchor, -dayOfWeekForDate(anchor)), [anchor]);
 
@@ -104,6 +245,35 @@ export default function CalendarView({
           addDays(weekStart, 6) + 'T00:00:00'
         ).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
       : new Date(anchor + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // Day time-grid range: defaults to a normal 8am-8pm working window, but
+  // widens to actually fit anything booked outside it - an early opener or
+  // a late appointment shouldn't get silently clipped off the top/bottom
+  // of the grid the way the old fixed-height hero section used to clip
+  // content (see the public page fix). No business-hours data reaches
+  // this component yet, so this is the closest available signal.
+  const dayBookings = useMemo(() => byDay.get(anchor) ?? [], [byDay, anchor]);
+  const { rangeStartHour, rangeEndHour } = useMemo(() => {
+    let startHour = 8;
+    let endHour = 20;
+    for (const b of dayBookings) {
+      startHour = Math.min(startHour, Math.floor(minutesOfDay(b.start_time, timezone) / 60));
+      endHour = Math.max(endHour, Math.ceil(minutesOfDay(b.end_time, timezone) / 60));
+    }
+    return { rangeStartHour: Math.max(0, startHour), rangeEndHour: Math.min(24, endHour) };
+  }, [dayBookings, timezone]);
+
+  const hours = useMemo(
+    () => Array.from({ length: rangeEndHour - rangeStartHour }, (_, i) => rangeStartHour + i),
+    [rangeStartHour, rangeEndHour]
+  );
+  const gridHeight = hours.length * HOUR_HEIGHT;
+  const positionedBookings = useMemo(
+    () => layoutDay(dayBookings, rangeStartHour * 60, timezone),
+    [dayBookings, rangeStartHour, timezone]
+  );
+  const nowTop =
+    now !== null && anchor === today ? (minutesOfDay(new Date(now).toISOString(), timezone) - rangeStartHour * 60) * PX_PER_MIN : null;
 
   return (
     <div>
@@ -158,14 +328,19 @@ export default function CalendarView({
         // Horizontal scroll below `sm` instead of stacking to one column -
         // a vertically-stacked "week" on mobile was just Day view repeated
         // seven times, which loses the actual point of a week view (seeing
-        // the whole week at a glance) rather than serving it worse.
+        // the whole week at a glance) rather than serving it worse. The
+        // partial last column already peeks in as a hint, but it wasn't
+        // a strong enough cue on its own - the fade edge below makes "more
+        // days exist, keep scrolling" visible without relying on someone
+        // noticing a sliver of a column.
+        <div className="relative">
         <div className="flex sm:grid sm:grid-cols-7 gap-3 overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
           {weekDays.map((day, i) => {
             // Cancelled bookings are shown (dimmed + struck through), not
             // hidden - Day view already did this; Week view silently
             // dropping them was an inconsistency between the two modes of
             // the same page, not a deliberate choice.
-            const dayBookings = byDay.get(day) ?? [];
+            const weekDayBookings = byDay.get(day) ?? [];
             const isToday = day === today;
             return (
               <div
@@ -180,61 +355,78 @@ export default function CalendarView({
                 >
                   <span>{DAY_LABELS[i]}</span>
                   <span>{Number(day.slice(8, 10))}</span>
-                  {dayBookings.length > 0 && (
+                  {weekDayBookings.length > 0 && (
                     <span className="ml-auto tabular-nums" style={{ color: isToday ? 'var(--accent)' : 'var(--ink-faint)' }}>
-                      {dayBookings.length}
+                      {weekDayBookings.length}
                     </span>
                   )}
                 </div>
                 <div className="space-y-1.5 min-h-[60px]">
-                  {dayBookings.length === 0 ? (
+                  {weekDayBookings.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-line h-[52px] flex items-center justify-center">
                       <span className="text-label text-ink-faint">Free</span>
                     </div>
                   ) : (
-                    dayBookings.map((b) => <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />)
+                    weekDayBookings.map((b) => <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />)
                   )}
                 </div>
               </div>
             );
           })}
         </div>
+        {/* Fade hint that more days sit off to the right - mobile only,
+            since sm+ already shows all 7 as a grid with nothing to scroll. */}
+        <div
+          className="sm:hidden pointer-events-none absolute top-0 right-0 bottom-2 w-8"
+          style={{ background: 'linear-gradient(to right, transparent, var(--paper))' }}
+          aria-hidden="true"
+        />
+        </div>
       ) : (
-        <div className="max-w-xl">
-          {(byDay.get(anchor) ?? []).length === 0 ? (
-            <div className="border-2 border-dashed border-line-strong rounded-2xl py-10 text-center text-body-sm text-ink-faint">
-              Nothing booked this day - a free day, or one worth filling.
-            </div>
-          ) : (
-            // Grouped by part of day rather than a flat list. The same
-            // grouping the customer sees when picking a slot, so morning
-            // and afternoon load is readable without doing time arithmetic
-            // down a column of chips.
-            (['Morning', 'Afternoon', 'Evening'] as const).map((period) => {
-              const inPeriod = (byDay.get(anchor) ?? []).filter((b) => {
-                const h = Number(
-                  new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', hour12: false }).format(
-                    new Date(b.start_time)
-                  )
-                );
-                return period === 'Morning' ? h < 12 : period === 'Afternoon' ? h < 17 : h >= 17;
-              });
-              if (inPeriod.length === 0) return null;
-              return (
-                <div key={period} className="mb-5 last:mb-0">
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint">{period}</span>
-                    <span className="text-label text-ink-faint tabular-nums">{inPeriod.length}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {inPeriod.map((b) => (
-                      <Chip key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })
+        <div>
+          {dayBookings.length === 0 && (
+            <p className="text-body-sm text-ink-faint mb-3">Nothing booked this day - a free day, or one worth filling.</p>
           )}
+          {/* True time-grid, not a flat list - hour rows on the left, blocks
+              positioned and sized by actual start time and duration on the
+              right, laid out side-by-side when two bookings overlap. A flat
+              list of chips made a 10:40 and a 1:30 appointment look exactly
+              as far apart as a 10:40 and an 11:00, and gave no way to see a
+              genuine double-booking versus two that just happen to be
+              adjacent. */}
+          <div className="flex border border-line rounded-2xl bg-surface overflow-hidden">
+            <div className="w-12 sm:w-14 shrink-0 border-r border-line" style={{ height: gridHeight }}>
+              {hours.map((h, i) => (
+                <div key={h} className="relative" style={{ height: HOUR_HEIGHT }}>
+                  {i > 0 && (
+                    <span className="absolute -top-2 right-2 font-mono text-[10px] text-ink-faint bg-surface px-0.5">
+                      {formatHourLabel(h)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 relative" style={{ height: gridHeight }}>
+              {hours.map((h, i) => (
+                <div
+                  key={h}
+                  className={`absolute left-0 right-0 ${i === 0 ? '' : 'border-t border-line'}`}
+                  style={{ top: i * HOUR_HEIGHT }}
+                />
+              ))}
+
+              {nowTop !== null && nowTop >= 0 && nowTop <= gridHeight && (
+                <div className="absolute left-0 right-0 z-10 flex items-center gap-1" style={{ top: nowTop }}>
+                  <span className="h-2 w-2 rounded-full shrink-0 -ml-1" style={{ background: 'var(--accent)' }} />
+                  <div className="flex-1 border-t-2" style={{ borderColor: 'var(--accent)' }} />
+                </div>
+              )}
+
+              {positionedBookings.map((b) => (
+                <GridBlock key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

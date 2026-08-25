@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import CalendarPicker from './CalendarPicker';
 import Skeleton from './Skeleton';
 
@@ -29,6 +30,7 @@ function groupSlots(slots: string[]): [Period, string[]][] {
 }
 
 export default function ManageBooking({
+  slug,
   bookingId,
   businessId,
   serviceId,
@@ -36,6 +38,7 @@ export default function ManageBooking({
   startTime,
   maxAdvanceDays = 30,
 }: {
+  slug: string;
   bookingId: string;
   businessId: string;
   serviceId: string;
@@ -96,21 +99,31 @@ export default function ManageBooking({
     };
   }, [date, businessId, serviceId, reloadKey]);
 
+  // Neither of these had a try/catch at all - the same class of bug
+  // BookingForm.tsx's createBooking already had fixed (see its comment):
+  // a network failure or a non-JSON error response threw straight out of
+  // an async onClick handler, leaving `loading` stuck true and the
+  // button reading "Cancelling…"/"Saving…" forever with nothing to tell
+  // the customer why.
   async function handleCancel() {
     setLoading(true);
     setError('');
 
-    const res = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
+      const data = await res.json().catch(() => null);
 
-    setLoading(false);
+      if (!res.ok) {
+        setError(data?.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
 
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong. Please try again.');
-      return;
+      setStatus('cancelled');
+    } catch {
+      setError("We couldn't reach the server. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setStatus('cancelled');
   }
 
   async function handleReschedule() {
@@ -118,28 +131,43 @@ export default function ManageBooking({
     setLoading(true);
     setError('');
 
-    const res = await fetch(`/api/bookings/${bookingId}/reschedule`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStartTime: selectedSlot }),
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/reschedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newStartTime: selectedSlot }),
+      });
+      const data = await res.json().catch(() => null);
 
-    setLoading(false);
+      if (!res.ok) {
+        setError(data?.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
 
-    if (!res.ok) {
-      setError(data.error ?? 'Something went wrong. Please try again.');
-      return;
+      setRescheduling(false);
+      setRescheduled(true);
+    } catch {
+      setError("We couldn't reach the server. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setRescheduling(false);
-    setRescheduled(true);
   }
 
+  // Every terminal state (cancelled, or already happened) used to leave
+  // the same blank card with nothing to do next - the only way forward
+  // was noticing the "Back to {business}" link all the way up in the
+  // page header. Each one now offers the actual next step.
   if (status === 'cancelled') {
     return (
       <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">This booking has been cancelled.</p>
+        <Link
+          href={`/${slug}#book`}
+          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: 'var(--accent)' }}
+        >
+          Book a new appointment
+        </Link>
       </div>
     );
   }
@@ -152,6 +180,13 @@ export default function ManageBooking({
       <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
         <p className="font-semibold text-[14px]">This appointment has already happened.</p>
         <p className="text-ink-soft text-[13px] mt-1">Nothing to manage here anymore.</p>
+        <Link
+          href={`/${slug}#book`}
+          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: 'var(--accent)' }}
+        >
+          Book again
+        </Link>
       </div>
     );
   }
@@ -169,9 +204,12 @@ export default function ManageBooking({
     return (
       <div className="border-2 border-line-strong bg-surface rounded-2xl p-6 space-y-5 animate-rise shadow-soft">
         <div>
-          <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
+          {/* Captions a button-grid calendar, not one input - a <label>
+              with nothing for htmlFor to point at is the same
+              half-association problem this pass exists to fix. */}
+          <span className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
             New date
-          </label>
+          </span>
           <CalendarPicker
             selectedDate={date}
             onChange={(d) => {
@@ -180,15 +218,17 @@ export default function ManageBooking({
             }}
             today={today}
             maxDate={maxDate}
+            businessId={businessId}
+            serviceId={serviceId}
           />
         </div>
 
         {date && (
           <div className="pt-2 animate-rise">
             <div className="flex items-center justify-between mb-3">
-              <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+              <span className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint">
                 Available times
-              </label>
+              </span>
               {!loadingSlots && !slotsError && (
                 <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>
               )}

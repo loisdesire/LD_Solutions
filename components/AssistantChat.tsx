@@ -9,11 +9,22 @@ type Message = { role: 'user' | 'assistant'; content: string };
 // scroll-to-bottom/message-rendering logic, differing only in which
 // endpoint they posted to and their copy. Each caller supplies its own
 // endpoint, suggestions, and copy; this owns the mechanics.
+// This one assistant does two different jobs in the same thread - answer a
+// question, or change the schedule - by deliberate choice (it used to be
+// two separate tabs; splitting it back out was tried and rejected, since
+// almost nobody went looking for a feature they had to first decide which
+// of two tools it lived under). Grouped suggestions is the compromise:
+// still one chat, one input, one history, but the opening chips make the
+// two kinds of thing it can do visually distinct from the first screen,
+// instead of one flat row where "Move Ada to Monday" and "Who are my top
+// customers?" read as the same kind of ask.
+type SuggestionGroup = { label: string; items: string[] };
+
 export default function AssistantChat({
   slug,
   endpoint,
   emptyStateText,
-  suggestions,
+  suggestionGroups,
   inputPlaceholder,
   banner,
   initialMessage,
@@ -21,7 +32,7 @@ export default function AssistantChat({
   slug: string;
   endpoint: string;
   emptyStateText: string;
-  suggestions: string[];
+  suggestionGroups: SuggestionGroup[];
   inputPlaceholder: string;
   /** Asked automatically on mount, so a question typed elsewhere can open straight into its answer. */
   initialMessage?: string;
@@ -39,11 +50,25 @@ export default function AssistantChat({
 
   // Ask the opening question once. The ref guard matters because effects run
   // twice in development, and without it the question is sent twice.
+  //
+  // Was leaving ?q=... sitting in the address bar forever afterwards - not
+  // just untidy (a full question, URL-encoded, permanently on display), but
+  // a real behavior bug: refreshing this exact URL re-asked the same
+  // question again, since `initialMessage` is read fresh from the URL on
+  // every full page load and `askedRef` itself resets on reload. Clearing
+  // the param via history.replaceState (no navigation event, no rerender,
+  // just rewrites what's shown in the address bar) once the question has
+  // actually been sent closes both.
   const askedRef = useRef(false);
   useEffect(() => {
     if (!initialMessage || askedRef.current) return;
     askedRef.current = true;
     send(initialMessage);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('q');
+      window.history.replaceState(null, '', url.pathname + url.search);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessage]);
 
@@ -86,15 +111,24 @@ export default function AssistantChat({
           {messages.length === 0 && (
             <div className="my-auto text-center">
               <p className="text-ink-soft text-[13.5px] mb-4">{emptyStateText}</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => send(s)}
-                    className="rounded-full border border-line px-3 py-1.5 text-[12.5px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors"
-                  >
-                    {s}
-                  </button>
+              <div className="flex flex-col items-center gap-3.5">
+                {suggestionGroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
+                      {group.label}
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {group.items.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => send(s)}
+                          className="rounded-full border border-line px-3 py-1.5 text-[12.5px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -132,6 +166,7 @@ export default function AssistantChat({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            aria-label="Ask your assistant"
             placeholder={inputPlaceholder}
             className="flex-1 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[13.5px] outline-none focus:border-accent transition-colors"
           />

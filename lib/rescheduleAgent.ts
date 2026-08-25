@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { runToolAgent, type AgentMessage } from './agentLoop';
+import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { todayInTimezone } from './timezone';
 import { proposeReschedule, proposeBookingMove, applyReschedule } from './rescheduleTools';
@@ -145,5 +145,8 @@ Formatting: plain conversational text, no markdown asterisks or headers. Keep it
     message,
     tools: RESCHEDULE_TOOLS,
     executeTool: (name, args) => executeRescheduleTool(name, args, businessId),
+    // Deterministic backstop - the prompt already says "no markdown", but
+    // that isn't reliably followed on its own (see agentLoop.ts).
+    postProcess: stripMarkdown,
   });
 }

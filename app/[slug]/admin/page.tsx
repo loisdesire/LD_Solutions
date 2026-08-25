@@ -1,6 +1,4 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
-import { hasBusinessIntelligence } from '@/lib/subscription-server';
-import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import AdminDashboardBody from '@/components/AdminDashboardBody';
@@ -13,15 +11,11 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await getBusinessBySlug(slug);
-  return { title: data ? `${data.business.name} - Dashboard` : 'Dashboard' };
-}
+// Just "Dashboard" now, not "{name} - Dashboard" - the admin layout's
+// title template already appends " - {name}" to whatever a child page
+// sets, so including the name here too would have doubled it up into
+// "Glow Salon - Dashboard - Glow Salon".
+export const metadata: Metadata = { title: 'Dashboard' };
 
 export default async function AdminDashboard({
   params,
@@ -33,7 +27,6 @@ export default async function AdminDashboard({
   const { slug } = await params;
   const { from, to } = await searchParams;
   const { business } = await requireStaffSession(slug);
-  const analyticsEnabled = await hasBusinessIntelligence(business.id);
 
   // The page used to load every booking a business had ever taken, then
   // throw most of it away in the browser. That is fine at a few dozen and
@@ -50,7 +43,7 @@ export default async function AdminDashboard({
   const pastFrom = from ? new Date(`${from}T00:00:00`) : new Date(nowMs - 7 * 86400000);
   const pastTo = to ? new Date(`${to}T23:59:59`) : new Date(nowMs);
 
-  const [{ data: recent }, { data: pastRows }, { data: bookableServices }, { data: rules }] =
+  const [{ data: recent }, { data: pastRows }, { data: bookableServices }, { data: rules }, { count: hoursCount }] =
     await Promise.all([
       supabaseAdmin
         .from('bookings')
@@ -78,6 +71,14 @@ export default async function AdminDashboard({
         .select('max_advance_days')
         .eq('business_id', business.id)
         .maybeSingle(),
+      // Setup-checklist signal only - is there any default (staff_id null)
+      // opening-hours row at all. head:true so this is a count, not a
+      // row fetch; the dashboard only needs to know "set" vs "not set".
+      supabaseAdmin
+        .from('availability')
+        .select('id', { count: 'exact', head: true })
+        .eq('business_id', business.id)
+        .is('staff_id', null),
     ]);
 
   // One list for the table, deduped: the two windows overlap by design, so
@@ -134,7 +135,6 @@ export default async function AdminDashboard({
       slug={slug}
       businessName={business.name}
       businessId={business.id}
-      analyticsEnabled={analyticsEnabled}
       services={bookableServices ?? []}
       maxAdvanceDays={rules?.max_advance_days ?? 30}
       all={all}
@@ -145,6 +145,10 @@ export default async function AdminDashboard({
       weekRevenue={weekRevenue}
       revenuePctDelta={revenuePctDelta}
       nextSlot={nextSlot}
+      profileDone={Boolean(business.description?.trim() || business.logo_url)}
+      servicesDone={(bookableServices?.length ?? 0) > 0}
+      hoursDone={(hoursCount ?? 0) > 0}
+      paymentDone={Boolean(business.paystack_public_key)}
     />
   );
 }

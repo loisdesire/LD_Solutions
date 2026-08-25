@@ -27,8 +27,12 @@ export default function SettingsSections({
 
   return (
     <div>
-      <div className="mb-5">
-        <h2 className="font-display text-[18px] text-ink">{current.label}</h2>
+      <div className="mb-6">
+        {/* Was the same 18px as the sub-section h3s each manager renders
+            below it (BusinessProfileManager's "Identity", SiteContent's
+            "Gallery", etc.) - the page's own section title needs to
+            outrank those, not tie with them. */}
+        <h2 className="font-display text-[21px] font-semibold text-ink">{current.label}</h2>
         <p className="text-ink-soft text-body-sm mt-1">{current.description}</p>
       </div>
       <div className="max-w-2xl">{current.content}</div>

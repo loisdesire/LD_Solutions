@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
+import SlotGrid from '@/components/SlotGrid';
 import SelfBookingDemo from '@/components/SelfBookingDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
 import Button from '@/components/Button';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
-
-const DEMO_SLUG = 'glow-salon';
+import { formatMoney } from '@/lib/formatMoney';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -173,33 +173,34 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageJsonLd) }}
       />
-      {/* Nav */}
+      {/* Nav - sentence-case links, not the tiny-mono-uppercase treatment
+          the whole previous system defaulted to for every label. */}
       <nav
         className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
-        style={{ background: 'color-mix(in srgb, var(--paper) 80%, transparent)' }}
+        style={{ background: 'color-mix(in srgb, var(--paper) 82%, transparent)' }}
       >
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
               <span className="text-white text-[13px] font-bold">V</span>
             </div>
-            <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
+            <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#how-it-works" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+          <div className="hidden md:flex items-center gap-7">
+            <a href="#how-it-works" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
               How it works
             </a>
-            <a href="#features" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+            <a href="#features" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
               Features
             </a>
-            <a href="#pricing" className="font-mono text-[13px] uppercase tracking-[0.08em] text-ink-soft hover:text-ink">
+            <a href="#pricing" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
               Pricing
             </a>
           </div>
           <div className="flex items-center gap-5">
             <a
               href={`/${DEMO_SLUG}`}
-              className="text-[13.5px] text-ink-soft hover:text-ink transition-colors hidden sm:inline"
+              className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors hidden sm:inline"
             >
               See a live demo
             </a>
@@ -210,56 +211,82 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 pt-12 sm:pt-16 pb-16 sm:pb-20">
+      {/* Hero - went through an asymmetric/offset composition first
+          (headline spanning full width on top, demo card offset below-
+          right) to prove genuine compositional change rather than a
+          recolored version of the old flush grid. In practice, from an
+          actual screenshot, that read as two disconnected pieces with a
+          big gap between them and made the page shape ungainly - a huge
+          headline block, then a lopsided section under it. Back to a
+          side-by-side layout, but not the SAME one: the distinctiveness
+          now lives in the demo card itself (rotated, a floating proof
+          chip breaking its corner, the SlotGrid signature behind it),
+          not in fighting the two-column-ness of a hero, which is a
+          legible, well-established pattern for a reason. */}
+      <section className="relative max-w-6xl mx-auto px-6 lg:px-10 pt-14 sm:pt-20 pb-16 sm:pb-20 overflow-hidden">
+        {/* The signature: a grid of time slots quietly filling in behind
+            the demo card, not a gradient or a glow. Hidden below lg -
+            there's no negative space for it to read as texture rather
+            than clutter once the columns stack. */}
+        <div className="hidden lg:block absolute -right-[6%] top-0 w-[52%] h-full -z-10">
+          <SlotGrid className="h-full" />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-14 items-center">
-          <Reveal>
-            <h1 className="font-display leading-[0.92] tracking-[-0.06em] mb-4 max-w-[700px]">
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
-                &ldquo;Do you have an
-              </span>
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium" style={{ color: 'var(--ink-soft)' }}>
-                opening tomorrow?&rdquo;
-              </span>
-              <span className="block text-[clamp(2.433rem,calc(4vw_-_2.667px),5.033rem)] font-medium mt-2" style={{ color: 'var(--accent)' }}>
-                Already booked.
-              </span>
+          <Reveal eager>
+            {/* Was clamp(2.6rem, 6vw, 4.6rem) - up to 73.6px, wrapping to
+                three lines and dominating most of the viewport height in
+                the actual rendered page. Down to a size that still reads
+                as a confident, bold headline without being the whole
+                screen. */}
+            <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-5 max-w-[560px] text-[clamp(2.1rem,3.6vw,3.1rem)]">
+              An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
             </h1>
 
             <p className="text-[16px] text-ink-soft leading-relaxed mb-8 max-w-md">
-              Meet your new AI receptionist. It answers instantly, checks your real
-              availability, and books the appointment on your website and Telegram, 24/7.
+              Customers ask for a time on your website or Telegram. Vanova checks your real
+              calendar and confirms it, no back-and-forth, 24/7.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5">
-              <Button href="/signup">
+              <Button href="/signup" size="lg">
                 Start free for 14 days
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
               </Button>
-              <Button href={`/${DEMO_SLUG}`} variant="outline">
+              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg">
                 See it live
               </Button>
             </div>
           </Reveal>
 
-          <Reveal delay={100}>
-            <SelfBookingDemo />
-          </Reveal>
+          {/* Side-by-side with the text now, not offset below it. The
+              rotation and the floating "Booked in 6 messages" proof
+              chip that used to sit here were both dropped - templated
+              SaaS-hero tells rather than anything specific to this
+              product. The SlotGrid texture behind it and the demo card
+              itself (which is real product UI, not a mockup) already
+              earn the "this is a real object" read without them. */}
+          <div className="relative">
+            <Reveal eager delay={120} className="relative">
+              <SelfBookingDemo />
+            </Reveal>
+          </div>
         </div>
       </section>
 
+
       {/* Channel strip - honest about what's live vs. coming, on purpose */}
       <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
+        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-9">
           <Reveal className="flex flex-col items-center text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-6">
+            <p className="text-[13px] font-medium text-ink-faint mb-5">
               One receptionist. Every channel your customers already use.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
               {CHANNELS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.05em]">
+                <span key={c.label} className="inline-flex items-center gap-1.5 text-[13px] font-medium">
                   <span
                     className="h-1.5 w-1.5 rounded-full shrink-0"
                     style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
@@ -385,7 +412,7 @@ export default function LandingPage() {
           {businessTypes.map((biz) => (
             <span
               key={biz}
-              className="px-5 py-2.5 rounded-full border-2 border-line bg-surface text-[13px] text-ink-soft"
+              className="px-5 py-2.5 rounded-full border border-line bg-surface text-[13px] font-medium text-ink-soft shadow-lift"
             >
               {biz}
             </span>
@@ -405,12 +432,12 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
             <Reveal delay={80}>
-              <div className="rounded-3xl bg-surface border-2 border-line p-8 h-full flex flex-col">
-                <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint">
+              <div className="rounded-3xl bg-surface border border-line shadow-soft p-8 h-full flex flex-col">
+                <div className="text-[13px] font-semibold text-ink-faint">
                   {PLAN_LABEL.core}
                 </div>
                 <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
-                  ₦{PLAN_PRICE_NGN.core.toLocaleString()}
+                  {formatMoney(PLAN_PRICE_NGN.core)}
                   <span className="text-[15px] font-normal text-ink-faint"> /month</span>
                 </div>
                 <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
@@ -432,12 +459,18 @@ export default function LandingPage() {
               </div>
             </Reveal>
             <Reveal delay={140}>
-              <div className="rounded-3xl bg-surface border-2 border-accent p-8 h-full flex flex-col">
-                <div className="font-mono text-label uppercase tracking-[0.14em] " style={{ color: 'var(--accent)' }}>
+              <div className="rounded-3xl bg-surface border-2 border-accent shadow-card p-8 h-full flex flex-col relative">
+                <span
+                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+                  style={{ background: 'var(--accent)' }}
+                >
+                  Most popular
+                </span>
+                <div className="text-[13px] font-semibold" style={{ color: 'var(--accent)' }}>
                   {PLAN_LABEL.business_intelligence}
                 </div>
                 <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
-                  ₦{PLAN_PRICE_NGN.business_intelligence.toLocaleString()}
+                  {formatMoney(PLAN_PRICE_NGN.business_intelligence)}
                   <span className="text-[15px] font-normal text-ink-faint"> /month</span>
                 </div>
                 <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
@@ -521,11 +554,15 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="font-mono text-[11px] text-ink-faint">
+          <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-[12.5px] text-ink-faint">
               © {new Date().getFullYear()} Vanova Hub. All rights reserved.
             </p>
-            <p className="font-mono text-[11px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
+            <div className="flex items-center gap-5">
+              <Link href="/terms" className="text-[12.5px] text-ink-faint hover:text-ink-soft transition-colors">Terms</Link>
+              <Link href="/privacy" className="text-[12.5px] text-ink-faint hover:text-ink-soft transition-colors">Privacy</Link>
+              <p className="text-[12.5px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
+            </div>
           </div>
         </div>
       </footer>

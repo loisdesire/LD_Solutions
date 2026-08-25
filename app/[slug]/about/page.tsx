@@ -53,6 +53,34 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
           <p className="text-[15.5px] leading-relaxed text-ink-soft whitespace-pre-line text-left sm:text-center">
             {business.about_text}
           </p>
+
+          {/* Hours were already fetched for this page (the footer uses
+              them) but never actually shown here - someone reading about
+              the business is a natural moment to also tell them when
+              they're open, not just leave it to the booking form to
+              reveal indirectly through which dates are available. */}
+          {hoursSummary && (
+            <div className="flex items-center justify-center gap-2.5 mt-8 text-ink-soft">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span className="text-[14px]">{hoursSummary}</span>
+            </div>
+          )}
+
+          <div className="mt-10">
+            <a
+              href={`/${slug}#book`}
+              className="inline-flex items-center gap-1.5 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] text-white transition-opacity hover:opacity-90 active:scale-95"
+              style={{ background: 'var(--accent)' }}
+            >
+              Book an appointment
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
         </div>
       </main>
       <SiteFooter business={business} hoursSummary={hoursSummary} showContact={showContact} />

@@ -2,56 +2,89 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 
 // Was a single row of 6 pills in `overflow-x-auto` - on an actual phone
 // width that's maybe 3 pills visible and the rest scrolled off with no
 // hint they exist (and "Products" wasn't even in the list, a real dead
-// end). Replaced with the same Manage/Account grouping the desktop
-// sidebar uses, collapsed behind a "current page" toggle instead of
-// trying to cram every destination into one line.
+// end). Replaced with the same Today/Set up/Automate/Business grouping
+// the desktop sidebar uses, collapsed behind a "current page" toggle
+// instead of trying to cram every destination into one line.
+type NavStatus = { setupIncomplete: boolean; channelsDisconnected: boolean; trialEndingSoon: boolean };
+
 export default function AdminMobileNav({
   slug,
   businessName,
+  logoUrl,
+  navStatus,
+  role,
 }: {
   slug: string;
   businessName: string;
+  logoUrl?: string | null;
+  navStatus: NavStatus;
+  role: string;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Staff, Channels, and the Settings sections all redirect a non-owner
+  // straight back to the dashboard - same reasoning as AdminSidebar.
+  // Billing stays visible for everyone since it handles a non-owner
+  // inline instead of redirecting.
+  const isOwner = role === 'owner';
+
   // Products isn't part of the MVP - kept working, just not promoted
-  // in the primary nav (matches the desktop sidebar). Same three-group
-  // split as AdminSidebar (Manage / Connect / Account), for the same
-  // reason: a single 9-item "Manage" bucket had no sub-structure.
-  const manage = [
-    { href: `/${slug}/admin`, label: 'Dashboard' },
-    { href: `/${slug}/admin/calendar`, label: 'Calendar' },
-    { href: `/${slug}/admin/customers`, label: 'Customers' },
-    { href: `/${slug}/admin/services`, label: 'Services' },
-    { href: `/${slug}/admin/hours`, label: 'Hours' },
-    { href: `/${slug}/admin/staff`, label: 'Staff' },
+  // in the primary nav (matches the desktop sidebar). Same four-group
+  // split as AdminSidebar (Today / Set up / Automate / Business) -
+  // named after the job, not the system area, so a phone menu with no
+  // sidebar to cross-reference still reads as "where do I go for X"
+  // rather than "which implementation bucket is X filed under".
+  const today = [
+    { href: `/${slug}/admin`, label: 'Dashboard', badge: navStatus.setupIncomplete },
+    { href: `/${slug}/admin/calendar`, label: 'Calendar', badge: false },
+    { href: `/${slug}/admin/customers`, label: 'Customers', badge: false },
   ];
-  const connect = [
-    { href: `/${slug}/admin/channels`, label: 'Channels' },
+  const setup = [
+    { href: `/${slug}/admin/services`, label: 'Services', badge: false },
+    { href: `/${slug}/admin/hours`, label: 'Hours', badge: false },
+    ...(isOwner ? [{ href: `/${slug}/admin/staff`, label: 'Staff', badge: false }] : []),
   ];
-  // Same four sections as the sidebar. There is no sidebar on a phone, so
-  // without these the only way into a section is the Settings page itself.
+  const automate = [
+    { href: `/${slug}/admin/insights`, label: 'Ask', badge: false },
+    { href: `/${slug}/admin/schedule-assistant`, label: 'Schedule', badge: false },
+    ...(isOwner ? [{ href: `/${slug}/admin/channels`, label: 'Channels', badge: navStatus.channelsDisconnected }] : []),
+  ];
+  // Promoted to top-level, same as the desktop sidebar - these used to
+  // hang off one "Settings" item, only visible once you were already
+  // there. Same page underneath (?section= still routes it).
   const settingsSections = [
     { key: 'profile', label: 'Business profile' },
     { key: 'content', label: 'Website content' },
-    { key: 'rules', label: 'Booking rules and payments' },
+    { key: 'rules', label: 'Booking rules' },
+    { key: 'payments', label: 'Payments' },
     { key: 'domain', label: 'Custom domain' },
   ];
+  const settingsHref = `/${slug}/admin/settings`;
+  const activeSection = searchParams.get('section') ?? 'profile';
 
-  const account = [
-    { href: `/${slug}/admin/assistant`, label: 'Assistant' },
-    { href: `/${slug}/admin/billing`, label: 'Billing' },
-    { href: `/${slug}/admin/settings`, label: 'Settings' },
+  const business = [
+    { href: `/${slug}/admin/billing`, label: 'Billing', badge: navStatus.trialEndingSoon, active: undefined as boolean | undefined },
+    ...(isOwner ? settingsSections : []).map((sec) => ({
+      href: `${settingsHref}?section=${sec.key}`,
+      label: sec.label,
+      badge: false,
+      active: pathname === settingsHref && activeSection === sec.key,
+    })),
   ];
-  const currentLabel = [...manage, ...connect, ...account].find((t) => t.href === pathname)?.label ?? 'Dashboard';
+  const currentLabel = pathname === settingsHref
+    ? (settingsSections.find((sec) => sec.key === activeSection)?.label ?? 'Settings')
+    : [...today, ...setup, ...automate, ...business].find((t) => t.href === pathname)?.label ?? 'Dashboard';
+  const anyBadge = navStatus.setupIncomplete || navStatus.channelsDisconnected || navStatus.trialEndingSoon;
 
   async function handleSignOut() {
     const supabase = createBrowserSupabase();
@@ -66,18 +99,36 @@ export default function AdminMobileNav({
   // on. The sidebar's soft treatment is the one with a documented
   // rationale (a solid-accent sidebar was tried and rejected as
   // overusing brand color), so that's the convention this now follows.
-  function NavLink({ href, label }: { href: string; label: string }) {
-    const active = pathname === href;
+  function NavLink({
+    href,
+    label,
+    badge,
+    active: activeOverride,
+  }: {
+    href: string;
+    label: string;
+    badge?: boolean;
+    active?: boolean;
+  }) {
+    const active = activeOverride ?? pathname === href;
     return (
       <Link
         href={href}
         onClick={() => setMenuOpen(false)}
-        className={`flex items-center px-3 py-2.5 rounded-xl text-[14px] transition-colors ${
+        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-[14px] transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft'
         }`}
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
         {label}
+        {badge && (
+          <span
+            className="h-1.5 w-1.5 rounded-full shrink-0"
+            style={{ background: 'var(--warning)' }}
+            aria-hidden="true"
+          />
+        )}
+        {badge && <span className="sr-only"> - needs attention</span>}
       </Link>
     );
   }
@@ -86,17 +137,34 @@ export default function AdminMobileNav({
     <div className="md:hidden border-b border-line bg-paper/95 backdrop-blur-xl sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
-            {businessName?.[0]?.toUpperCase()}
-          </div>
+          {logoUrl ? (
+            <div className="relative h-8 w-8 rounded-xl overflow-hidden border border-line shrink-0">
+              <Image src={logoUrl} alt="" fill sizes="32px" className="object-cover" />
+            </div>
+          ) : (
+            <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
+              {businessName?.[0]?.toUpperCase()}
+            </div>
+          )}
           <span className="font-semibold text-body-sm truncate">{businessName}</span>
         </div>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-controls="admin-mobile-nav-menu"
-          className="flex items-center gap-1.5 rounded-xl border-2 border-line-strong pl-3.5 pr-3 py-2 min-h-[40px] max-w-[52%] text-caption font-semibold text-ink shrink-0"
+          className="relative flex items-center gap-1.5 rounded-xl border-2 border-line-strong pl-3.5 pr-3 py-2 min-h-[40px] max-w-[52%] text-caption font-semibold text-ink shrink-0"
         >
+          {/* One dot on the trigger itself, not only inside the expanded
+              list - otherwise "something needs attention" is invisible
+              unless you'd already thought to open the menu. */}
+          {anyBadge && (
+            <span
+              className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-paper"
+              style={{ background: 'var(--warning)' }}
+              aria-hidden="true"
+              title="Something needs attention"
+            />
+          )}
           <span className="truncate">{currentLabel}</span>
           <svg
             width="14"
@@ -116,46 +184,39 @@ export default function AdminMobileNav({
 
       {menuOpen && (
         <div id="admin-mobile-nav-menu" role="menu" className="border-t border-line px-4 py-4 animate-rise">
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-            Manage
+          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+            Today
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
-            {manage.map((tab) => (
-              <NavLink key={tab.href} href={tab.href} label={tab.label} />
+            {today.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} badge={tab.badge} />
             ))}
           </nav>
 
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-            Connect
+          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+            Set up
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
-            {connect.map((tab) => (
-              <NavLink key={tab.href} href={tab.href} label={tab.label} />
+            {setup.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} badge={tab.badge} />
             ))}
           </nav>
 
-          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint px-3 mb-1.5">
-            Account
+          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+            Automate
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
-            {account.map((tab) => (
-              <div key={tab.href}>
-                <NavLink href={tab.href} label={tab.label} />
-                {tab.href.endsWith('/settings') && (
-                  <div className="ml-4 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-line pl-2.5">
-                    {settingsSections.map((sec) => (
-                      <Link
-                        key={sec.key}
-                        href={`${tab.href}?section=${sec.key}`}
-                        onClick={() => setMenuOpen(false)}
-                        className="rounded-lg px-2.5 py-2.5 min-h-[40px] text-caption text-ink-soft hover:text-ink transition-colors"
-                      >
-                        {sec.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {automate.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} badge={tab.badge} />
+            ))}
+          </nav>
+
+          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+            Business
+          </div>
+          <nav className="flex flex-col gap-0.5 mb-4">
+            {business.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} badge={tab.badge} active={tab.active} />
             ))}
           </nav>
 

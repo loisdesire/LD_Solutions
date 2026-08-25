@@ -128,6 +128,7 @@ export default function ConversationPanel({
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
+            aria-label="Reply as your business"
             placeholder="Reply as your business…"
             className="flex-1 rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
           />

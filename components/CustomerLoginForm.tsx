@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { createCustomerBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import { SITE_URL } from '@/lib/site';
+import { inputClass } from './formStyles';
+import Field from './Field';
 
 export default function CustomerLoginForm() {
   const [email, setEmail] = useState('');
@@ -50,22 +52,22 @@ export default function CustomerLoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="animate-rise space-y-4">
-      <div>
-        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
-          Email
-        </label>
-        <input
-          required
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
-        />
-        <p className="text-ink-faint text-[12px] mt-2">
-          The same email you used when booking. We'll send a one-click login link - no password.
-        </p>
-      </div>
+      <Field
+        label="Email"
+        required
+        hint="The same email you used when booking. We'll send a one-click login link - no password."
+      >
+        {(props) => (
+          <input
+            {...props}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className={inputClass}
+          />
+        )}
+      </Field>
 
       <button
         type="submit"

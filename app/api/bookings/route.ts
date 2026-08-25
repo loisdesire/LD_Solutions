@@ -8,6 +8,7 @@ import { canAcceptBookings } from '@/lib/subscription-server';
 import { verifyPaystackTransaction } from '@/lib/paystack';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
+import { formatMoney } from '@/lib/formatMoney';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`
@@ -177,11 +178,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fire-and-forget confirmation email - never fails the booking itself.
-  // Formatted in the business's own timezone, not the server's - a real
-  // bug this was hitting before: a booking confirmed for "8:00 AM" Lagos
-  // time could show a different hour in the email if the server (e.g. a
-  // US-region Vercel deploy) runs in a different zone.
+  // Awaited, but never fails the booking itself - sendEmail swallows its
+  // own errors and returns false rather than throwing. Formatted in the
+  // business's own timezone, not the server's - a real bug this was
+  // hitting before: a booking confirmed for "8:00 AM" Lagos time could
+  // show a different hour in the email if the server (e.g. a US-region
+  // Vercel deploy) runs in a different zone.
+  let emailSent = false;
   if (customerEmail) {
     const whenLabel = start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' });
     const bizName = business?.name ?? 'Your appointment';
@@ -190,9 +193,15 @@ export async function POST(req: NextRequest) {
       { label: 'Service', value: service?.name ?? 'Appointment' },
       { label: 'When', value: whenLabel },
     ];
-    if (amountPaid) rows.push({ label: 'Paid', value: `₦${amountPaid.toLocaleString()}` });
+    if (amountPaid) rows.push({ label: 'Paid', value: formatMoney(amountPaid) });
 
-    await sendEmail(
+    // Return value used to matter to no one - the confirmation screen
+    // told every customer "A confirmation has been sent to {email}"
+    // unconditionally, whether or not sendEmail actually returned true.
+    // sendEmail itself never throws (see lib/email.ts), so awaiting it
+    // here can't turn a successful booking into a client-visible 500 -
+    // this is only about telling the truth about the email specifically.
+    emailSent = await sendEmail(
       {
         to: customerEmail,
         subject: `Your ${bizName} appointment is confirmed`,
@@ -215,5 +224,5 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ booking });
+  return NextResponse.json({ booking, emailSent });
 }

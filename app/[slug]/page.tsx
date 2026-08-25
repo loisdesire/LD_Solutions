@@ -3,13 +3,15 @@ import { getSiteContentFlags } from '@/lib/siteContent';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import BookingForm from '@/components/BookingForm';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { canAcceptBookings } from '@/lib/subscription-server';
+import { formatMoney } from '@/lib/formatMoney';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,14 +69,21 @@ export default async function BusinessBookingPage({
 
   if (!data) notFound();
 
-  const { business, services, hoursSummary } = data;
+  const { business, services, hoursSummary, isOpenNow } = data;
+
+  // "From ₦X" rather than nothing - the hero previously gave no price
+  // signal at all until you'd already picked a service in the booking
+  // form below. Only services with a real price count; a null price
+  // means "ask for pricing", not free.
+  const pricedServices = services.map((s) => s.price).filter((p): p is number => p != null);
+  const startingPrice = pricedServices.length > 0 ? Math.min(...pricedServices) : null;
 
   // Service role: booking_rules is staff-only under RLS, but the date
   // picker below needs max_advance_days to cap what it lets a customer pick,
   // and now also whether this business requires payment to confirm.
   const { data: rules } = await supabaseAdmin
     .from('booking_rules')
-    .select('max_advance_days, require_payment, deposit_percentage')
+    .select('max_advance_days, require_payment, deposit_percentage, cancellation_window_hours')
     .eq('business_id', business.id)
     .maybeSingle();
 
@@ -121,11 +130,31 @@ export default async function BusinessBookingPage({
 
       {/* Hero - the business's own cover photo if they've set one, or a
           rich accent-colored gradient in its place. Never a stock photo:
-          nothing here is real unless the business actually provided it. */}
-      <section className="relative h-[420px] sm:h-[480px] pt-16 flex items-center overflow-hidden">
+          nothing here is real unless the business actually provided it.
+
+          min-h, not h - a business with a description, a long name that
+          wraps to two lines, and an hours line together can exceed 420px
+          on a phone. A fixed height plus overflow-hidden below used to
+          silently clip whatever didn't fit; min-height lets the section
+          grow to whatever the content actually needs instead. */}
+      <section className="relative min-h-[420px] sm:min-h-[480px] pt-14 sm:pt-16 pb-8 sm:pb-0 flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           {business.cover_image_url ? (
-            <img src={business.cover_image_url} alt="" className="w-full h-full object-cover" />
+            // alt="" is correct, not an oversight - decorative background
+            // photo, and the one piece of information it could carry
+            // (whose page this is) is already real text two lines down
+            // (the "Book with {business.name}" h1). next/image + priority
+            // because this is very likely the page's LCP element: full-
+            // bleed, above the fold, on the one page type (the public
+            // booking page) that gets real outside traffic.
+            <Image
+              src={business.cover_image_url}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
           ) : (
             <div
               className="w-full h-full"
@@ -147,24 +176,60 @@ export default async function BusinessBookingPage({
 
         <div className="relative z-10 w-full px-6 sm:px-10 max-w-5xl mx-auto text-white">
           <div className="max-w-2xl" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.45)' }}>
+            {/* The marketing site's own "see it live" link already says
+                "demo" in its own text, but that disclosure lived only on
+                the page you left - nothing on this page itself told a
+                visitor who landed here directly that it wasn't a real,
+                oddly-named business. */}
+            {slug === DEMO_SLUG && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-semibold mb-4"
+                style={{ background: 'rgba(255,255,255,0.9)', color: 'var(--accent)', textShadow: 'none' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>
+                Demo business - try booking, nothing&apos;s real
+              </span>
+            )}
             {business.description && (
-              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mb-4 max-w-[48ch]">
+              // line-clamp on mobile only - on a short phone viewport a
+              // long description was pushing the name, hours, and both
+              // CTAs further down the stack than a first glance should
+              // need to scan. The full description still shows at sm+.
+              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mb-4 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
                 {business.description}
               </p>
             )}
             {/* Personalized rather than a static "Book your visit" on
                 every business's page - the first thing a visitor should
                 know is whose page this actually is. */}
-            <h1 className="font-display text-[36px] sm:text-[52px] font-semibold leading-[1.05]">
+            <h1 className="font-display text-[32px] sm:text-[52px] font-semibold leading-[1.05]">
               Book with {business.name}
             </h1>
             {hoursSummary && (
-              <div className="flex items-center gap-2.5 mt-6 text-white/90">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 6v6l4 2" />
-                </svg>
-                <span className="text-[14px]">{hoursSummary}</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-5 sm:mt-6 text-white/90">
+                <div className="flex items-center gap-2.5">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  <span className="text-[14px]">{hoursSummary}</span>
+                </div>
+                {/* Computed from today's actual hours in the business's own
+                    timezone, not just the static weekly summary - a
+                    visitor landing outside hours could see "Mon-Fri ·
+                    9 AM-6 PM" and still not know at a glance whether now
+                    counts. */}
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+                  style={
+                    isOpenNow
+                      ? { background: 'rgba(255,255,255,0.9)', color: 'var(--accent)' }
+                      : { background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.5)' }
+                  }
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${isOpenNow ? 'bg-current' : 'bg-white/70'}`} />
+                  {isOpenNow ? 'Open now' : 'Closed now'}
+                </span>
               </div>
             )}
 
@@ -172,7 +237,7 @@ export default async function BusinessBookingPage({
                 not a minor extra - it gets equal billing with "Book now"
                 here in the hero, not just a small corner bubble someone
                 has to notice on their own. */}
-            <div className="flex flex-wrap items-center gap-3 mt-8">
+            <div className="flex flex-wrap items-center gap-3 mt-6 sm:mt-8">
               <a
                 href="#book"
                 className="px-6 py-3 min-h-[48px] flex items-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
@@ -180,11 +245,13 @@ export default async function BusinessBookingPage({
               >
                 Book an appointment
               </a>
-              {/* Two doors, not a button and a fallback. Someone who knows
-                  what they want books; someone who does not asks. The chat
-                  used to be a thin outline against a solid Book now, which
-                  read as the lesser option - and it is the thing this
-                  product is actually for. */}
+              {/* Was "Not sure? Just ask" - equal visual weight to Book
+                  now, but copy that still framed chat as the confused-
+                  person's fallback, not an equally real way to book. The
+                  actual promise ("an AI receptionist that books the
+                  appointment") never shows up if the one place a
+                  customer meets it talks itself down to a help option.
+                  This says what it does. */}
               <a
                 href="#chat"
                 className="flex items-center gap-2 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
@@ -194,9 +261,28 @@ export default async function BusinessBookingPage({
                   <path d="M4 4h16v12H8l-4 4V4z" />
                   <path d="M8 9h8M8 12h5" />
                 </svg>
-                Not sure? Just ask
+                Chat to book
               </a>
             </div>
+
+            {/* Price and payment expectations before commitment, not just
+                after picking a service three steps into the form below -
+                the two questions a first-time visitor actually has before
+                they'll click "Book". */}
+            {(startingPrice != null || requirePayment) && (
+              <p className="text-[13px] text-white/80 mt-4">
+                {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
+                {startingPrice != null && requirePayment && ' · '}
+                {requirePayment && (
+                  <>
+                    {rules?.deposit_percentage != null && rules.deposit_percentage < 100
+                      ? `${rules.deposit_percentage}% deposit`
+                      : 'Payment'}{' '}
+                    required to confirm
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -212,6 +298,8 @@ export default async function BusinessBookingPage({
             requirePayment={requirePayment}
             depositPercentage={rules?.deposit_percentage ?? 100}
             paystackPublicKey={business.paystack_public_key}
+            timezone={business.timezone || 'UTC'}
+            cancellationWindowHours={rules?.cancellation_window_hours ?? 24}
           />
         ) : (
           <div className="max-w-lg mx-auto text-center rounded-3xl bg-warm-surface py-14 px-6">

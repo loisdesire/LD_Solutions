@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
-import { statusLabel, statusStyle } from '@/lib/bookingStatus';
 import AskAssistantBar from './AskAssistantBar';
+import SetupChecklist from './SetupChecklist';
+import { formatMoney } from '@/lib/formatMoney';
 
 type Booking = {
   id: string;
@@ -19,21 +20,18 @@ type Booking = {
   staff?: any;
 };
 
-// One stat inside the Today strip - not its own bordered card. The strip
-// itself is the single card; each stat is just a labeled number with a
-// hairline divider between them, so three (or four, with Next
-// appointment) numbers read as one connected summary of the day instead
-// of a row of identical boxes competing for attention. `emphasis` gives
-// "Next up" more visual weight than the other three - it's the one
-// number that's actually actionable ("what do I need to do right now"),
-// so it shouldn't tie visually with static counts.
+// One stat inside the Today strip, all four (Next up, Today, Today's
+// revenue, This week) the same size and on one line - not one panel with
+// actions sitting above three plain numbers. Actions (call, reschedule,
+// cancel...) live where they always did: click into a booking from the
+// list below. This card's job is just "what's the state of today," at a
+// glance, nothing more.
 function TodayStat({
   label,
   value,
   sub,
   delta,
   color = 'var(--ink)',
-  emphasis = false,
 }: {
   label: string;
   value: string;
@@ -41,20 +39,27 @@ function TodayStat({
   /** Kept separate from `sub` so a fall can read differently from a rise. */
   delta?: { value: string; up: boolean };
   color?: string;
-  emphasis?: boolean;
 }) {
   return (
-    <div className="flex-1 min-w-[120px]">
-      <div className="font-mono text-label uppercase tracking-[0.12em] text-ink-faint mb-1">{label}</div>
-      <div
-        className={`font-display font-bold leading-none ${emphasis ? 'text-[30px]' : 'text-[24px]'}`}
-        style={{ color }}
-      >
+    // px-4 rather than a gap on the parent row - a gap sits entirely on
+    // one side of the lg: divider (all 32px before it, 0px after), so the
+    // line reads as glued to whichever stat comes next instead of
+    // sitting centered in the space between two stats. Padding on both
+    // sides of every stat puts 16px on each side of the divider instead,
+    // and does the row's normal spacing job too, so gap-x-8 on the
+    // parent goes away entirely rather than doubling up with this.
+    <div className="flex-1 min-w-[120px] px-4">
+      <div className="text-caption font-semibold text-ink-faint mb-1">{label}</div>
+      <div className="font-display text-[24px] font-bold leading-none" style={{ color }}>
         {value}
       </div>
-      <div className={`flex items-baseline gap-1.5 mt-1 ${emphasis ? 'max-w-[220px]' : ''}`}>
+      <div className="flex items-baseline gap-1.5 mt-1">
         {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
-        {delta && <span className="text-caption text-ink-faint shrink-0">{delta.value}</span>}
+        {delta && (
+          <span className={`text-caption font-semibold shrink-0 ${delta.up ? 'text-success' : 'text-error'}`}>
+            {delta.up ? '↑' : '↓'} {delta.value}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -64,7 +69,6 @@ export default function AdminDashboardBody({
   slug,
   businessName,
   businessId,
-  analyticsEnabled,
   services,
   maxAdvanceDays,
   all,
@@ -75,11 +79,14 @@ export default function AdminDashboardBody({
   weekRevenue,
   revenuePctDelta,
   nextSlot,
+  profileDone,
+  servicesDone,
+  hoursDone,
+  paymentDone,
 }: {
   slug: string;
   businessName: string;
   businessId: string;
-  analyticsEnabled: boolean;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
   all: Booking[];
@@ -90,6 +97,10 @@ export default function AdminDashboardBody({
   weekRevenue: number;
   revenuePctDelta: number | null;
   nextSlot: Booking | undefined;
+  profileDone: boolean;
+  servicesDone: boolean;
+  hoursDone: boolean;
+  paymentDone: boolean;
 }) {
   const [search, setSearch] = useState('');
 
@@ -138,7 +149,7 @@ export default function AdminDashboardBody({
           time-dependent greeting and there is no hydration mismatch. */}
       <div className="mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div className="min-w-0">
-          <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
+          <div className="text-[13px] font-semibold text-accent mb-1">
             {now
               ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
               : 'Today'}
@@ -154,7 +165,7 @@ export default function AdminDashboardBody({
               through. Below that it is a permanent empty box on a page
               whose whole job is showing you a short list. */}
           {all.length > 8 && (
-            <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 min-h-[44px] flex-1 lg:flex-none lg:w-64 transition-colors focus-within:border-[var(--accent)]">
+            <div className="flex items-center gap-2 bg-surface border border-line-strong rounded-lg px-4 py-2.5 min-h-[44px] flex-1 lg:flex-none lg:w-64 transition-colors focus-within:border-[var(--accent)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.3-4.3" />
@@ -177,28 +188,80 @@ export default function AdminDashboardBody({
         </div>
       </div>
 
-      {/* Sits on --warm-surface on desktop and --paper on mobile, so it
-          needs to lift off both. A hardcoded cream (#f5efe4) was tried and
-          clashed: it was warm against a palette that had been cooled.
-          White with a hairline is the same treatment every other card in
-          the app uses, so it reads as elevated and cannot drift out of
-          step with the tokens again. */}
+      <SetupChecklist
+        slug={slug}
+        profileDone={profileDone}
+        servicesDone={servicesDone}
+        hoursDone={hoursDone}
+        paymentDone={paymentDone}
+      />
+
+      {/* Ask bar sits above the summary now, not below it - it's the
+          entry point to the thing this product is actually built
+          around, so it shouldn't come after the reader has already
+          finished the numbers and started scanning down toward the
+          list. */}
+      <AskAssistantBar slug={slug} />
+
+      {/* One card, one line - Next up, Today, Today's revenue, This week
+          all the same size, side by side, not a detail panel with its
+          own actions sitting above three plain numbers. Call/Reschedule/
+          Cancel etc. aren't needed here: they're one click away already
+          (open the booking from the list below), and pulling them onto
+          this strip meant a taller two-row card for a control most
+          mornings go unused.
+
+          This card carried a real tint before a since-reverted "cooler"
+          palette pass made it clash and it got stripped to plain white
+          (see git history on this file, commit b9ce780). Three swings at
+          bringing it back: bg-warm-surface sat only a couple of points
+          off --paper and read as "no background"; plain --cream-surface
+          was a full-strength mustard fill; mixed 45% into white it was
+          still an unrelated hue sitting on top of the page rather than
+          growing out of it. Mixed a little cream into --paper itself
+          (the page's own background, not white) instead - the card is
+          now a warmer step along the same tone the page already is,
+          not a different color dropped onto it. No border - the tone
+          shift against --paper is what separates the card from the
+          page, not an edge - shadow-soft (a couple of points of lift,
+          same treatment every other card in the app uses) is what stops
+          that tone-on-tone approach reading as no card at all. */}
       {all.length > 0 && (
-        <div className="rounded-2xl bg-surface border border-line px-5 py-5 mb-8 shadow-soft">
-          <div className="flex flex-wrap gap-x-8 gap-y-5">
+        <div
+          className="rounded-2xl px-5 py-5 mb-8 shadow-soft"
+          style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--paper))' }}
+        >
+          {/* Dividers only from lg: up - below that, at 4 stats x
+              min-w-[120px], the row doesn't reliably have the ~576px it
+              needs and wraps onto two lines (no sidebar below 900px, and
+              even with it the content column is still tight until lg:).
+              A divide-x sibling border doesn't know about wrapping - it'd
+              draw a dangling line on whichever stat starts a second row.
+              Gated to the width where four in a row is actually safe.
+              divide-line-strong, not the plain divide-line first tried -
+              --line (#e7e2da) sits almost the same lightness as this
+              card's cream tint, so the divider was technically there and
+              functionally invisible. --line-strong is the token the app
+              already reaches for whenever a border needs to actually
+              read against a tinted surface, not a white one.
+
+              -mx-4 cancels out the px-4 each TodayStat now carries (see
+              its own comment) so the first/last stat's content still
+              lands exactly on the card's own px-5 edge instead of
+              sitting 16px further in than every other card in the app. */}
+          <div className="flex flex-wrap -mx-4 gap-y-5 lg:divide-x lg:divide-line-strong">
             <TodayStat
               label="Next up"
               value={nextSlotLabel}
               sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
               color="var(--accent)"
-              emphasis
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
-            <TodayStat label="Today's revenue" value={todayRevenue != null ? `₦${todayRevenue.toLocaleString()}` : '-'} />
+            <TodayStat label="Today's revenue" value={formatMoney(todayRevenue)} />
             <TodayStat
               label="This week"
               value={String(thisWeekCount)}
-              sub={weekRevenue != null ? `₦${weekRevenue.toLocaleString()}` : undefined}
+              sub={weekRevenue != null ? formatMoney(weekRevenue) : undefined}
               delta={
                 revenuePctDelta != null && revenuePctDelta !== 0
                   ? { value: `${revenuePctDelta > 0 ? '+' : ''}${revenuePctDelta}%`, up: revenuePctDelta > 0 }
@@ -211,25 +274,16 @@ export default function AdminDashboardBody({
         </div>
       )}
 
-      <AskAssistantBar
-        slug={slug}
-        suggestions={
-          analyticsEnabled
-            ? ['How much did I make this month?', 'Who are my top customers?', "I'm out sick tomorrow"]
-            : ["I'm out sick tomorrow", 'Move my next appointment to Friday']
-        }
-      />
-
       {all.length === 0 ? (
-        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
+        <div className="border border-line rounded-2xl bg-warm-surface p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-14 w-14 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
             <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
               <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
               <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
               <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </div>
-          <h2 className="font-display text-[20px]">No bookings yet - that's normal</h2>
+          <h2 className="font-display text-[20px] font-semibold">No bookings yet - that's normal</h2>
           <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
             The moment someone books through your page, they'll show up right here with all their
             details.
@@ -237,23 +291,22 @@ export default function AdminDashboardBody({
           <div className="flex items-center justify-center gap-3 mt-6">
             <Link
               href={`/${slug}/admin/services`}
-              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="rounded-lg border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Add a service
             </Link>
             <Link
               href={`/${slug}/admin/hours`}
-              className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+              className="rounded-lg border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
             >
               Set your hours
             </Link>
           </div>
-          <div className="font-mono text-label text-ink-faint mt-6 tracking-[0.05em]">/{slug}</div>
+          <div className="text-caption font-medium text-ink-faint mt-6">/{slug}</div>
         </div>
       ) : (
         <BookingsList slug={slug} bookings={all} search={search} />
       )}
-
     </div>
   );
 }

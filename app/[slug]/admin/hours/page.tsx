@@ -1,5 +1,8 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import HoursManager from '@/components/HoursManager';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Hours' };
 
 export default async function HoursPage({
   params,
@@ -19,7 +22,7 @@ export default async function HoursPage({
     <div>
       <div className="mb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
+          Set up
         </div>
         <h1 className="font-display text-[26px] text-ink">Opening hours</h1>
         <p className="text-ink-soft text-[13.5px] mt-1">

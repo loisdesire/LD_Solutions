@@ -16,9 +16,15 @@ export const STATUS_LABELS: Record<string, string> = {
   pending_payment: 'Awaiting payment',
 };
 
+// completed used to share cancelled's exact neutral-gray treatment - a
+// booking that happened successfully and one that never happened at all
+// read as visually identical. success is the correct semantic for it
+// (the outcome is a genuinely positive one), same family as no_show's
+// error and pending_payment's warning; cancelled stays neutral since
+// "void" isn't really a bad outcome, just an inactive one.
 export const STATUS_STYLE: Record<string, string> = {
   confirmed: 'bg-accent-soft text-accent',
-  completed: 'bg-ink-wash text-ink-faint',
+  completed: 'bg-success-bg text-success',
   cancelled: 'bg-ink-wash text-ink-faint line-through',
   no_show: 'bg-error-bg text-error',
   pending_payment: 'bg-warning-bg text-warning',

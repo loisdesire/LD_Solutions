@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import WebChatWidget from './WebChatWidget';
 import { statusLabel, statusStyle } from '@/lib/bookingStatus';
+import { googleCalendarUrl } from '@/lib/googleCalendar';
+import { formatMoney } from '@/lib/formatMoney';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -31,6 +33,7 @@ export default function AccountBookingCard({
   const [widgetOpen, setWidgetOpen] = useState(false);
   const business = Array.isArray(booking.businesses) ? booking.businesses[0] : booking.businesses;
   const service = Array.isArray(booking.services) ? booking.services[0] : booking.services;
+  const isUpcoming = booking.status !== 'cancelled' && new Date(booking.start_time).getTime() >= Date.now();
 
   return (
     <div className="rounded-2xl border border-line bg-surface overflow-hidden transition-colors duration-200 hover:border-line-strong">
@@ -50,6 +53,7 @@ export default function AccountBookingCard({
             })}
             {' · '}
             {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+            {service?.price != null && <> · {formatMoney(service.price)}</>}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
@@ -59,7 +63,7 @@ export default function AccountBookingCard({
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {statusLabel(booking.status)}
           </span>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {business?.id && (
               <button
                 onClick={() => setWidgetOpen(true)}
@@ -73,10 +77,14 @@ export default function AccountBookingCard({
                 </svg>
               </button>
             )}
+            {/* Was a plain text link, easy to miss next to the status pill
+                above it - "Manage" is the actual primary action on this
+                card (reschedule, cancel), so it gets button weight now. */}
             {business?.slug && (
               <Link
                 href={`/${business.slug}/manage/${booking.id}`}
-                className="text-[12.5px] font-semibold text-accent hover:underline"
+                className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: 'var(--accent)' }}
               >
                 Manage
               </Link>
@@ -84,6 +92,27 @@ export default function AccountBookingCard({
           </div>
         </div>
       </div>
+
+      {isUpcoming && service?.name && (
+        <div className="px-4 pb-3.5 -mt-1">
+          <a
+            href={googleCalendarUrl({
+              title: `${service.name} at ${business?.name ?? 'your appointment'}`,
+              startISO: booking.start_time,
+              minutes: service.duration_minutes ?? 30,
+              details: `Booked through Vanova`,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-ink-faint hover:text-ink transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
+            </svg>
+            Add to calendar
+          </a>
+        </div>
+      )}
 
       {messages && messages.length > 0 && (
         <>

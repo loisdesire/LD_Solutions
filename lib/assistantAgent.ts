@@ -1,4 +1,4 @@
-import { runToolAgent, type AgentMessage } from './agentLoop';
+import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { todayInTimezone } from './timezone';
 import { INSIGHTS_TOOLS, executeInsightsTool } from './insightsAgent';
@@ -76,5 +76,8 @@ naira sign like ₦12,000. Keep answers short and direct; this is a working dash
         ? executeRescheduleTool(name, args, businessId)
         : executeInsightsTool(name, args, businessId);
     },
+    // The prompt already says "no markdown" (see above) - confirmed live
+    // that isn't enough on its own, so this is the deterministic backstop.
+    postProcess: stripMarkdown,
   });
 }

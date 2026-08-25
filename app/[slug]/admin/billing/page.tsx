@@ -1,17 +1,39 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getSubscriptionState } from '@/lib/subscription';
 import BillingManager from '@/components/BillingManager';
+import PageHeader from '@/components/PageHeader';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Billing' };
 
 // The one admin page reachable with an expired trial - everything else
 // redirects here via requireStaffSession's gate, so this can't itself
-// require an active subscription.
+// require an active subscription. That rules out the usual
+// `requireOwner: true` redirect for the owner-only check below: if a
+// non-owner staff member's trial were expired, requireOwner redirecting
+// to /admin would just bounce straight back here via THAT page's own
+// subscription check, looping forever. Handled inline instead - render
+// a plain message for a non-owner rather than ever redirecting away.
 export default async function BillingPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { business, supabase } = await requireStaffSession(slug, { skipSubscriptionCheck: true });
+  const { business, supabase, staff } = await requireStaffSession(slug, { skipSubscriptionCheck: true });
+
+  if (staff.role !== 'owner') {
+    return (
+      <div>
+        <PageHeader eyebrow="Business" title="Billing" />
+        <div className="rounded-2xl border border-line bg-warm-surface p-8 text-center">
+          <p className="text-body-sm text-ink-soft">
+            Billing is managed by {business.name}&rsquo;s owner. Ask them if you need something changed here.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   let [{ data: sub, error: subError }, { data: history }] = await Promise.all([
     supabase
@@ -42,13 +64,7 @@ export default async function BillingPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
-        </div>
-        <h1 className="font-display text-h1 text-ink">Billing</h1>
-      </div>
-
+      <PageHeader eyebrow="Business" title="Billing" />
       <BillingManager slug={slug} state={state} history={history ?? []} />
     </div>
   );

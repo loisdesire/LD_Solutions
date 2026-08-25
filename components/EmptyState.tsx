@@ -1,13 +1,12 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Codifies the pattern already proven in AdminDashboardBody's bookings
-// empty state - what's missing, why it matters, and what to do next -
-// against the dozen or so elsewhere that just said "No services yet".
-//
-// The brief's rule: never a bare "no data". A blank screen is where a new
-// business decides whether this product works, so it's the screen that
-// most needs to tell them what to do.
+// Codifies the pattern AdminDashboardBody and ServicesManager and
+// CustomersManager already used independently, each with its own copy of
+// the same markup: an icon, what's missing, why it matters, and an action
+// if there's somewhere useful to send someone. Several managers (Staff,
+// Billing) fell back to a single plain sentence instead - not literally
+// no empty state, just a visibly weaker one than everywhere else in the
+// product, which reads as inconsistency more than a design choice.
 export default function EmptyState({
   icon,
   title,
@@ -15,47 +14,24 @@ export default function EmptyState({
   action,
   compact = false,
 }: {
-  icon?: ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
-  action?: { label: string; href: string } | { label: string; onClick: () => void };
+  action?: ReactNode;
+  /** A tighter version for a section nested inside another card, rather than a full-page empty state. */
   compact?: boolean;
 }) {
+  // Solid border + a filled surface, not a dashed outline - dashed reads
+  // as "wireframe/placeholder" rather than a considered state, and it
+  // was the default treatment for nearly every empty state in the app.
   return (
-    <div className={`text-center ${compact ? 'py-8' : 'py-14'} px-6`}>
-      {icon && (
-        <div
-          className="h-11 w-11 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-          style={{ background: 'var(--accent-soft)' }}
-          aria-hidden="true"
-        >
-          {icon}
-        </div>
-      )}
-      <p className="font-display text-[17px] text-ink mb-1.5">{title}</p>
-      <p className="text-ink-soft text-body-sm max-w-sm mx-auto leading-relaxed">{description}</p>
-      {action && (
-        <div className="mt-5">
-          {'href' in action ? (
-            <Link
-              href={action.href}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'var(--accent)' }}
-            >
-              {action.label}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={action.onClick}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'var(--accent)' }}
-            >
-              {action.label}
-            </button>
-          )}
-        </div>
-      )}
+    <div className={`border border-line rounded-2xl bg-warm-surface text-center ${compact ? 'p-8' : 'p-10 sm:p-14'}`}>
+      <div className="mx-auto mb-5 h-12 w-12 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
+        {icon}
+      </div>
+      <h2 className="font-display text-[19px] font-semibold">{title}</h2>
+      <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">{description}</p>
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }

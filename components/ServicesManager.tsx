@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { useToast } from './Toast';
+import { friendlyError } from '@/lib/friendlyError';
+import { formatMoney } from '@/lib/formatMoney';
 import PillTabs from './PillTabs';
+import { useDialog } from './useDialog';
 import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
+import ConfirmDialog from './ConfirmDialog';
 
 type Service = {
   id: string;
@@ -24,6 +28,143 @@ function formatDuration(min: number): string {
   const h = Math.floor(min / 60);
   const rest = min % 60;
   return rest === 0 ? `${h} hr` : `${h} hr ${rest} min`;
+}
+
+function AddServiceModal({
+  name,
+  setName,
+  category,
+  setCategory,
+  duration,
+  setDuration,
+  price,
+  setPrice,
+  categories,
+  saving,
+  error,
+  onSubmit,
+  onClose,
+}: {
+  name: string;
+  setName: (v: string) => void;
+  category: string;
+  setCategory: (v: string) => void;
+  duration: number;
+  setDuration: (v: number) => void;
+  price: string;
+  setPrice: (v: string) => void;
+  categories: string[];
+  saving: boolean;
+  error: string;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+}) {
+  const dialogRef = useDialog(true, onClose);
+  const nameId = useId();
+  const categoryId = useId();
+  const durationId = useId();
+  const priceId = useId();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add service"
+      ref={dialogRef}
+    >
+      <div
+        className="absolute inset-0 backdrop-blur-sm animate-fade"
+        style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
+          <h2 className="font-display text-[19px] font-semibold text-ink">Add service</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="p-6 space-y-4">
+          <div>
+            <label htmlFor={nameId} className={labelClass}>Service name</label>
+            <input
+              id={nameId}
+              required
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="Haircut"
+            />
+          </div>
+          <div>
+            <label htmlFor={categoryId} className={labelClass}>Category</label>
+            <input
+              id={categoryId}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={inputClass}
+              placeholder="Optional"
+              list="category-suggestions"
+            />
+            <datalist id="category-suggestions">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor={durationId} className={labelClass}>Duration (min)</label>
+              <input
+                id={durationId}
+                required
+                type="number"
+                min={5}
+                step={5}
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor={priceId} className={labelClass}>Price</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint text-[13px] pointer-events-none">
+                  ₦
+                </span>
+                <input
+                  id={priceId}
+                  type="number"
+                  min={0}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className={`${inputClass} pl-7`}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-error">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-xl bg-accent px-5 py-3 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save service'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 export default function ServicesManager({
@@ -47,6 +188,8 @@ export default function ServicesManager({
   const [editingId, setEditingId] = useState('');
   const [editDraft, setEditDraft] = useState({ name: '', category: '', duration_minutes: 30, price: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -141,7 +284,7 @@ export default function ServicesManager({
     setSaving(false);
 
     if (insertError) {
-      setError(insertError.message);
+      setError(friendlyError(insertError));
       return;
     }
 
@@ -169,13 +312,16 @@ export default function ServicesManager({
     }
   }
 
-  async function handleDelete(id: string) {
-    const service = services.find((s) => s.id === id);
-    if (!confirm(`Delete ${service?.name ?? 'this service'}? This can't be undone.`)) return;
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { id, name } = deleteTarget;
+    setDeleting(true);
     const { error: deleteError } = await supabase.from('services').delete().eq('id', id);
+    setDeleting(false);
+    setDeleteTarget(null);
     if (!deleteError) {
       setServices((prev) => prev.filter((s) => s.id !== id));
-      showToast(`${service?.name ?? 'Service'} deleted`);
+      showToast(`${name} deleted`);
     } else {
       showToast('Could not delete that service', 'error');
     }
@@ -208,7 +354,7 @@ export default function ServicesManager({
     setEditSaving(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyError(updateError));
       return;
     }
 
@@ -232,81 +378,40 @@ export default function ServicesManager({
     <div className="print:[&_.no-print]:hidden">
       <div className="flex justify-end mb-4 no-print">
         <button
-          onClick={() => setShowAdd((v) => !v)}
+          onClick={() => {
+            setError('');
+            setShowAdd(true);
+          }}
           className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          {showAdd ? 'Cancel' : 'Add service'}
+          Add service
         </button>
       </div>
 
+      {/* A modal, not an inline-expanding form - it used to push every row
+          in the table down the page the instant you opened it, and back up
+          the instant you closed it. Reuses the same dialog shell
+          (useDialog: focus trap, Escape, scroll lock) as NewAppointmentModal. */}
       {showAdd && (
-        <form
+        <AddServiceModal
+          name={name}
+          setName={setName}
+          category={category}
+          setCategory={setCategory}
+          duration={duration}
+          setDuration={setDuration}
+          price={price}
+          setPrice={setPrice}
+          categories={categories}
+          saving={saving}
+          error={error}
           onSubmit={handleAdd}
-          className="grid grid-cols-1 sm:grid-cols-[1.6fr_1fr_1fr_1fr_auto] gap-4 items-end border-2 border-line rounded-2xl p-5 mb-4 bg-surface no-print"
-        >
-          <div>
-            <label className={labelClass}>Service name</label>
-            <input
-              required
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
-              placeholder="Haircut"
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Category</label>
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={inputClass}
-              placeholder="Optional"
-              list="category-suggestions"
-            />
-            <datalist id="category-suggestions">
-              {categories.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </div>
-          <div>
-            <label className={labelClass}>Duration (min)</label>
-            <input
-              required
-              type="number"
-              min={5}
-              step={5}
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Price</label>
-            <input
-              type="number"
-              min={0}
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className={inputClass}
-              placeholder="Optional"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </form>
+          onClose={() => setShowAdd(false)}
+        />
       )}
-
-      {error && <p className="text-sm text-error mb-4">{error}</p>}
 
       {services.length === 0 ? (
         <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
@@ -395,11 +500,13 @@ export default function ServicesManager({
                 style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
                 <input
+                  aria-label="Service name"
                   value={editDraft.name}
                   onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
                   className={`${smallInputClass} flex-1`}
                 />
                 <input
+                  aria-label="Category"
                   value={editDraft.category}
                   onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
                   placeholder="Category"
@@ -409,20 +516,27 @@ export default function ServicesManager({
                   type="number"
                   min={5}
                   step={5}
+                  aria-label="Duration in minutes"
                   value={editDraft.duration_minutes}
                   onChange={(e) =>
                     setEditDraft((d) => ({ ...d, duration_minutes: Number(e.target.value) }))
                   }
                   className={`${smallInputClass} w-24`}
                 />
-                <input
-                  type="number"
-                  min={0}
-                  value={editDraft.price}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
-                  placeholder="Price"
-                  className={`${smallInputClass} w-28`}
-                />
+                <div className="relative w-28">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint text-[12.5px] pointer-events-none">
+                    ₦
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    aria-label="Price"
+                    value={editDraft.price}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
+                    placeholder="Price"
+                    className={`${smallInputClass} w-full pl-6`}
+                  />
+                </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => saveEdit(s.id)}
@@ -475,10 +589,10 @@ export default function ServicesManager({
                 </div>
                 <div className="font-mono text-[13px] text-ink-soft">
                   {formatDuration(s.duration_minutes)}
-                  {s.price != null && <span className="sm:hidden"> · ₦{s.price.toLocaleString()}</span>}
+                  {s.price != null && <span className="sm:hidden"> · {formatMoney(s.price)}</span>}
                 </div>
                 <div className="hidden sm:block font-semibold text-body-sm" style={{ color: 'var(--accent)' }}>
-                  {s.price != null ? `₦${s.price.toLocaleString()}` : '-'}
+                  {formatMoney(s.price)}
                 </div>
                 <div className="hidden sm:block">
                   <span
@@ -520,7 +634,7 @@ export default function ServicesManager({
                     )}
                   </button>
                   <button
-                    onClick={() => handleDelete(s.id)}
+                    onClick={() => setDeleteTarget(s)}
                     aria-label="Delete"
                     className={`${iconBtnClass} hover:border-error hover:text-error`}
                   >
@@ -608,6 +722,17 @@ export default function ServicesManager({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete service?"
+        message={`Delete ${deleteTarget?.name ?? 'this service'}? This can't be undone.`}
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        pending={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

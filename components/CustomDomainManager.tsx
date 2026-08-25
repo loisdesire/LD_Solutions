@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
+import Field from './Field';
+import { inputClass } from './formStyles';
 
 export default function CustomDomainManager({
   businessId,
@@ -42,7 +45,7 @@ export default function CustomDomainManager({
       } else if ((updateError as { code?: string }).code === '42703') {
         setError('Custom domains aren\'t switched on for your account yet. Check back soon.');
       } else {
-        setError(updateError.message);
+        setError(friendlyError(updateError));
       }
       return;
     }
@@ -51,32 +54,28 @@ export default function CustomDomainManager({
     setSaved(true);
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
-
   return (
     <form onSubmit={handleSave} className="space-y-5">
-      <div>
-        <label className={labelClass}>Your domain</label>
-        <input
-          type="text"
-          value={domain}
-          // Every other manager clears its "Saved" badge on edit; this one
-          // didn't, so the green "Saved" sat next to unsaved changes.
-          onChange={(e) => {
-            setDomain(e.target.value);
-            setSaved(false);
-          }}
-          placeholder="book.yourbusiness.com"
-          className={inputClass}
-        />
-        <p className="text-ink-faint text-[12.5px] mt-2 leading-relaxed">
-          Point a domain or subdomain you own at your booking page. Customers see it as your own address,
-          nothing about the platform shows. This covers your public pages only (booking, about, gallery,
-          contact); you'll still manage the business and log in from here.
-        </p>
-      </div>
+      <Field
+        label="Your domain"
+        hint="Point a domain or subdomain you own at your booking page. Customers see it as your own address, nothing about the platform shows. This covers your public pages only (booking, about, gallery, contact); you'll still manage the business and log in from here."
+      >
+        {(props) => (
+          <input
+            {...props}
+            type="text"
+            value={domain}
+            // Every other manager clears its "Saved" badge on edit; this one
+            // didn't, so the green "Saved" sat next to unsaved changes.
+            onChange={(e) => {
+              setDomain(e.target.value);
+              setSaved(false);
+            }}
+            placeholder="book.yourbusiness.com"
+            className={inputClass}
+          />
+        )}
+      </Field>
 
       {domain && (
         <div className="rounded-xl bg-warm-surface p-4">

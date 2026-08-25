@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import ConversationPanel from './ConversationPanel';
+import CustomerDetailModal from './CustomerDetailModal';
 import PillTabs from './PillTabs';
 import { parseContact } from '@/lib/contact';
+import { formatMoney } from '@/lib/formatMoney';
 
 type Booking = {
   customer_name: string;
@@ -25,6 +27,7 @@ type Customer = {
   totalSpent: number;
   lastVisit: string;
   lastService: string | null;
+  nextVisit: string | null;
 };
 
 function relativeDay(iso: string): string {
@@ -48,10 +51,14 @@ function customerKey(b: Booking): string {
 
 function aggregate(bookings: Booking[]): Customer[] {
   const map = new Map<string, Customer>();
+  const now = Date.now();
 
   for (const b of bookings) {
     const key = customerKey(b);
     const spent = b.status === 'cancelled' ? 0 : (b.services?.price ?? 0);
+    // Upcoming, not just "in the future" - a cancelled booking three days
+    // from now isn't a real next appointment.
+    const isUpcoming = b.status !== 'cancelled' && new Date(b.start_time).getTime() >= now;
     const existing = map.get(key);
 
     if (!existing) {
@@ -65,6 +72,7 @@ function aggregate(bookings: Booking[]): Customer[] {
         totalSpent: spent,
         lastVisit: b.start_time,
         lastService: b.services?.name ?? null,
+        nextVisit: isUpcoming ? b.start_time : null,
       });
       continue;
     }
@@ -79,6 +87,11 @@ function aggregate(bookings: Booking[]): Customer[] {
       existing.lastService = b.services?.name ?? null;
       existing.name = b.customer_name;
     }
+    // Earliest upcoming booking wins for "next visit" - ascending order
+    // means the first upcoming one seen is already the soonest.
+    if (isUpcoming && existing.nextVisit === null) {
+      existing.nextVisit = b.start_time;
+    }
   }
 
   return [...map.values()].sort((a, b) => new Date(b.lastVisit).getTime() - new Date(a.lastVisit).getTime());
@@ -88,6 +101,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'recent' | 'frequent' | 'spent'>('recent');
   const [openConversation, setOpenConversation] = useState<Customer | null>(null);
+  const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
 
   const customers = useMemo(() => aggregate(bookings), [bookings]);
 
@@ -130,6 +144,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search customers"
             placeholder="Search customers…"
             className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
           />
@@ -162,13 +177,40 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
             return (
               <div
                 key={c.key}
-                className={`px-2 py-4 hover:bg-warm-surface transition-colors ${
+                // Clickable now - previously only the contact cell did
+                // anything; there was no way to see a customer's actual
+                // visit history, just the aggregate row.
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetailCustomer(c)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDetailCustomer(c);
+                  }
+                }}
+                className={`cursor-pointer px-2 py-4 hover:bg-warm-surface transition-colors ${
                   i !== filtered.length - 1 ? 'border-b border-line' : ''
                 }`}
               >
                 <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] sm:gap-4 sm:items-center">
                   <div className="min-w-0">
-                    <p className="font-semibold text-[14px] truncate">{c.name}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-[14px] truncate">{c.name}</p>
+                      {/* Whether they're coming back was previously
+                          invisible - only "last visit" was tracked, so a
+                          returning customer with something already on the
+                          calendar looked identical to one who might never
+                          come back. */}
+                      {c.nextVisit && (
+                        <span
+                          className="font-mono text-[9.5px] uppercase tracking-[0.05em] rounded-full px-2 py-0.5 shrink-0"
+                          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                        >
+                          Next {relativeDay(c.nextVisit)}
+                        </span>
+                      )}
+                    </div>
                     {c.lastService && (
                       <p className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint truncate mt-0.5">
                         Last booked {c.lastService}
@@ -178,16 +220,22 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                   <div className="font-mono text-[13px] truncate">
                     {c.phone || c.telegramUsername ? (
                       isBotContact ? (
-                        <button onClick={() => setOpenConversation(c)} className="text-accent hover:underline text-left">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenConversation(c);
+                          }}
+                          className="text-accent hover:underline text-left"
+                        >
                           {label}
                         </button>
                       ) : (
-                        <a href={`tel:${c.phone}`} className="text-accent hover:underline">
+                        <a href={`tel:${c.phone}`} className="text-accent hover:underline" onClick={(e) => e.stopPropagation()}>
                           {label}
                         </a>
                       )
                     ) : c.email ? (
-                      <a href={`mailto:${c.email}`} className="text-accent hover:underline">
+                      <a href={`mailto:${c.email}`} className="text-accent hover:underline" onClick={(e) => e.stopPropagation()}>
                         {c.email}
                       </a>
                     ) : (
@@ -200,14 +248,14 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                       stacking every grid column individually. */}
                   <div className="font-mono text-label text-ink-faint sm:hidden">
                     {c.bookingCount} {c.bookingCount === 1 ? 'visit' : 'visits'}
-                    {c.totalSpent ? ` · ₦${c.totalSpent.toLocaleString()}` : ''}
+                    {c.totalSpent ? ` · ${formatMoney(c.totalSpent)}` : ''}
                     {' · '}{relativeDay(c.lastVisit)}
                   </div>
                   <div className="hidden sm:block text-body-sm text-ink-soft">
                     {c.bookingCount} {c.bookingCount === 1 ? 'visit' : 'visits'}
                   </div>
                   <div className="hidden sm:block font-mono text-body-sm font-semibold" style={{ color: 'var(--accent)' }}>
-                    {c.totalSpent ? `₦${c.totalSpent.toLocaleString()}` : '-'}
+                    {c.totalSpent ? formatMoney(c.totalSpent) : '-'}
                   </div>
                   <div className="hidden sm:block text-[13px] text-ink-soft">{relativeDay(c.lastVisit)}</div>
                 </div>
@@ -225,6 +273,21 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
             openConversation.telegramUsername ? `@${openConversation.telegramUsername}` : openConversation.name
           }
           onClose={() => setOpenConversation(null)}
+        />
+      )}
+
+      {detailCustomer && (
+        <CustomerDetailModal
+          slug={slug}
+          customer={detailCustomer}
+          bookings={bookings
+            .filter((b) => customerKey(b) === detailCustomer.key)
+            .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())}
+          onMessage={() => {
+            setOpenConversation(detailCustomer);
+            setDetailCustomer(null);
+          }}
+          onClose={() => setDetailCustomer(null)}
         />
       )}
     </div>

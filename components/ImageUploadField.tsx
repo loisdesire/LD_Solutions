@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 
 // Replaces what used to be a raw "paste a URL" text input - nobody
 // actually wants to host an image somewhere else first just to link it
@@ -66,7 +67,17 @@ export default function ImageUploadField({
     <div className={shape === 'avatar' ? 'flex items-center gap-4' : ''}>
       <div className={`relative shrink-0 overflow-hidden border-2 border-line-strong bg-paper ${previewClass} ${shape === 'banner' ? 'mb-2' : ''}`}>
         {value ? (
-          <img src={value} alt="" className="h-full w-full object-cover" />
+          // `value` only ever holds the persisted URL /api/upload hands
+          // back once the upload has actually finished (see handleFile
+          // below) - never a local blob: preview - so this is safe for
+          // next/image, which can't load blob: URLs.
+          <Image
+            src={value}
+            alt={`${label} preview`}
+            fill
+            sizes={shape === 'avatar' ? '64px' : '400px'}
+            className="object-cover"
+          />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-ink-faint">
             <svg width={shape === 'avatar' ? 20 : 26} height={shape === 'avatar' ? 20 : 26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

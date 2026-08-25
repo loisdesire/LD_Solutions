@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createCustomerServerSupabase } from '@/lib/supabase-server';
 import AccountBookingCard from '@/components/AccountBookingCard';
 import LogoutButton from '@/components/LogoutButton';
+import EmptyState from '@/components/EmptyState';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -89,11 +90,21 @@ export default async function AccountPage() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="rounded-3xl bg-warm-surface py-16 text-center px-6">
-            <p className="text-ink-soft text-[14px]">
-              No bookings found for this email yet - once you book somewhere, it'll show up here.
-            </p>
-          </div>
+          // Vanova isn't a directory of businesses to browse, so there's
+          // no real "book again" catalog to point at - the honest
+          // action here is explaining how a booking actually gets here,
+          // not inventing a discovery flow that doesn't exist.
+          <EmptyState
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            }
+            title="Nothing here yet"
+            description={`No bookings found for ${user.email} yet. Once you book with a business on Vanova, it'll show up here - you'll get a link straight back to this page in your confirmation.`}
+          />
         ) : (
           <div className="space-y-10">
             {upcoming.length > 0 && (

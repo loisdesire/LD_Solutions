@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { runToolAgent } from './agentLoop';
+import { runToolAgent, stripMarkdown } from './agentLoop';
 import {
   checkAvailability,
   createBooking,
@@ -16,18 +16,6 @@ import {
 } from './whatsappTools';
 import { todayInTimezone } from './timezone';
 import { hasBusinessIntelligence } from './subscription-server';
-
-// The system prompt tells the model never to use markdown, but that
-// instruction isn't reliably followed on its own - chat apps like WhatsApp/
-// Telegram have no markdown rendering, so a stray "**Haircut**" shows up as
-// literal asterisks to the customer. Rather than keep trusting the prompt,
-// strip it deterministically so it can't happen regardless of model output.
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*/g, '')
-    .replace(/^#{1,6}\s+/gm, '');
-}
 
 // Everything OpenAI-specific lives in this one file (plus the shared loop
 // in lib/agentLoop.ts): the tool schemas and what each tool call actually

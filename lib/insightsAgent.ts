@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { runToolAgent, type AgentMessage } from './agentLoop';
+import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { todayInTimezone } from './timezone';
 import {
@@ -230,5 +230,8 @@ them as ₦12,000 style. Keep answers concise and direct; this is a working dash
     message,
     tools: INSIGHTS_TOOLS,
     executeTool: (name, args) => executeInsightsTool(name, args, businessId),
+    // Deterministic backstop - the prompt already says "no markdown", but
+    // that isn't reliably followed on its own (see agentLoop.ts).
+    postProcess: stripMarkdown,
   });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBusinessByTelegramToken } from '@/lib/whatsappTools';
+import { getBusinessByTelegramToken, markChannelActive } from '@/lib/whatsappTools';
 import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { sendTelegramMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
@@ -54,6 +54,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     logError('api/telegram/webhook:business-not-found', new Error('No business for Telegram bot token'));
     return NextResponse.json({ ok: true });
   }
+  // Not awaited - a real customer's reply should never wait on (or fail
+  // over) a dashboard-only "last active" timestamp.
+  markChannelActive(business.id, 'telegram');
 
   try {
     const reply = await runWhatsappAgent({

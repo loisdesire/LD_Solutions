@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import ConversationPanel from './ConversationPanel';
+import BookingDetailModal from './BookingDetailModal';
 import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
-import PillTabs from './PillTabs';
 import { parseContact } from '@/lib/contact';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -50,16 +50,24 @@ function ContactCell({
 }) {
   const { isBotContact, label } = parseContact(phone, telegramUsername);
 
+  // Stops the click from also bubbling up to the row's own onClick (which
+  // opens the full detail modal) - this has its own, more specific action.
   if (!isBotContact) {
     return (
-      <a href={`tel:${phone}`} className="text-accent hover:underline">
+      <a href={`tel:${phone}`} className="text-accent hover:underline" onClick={(e) => e.stopPropagation()}>
         {label}
       </a>
     );
   }
 
   return (
-    <button onClick={onOpen} className="text-accent hover:underline text-left">
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      className="text-accent hover:underline text-left"
+    >
       {label}
     </button>
   );
@@ -74,10 +82,13 @@ export default function BookingsList({
   bookings: Booking[];
   search?: string;
 }) {
-  // One filter, not a scope toggle plus a filter. "past" sits alongside
-  // the status pills because that is how it reads to a user: another way
-  // to narrow the same list, not a separate screen to navigate to.
-  const [filter, setFilter] = useState('all');
+  // Two independent controls, not one flat pill row mixing them - "past"
+  // is a time scope, "confirmed" is a status, and "all" is neither; they
+  // used to sit in the same row as if they were equivalent choices.
+  // `scope` decides WHICH bookings are in play (Upcoming / Today / Past);
+  // `statusFilter` narrows whichever scope is active by status.
+  const [scope, setScope] = useState<'upcoming' | 'today' | 'past'>('upcoming');
+  const [statusFilter, setStatusFilter] = useState('all');
   // The range lives in the URL rather than component state, because the
   // server query reads it. Changing a date re-runs the query against the
   // database instead of filtering a list the browser already holds.
@@ -95,6 +106,7 @@ export default function BookingsList({
     router.replace(params.toString() ? `?${params.toString()}` : '?', { scroll: false });
   }
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -126,10 +138,19 @@ export default function BookingsList({
     ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
     : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
 
-  const isPast = filter === 'past';
+  const isPast = scope === 'past';
 
   const upcoming = bookings.filter((b) => b.status !== 'cancelled' && new Date(b.start_time) >= now);
   const allPast = bookings.filter((b) => b.status === 'cancelled' || new Date(b.start_time) < now);
+  // Today's whole day, not just what's still ahead of the current time -
+  // a 10am appointment shouldn't vanish from "Today" at 11am just because
+  // it's already started (or wasn't marked complete yet).
+  const startOfTomorrow = new Date(startOfToday.getTime() + 86400000);
+  const todayScoped = bookings.filter((b) => {
+    if (b.status === 'cancelled') return false;
+    const d = new Date(b.start_time);
+    return d >= startOfToday && d < startOfTomorrow;
+  });
 
   // Past defaults to the last 7 days. Showing everything ever booked made
   // the recent few rows, which are the ones anyone actually wants, sit
@@ -139,19 +160,19 @@ export default function BookingsList({
   // Already windowed by the server query, so nothing to narrow here.
   const past = allPast;
 
-  const scoped = isPast ? past : upcoming;
+  const scoped = isPast ? past : scope === 'today' ? todayScoped : upcoming;
 
-  // Not shown any more, but still needed: this decides WHICH status pills
-  // exist, so a business with no cancellations never sees a Cancelled pill.
-  // Counted from the upcoming list even while Past is selected, so the pills
-  // do not appear and disappear as you move between them.
+  // This decides WHICH status pills exist, so a business with no
+  // cancellations never sees a Cancelled pill. Counted from the upcoming
+  // list regardless of which scope is active, so the pills don't appear
+  // and disappear as you move between Upcoming/Today/Past.
   const counts = upcoming.reduce<Record<string, number>>((acc, b) => {
     acc[b.status] = (acc[b.status] ?? 0) + 1;
     return acc;
   }, {});
 
   const visibleStatuses = Object.keys(STATUS_LABELS).filter((s) => counts[s] > 0);
-  const statusFiltered = filter === 'all' || isPast ? scoped : scoped.filter((b) => b.status === filter);
+  const statusFiltered = statusFilter === 'all' ? scoped : scoped.filter((b) => b.status === statusFilter);
   const query = search.trim().toLowerCase();
   const filtered = query
     ? statusFiltered.filter(
@@ -161,28 +182,64 @@ export default function BookingsList({
       )
     : statusFiltered;
 
+  const SCOPE_HEADING: Record<typeof scope, string> = {
+    upcoming: 'Upcoming bookings',
+    today: "Today's bookings",
+    past: 'Past bookings',
+  };
+
   return (
     <div>
+      {/* Scope (Upcoming/Today/Past) and status (No-show etc.) are still
+          two independent pieces of state, not one exclusive choice - a
+          business can genuinely be looking at "Upcoming" AND filtered to
+          "No-show" at once. No "All" pill now: status is a toggle, not a
+          tab - clicking the active one turns it back off instead of
+          needing a separate option to return to. One shared track
+          (rather than two separate PillTabs instances sitting next to
+          each other) so it reads as one continuous row, status chips
+          appended after Past. */}
       <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
-        <h2 className="font-display text-[19px] font-semibold text-ink">
-          {isPast ? 'Past bookings' : 'Upcoming bookings'}
-        </h2>
-        <PillTabs
-          active={filter}
-          onChange={(f) => {
-            setFilter(f);
-            // Leaving Past should not keep a range applied invisibly.
-            if (f !== 'past') setRange({ from: '', to: '' });
-          }}
-          options={[
-            // No counts. Past cannot carry one now that the browser only
-            // holds a window of history, and a row where some pills are
-            // numbered and one is not reads as though that one is broken.
-            { key: 'all', label: 'All' },
-            ...visibleStatuses.map((s) => ({ key: s, label: STATUS_LABELS[s] })),
-            { key: 'past', label: 'Past' },
-          ]}
-        />
+        <h2 className="font-display text-[19px] font-semibold text-ink">{SCOPE_HEADING[scope]}</h2>
+        <div className="inline-flex items-center gap-0.5 bg-warm-surface rounded-lg p-1 flex-wrap">
+          {(
+            [
+              { key: 'upcoming', label: 'Upcoming' },
+              { key: 'today', label: 'Today' },
+              { key: 'past', label: 'Past' },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                setScope(opt.key);
+                // Leaving Past should not keep a range applied invisibly.
+                if (opt.key !== 'past') setRange({ from: '', to: '' });
+              }}
+              aria-current={scope === opt.key ? 'true' : undefined}
+              className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                scope === opt.key ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {visibleStatuses.map((s) => {
+            const isActive = statusFilter === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(isActive ? 'all' : s)}
+                aria-pressed={isActive}
+                className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                  isActive ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                {STATUS_LABELS[s]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {isPast && (
@@ -246,7 +303,8 @@ export default function BookingsList({
 
         {filtered.length === 0 ? (
           <div className="px-2 py-10 text-center text-body-sm text-ink-faint">
-            No {isPast ? 'past' : filter === 'all' ? 'upcoming' : STATUS_LABELS[filter]?.toLowerCase()} bookings.
+            No {statusFilter !== 'all' ? `${STATUS_LABELS[statusFilter]?.toLowerCase()} ` : ''}
+            {scope === 'today' ? "bookings today" : `${scope} bookings`}.
           </div>
         ) : (
           filtered.map((b, i) => {
@@ -254,8 +312,30 @@ export default function BookingsList({
             return (
               <div
                 key={b.id}
-                className={`px-2 py-4 hover:bg-warm-surface transition-colors ${
-                  i !== filtered.length - 1 ? 'border-b border-line' : ''
+                // A real card on mobile (rounded, bordered, its own
+                // background) instead of one more divided row in a flat
+                // list - at sm+ this reverts to the existing plain-row
+                // treatment, unchanged (border-0 clears all four sides,
+                // then the conditional border-b below re-adds only the
+                // bottom one, only between rows).
+                //
+                // Clickable everywhere now, opening the same detail/action
+                // panel NextAppointmentCard gives the single next booking -
+                // previously nothing on this row opened anything except the
+                // contact link. role="button" + a key handler since this
+                // wraps other interactive elements (contact link, status
+                // pill), which rules out making the row itself a <button>.
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetailBooking(b)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDetailBooking(b);
+                  }
+                }}
+                className={`cursor-pointer rounded-2xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-2 sm:py-4 hover:bg-warm-surface transition-colors ${
+                  i !== filtered.length - 1 ? 'sm:border-b sm:border-line' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
                 <div className={`flex flex-col gap-2.5 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>
@@ -336,6 +416,10 @@ export default function BookingsList({
           }
           onClose={() => setOpenConversation(null)}
         />
+      )}
+
+      {detailBooking && (
+        <BookingDetailModal slug={slug} booking={detailBooking} onClose={() => setDetailBooking(null)} />
       )}
     </div>
   );

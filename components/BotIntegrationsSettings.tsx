@@ -1,9 +1,27 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 
 const inputClass =
   'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] font-mono text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+
+// "Connected" alone doesn't say whether a channel is actually being used -
+// null just means no real customer message has come through it yet
+// (including if the last-active migration hasn't run, since the page
+// passes null in that case too), not that something's wrong.
+function formatLastActive(iso: string | null): string {
+  if (!iso) return 'No messages yet';
+  const then = new Date(iso).getTime();
+  const minutes = Math.round((Date.now() - then) / 60000);
+  if (minutes < 1) return 'Active just now';
+  if (minutes < 60) return `Active ${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `Active ${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `Active ${days}d ago`;
+  return `Last active ${new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+}
 
 declare global {
   interface Window {
@@ -17,11 +35,17 @@ export default function BotIntegrationsSettings({
   initialTelegramUsername,
   initialWhatsappNumber,
   initialMessengerPageName,
+  telegramLastActiveAt,
+  whatsappLastActiveAt,
+  messengerLastActiveAt,
 }: {
   slug: string;
   initialTelegramUsername: string | null;
   initialWhatsappNumber: string | null;
   initialMessengerPageName: string | null;
+  telegramLastActiveAt?: string | null;
+  whatsappLastActiveAt?: string | null;
+  messengerLastActiveAt?: string | null;
 }) {
   return (
     <div className="space-y-8">
@@ -43,20 +67,24 @@ export default function BotIntegrationsSettings({
         </div>
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
           <p className="text-body-sm text-ink-soft">Live on your booking page. Nothing to set up.</p>
-          <button
-            type="button"
-            disabled
-            className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg text-ink-faint cursor-default"
+          {/* Was a permanently disabled "Set up" button that did nothing -
+              the one channel this page can actually let you test right
+              now, with zero setup required, had no way to do that. */}
+          <a
+            href={`/${slug}#chat`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg text-accent hover:bg-accent-soft transition-colors"
           >
-            Set up
-          </button>
+            Try it
+          </a>
         </div>
       </div>
-      <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} />
+      <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} lastActiveAt={whatsappLastActiveAt ?? null} />
       <div className="border-t border-dashed border-line" />
-      <TelegramSection slug={slug} initialUsername={initialTelegramUsername} />
+      <TelegramSection slug={slug} initialUsername={initialTelegramUsername} lastActiveAt={telegramLastActiveAt ?? null} />
       <div className="border-t border-dashed border-line" />
-      <MessengerSection slug={slug} initialPageName={initialMessengerPageName} />
+      <MessengerSection slug={slug} initialPageName={initialMessengerPageName} lastActiveAt={messengerLastActiveAt ?? null} />
     </div>
   );
 }
@@ -81,12 +109,21 @@ function NotConnectedRow({ onConnect }: { onConnect: () => void }) {
   );
 }
 
-function MessengerSection({ slug, initialPageName }: { slug: string; initialPageName: string | null }) {
+function MessengerSection({
+  slug,
+  initialPageName,
+  lastActiveAt,
+}: {
+  slug: string;
+  initialPageName: string | null;
+  lastActiveAt: string | null;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [pageName, setPageName] = useState(initialPageName);
   const [token, setToken] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -102,7 +139,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
     setSaving(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       return;
     }
 
@@ -111,9 +148,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
   }
 
   async function handleDisconnect() {
-    if (!confirm('Disconnect Facebook Messenger? Customers messaging your page will stop reaching the AI assistant until you reconnect.')) {
-      return;
-    }
+    setConfirmingDisconnect(false);
     setSaving(true);
     setError('');
     // A failed DELETE used to do nothing at all - no error, badge still
@@ -149,14 +184,20 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
           </span>
         )}
       </div>
+      <p className="text-caption text-ink-faint mb-2">
+        Customers can ask about availability, get recommendations, and book directly in the chat.
+      </p>
 
       {pageName ? (
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="text-[13.5px] text-ink-soft">
-            Connected as <span className="font-mono text-ink">{pageName}</span>
-          </p>
+          <div>
+            <p className="text-[13.5px] text-ink-soft">
+              Connected as <span className="font-mono text-ink">{pageName}</span>
+            </p>
+            <p className="text-caption text-ink-faint mt-0.5">{formatLastActive(lastActiveAt)}</p>
+          </div>
           <button
-            onClick={handleDisconnect}
+            onClick={() => setConfirmingDisconnect(true)}
             disabled={saving}
             className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
           >
@@ -175,6 +216,7 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
             <input
               value={token}
               onChange={(e) => setToken(e.target.value)}
+              aria-label="Facebook Page Access Token"
               placeholder="EAAG..."
               className={inputClass}
               required
@@ -190,16 +232,36 @@ function MessengerSection({ slug, initialPageName }: { slug: string; initialPage
         </form>
       )}
       {error && <p className="text-sm text-error mt-2">{error}</p>}
+
+      <ConfirmDialog
+        open={confirmingDisconnect}
+        title="Disconnect Facebook Messenger?"
+        message="Customers messaging your page will stop reaching the AI assistant until you reconnect."
+        confirmLabel="Disconnect"
+        pendingLabel="Disconnecting…"
+        pending={saving}
+        onConfirm={handleDisconnect}
+        onCancel={() => setConfirmingDisconnect(false)}
+      />
     </div>
   );
 }
 
-function TelegramSection({ slug, initialUsername }: { slug: string; initialUsername: string | null }) {
+function TelegramSection({
+  slug,
+  initialUsername,
+  lastActiveAt,
+}: {
+  slug: string;
+  initialUsername: string | null;
+  lastActiveAt: string | null;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [username, setUsername] = useState(initialUsername);
   const [token, setToken] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -215,7 +277,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
     setSaving(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       return;
     }
 
@@ -224,9 +286,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
   }
 
   async function handleDisconnect() {
-    if (!confirm('Disconnect this Telegram bot? Customers messaging it will stop reaching the AI assistant until you reconnect.')) {
-      return;
-    }
+    setConfirmingDisconnect(false);
     setSaving(true);
     setError('');
     try {
@@ -259,19 +319,37 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
           </span>
         )}
       </div>
+      <p className="text-caption text-ink-faint mb-2">
+        Customers can ask about availability, get recommendations, and book directly in the chat.
+      </p>
 
       {username ? (
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="text-body-sm text-ink-soft">
-            Connected as <span className="font-mono text-ink">@{username}</span>
-          </p>
-          <button
-            onClick={handleDisconnect}
-            disabled={saving}
-            className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
-          >
-            Disconnect
-          </button>
+          <div>
+            <p className="text-body-sm text-ink-soft">
+              Connected as <span className="font-mono text-ink">@{username}</span>
+            </p>
+            <p className="text-caption text-ink-faint mt-0.5">{formatLastActive(lastActiveAt)}</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {/* A real, working test action, not just a status line - opens
+                a chat with the business's own bot on Telegram itself. */}
+            <a
+              href={`https://t.me/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[12.5px] font-semibold text-accent hover:underline"
+            >
+              Test it
+            </a>
+            <button
+              onClick={() => setConfirmingDisconnect(true)}
+              disabled={saving}
+              className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
       ) : !expanded ? (
         <NotConnectedRow onConnect={() => setExpanded(true)} />
@@ -285,6 +363,7 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
             <input
               value={token}
               onChange={(e) => setToken(e.target.value)}
+              aria-label="Telegram bot token"
               placeholder="123456789:AAH..."
               className={inputClass}
               required
@@ -300,17 +379,37 @@ function TelegramSection({ slug, initialUsername }: { slug: string; initialUsern
         </form>
       )}
       {error && <p className="text-sm text-error mt-2">{error}</p>}
+
+      <ConfirmDialog
+        open={confirmingDisconnect}
+        title="Disconnect this Telegram bot?"
+        message="Customers messaging it will stop reaching the AI assistant until you reconnect."
+        confirmLabel="Disconnect"
+        pendingLabel="Disconnecting…"
+        pending={saving}
+        onConfirm={handleDisconnect}
+        onCancel={() => setConfirmingDisconnect(false)}
+      />
     </div>
   );
 }
 
-function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber: string | null }) {
+function WhatsappSection({
+  slug,
+  initialNumber,
+  lastActiveAt,
+}: {
+  slug: string;
+  initialNumber: string | null;
+  lastActiveAt: string | null;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [number, setNumber] = useState(initialNumber);
   const [connecting, setConnecting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [sdkReady, setSdkReady] = useState(false);
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
   const signupData = useRef<{ wabaId?: string; phoneNumberId?: string }>({});
 
   // Meta posts a WA_EMBEDDED_SIGNUP message to the window as the owner
@@ -363,7 +462,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
     setConnecting(false);
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
+      setError(data.error ?? 'Something went wrong. Please try again.');
       return;
     }
     setNumber(data.displayNumber);
@@ -400,9 +499,7 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
   }
 
   async function handleDisconnect() {
-    if (!confirm(`Disconnect ${number}? Customers messaging this number will stop reaching the AI assistant, and you'll need to redo Embedded Signup to reconnect it.`)) {
-      return;
-    }
+    setConfirmingDisconnect(false);
     setSaving(true);
     setError('');
     try {
@@ -435,19 +532,37 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
           </span>
         )}
       </div>
+      <p className="text-caption text-ink-faint mb-2">
+        Customers can ask about availability, get recommendations, and book directly in the chat.
+      </p>
 
       {number ? (
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="text-body-sm text-ink-soft">
-            Connected as <span className="font-mono text-ink">{number}</span>
-          </p>
-          <button
-            onClick={handleDisconnect}
-            disabled={saving}
-            className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
-          >
-            Disconnect
-          </button>
+          <div>
+            <p className="text-body-sm text-ink-soft">
+              Connected as <span className="font-mono text-ink">{number}</span>
+            </p>
+            <p className="text-caption text-ink-faint mt-0.5">{formatLastActive(lastActiveAt)}</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {/* wa.me needs digits only - the display number can arrive
+                formatted with a leading + and spaces. */}
+            <a
+              href={`https://wa.me/${number.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[12.5px] font-semibold text-accent hover:underline"
+            >
+              Test it
+            </a>
+            <button
+              onClick={() => setConfirmingDisconnect(true)}
+              disabled={saving}
+              className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors disabled:opacity-50"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
       ) : !expanded ? (
         <NotConnectedRow onConnect={() => setExpanded(true)} />
@@ -469,6 +584,17 @@ function WhatsappSection({ slug, initialNumber }: { slug: string; initialNumber:
         </div>
       )}
       {error && <p className="text-sm text-error mt-2">{error}</p>}
+
+      <ConfirmDialog
+        open={confirmingDisconnect}
+        title="Disconnect WhatsApp?"
+        message={`Disconnect ${number}? Customers messaging this number will stop reaching the AI assistant, and you'll need to redo Embedded Signup to reconnect it.`}
+        confirmLabel="Disconnect"
+        pendingLabel="Disconnecting…"
+        pending={saving}
+        onConfirm={handleDisconnect}
+        onCancel={() => setConfirmingDisconnect(false)}
+      />
     </div>
   );
 }

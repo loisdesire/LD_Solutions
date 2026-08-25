@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
+import { inputClass } from './formStyles';
+import Field from './Field';
 
 export default function ResetPasswordForm({ slug }: { slug: string }) {
   const router = useRouter();
@@ -54,9 +56,6 @@ export default function ResetPasswordForm({ slug }: { slug: string }) {
     }
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-
   if (!ready) {
     return (
       <div className="border-2 border-line rounded-2xl p-5 text-center bg-surface">
@@ -67,20 +66,19 @@ export default function ResetPasswordForm({ slug }: { slug: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5">
-          New password
-        </label>
-        <input
-          required
-          type="password"
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-          placeholder="At least 8 characters"
-        />
-      </div>
+      <Field label="New password" required>
+        {(props) => (
+          <input
+            {...props}
+            type="password"
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={inputClass}
+            placeholder="At least 8 characters"
+          />
+        )}
+      </Field>
 
       <button
         type="submit"

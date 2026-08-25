@@ -50,3 +50,35 @@ export function summarizeHours(rows: AvailabilityRow[]): string | null {
 
   return parts.join(', ');
 }
+
+const WEEKDAY_ABBR_ORDER = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Whether the business is open right now, in its own timezone - not the
+// visitor's. The public page used to show only a static weekly summary,
+// so a customer landing outside business hours had no way to tell without
+// doing the day/time math themselves against a string like "Mon-Fri ·
+// 9 AM-6 PM".
+export function isOpenNow(rows: AvailabilityRow[], timeZone: string): boolean {
+  if (rows.length === 0) return false;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? '';
+  const dayIndex = WEEKDAY_ABBR_ORDER.indexOf(weekday);
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24;
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
+  const nowMinutes = hour * 60 + minute;
+
+  return rows.some((r) => {
+    if (r.day_of_week !== dayIndex) return false;
+    const [sh, sm] = r.start_time.split(':').map(Number);
+    const [eh, em] = r.end_time.split(':').map(Number);
+    return nowMinutes >= sh * 60 + sm && nowMinutes < eh * 60 + em;
+  });
+}

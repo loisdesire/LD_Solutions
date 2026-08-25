@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const auth = await requireStaffApiSession(slug, 'id, name');
+  const auth = await requireStaffApiSession(slug, 'id, name', { requireOwner: true });
   if (auth.error) return auth.error;
   const { business } = auth;
 

@@ -4,8 +4,12 @@ import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
 import { useToast } from './Toast';
-import { inputClass, smallInputClass, iconBtnClass, labelClass } from './formStyles';
+import { friendlyError } from '@/lib/friendlyError';
+import { inputClass, smallInputClass, iconBtnClass } from './formStyles';
 import PageHeader from './PageHeader';
+import EmptyState from './EmptyState';
+import ConfirmDialog from './ConfirmDialog';
+import Field from './Field';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
@@ -17,6 +21,7 @@ export default function StaffManager({
   currentUserId,
   initialStaff,
   initialInvites,
+  upcomingCountByStaffId = {},
 }: {
   businessId: string;
   businessName: string;
@@ -24,6 +29,8 @@ export default function StaffManager({
   currentUserId: string;
   initialStaff: StaffRow[];
   initialInvites: Invite[];
+  /** Upcoming, non-cancelled bookings currently assigned to each staff id - "what does this person actually have coming up". */
+  upcomingCountByStaffId?: Record<string, number>;
 }) {
   const [staff, setStaff] = useState<StaffRow[]>(initialStaff);
   const [invites, setInvites] = useState<Invite[]>(initialInvites);
@@ -36,6 +43,8 @@ export default function StaffManager({
   const [editingId, setEditingId] = useState('');
   const [editName, setEditName] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<StaffRow | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   const supabase = createBrowserSupabase();
   const showToast = useToast();
@@ -58,23 +67,38 @@ export default function StaffManager({
     setSaving(false);
 
     if (insertError) {
-      setError(insertError.message);
+      setError(friendlyError(insertError));
       return;
     }
 
     setInvites((prev) => [...prev, data]);
     setEmail('');
     setShowInvite(false);
-    showToast(`Invite sent to ${data.email}`);
 
-    fetch('/api/staff/notify-invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // Only the token goes over the wire now. The recipient, the business
-      // name and the link are all resolved server-side, so none of them can
-      // be chosen by whoever calls the endpoint.
-      body: JSON.stringify({ slug, token: data.token }),
-    }).catch(() => {});
+    // Was fire-and-forget with a swallowed .catch() - the toast said
+    // "Invite sent" unconditionally, whether or not the email actually
+    // went anywhere. A misconfigured sender (Resend's test address only
+    // ever delivers to the Resend account's own inbox, per lib/email.ts)
+    // or any other delivery failure was invisible: the invite row exists,
+    // but nothing tells the person to just copy the link and send it
+    // themselves instead of waiting on an email that's never coming.
+    try {
+      const res = await fetch('/api/staff/notify-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Only the token goes over the wire now. The recipient, the business
+        // name and the link are all resolved server-side, so none of them can
+        // be chosen by whoever calls the endpoint.
+        body: JSON.stringify({ slug, token: data.token }),
+      });
+      if (res.ok) {
+        showToast(`Invite sent to ${data.email}`);
+      } else {
+        showToast(`Invite created, but the email couldn't be sent - copy the link below and share it directly`, 'error');
+      }
+    } catch {
+      showToast(`Invite created, but the email couldn't be sent - copy the link below and share it directly`, 'error');
+    }
   }
 
   function handleCopy(token: string, id: string) {
@@ -83,13 +107,16 @@ export default function StaffManager({
     setTimeout(() => setCopiedId(''), 1500);
   }
 
-  async function handleRemove(id: string) {
-    const member = staff.find((s) => s.id === id);
-    if (!confirm(`Remove ${member?.name ?? 'this person'} from your team? They'll lose access immediately.`)) return;
+  async function handleRemove() {
+    if (!removeTarget) return;
+    const { id, name } = removeTarget;
+    setRemoving(true);
     const { error: deleteError } = await supabase.from('staff').delete().eq('id', id);
+    setRemoving(false);
+    setRemoveTarget(null);
     if (!deleteError) {
       setStaff((prev) => prev.filter((s) => s.id !== id));
-      showToast(`${member?.name ?? 'Team member'} removed`);
+      showToast(`${name} removed`);
     } else {
       showToast('Could not remove that team member', 'error');
     }
@@ -120,7 +147,7 @@ export default function StaffManager({
   return (
     <div>
       <PageHeader
-        eyebrow="Manage"
+        eyebrow="Set up"
         title="Your team"
         description={`Invite people to help manage bookings for ${businessName}.`}
         action={
@@ -142,16 +169,19 @@ export default function StaffManager({
           className="flex flex-col sm:flex-row gap-3 items-end border-2 border-line rounded-2xl p-5 mb-8 bg-surface"
         >
           <div className="flex-1 w-full">
-            <label className={labelClass}>Invite by email</label>
-            <input
-              required
-              autoFocus
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              placeholder="colleague@example.com"
-            />
+            <Field label="Invite by email" required>
+              {(props) => (
+                <input
+                  {...props}
+                  autoFocus
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="colleague@example.com"
+                />
+              )}
+            </Field>
           </div>
           <button
             type="submit"
@@ -168,17 +198,36 @@ export default function StaffManager({
       <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-3">
         Team
       </div>
+      {staff.length === 0 ? (
+        <div className="mb-8">
+          <EmptyState
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            }
+            title="Flying solo for now"
+            description="No one else on the team yet. Invite a staff member and they'll be able to see the calendar and manage their own bookings."
+            action={
+              !showInvite && (
+                <button
+                  onClick={() => setShowInvite(true)}
+                  className="rounded-full border-2 border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+                >
+                  Invite someone
+                </button>
+              )
+            }
+          />
+        </div>
+      ) : (
       <div className="border-2 border-line rounded-2xl bg-surface overflow-hidden mb-8">
-        {staff.length === 0 && (
-          <p className="text-ink-soft text-body-sm px-4 py-5">
-            No one on the team yet. Invite a staff member and they&apos;ll be able to see the calendar and manage
-            their own bookings.
-          </p>
-        )}
         {staff.map((s) =>
           editingId === s.id ? (
             <div key={s.id} className="flex flex-col gap-3 p-4 border-b border-line last:border-0">
               <input
+                aria-label={`${s.name}'s name`}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 className={smallInputClass}
@@ -218,7 +267,17 @@ export default function StaffManager({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-[14px] truncate">{s.name}</p>
-                  <p className="font-mono text-label text-ink-faint truncate mt-0.5">{s.email}</p>
+                  <p className="font-mono text-label text-ink-faint truncate mt-0.5">
+                    {s.email}
+                    {/* Appointment ownership - was invisible from this
+                        page entirely; someone deciding whether it's safe
+                        to remove a team member had no way to see what
+                        they still have coming up without leaving to check
+                        Calendar or Bookings first. */}
+                    {upcomingCountByStaffId[s.id] > 0 && (
+                      <> · {upcomingCountByStaffId[s.id]} upcoming</>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 shrink-0 pl-[52px] sm:pl-0">
@@ -241,7 +300,7 @@ export default function StaffManager({
                 </button>
                 {s.auth_id !== currentUserId && (
                   <button
-                    onClick={() => handleRemove(s.id)}
+                    onClick={() => setRemoveTarget(s)}
                     className="text-[13px] text-ink-faint hover:text-error transition-colors"
                   >
                     Remove
@@ -252,6 +311,7 @@ export default function StaffManager({
           )
         )}
       </div>
+      )}
 
       {invites.length > 0 && (
         <div>
@@ -288,6 +348,17 @@ export default function StaffManager({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title="Remove from your team?"
+        message={`Remove ${removeTarget?.name ?? 'this person'} from your team? They'll lose access immediately.`}
+        confirmLabel="Remove"
+        pendingLabel="Removing…"
+        pending={removing}
+        onConfirm={handleRemove}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

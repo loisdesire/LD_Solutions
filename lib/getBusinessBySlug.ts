@@ -1,5 +1,5 @@
 import { supabasePublic } from './supabase';
-import { summarizeHours } from './formatHours';
+import { summarizeHours, isOpenNow } from './formatHours';
 
 const BASE_COLUMNS =
   'id, slug, name, business_type, description, about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, logo_url, cover_image_url, accent_color, timezone';
@@ -53,5 +53,6 @@ export async function getBusinessBySlug(slug: string) {
     services: services ?? [],
     hasProducts: (productCount ?? 0) > 0,
     hoursSummary: summarizeHours(hours ?? []),
+    isOpenNow: isOpenNow(hours ?? [], business.timezone || 'UTC'),
   };
 }

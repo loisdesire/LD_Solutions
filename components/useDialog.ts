@@ -11,9 +11,22 @@ import { useEffect, useRef } from 'react';
 //
 // Returns a ref to spread onto the dialog container, alongside the
 // role/aria attributes each caller applies.
+//
+// `onClose` deliberately does NOT sit in the effect's dependency array -
+// it used to, and that was a real bug. Any modal whose form fields are
+// lifted into the parent's state (AddServiceModal is the one that
+// actually shipped this way) re-renders the parent on every keystroke,
+// which creates a brand new `onClose={() => ...}` function reference each
+// time. With `onClose` in the deps, that made this whole effect tear down
+// and re-run on every single keystroke - re-stealing focus to the
+// dialog's first focusable element mid-word. A ref holds the latest
+// `onClose` without ever needing to re-run the effect for it; the setup
+// (focus trap, Escape, scroll lock) now only runs once per open/close.
 export function useDialog(open: boolean, onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -34,7 +47,7 @@ export function useDialog(open: boolean, onClose: () => void) {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -67,7 +80,7 @@ export function useDialog(open: boolean, onClose: () => void) {
       // dump the user at the top of the page.
       restoreTo.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return ref;
 }

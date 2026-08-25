@@ -1,6 +1,8 @@
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { notFound } from 'next/navigation';
 import LoginForm from '@/components/LoginForm';
+import AuthMark from '@/components/AuthMark';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -44,8 +46,20 @@ export default async function LoginPage({
 
       <div className="flex items-center justify-center p-6 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
+          <div className="lg:hidden">
+            <AuthMark name={business.name} label="Business owner login" logoUrl={business.logo_url} />
+          </div>
           <h2 className="font-display text-[26px] mb-7">Log in</h2>
           <LoginForm slug={slug} />
+          {/* No route back to the public page previously - once here, the
+              only way out was the browser's back button. */}
+          <Link
+            href={`/${slug}`}
+            className="mt-5 inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            Back to {business.name}
+          </Link>
         </div>
       </div>
     </main>

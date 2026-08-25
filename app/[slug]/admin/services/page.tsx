@@ -1,5 +1,8 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import ServicesManager from '@/components/ServicesManager';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Services' };
 
 export default async function ServicesPage({
   params,

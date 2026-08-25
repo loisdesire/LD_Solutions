@@ -1,9 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useId } from 'react';
+import Image from 'next/image';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
+import { inputClass, labelClass } from './formStyles';
 
 // A grid of real photo uploads instead of a textarea where you paste
 // URLs blind and only find out something's broken when you check the
@@ -14,10 +17,13 @@ function GalleryUploader({
   slug,
   urls,
   onChange,
+  labelId,
 }: {
   slug: string;
   urls: string[];
   onChange: (urls: string[]) => void;
+  /** id of the "Gallery photos" label above this widget - applied as an aria-label reference on the file input, since the input itself is visually hidden and triggered by the "Add photo" button, not the label directly. */
+  labelId?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -71,7 +77,7 @@ function GalleryUploader({
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
         {urls.map((url, i) => (
           <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-line-strong bg-paper group">
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <Image src={url} alt={`Gallery photo ${i + 1} preview`} fill sizes="150px" className="object-cover" />
             <button
               type="button"
               onClick={() => onChange(urls.filter((_, idx) => idx !== i))}
@@ -105,7 +111,15 @@ function GalleryUploader({
           )}
         </button>
       </div>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleSelect} className="hidden" />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        multiple
+        onChange={handleSelect}
+        className="hidden"
+        aria-labelledby={labelId}
+      />
       {error && <p className="text-[12px] text-error mt-2">{error}</p>}
     </div>
   );
@@ -153,6 +167,14 @@ export default function SiteContentManager({
 
   const supabase = createBrowserSupabase();
 
+  // Each of these three labels sits next to a Toggle, not directly above
+  // its own field, so Field.tsx's rigid label-then-input layout doesn't
+  // fit here - real htmlFor/id association wired by hand instead. These
+  // were the "visually adjacent, not actually associated" case; the
+  // label was real, it just didn't point at anything.
+  const aboutId = useId();
+  const galleryId = useId();
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -177,23 +199,31 @@ export default function SiteContentManager({
     setSaving(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyError(updateError));
       return;
     }
 
     setSaved(true);
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
+  // inputClass/labelClass now shared from formStyles.ts, same reasoning
+  // as BusinessProfileManager - see its comment.
+  // Same weight bump as BusinessProfileManager's sectionHeadingClass -
+  // 16px with no explicit weight read barely heavier than the 14px
+  // inputs sitting right under it.
+  const sectionHeadingClass = 'font-display text-[18px] font-semibold text-ink mb-4';
 
   return (
     <form onSubmit={handleSave} className="space-y-8">
       <div>
-        <h3 className="font-display text-[16px] text-ink mb-4">Pages</h3>
+        {/* Was "Pages" - a heading that describes what the site calls
+            these (About/Gallery/Contact are each "a page"), not which
+            one this particular section is about. Named per-section
+            below instead, matching what the toggle right underneath it
+            actually says ("About page"). */}
+        <h3 className={sectionHeadingClass}>About page</h3>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={labelClass}>About</label>
+          <label htmlFor={aboutId} className={labelClass}>About</label>
           <Toggle
             on={showAbout}
             onChange={(v) => {
@@ -204,6 +234,7 @@ export default function SiteContentManager({
           />
         </div>
         <textarea
+          id={aboutId}
           value={aboutText}
           onChange={(e) => {
             setAboutText(e.target.value);
@@ -219,9 +250,13 @@ export default function SiteContentManager({
       </div>
 
       <div className="border-t border-line pt-6">
-        <h3 className="font-display text-[16px] text-ink mb-4">Contact details</h3>
+        {/* This heading actually read "Contact details" before, sitting
+            directly over the gallery uploader - a real mislabel, not
+            just a styling gap. Anyone scanning for where contact info
+            lives would land here and see photo uploads instead. */}
+        <h3 className={sectionHeadingClass}>Gallery</h3>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={labelClass}>Gallery photos</label>
+          <label id={galleryId} className={labelClass}>Gallery photos</label>
           <Toggle
             on={showGallery}
             onChange={(v) => {
@@ -234,6 +269,7 @@ export default function SiteContentManager({
         <GalleryUploader
           slug={slug}
           urls={galleryUrls}
+          labelId={galleryId}
           onChange={(urls) => {
             setGalleryUrls(urls);
             setSaved(false);
@@ -242,9 +278,22 @@ export default function SiteContentManager({
         <p className="text-ink-faint text-[12px] mt-2">Upload as many as you like. Also gets its own page.</p>
       </div>
 
-      <div>
+      <div className="border-t border-line pt-6">
+        {/* The section this heading actually belongs to had none at all
+            before - the real contact fields (phone/email/Instagram/
+            Facebook) sat unlabeled right after the misnamed "Contact
+            details" heading above, which pointed at the gallery instead. */}
+        <h3 className={sectionHeadingClass}>Contact details</h3>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={labelClass}>Contact</label>
+          {/* Not a <label> - it doesn't describe one control, it captions
+              a group of four (phone/email/Instagram/Facebook). A <label>
+              with no matching htmlFor target is itself the kind of
+              half-association this whole pass exists to fix; each input
+              below gets its own real aria-label instead, since none of
+              them had a visible label at all before, just a placeholder
+              (which disappears the moment you type, and isn't reliably
+              read as a label by every screen reader). */}
+          <span className={labelClass}>Contact</span>
           <Toggle
             on={showContact}
             onChange={(v) => {
@@ -257,6 +306,7 @@ export default function SiteContentManager({
         <div className="space-y-2.5">
           <input
             type="tel"
+            aria-label="Phone number"
             value={contactPhone}
             onChange={(e) => {
               setContactPhone(e.target.value);
@@ -267,6 +317,7 @@ export default function SiteContentManager({
           />
           <input
             type="email"
+            aria-label="Email address"
             value={contactEmail}
             onChange={(e) => {
               setContactEmail(e.target.value);
@@ -277,6 +328,7 @@ export default function SiteContentManager({
           />
           <input
             type="url"
+            aria-label="Instagram link"
             value={instagramUrl}
             onChange={(e) => {
               setInstagramUrl(e.target.value);
@@ -287,6 +339,7 @@ export default function SiteContentManager({
           />
           <input
             type="url"
+            aria-label="Facebook link"
             value={facebookUrl}
             onChange={(e) => {
               setFacebookUrl(e.target.value);

@@ -1,5 +1,8 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import CustomersManager from '@/components/CustomersManager';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Customers' };
 
 // There's no separate customers table - every booking just carries its
 // own customer_name/phone/email/telegram_username, since a customer
@@ -27,7 +30,7 @@ export default async function CustomersPage({
     <div>
       <div className="mb-6">
         <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage
+          Today
         </div>
         <h1 className="font-display text-[26px] text-ink">Customers</h1>
         <p className="text-ink-soft text-[13.5px] mt-1">

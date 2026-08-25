@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color tokens: the committed warm palette (terracotta accent, warm
+   paper/surface neutrals). An in-progress cooler direction ("Signal" -
+   indigo-blue accent, blue-gray-tinted neutrals like #eef0f4/#e3e5ec)
+   was tried, then explicitly rejected - but only --accent itself got
+   reverted back to terracotta at the time, not the neutral tokens
+   underneath it. Every one of --paper/--surface/--warm-surface/--line/
+   --line-strong/--ink* was still pointing at those cool, faintly blue-
+   tinted values - which is exactly why the dashboard background and the
+   tab hover/active states (bg-warm-surface, bg-surface - neither of
+   which touches --accent at all) kept reading as bluish even after the
+   accent color itself was already back to terracotta. Reverted here in
+   full, matching --accent, so the whole palette is warm again and
+   consistent with itself rather than half-reverted. Structural changes
+   from the same period (radius scale, shadow tiers, card/button
+   discipline) are untouched - this is a color-only revert. */
 :root {
   --paper: #f8f6f2;
   --surface: #ffffff;
@@ -10,10 +25,19 @@
 
   --ink: #211f1b;
   --ink-soft: #6e6a63;
-  /* #9b9691 computes to ~3.6:1 against --paper/--surface - below AA's
-     4.5:1 for normal text, fine for the low-priority metadata/timestamp
-     role this is actually used for site-wide, never body copy. */
-  --ink-faint: #8f8a82;
+  /* Was #8f8a82 - ~3.6:1 against --paper/--surface, below AA's 4.5:1.
+     That was excused as fine for the "low-priority metadata" role this
+     carries site-wide, but a lot of that role is real content (times,
+     counts, statuses on ~40+ controls), not decorative filler WCAG
+     actually exempts - so it needed to genuinely pass, not be waved
+     through. #706b64 clears 4.5:1 against both --paper and --surface
+     with a real margin (~4.9:1 / ~5.3:1). It reads closer to --ink-soft
+     now than the old value did - that's the honest tradeoff of an
+     actually-compliant "faint" tier, not a bug. Where a real two-step
+     hierarchy still matters, lean on size/weight (this token is
+     consistently the smaller one already) rather than color contrast
+     alone to carry it. */
+  --ink-faint: #706b64;
 
   --line: #e7e2da;
   --line-strong: #d6cec2;
@@ -40,12 +64,25 @@
      paint time can. Everywhere else (the marketing site, admin chrome) -
      contexts where --accent is always this one static value - prefer the
      `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
-     get Tailwind's normal tooling (autocomplete, purge) for free. */
-  --accent: #b94f32;
-  --accent-hover: #9f4028;
-  --accent-active: #86341f;
+     get Tailwind's normal tooling (autocomplete, purge) for free.
+
+     Brighter than the old #b94f32 on purpose - that one leaned brownish
+     (its blue channel, 50, was nearly as high as its green, 79, which is
+     what reads as "muted terracotta" rather than a genuinely lively
+     orange). This keeps the same hue family but with the blue pulled
+     down (30) and the saturation pushed up, so it reads as a real,
+     energetic orange instead. Not just eyeballed brighter, though -
+     --accent-contrast is white text on solid accent buttons everywhere,
+     which needs 4.5:1 to stay AA-compliant at the ~14px button sizes
+     this app uses (too small to qualify for the lower 3:1 "large text"
+     bar). A straightforward vivid pick like Tailwind's orange-500
+     (#f97316) only clears ~2.8:1 with white on it - checked, not
+     assumed. #c74a1e clears 4.74:1. */
+  --accent: #c74a1e;
+  --accent-hover: #ab401a;
+  --accent-active: #8f3516;
   --accent-contrast: #ffffff;
-  --accent-soft: rgba(185, 79, 50, 0.1);
+  --accent-soft: rgba(199, 74, 30, 0.1);
 
   /* Warm human accent - cream. Used with restraint: highlight cards,
      booking confirmations, occasional secondary buttons - never
@@ -80,9 +117,34 @@
   --info-border: #a9d2ed;
 }
 
+/* ============================================
+   Radius convention
+   ============================================
+   Enforced by tailwind.config.ts's `borderRadius` extend (xl/2xl/3xl are
+   redefined there, tighter than Tailwind's defaults) as well as by this
+   reference for which STEP to reach for - the previous system had
+   drifted toward rounded-2xl/3xl for nearly everything (cards, buttons,
+   badges, inputs alike), reading as repetitive rather than one
+   deliberate scale.
+
+   - Controls (inputs, small buttons, icon buttons):  rounded-lg / rounded-xl
+   - Cards, panels, modals:                            rounded-2xl
+   - Large hero/marketing surfaces only:                rounded-3xl
+   - Tables and dense list rows:                        minimal/none - a
+     rounded row inside a bordered container fights the container's own
+     corners
+   - Pills, avatars, floating action buttons:           rounded-full,
+     used more sparingly now - not the default treatment for every badge
+
+   A full mechanical sweep of every existing rounded-* usage against this
+   wasn't done in one pass - dozens of files, no visual preview tool
+   available in this environment to verify each change didn't regress
+   something. This is the convention going forward; retrofitting is
+   incremental, prioritized by how visible/high-traffic a screen is. */
+
 .landing .font-display {
    font-family: var(--font-display), Georgia, serif;
-   letter-spacing: -0.02em;
+   letter-spacing: -0.03em;
 }
 
 .landing nav a,
@@ -93,19 +155,6 @@
 
 .landing section {
   scroll-margin-top: 96px;
-}
-
-.landing .rounded-3xl,
-.landing .rounded-2xl {
-  border-radius: 8px;
-}
-
-.landing .rounded-xl {
-  border-radius: 6px;
-}
-
-.landing .rounded-full {
-  border-radius: 12px;
 }
 
 @media (min-width: 768px) {
@@ -136,6 +185,7 @@ textarea {
 
 .font-display {
   font-family: var(--font-display), system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Monospace was dropped from the product. Against a geometric sans like
@@ -143,10 +193,10 @@ textarea {
    technical rather than friendly, and it was a whole extra font file to
    download on every page load.
 
-   The class name is kept so the ~173 existing usages did not all need
-   editing. It now means "the small label treatment" rather than
-   "monospaced". tabular-nums preserves the one thing monospace was
-   genuinely earning: times and amounts still line up in a column. */
+   The class name is kept so existing usages did not all need editing.
+   It now means "the small label treatment" rather than "monospaced".
+   tabular-nums preserves the one thing monospace was genuinely earning:
+   times and amounts still line up in a column. */
 .font-mono {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
@@ -156,17 +206,25 @@ textarea {
 /* ============================================
    Keyboard focus
    ============================================
-   `focus-visible` appeared zero times in this codebase, while
-   `outline-none` was applied unconditionally in ~20 files. Inputs
-   compensated with their own focus ring, but no button or link anywhere
-   had any focus style at all - so a keyboard user could not see where
-   they were. Icon buttons, nav links, slot pills, tab pills, gallery
-   thumbnails and modal close buttons were all invisible.
-
    :focus-visible (not :focus) means mouse users never see a ring, so
-   there's no visual cost to fixing this. Declared here rather than
-   per-component so a new component can't forget it. */
-:where(a, button, [role='button'], [tabindex]:not([tabindex='-1'])):focus-visible {
+   there's no visual cost to this. Declared here rather than
+   per-component so a new component can't forget it.
+
+   Deliberately NOT wrapped in :where() - :where() zeroes out a
+   selector's specificity, and ~30 components apply their own
+   `outline-none` (specificity 0,1,0) directly to inputs/buttons. Under
+   :where(), this rule and a component's `outline-none` were tied on
+   specificity, so whichever happened to load later in the built
+   stylesheet won - true today only by source-order luck, not by
+   design, and one file reorder away from silently losing focus
+   visibility again. A bare element selector (`input:focus-visible`
+   etc.) carries real, higher specificity than a single class
+   regardless of order, so this now wins unconditionally - the one
+   thing this rule exists to guarantee. */
+a:focus-visible,
+button:focus-visible,
+[role='button']:focus-visible,
+[tabindex]:not([tabindex='-1']):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
@@ -174,7 +232,9 @@ textarea {
 
 /* Inputs already set their own border+ring on focus; keep that, but make
    sure keyboard focus is never *only* a colour change. */
-:where(input, select, textarea):focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -182,11 +242,6 @@ textarea {
 /* ============================================
    Reduced motion
    ============================================
-   25 animate-* usages ran at full strength regardless of the OS setting -
-   including an infinite shimmer and a scale-punch on every time-slot tap.
-   For people who get motion sickness or vestibular symptoms this is not a
-   preference, it's an accessibility requirement.
-
    Animations are neutralised rather than removed: opacity-based reveals
    still resolve to visible, so nothing ends up stuck at opacity 0. */
 @media (prefers-reduced-motion: reduce) {
@@ -199,4 +254,3 @@ textarea {
     scroll-behavior: auto !important;
   }
 }
-

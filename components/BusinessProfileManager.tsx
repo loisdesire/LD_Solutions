@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
+import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import ImageUploadField from './ImageUploadField';
+import { inputClass, labelClass } from './formStyles';
+import Field from './Field';
 
 // The platform's own terracotta + cream identity leads the list, plus a
 // handful of others real businesses might actually want as their own
@@ -60,101 +63,137 @@ export default function BusinessProfileManager({
     setSaving(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(friendlyError(updateError));
       return;
     }
 
     setSaved(true);
   }
 
-  const inputClass =
-    'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
-  const labelClass = 'font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-1.5';
+  // inputClass/labelClass now come from formStyles.ts - this file had its
+  // own local copy of the OLD style (2px border, tiny-mono-uppercase
+  // label), which formStyles.ts moved away from a while back (1px
+  // border, plain medium-weight label) - ServicesManager/ProductsManager/
+  // StaffManager already picked that up, this file just never did, so
+  // Settings visibly looked like an older design pass than the rest of
+  // the admin. Importing the shared one fixes the duplication AND that
+  // drift in the same move.
+  // Section headers were 16px with no explicit weight - font-display's
+  // own base weight, which reads barely heavier than the 14px input text
+  // sitting right under it, and noticeably LESS prominent than
+  // SetupChecklist's card heading a few clicks away (17px, font-semibold)
+  // despite being a more important piece of structure here, not less.
+  const sectionHeadingClass = 'font-display text-[18px] font-semibold text-ink mb-4';
 
   return (
-    <form onSubmit={handleSave} className="space-y-8">
+    <form onSubmit={handleSave} className="space-y-9">
+      {/* Logo used to sit in its own unheaded div between "Identity" and
+          "Booking page appearance" - inside neither section, so nothing
+          on screen said which group it belonged to. It's an identity
+          field, not a page-appearance one (the business's own mark, same
+          category as its name), so it moves under Identity properly.
+          space-y-5 inside a group vs. space-y-9 between groups - the
+          groups themselves need to read as the real structure, not
+          every field sitting at identical distance from every other. */}
       <div>
-        <h3 className="font-display text-[16px] text-ink mb-4">Identity</h3>
-        <label className={labelClass}>Business name</label>
-        <input
-          required
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setSaved(false);
-          }}
-          className={inputClass}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Logo</label>
-        <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
-      </div>
-
-      <div className="border-t border-line pt-6">
-        <h3 className="font-display text-[16px] text-ink mb-4">Booking page appearance</h3>
-        <label className={labelClass}>Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => {
-            setDescription(e.target.value);
-            setSaved(false);
-          }}
-          maxLength={160}
-          rows={2}
-          placeholder="Lagos's go-to for natural hair care since 2019."
-          className={inputClass}
-        />
-        <p className="text-ink-faint text-[12px] mt-2">
-          One or two lines, shown at the top of your booking page. {160 - description.length} left.
-        </p>
-      </div>
-
-      <div>
-        <label className={labelClass}>Cover photo</label>
-        <ImageUploadField slug={slug} value={coverImageUrl} onChange={(url) => { setCoverImageUrl(url); setSaved(false); }} shape="banner" label="cover photo" />
-        <p className="text-ink-faint text-[12px] mt-2">
-          Wide banner across the top of your booking page. Without one, we use your accent color instead.
-        </p>
-      </div>
-
-      <div>
-        <label className={labelClass}>Accent color</label>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {PRESETS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => {
-                setAccentColor(c);
-                setSaved(false);
-              }}
-              style={{ background: c }}
-              className={`h-8 w-8 rounded-xl transition-all ${
-                accentColor.toLowerCase() === c.toLowerCase()
-                  ? 'ring-2 ring-offset-2 ring-ink'
-                  : ''
-              }`}
-              aria-label={c}
-            />
-          ))}
+        <h3 className={sectionHeadingClass}>Identity</h3>
+        <div className="space-y-5">
+          <Field label="Business name" required>
+            {(props) => (
+              <input
+                {...props}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSaved(false);
+                }}
+                className={inputClass}
+              />
+            )}
+          </Field>
+          <div>
+            {/* Caption, not a field label - the real control below (the
+                "Upload logo"/"Change logo" button) already names itself
+                in its own visible text, so there's no single unlabeled
+                input for htmlFor to point at. */}
+            <span className={labelClass}>Logo</span>
+            <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={accentColor}
-            onChange={(e) => {
-              setAccentColor(e.target.value);
-              setSaved(false);
-            }}
-            className="h-9 w-12 rounded-xl border-2 border-line-strong cursor-pointer"
-          />
-          <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
+      </div>
+
+      <div className="border-t border-line pt-7">
+        <h3 className={sectionHeadingClass}>Booking page appearance</h3>
+        <div className="space-y-5">
+          <Field
+            label="Description"
+            hint={`One or two lines, shown at the top of your booking page. ${160 - description.length} left.`}
+          >
+            {(props) => (
+              <textarea
+                {...props}
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setSaved(false);
+                }}
+                maxLength={160}
+                rows={2}
+                placeholder="Lagos's go-to for natural hair care since 2019."
+                className={inputClass}
+              />
+            )}
+          </Field>
+
+          <div>
+            <span className={labelClass}>Cover photo</span>
+            <ImageUploadField slug={slug} value={coverImageUrl} onChange={(url) => { setCoverImageUrl(url); setSaved(false); }} shape="banner" label="cover photo" />
+            <p className="text-ink-faint text-[12px] mt-2">
+              Wide banner across the top of your booking page. Without one, we use your accent color instead.
+            </p>
+          </div>
+
+          <div>
+            {/* Captions a compound control (preset swatches + native
+                color picker + hex readout), not one input. */}
+            <span className={labelClass}>Accent color</span>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {PRESETS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    setAccentColor(c);
+                    setSaved(false);
+                  }}
+                  style={{ background: c }}
+                  className={`h-8 w-8 rounded-xl transition-all ${
+                    accentColor.toLowerCase() === c.toLowerCase()
+                      ? 'ring-2 ring-offset-2 ring-ink'
+                      : ''
+                  }`}
+                  aria-label={c}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                aria-label="Custom accent color"
+                value={accentColor}
+                onChange={(e) => {
+                  setAccentColor(e.target.value);
+                  setSaved(false);
+                }}
+                className="h-9 w-12 rounded-xl border-2 border-line-strong cursor-pointer"
+              />
+              <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
+            </div>
+            <p className="text-ink-faint text-[12px] mt-2">
+              Flows through your whole booking page - buttons, selected dates, times.
+            </p>
+          </div>
         </div>
-        <p className="text-ink-faint text-[12px] mt-2">
-          Flows through your whole booking page - buttons, selected dates, times.
-        </p>
       </div>
 
       <button

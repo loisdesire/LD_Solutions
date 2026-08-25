@@ -4,6 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
+// The reveal effect below is purely a rendering thing - `content` still
+// ends up holding the real, full reply the moment it's done, and the
+// server never sees any of this (history is reconstructed server-side
+// from what's actually persisted, not from this client state), so there's
+// no risk of a half-revealed string ever reaching the AI as if it were
+// real conversation history.
+const REVEAL_MS_PER_WORD = 35;
+const REVEAL_MAX_MS = 1400;
+const REVEAL_MIN_MS = 300;
+
 const THINKING_LINES = ['Checking availability…', 'One moment…', 'Almost there…'];
 
 // A random per-visitor id, one per business (a customer browsing two
@@ -51,6 +61,13 @@ export default function WebChatWidget({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [value, setValue] = useState('');
   const [thinking, setThinking] = useState(false);
+  // The whole reply used to appear as one instant block the moment the
+  // request resolved - technically correct, but felt like a form
+  // submitting, not a receptionist actually talking to you. This reveals
+  // it word by word instead, purely client-side (the real text is already
+  // in hand, this only controls how much of it is shown yet).
+  const [revealing, setRevealing] = useState(false);
+  const revealTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [thinkingLineIndex, setThinkingLineIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -84,9 +101,33 @@ export default function WebChatWidget({
     if (open) requestAnimationFrame(() => inputRef.current?.focus());
   }, [open]);
 
+  // Escape-to-close, and role="dialog" below - the panel had neither.
+  // Deliberately not the full useDialog treatment (focus trap + body
+  // scroll lock) other overlays in the app use: this is a floating
+  // widget that coexists with the page, not a full-screen blocker - a
+  // visitor should still be able to tab or scroll past it if they want
+  // to, the way a real chat widget (Intercom, Drift) behaves. aria-label
+  // alone is enough for a screen reader to announce what the region is.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, thinking]);
+
+  // Stray interval outliving the component (widget closed/unmounted
+  // mid-reveal) would keep calling setState on nothing.
+  useEffect(() => {
+    return () => {
+      if (revealTimer.current) clearInterval(revealTimer.current);
+    };
+  }, []);
 
   // THINKING_LINES has 3 messages so a reply that takes a couple of
   // seconds doesn't just sit on the same static "Checking availability…"
@@ -107,7 +148,7 @@ export default function WebChatWidget({
   // rather than being typed into the box first.
   async function send(preset?: string) {
     const text = (preset ?? value).trim();
-    if (!text || thinking || !sessionId) return;
+    if (!text || thinking || revealing || !sessionId) return;
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setValue('');
     setThinking(true);
@@ -119,10 +160,41 @@ export default function WebChatWidget({
     });
     const data = await res.json();
     setThinking(false);
-    setMessages((prev) => [
-      ...prev,
-      { role: 'assistant', content: data.reply ?? 'Sorry, something went wrong. Please try again.' },
-    ]);
+    const fullReply: string = data.reply ?? 'Sorry, something went wrong. Please try again.';
+
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: fullReply }]);
+      return;
+    }
+
+    setRevealing(true);
+    const words = fullReply.split(' ');
+    // Seeded with the first word already showing, not an empty bubble -
+    // otherwise there's a blank flash between "thinking" disappearing and
+    // the interval's first tick.
+    setMessages((prev) => [...prev, { role: 'assistant', content: words[0] ?? '' }]);
+    const totalMs = Math.min(REVEAL_MAX_MS, Math.max(REVEAL_MIN_MS, words.length * REVEAL_MS_PER_WORD));
+    const perWord = totalMs / words.length;
+    let shown = 1;
+    if (shown >= words.length) {
+      setRevealing(false);
+      return;
+    }
+    revealTimer.current = setInterval(() => {
+      shown += 1;
+      setMessages((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = { role: 'assistant', content: words.slice(0, shown).join(' ') };
+        return next;
+      });
+      if (shown >= words.length) {
+        if (revealTimer.current) clearInterval(revealTimer.current);
+        revealTimer.current = null;
+        setRevealing(false);
+      }
+    }, perWord);
   }
 
   return (
@@ -157,17 +229,33 @@ export default function WebChatWidget({
       </button>
 
       {open && (
-        <div className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] rounded-2xl bg-surface border border-line shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden animate-rise">
-          <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-2.5" style={{ background: 'var(--accent-soft)' }}>
-            <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v12H8l-4 4V4z" /></svg>
+        <div
+          role="dialog"
+          aria-label={`Chat with ${businessName ?? 'us'}`}
+          className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] rounded-2xl bg-surface border border-line shadow-card flex flex-col overflow-hidden animate-rise"
+        >
+          {/* Matches SelfBookingDemo's header exactly, on purpose - that's
+              the "new chatbot" look: a solid accent avatar carrying the
+              business's own initial (a brand mark, not a generic chat
+              icon), the name up front, and a real status pill instead of
+              a static "usually replies instantly" line - this widget is
+              genuinely always on, so it says so plainly rather than
+              hedging. */}
+          <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-white" style={{ background: 'var(--accent)' }}>
+              {businessName?.[0]?.toUpperCase() ?? '?'}
             </div>
-            <div>
-              <div className="font-display text-[14.5px] font-semibold text-ink">
-                {businessName ? `Message ${businessName}` : 'Ask us anything'}
-              </div>
-              <div className="text-[11px] text-ink-faint">Usually replies instantly</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-ink truncate">{businessName ?? 'Ask us anything'}</p>
+              <p className="text-[10.5px] text-ink-faint">Chat on the booking page</p>
             </div>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold shrink-0"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              Online
+            </span>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -224,12 +312,13 @@ export default function WebChatWidget({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') send();
                 }}
+                aria-label="Type a message"
                 placeholder="Type a message…"
                 className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}
-                disabled={!value.trim() || thinking}
+                disabled={!value.trim() || thinking || revealing}
                 aria-label="Send"
                 className="h-8 w-8 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity disabled:opacity-30"
                 style={{ background: 'var(--accent)' }}

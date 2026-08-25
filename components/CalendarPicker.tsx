@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 type CalendarPickerProps = {
   selectedDate: string; // YYYY-MM-DD
   onChange: (d: Date) => void;
   today: string; // YYYY-MM-DD
   maxDate: string; // YYYY-MM-DD
+  // Optional on purpose - a caller with no service picked yet (there
+  // isn't one until step 1 of the booking flow is done) just gets the
+  // calendar with no per-day signal, same as before this existed.
+  businessId?: string;
+  serviceId?: string;
 };
 
 function toDateStr(d: Date): string {
@@ -33,8 +38,15 @@ export default function CalendarPicker({
   onChange,
   today,
   maxDate,
+  businessId,
+  serviceId,
 }: CalendarPickerProps) {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  // date string -> has any open slot. Missing key = unknown yet (still
+  // loading, or out of the bookable range) - deliberately NOT treated as
+  // "no availability" so a date never flashes muted before the real
+  // answer comes back.
+  const [availability, setAvailability] = useState<Record<string, boolean>>({});
 
   const initialDate = useMemo(() => {
     if (!selectedDate) return new Date();
@@ -75,6 +87,34 @@ export default function CalendarPicker({
     if (ds < today || ds > maxDate) return;
     onChange(d);
   }
+
+  // Whichever grid is actually on screen right now - fetches once per
+  // range (view toggle, prev/next) rather than once per day, via
+  // /api/availability/range's single bulk answer.
+  const visibleDays = viewMode === 'week' ? weekDays : monthDays;
+  const rangeStart = toDateStr(visibleDays[0]);
+  const rangeEnd = toDateStr(visibleDays[visibleDays.length - 1]);
+  const fetchSeq = useRef(0);
+
+  useEffect(() => {
+    if (!businessId || !serviceId) return;
+    const seq = ++fetchSeq.current;
+    fetch(
+      `/api/availability/range?businessId=${businessId}&serviceId=${serviceId}&start=${rangeStart}&end=${rangeEnd}`
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        // A slower earlier request landing after a faster later one used
+        // to overwrite fresher data with stale results - only the most
+        // recent request's answer is allowed to apply.
+        if (seq !== fetchSeq.current || !data?.days) return;
+        setAvailability((prev) => ({ ...prev, ...data.days }));
+      })
+      .catch(() => {
+        // No per-day signal is a silent degrade, not an error state - the
+        // calendar still works exactly as it did before this existed.
+      });
+  }, [businessId, serviceId, rangeStart, rangeEnd]);
 
   const weekdaysHeader = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -145,6 +185,10 @@ export default function CalendarPicker({
             const disabled = ds < today || ds > maxDate;
             const isSelected = ds === selectedDate;
             const isToday = ds === today;
+            // Only ever true once the range fetch has actually answered
+            // for this date - `undefined` (still loading, or businessId/
+            // serviceId not passed at all) never mutes anything.
+            const isFull = !disabled && availability[ds] === false;
             return (
               <button
                 type="button"
@@ -165,7 +209,14 @@ export default function CalendarPicker({
                 }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)}
                 </span>
-                <span className="font-display text-[17px] font-semibold leading-none">{d.getDate()}</span>
+                {/* Muted text, not a strikethrough or a second badge - the
+                    same "de-emphasized" treatment text-ink-faint already
+                    carries everywhere else in the app, applied here to
+                    mean "still bookable, but nothing's open" rather than
+                    inventing a new visual language just for this. */}
+                <span className={`font-display text-[17px] font-semibold leading-none ${isFull && !isSelected ? 'text-ink-faint' : ''}`}>
+                  {d.getDate()}
+                </span>
                 {isToday && !isSelected && (
                   <div className="absolute bottom-1.5 h-1 w-1 rounded-full" style={{ background: 'var(--accent)' }} />
                 )}
@@ -192,6 +243,7 @@ export default function CalendarPicker({
               const disabled = ds < today || ds > maxDate;
               const isSelected = ds === selectedDate;
               const isToday = ds === today;
+              const isFull = !disabled && availability[ds] === false;
               return (
                 <button
                   type="button"
@@ -216,6 +268,8 @@ export default function CalendarPicker({
                       ? 'font-semibold shadow-glow'
                       : isToday
                       ? 'font-semibold text-ink'
+                      : isFull
+                      ? 'text-ink-faint hover:bg-warm-surface active:scale-90'
                       : 'text-ink hover:bg-warm-surface active:scale-90'
                   }`}
                 >
