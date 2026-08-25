@@ -41,7 +41,7 @@ export default function PlatformLoginPage() {
       <div className="flex items-center justify-center p-6 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
           <div className="lg:hidden">
-            <AuthMark name="Vanova" label="Business owner login" />
+            <AuthMark name="Vanova" label="Business owner login" logoUrl="/logo.png" />
           </div>
           <h2 className="font-display text-[26px] mb-7">Log in</h2>
           <PlatformLoginForm />

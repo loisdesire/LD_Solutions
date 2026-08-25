@@ -182,9 +182,7 @@ export default function LandingPage() {
       >
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <span className="text-accent-contrast text-[13px] font-bold">V</span>
-            </div>
+            <img src="/logo.png" alt="Vanova" className="h-8 w-8 shrink-0 object-contain" />
             <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </div>
           <div className="hidden md:flex items-center gap-7">
@@ -545,9 +543,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 mb-10">
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                  <span className="text-accent-contrast text-[13px] font-bold">V</span>
-                </div>
+                <img src="/logo.png" alt="Vanova" className="h-8 w-8 shrink-0 object-contain" />
                 <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
               </div>
               <p className="text-[13px] text-ink-soft leading-relaxed">

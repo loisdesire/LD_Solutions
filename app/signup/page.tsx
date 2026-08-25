@@ -152,7 +152,7 @@ export default function SignupPage() {
               mobile got a completely blank, unbranded form with no idea
               what it was signing up for. Same fix as the login screens. */}
           <div className="lg:hidden">
-            <AuthMark name="Vanova" label="Create your booking page" />
+            <AuthMark name="Vanova" label="Create your booking page" logoUrl="/logo.png" />
           </div>
           <h2 className="font-display text-[26px] mb-7">Create your account</h2>
 

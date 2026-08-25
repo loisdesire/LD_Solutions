@@ -21,7 +21,7 @@ export default function CustomerLoginPage() {
             belonging to whichever business they last booked, not the
             platform account this actually is. */}
         <div className="flex justify-center">
-          <AuthMark name="Vanova" label="Customer account" />
+          <AuthMark name="Vanova" label="Customer account" logoUrl="/logo.png" />
         </div>
         <h1 className="font-display text-[26px] mb-1.5 text-center">My bookings</h1>
         <p className="text-ink-soft text-[13.5px] mb-7 text-center">

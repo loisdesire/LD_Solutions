@@ -20,7 +20,7 @@ export default async function AcceptInvitePage({
   return (
     <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm animate-rise">
-        <AuthMark name="Vanova" label="Team invite" />
+        <AuthMark name="Vanova" label="Team invite" logoUrl="/logo.png" />
         <h1 className="font-display text-[28px] mb-7">
           Join the <span className="italic">team</span>
         </h1>

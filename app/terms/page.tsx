@@ -23,9 +23,7 @@ export default function TermsPage() {
       <header className="border-b border-line">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <span className="text-accent-contrast text-[13px] font-bold">V</span>
-            </div>
+            <img src="/logo.png" alt="Vanova" className="h-8 w-8 shrink-0 object-contain" />
             <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </Link>
           <Link href="/" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
