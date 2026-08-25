@@ -37,6 +37,7 @@ export default function WebChatWidget({
   businessName,
   serviceNames = [],
   defaultOpen = false,
+  bookingId,
 }: {
   businessId: string;
   /** The chat speaks as the business, not as "an assistant". */
@@ -48,6 +49,15 @@ export default function WebChatWidget({
   // icon on /account) - skips relying on the #chat hash trick, which is
   // really meant for deep-linking in from a different page.
   defaultOpen?: boolean;
+  // Passed from /account when this widget opens from a specific booking
+  // the customer is logged in and already owns - lets the server (see
+  // app/api/web-chat/route.ts's resolveIdentity) verify that ownership and
+  // continue the REAL conversation this customer already has with the
+  // business (e.g. one that started on Telegram), instead of a fresh
+  // anonymous one. The server re-checks ownership itself; this is never
+  // trusted on its own. Omit it anywhere else - a business's own public
+  // page has no logged-in customer to verify against.
+  bookingId?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   // Real services beat a hardcoded example: "Do you do Braids?" only makes
@@ -91,11 +101,13 @@ export default function WebChatWidget({
 
   useEffect(() => {
     if (!open || !sessionId || loaded) return;
-    fetch(`/api/web-chat?businessId=${businessId}&sessionId=${sessionId}`)
+    const params = new URLSearchParams({ businessId, sessionId });
+    if (bookingId) params.set('bookingId', bookingId);
+    fetch(`/api/web-chat?${params}`)
       .then((r) => r.json())
       .then((data) => setMessages(data.messages ?? []))
       .finally(() => setLoaded(true));
-  }, [open, sessionId, businessId, loaded]);
+  }, [open, sessionId, businessId, loaded, bookingId]);
 
   useEffect(() => {
     if (open) requestAnimationFrame(() => inputRef.current?.focus());
@@ -156,7 +168,7 @@ export default function WebChatWidget({
     const res = await fetch('/api/web-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessId, sessionId, message: text }),
+      body: JSON.stringify({ businessId, sessionId, bookingId, message: text }),
     });
     const data = await res.json();
     setThinking(false);

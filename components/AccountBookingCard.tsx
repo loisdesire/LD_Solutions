@@ -142,8 +142,13 @@ export default function AccountBookingCard({
 
       {/* Opens in place - clicking the chat icon above shouldn't navigate
           you off /account, it should just open the same widget used on
-          the business's own page, right here. */}
-      {widgetOpen && business?.id && <WebChatWidget businessId={business.id} defaultOpen />}
+          the business's own page, right here. bookingId lets the server
+          verify this customer already has a real conversation with this
+          business (e.g. one that started on Telegram) and continue that
+          thread, instead of starting a brand new anonymous one every time
+          they message from their account instead of the channel they
+          originally used - see app/api/web-chat/route.ts's resolveIdentity. */}
+      {widgetOpen && business?.id && <WebChatWidget businessId={business.id} defaultOpen bookingId={booking.id} />}
     </div>
   );
 }
