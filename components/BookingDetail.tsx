@@ -142,7 +142,7 @@ export default function BookingDetail({
             <button
               type="button"
               onClick={() => setShowConversation(true)}
-              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 min-h-[36px] text-caption font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 min-h-[36px] text-caption font-semibold text-accent-contrast transition-opacity hover:opacity-90"
               style={{ background: 'var(--accent)' }}
             >
               Message {contactLabel}
@@ -150,7 +150,7 @@ export default function BookingDetail({
           ) : (
             <a
               href={`tel:${booking.customer_phone}`}
-              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 min-h-[36px] text-caption font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 min-h-[36px] text-caption font-semibold text-accent-contrast transition-opacity hover:opacity-90"
               style={{ background: 'var(--accent)' }}
             >
               Call {contactLabel}

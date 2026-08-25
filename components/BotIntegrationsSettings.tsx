@@ -224,7 +224,7 @@ function MessengerSection({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -371,7 +371,7 @@ function TelegramSection({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -577,7 +577,7 @@ function WhatsappSection({
           <button
             onClick={handleConnect}
             disabled={!sdkReady || connecting}
-            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {connecting ? 'Connecting…' : 'Connect WhatsApp'}
           </button>

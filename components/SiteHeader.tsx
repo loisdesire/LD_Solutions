@@ -80,7 +80,7 @@ export default function SiteHeader({
           </a>
           <a
             href={`/${slug}#book`}
-            className="px-5 py-2.5 rounded-xl font-semibold text-[13px] text-white transition-opacity hover:opacity-90 active:scale-95"
+            className="px-5 py-2.5 rounded-xl font-semibold text-[13px] text-accent-contrast transition-opacity hover:opacity-90 active:scale-95"
             style={{ background: 'var(--accent)' }}
           >
             Book now
@@ -91,7 +91,7 @@ export default function SiteHeader({
         <div className="flex sm:hidden items-center gap-1.5 shrink-0">
           <a
             href={`/${slug}#book`}
-            className="px-3.5 py-2 rounded-xl font-semibold text-[13px] text-white whitespace-nowrap"
+            className="px-3.5 py-2 rounded-xl font-semibold text-[13px] text-accent-contrast whitespace-nowrap"
             style={{ background: 'var(--accent)' }}
           >
             Book now

@@ -214,7 +214,7 @@ export default function HoursManager({
               type="button"
               onClick={() => setSelectedDay(index)}
               className={`relative min-w-0 rounded-2xl px-1.5 py-3 text-center transition-colors ${
-                selectedDay === index ? 'bg-accent text-white' : 'bg-warm-surface text-ink-soft hover:bg-ink-wash'
+                selectedDay === index ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink-soft hover:bg-ink-wash'
               }`}
             >
               <span className="block font-mono text-[9px] uppercase tracking-[0.08em]">{DAY_NAMES[index].slice(0, 3)}</span>
@@ -327,7 +327,7 @@ export default function HoursManager({
               type="button"
               onClick={() => saveDay(selectedDay)}
               disabled={savingDay === selectedDay}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-caption font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-caption font-medium text-accent-contrast hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {savingDay === selectedDay ? 'Saving…' : savedDay === selectedDay ? <>Saved <CheckIcon className="h-3 w-3" /></> : 'Save day'}
             </button>

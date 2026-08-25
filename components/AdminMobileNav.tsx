@@ -142,7 +142,7 @@ export default function AdminMobileNav({
               <Image src={logoUrl} alt="" fill sizes="32px" className="object-cover" />
             </div>
           ) : (
-            <div className="h-8 w-8 rounded-xl bg-accent text-white flex items-center justify-center font-display text-[14px] font-bold shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-accent text-accent-contrast flex items-center justify-center font-display text-[14px] font-bold shrink-0">
               {businessName?.[0]?.toUpperCase()}
             </div>
           )}

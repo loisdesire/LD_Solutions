@@ -68,7 +68,7 @@ export default async function AccountPage() {
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="h-11 w-11 rounded-full text-white flex items-center justify-center font-display text-[16px] font-bold shrink-0"
+              className="h-11 w-11 rounded-full text-accent-contrast flex items-center justify-center font-display text-[16px] font-bold shrink-0"
               style={{ background: 'var(--accent)' }}
             >
               {user.email[0]?.toUpperCase()}

@@ -135,10 +135,10 @@ export default function AssistantChat({
           )}
 
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
-                  m.role === 'user' ? 'bg-accent text-white' : 'bg-warm-surface text-ink'
+                  m.role === 'user' ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink'
                 }`}
               >
                 {m.content}
@@ -147,7 +147,7 @@ export default function AssistantChat({
           ))}
 
           {loading && (
-            <div className="flex justify-start">
+            <div className="flex justify-start animate-rise">
               <div className="bg-warm-surface rounded-2xl px-4 py-2.5 text-[13.5px] text-ink-faint">Thinking…</div>
             </div>
           )}
@@ -173,7 +173,7 @@ export default function AssistantChat({
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="rounded-xl bg-accent px-4 py-2.5 text-[13.5px] font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+            className="rounded-xl bg-accent px-4 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
           >
             Send
           </button>

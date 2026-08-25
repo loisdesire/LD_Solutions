@@ -81,7 +81,7 @@ export default function LoginForm({ slug }: { slug: string }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 mt-2"
+        className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 mt-2"
       >
         {loading ? 'Signing in…' : 'Log in'}
       </button>

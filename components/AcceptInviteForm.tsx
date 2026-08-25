@@ -106,7 +106,7 @@ export default function AcceptInviteForm({ token, slug }: { token: string; slug:
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {loading ? 'Joining…' : 'Accept invite'}
       </button>

@@ -80,8 +80,8 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className="rounded-lg px-3.5 py-2 min-h-[36px] text-caption font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: danger ? 'var(--error)' : 'var(--accent)' }}
+            className="rounded-lg px-3.5 py-2 min-h-[36px] text-caption font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ background: danger ? 'var(--error)' : 'var(--accent)', color: danger ? '#fff' : 'var(--accent-contrast)' }}
           >
             {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </button>

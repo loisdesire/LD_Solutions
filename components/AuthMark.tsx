@@ -18,7 +18,7 @@ export default function AuthMark({
         <img src={logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0" />
       ) : (
         <div
-          className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-display text-[14px] font-semibold shrink-0"
+          className="h-9 w-9 rounded-xl flex items-center justify-center text-accent-contrast font-display text-[14px] font-semibold shrink-0"
           style={{ background: 'var(--accent)' }}
         >
           {name?.[0]?.toUpperCase()}

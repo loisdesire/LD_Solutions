@@ -157,7 +157,7 @@ function AddServiceModal({
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-accent px-5 py-3 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-xl bg-accent px-5 py-3 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save service'}
           </button>
@@ -382,7 +382,7 @@ export default function ServicesManager({
             setError('');
             setShowAdd(true);
           }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
@@ -452,7 +452,7 @@ export default function ServicesManager({
                     setPage(0);
                   }}
                   placeholder="Search services…"
-                  className="bg-transparent border-none outline-none text-[13px] text-ink placeholder-ink-faint w-36"
+                  className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-36"
                 />
               </div>
               <button
@@ -541,7 +541,7 @@ export default function ServicesManager({
                   <button
                     onClick={() => saveEdit(s.id)}
                     disabled={editSaving}
-                    className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-white disabled:opacity-50"
+                    className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-accent-contrast disabled:opacity-50"
                   >
                     {editSaving ? 'Saving…' : 'Save'}
                   </button>

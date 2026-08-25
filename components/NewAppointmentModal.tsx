@@ -166,7 +166,7 @@ export default function NewAppointmentModal({
               </button>
               <button
                 onClick={onClose}
-                className="rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+                className="rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent)' }}
               >
                 Done
@@ -270,7 +270,7 @@ export default function NewAppointmentModal({
               type="submit"
               disabled={status === 'saving' || !selectedSlot}
               style={selectedSlot ? { background: 'var(--accent)' } : undefined}
-              className="w-full py-3.5 text-[14px] font-semibold text-white rounded-full transition-all disabled:opacity-30 disabled:bg-line-strong hover:opacity-90 active:scale-[0.98]"
+              className="w-full py-3.5 text-[14px] font-semibold text-accent-contrast rounded-full transition-all disabled:opacity-30 disabled:bg-line-strong hover:opacity-90 active:scale-[0.98]"
             >
               {status === 'saving' ? 'Booking…' : selectedSlot ? `Book for ${formatTime(selectedSlot)}` : 'Pick a time'}
             </button>

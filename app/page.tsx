@@ -182,7 +182,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <span className="text-white text-[13px] font-bold">V</span>
+              <span className="text-accent-contrast text-[13px] font-bold">V</span>
             </div>
             <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </div>
@@ -461,7 +461,7 @@ export default function LandingPage() {
             <Reveal delay={140}>
               <div className="rounded-3xl bg-surface border-2 border-accent shadow-card p-8 h-full flex flex-col relative">
                 <span
-                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-semibold text-accent-contrast"
                   style={{ background: 'var(--accent)' }}
                 >
                   Most popular
@@ -530,7 +530,7 @@ export default function LandingPage() {
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="h-8 w-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                  <span className="text-white text-[13px] font-bold">V</span>
+                  <span className="text-accent-contrast text-[13px] font-bold">V</span>
                 </div>
                 <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
               </div>

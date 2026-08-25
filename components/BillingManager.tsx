@@ -190,7 +190,7 @@ export default function BillingManager({
               <button
                 onClick={handleSubscribe}
                 disabled={loading}
-                className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
               >
                 {loading ? 'Redirecting…' : `Subscribe to ${PLAN_LABEL[selectedPlan]} with Flutterwave`}
               </button>

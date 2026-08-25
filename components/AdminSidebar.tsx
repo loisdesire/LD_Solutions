@@ -29,7 +29,7 @@ function BusinessMark({
   }
   return (
     <div
-      className={`flex items-center justify-center text-white font-display font-semibold shrink-0 ${className}`}
+      className={`flex items-center justify-center text-accent-contrast font-display font-semibold shrink-0 ${className}`}
       style={{ background: 'var(--accent)' }}
     >
       {businessName?.[0]?.toUpperCase()}
@@ -400,7 +400,7 @@ export default function AdminSidebar({
 
       <div className="mt-auto pt-5 border-t border-line flex items-center gap-2.5 px-1">
         <div
-          className="h-10 w-10 rounded-2xl text-white flex items-center justify-center font-display text-[15px] font-bold shrink-0"
+          className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
           style={{ background: 'var(--accent)' }}
         >
           {userEmail?.[0]?.toUpperCase()}

@@ -24,7 +24,7 @@ export default function TermsPage() {
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <span className="text-white text-[13px] font-bold">V</span>
+              <span className="text-accent-contrast text-[13px] font-bold">V</span>
             </div>
             <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </Link>

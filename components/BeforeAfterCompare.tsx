@@ -18,7 +18,7 @@ const AUTOMATIC: Msg[] = [
   { from: 'you', time: '9:15 AM', text: 'Booked for Tuesday at 2pm ✓' },
 ];
 
-function Thread({ messages, accentVar }: { messages: Msg[]; accentVar: string }) {
+function Thread({ messages, accentVar, textVar = '#fff' }: { messages: Msg[]; accentVar: string; textVar?: string }) {
   return (
     <div className="space-y-3">
       {messages.map((m, i) => (
@@ -26,9 +26,9 @@ function Thread({ messages, accentVar }: { messages: Msg[]; accentVar: string })
           <div className={`max-w-[85%] ${m.from === 'you' ? 'text-right' : 'text-left'}`}>
             <div
               className={`inline-block rounded-2xl px-3.5 py-2 text-[13px] ${
-                m.from === 'you' ? 'text-white rounded-br-md' : 'bg-paper text-ink rounded-bl-md'
+                m.from === 'you' ? 'rounded-br-md' : 'bg-paper text-ink rounded-bl-md'
               }`}
-              style={m.from === 'you' ? { background: accentVar } : undefined}
+              style={m.from === 'you' ? { background: accentVar, color: textVar } : undefined}
             >
               {m.text}
             </div>
@@ -66,7 +66,7 @@ export default function BeforeAfterCompare() {
             ~1 minute
           </span>
         </div>
-        <Thread messages={AUTOMATIC} accentVar="var(--accent)" />
+        <Thread messages={AUTOMATIC} accentVar="var(--accent)" textVar="var(--accent-contrast)" />
       </div>
     </div>
   );

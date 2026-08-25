@@ -71,7 +71,7 @@ export default function SelfBookingDemo() {
   return (
     <div ref={containerRef} className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
       <div className="px-5 py-4 border-b border-line flex items-center gap-3">
-        <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-display text-[14px] font-bold shrink-0" style={{ background: 'var(--accent)' }}>
+        <div className="h-9 w-9 rounded-xl flex items-center justify-center text-accent-contrast font-display text-[14px] font-bold shrink-0" style={{ background: 'var(--accent)' }}>
           G
         </div>
         <div className="min-w-0 flex-1">
@@ -99,7 +99,7 @@ export default function SelfBookingDemo() {
             </div>
           ) : step.kind === 'assistant' ? (
             <div key={i} className="flex justify-start animate-rise">
-              <div className="max-w-[80%] text-white rounded-2xl rounded-bl-md px-3.5 py-2 text-[13.5px]" style={{ background: 'var(--accent)' }}>
+              <div className="max-w-[80%] text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[13.5px]" style={{ background: 'var(--accent)' }}>
                 {step.text}
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function SelfBookingDemo() {
         <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 mb-4">
           <span className="flex-1 text-[13px] text-ink-faint">Type a message…</span>
           <span
-            className="h-8 w-8 rounded-full flex items-center justify-center text-white shrink-0"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-accent-contrast shrink-0"
             style={{ background: 'var(--accent)' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

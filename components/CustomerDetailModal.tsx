@@ -102,7 +102,7 @@ export default function CustomerDetailModal({
           <div className="px-6 pt-4">
             <button
               onClick={onMessage}
-              className="rounded-full px-4 py-2 min-h-[40px] text-caption font-semibold text-white transition-opacity hover:opacity-90"
+              className="rounded-full px-4 py-2 min-h-[40px] text-caption font-semibold text-accent-contrast transition-opacity hover:opacity-90"
               style={{ background: 'var(--accent)' }}
             >
               Message {contactLabel}

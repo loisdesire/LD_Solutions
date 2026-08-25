@@ -190,13 +190,20 @@ export default function SignupPage() {
                 <span className="bg-paper font-mono text-[12.5px] text-ink-faint px-3 flex items-center border-r border-line whitespace-nowrap">
                   {host || ' '}/
                 </span>
+                {/* focus:outline-none deliberately, not an oversight - the
+                    parent box's own overflow-hidden was clipping the
+                    global focus outline into a jagged half-visible
+                    fragment. Safe to drop here specifically because the
+                    parent already gives focus a real, visible, non-color-
+                    only signal of its own (a 2px ring plus a border-color
+                    change), so nothing is lost. */}
                 <input
                   id={slugId}
                   required
                   value={slug}
                   onChange={(e) => setSlug(slugify(e.target.value))}
                   aria-describedby="slug-availability"
-                  className="flex-1 bg-surface border-0 text-[14px] px-3 py-2.5 outline-none min-w-0"
+                  className="flex-1 bg-surface border-0 text-[14px] px-3 py-2.5 outline-none focus:outline-none min-w-0"
                 />
               </div>
               {/* Was only discoverable after filling in email and password
@@ -261,7 +268,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 mt-2"
+              className="w-full rounded-full bg-accent py-3 text-[14px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 mt-2"
             >
               {loading ? 'Creating…' : 'Create booking page →'}
             </button>

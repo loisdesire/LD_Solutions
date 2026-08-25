@@ -72,7 +72,7 @@ export default function CustomerLoginForm() {
       <button
         type="submit"
         disabled={status === 'sending'}
-        className="w-full rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        className="w-full rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         {status === 'sending' ? 'Sending…' : 'Send login link'}
       </button>

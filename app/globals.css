@@ -66,23 +66,26 @@
      `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
      get Tailwind's normal tooling (autocomplete, purge) for free.
 
-     Brighter than the old #b94f32 on purpose - that one leaned brownish
-     (its blue channel, 50, was nearly as high as its green, 79, which is
-     what reads as "muted terracotta" rather than a genuinely lively
-     orange). This keeps the same hue family but with the blue pulled
-     down (30) and the saturation pushed up, so it reads as a real,
-     energetic orange instead. Not just eyeballed brighter, though -
-     --accent-contrast is white text on solid accent buttons everywhere,
-     which needs 4.5:1 to stay AA-compliant at the ~14px button sizes
-     this app uses (too small to qualify for the lower 3:1 "large text"
-     bar). A straightforward vivid pick like Tailwind's orange-500
-     (#f97316) only clears ~2.8:1 with white on it - checked, not
-     assumed. #c74a1e clears 4.74:1. */
-  --accent: #c74a1e;
-  --accent-hover: #ab401a;
-  --accent-active: #8f3516;
-  --accent-contrast: #ffffff;
-  --accent-soft: rgba(199, 74, 30, 0.1);
+     Testing a second swing at "brighter": #c74a1e (the previous value)
+     was already a real, deliberate brightening from the original muted
+     #b94f32, but it sits so close to the white/black contrast crossover
+     that even BLACK text on it only clears 4.43:1 - just under the 4.5
+     bar - so white was never a style choice there, it was the only
+     option that worked at all. Genuinely vivid orange (Tailwind's
+     orange-500, #f97316) needs the OTHER lever: keep it bright and
+     change what sits on top of it instead. White on #f97316 collapses
+     to ~2.8:1 (fails outright), but this app's own --ink token
+     (#211f1b - warm near-black, not pure #000, so it doesn't read as
+     hazard-sign black-on-orange) clears 5.87:1 on it - more margin than
+     the old white/#c74a1e pairing ever had. --accent-contrast carries
+     that swap, so every already-token-based button gets it automatically;
+     the ~24 sites that hardcoded text-white instead of reading this
+     token needed their own pass (see git history on this file's date). */
+  --accent: #f97316;
+  --accent-hover: #d66313;
+  --accent-active: #b35310;
+  --accent-contrast: #211f1b;
+  --accent-soft: rgba(249, 115, 22, 0.12);
 
   /* Warm human accent - cream. Used with restraint: highlight cards,
      booking confirmations, occasional secondary buttons - never

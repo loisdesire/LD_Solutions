@@ -105,14 +105,14 @@ export default function ConversationPanel({
             <p className="text-[13px] text-ink-faint">No messages yet. When this customer messages your assistant, the conversation appears here.</p>
           ) : (
             messages.map((m, i) => (
-              <div key={i} className={m.role === 'user' ? 'text-left' : 'text-right'}>
+              <div key={i} className={`animate-rise ${m.role === 'user' ? 'text-left' : 'text-right'}`}>
                 <div
                   // whitespace-pre-wrap matters here - bot replies routinely
                   // contain line breaks (lists, multi-line confirmations),
                   // and without it every line just runs together into one
                   // block, which is what "jumbled up" actually was.
                   className={`inline-block rounded-md px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap max-w-[85%] text-left ${
-                    m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-white'
+                    m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-accent-contrast'
                   }`}
                 >
                   {m.content}
@@ -135,7 +135,7 @@ export default function ConversationPanel({
           <button
             type="submit"
             disabled={sending || !text.trim()}
-            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
           >
             {sending ? 'Sending…' : 'Send'}
           </button>

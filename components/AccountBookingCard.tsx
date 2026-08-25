@@ -83,7 +83,7 @@ export default function AccountBookingCard({
             {business?.slug && (
               <Link
                 href={`/${business.slug}/manage/${booking.id}`}
-                className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
+                className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
                 style={{ background: 'var(--accent)' }}
               >
                 Manage
@@ -125,10 +125,10 @@ export default function AccountBookingCard({
           {showChat && (
             <div className="px-4 pb-4 space-y-2.5 max-h-64 overflow-y-auto">
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-1.5 text-[12.5px] whitespace-pre-wrap ${
-                      m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-white'
+                      m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-accent-contrast'
                     }`}
                   >
                     {m.content}

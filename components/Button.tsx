@@ -9,7 +9,7 @@ import type { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from 'reac
 // dimming opacity, which is what makes an interaction feel considered
 // rather than just "less visible."
 const VARIANTS = {
-  primary: 'text-white bg-accent shadow-lift hover:bg-accent-hover hover:shadow-soft hover:-translate-y-px active:translate-y-0 active:bg-accent-active',
+  primary: 'text-accent-contrast bg-accent shadow-lift hover:bg-accent-hover hover:shadow-soft hover:-translate-y-px active:translate-y-0 active:bg-accent-active',
   outline: 'text-ink border-[1.5px] border-line-strong bg-surface hover:border-accent hover:text-accent',
   // Soft-tinted, no border - a middle-weight action that isn't the page's
   // primary CTA but shouldn't read as a plain link either.

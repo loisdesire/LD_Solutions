@@ -37,7 +37,7 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
         className="flex items-center gap-2.5 px-4 py-2.5"
       >
         <span
-          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-white"
+          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-accent-contrast"
           style={{ background: 'var(--accent)' }}
           aria-hidden="true"
         >
@@ -62,7 +62,7 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
         <button
           type="submit"
           disabled={!value.trim()}
-          className="rounded-lg px-3.5 py-2 min-h-[36px] text-caption font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
+          className="rounded-lg px-3.5 py-2 min-h-[36px] text-caption font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-40 shrink-0"
           style={{ background: 'var(--accent)' }}
         >
           Ask

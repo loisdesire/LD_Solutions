@@ -97,7 +97,7 @@ export default function CustomDomainManager({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+          className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save domain'}
         </button>

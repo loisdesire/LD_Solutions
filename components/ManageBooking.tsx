@@ -163,7 +163,7 @@ export default function ManageBooking({
         <p className="font-semibold text-[14px]">This booking has been cancelled.</p>
         <Link
           href={`/${slug}#book`}
-          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
           style={{ background: 'var(--accent)' }}
         >
           Book a new appointment
@@ -182,7 +182,7 @@ export default function ManageBooking({
         <p className="text-ink-soft text-[13px] mt-1">Nothing to manage here anymore.</p>
         <Link
           href={`/${slug}#book`}
-          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="inline-flex items-center gap-1.5 mt-4 rounded-full px-5 py-2.5 min-h-[44px] text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
           style={{ background: 'var(--accent)' }}
         >
           Book again
@@ -308,7 +308,7 @@ export default function ManageBooking({
             onClick={handleReschedule}
             disabled={loading || !selectedSlot}
             style={selectedSlot ? { background: 'var(--accent)' } : undefined}
-            className="flex-1 rounded-xl py-3 text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
+            className="flex-1 rounded-xl py-3 text-[13.5px] font-semibold text-accent-contrast transition-opacity disabled:opacity-40"
           >
             {loading ? 'Saving…' : 'Confirm new time'}
           </button>

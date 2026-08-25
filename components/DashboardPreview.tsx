@@ -34,7 +34,7 @@ export default function DashboardPreview() {
             </svg>
             <span className="text-[10px] text-ink-faint truncate">Search customers or bookings…</span>
           </div>
-          <span className="rounded-lg bg-accent px-3 py-2 text-[10px] font-semibold text-white shrink-0">New appointment</span>
+          <span className="rounded-lg bg-accent px-3 py-2 text-[10px] font-semibold text-accent-contrast shrink-0">New appointment</span>
         </div>
 
         <div className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-faint mb-1">Manage</div>

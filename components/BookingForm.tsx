@@ -472,7 +472,7 @@ export default function BookingForm({
           )}
           <Link
             href={`/${slug}/manage/${bookingId}`}
-            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 min-h-[44px] rounded-full text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 min-h-[44px] rounded-full text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
             style={{ background: 'var(--accent)' }}
           >
             Manage this booking
@@ -786,7 +786,7 @@ export default function BookingForm({
             <button
               onClick={() => setStep('details')}
               disabled={!selectedSlot}
-              style={selectedSlot ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--line)', color: 'var(--ink-faint)' }}
+              style={selectedSlot ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : { background: 'var(--line)', color: 'var(--ink-faint)' }}
               className="px-8 py-3 min-h-[44px] text-[14px] font-semibold rounded-full transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed"
             >
               Continue to details
@@ -908,7 +908,7 @@ export default function BookingForm({
             type="submit"
             disabled={status === 'saving' || (paymentActive && !paystackReady)}
             style={{ background: 'var(--accent)' }}
-            className="w-full py-3.5 text-[14px] font-semibold text-white rounded-full transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+            className="w-full py-3.5 text-[14px] font-semibold text-accent-contrast rounded-full transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
           >
             {status === 'saving' ? (
               <span className="flex items-center justify-center gap-2">

@@ -171,7 +171,7 @@ export default function ProductsManager({
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <path d="M12 5v14M5 12h14" />
@@ -235,7 +235,7 @@ export default function ProductsManager({
           <button
             type="submit"
             disabled={saving}
-            className="sm:col-span-2 rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="sm:col-span-2 rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
@@ -272,7 +272,7 @@ export default function ProductsManager({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search products…"
-                className="bg-transparent border-none outline-none text-[13px] text-ink placeholder-ink-faint w-full"
+                className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-full"
               />
             </div>
           </div>
@@ -333,7 +333,7 @@ export default function ProductsManager({
                     <button
                       onClick={() => saveEdit(p.id)}
                       disabled={editSaving}
-                      className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-white disabled:opacity-50"
+                      className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-accent-contrast disabled:opacity-50"
                     >
                       {editSaving ? 'Saving…' : 'Save'}
                     </button>

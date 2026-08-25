@@ -153,7 +153,7 @@ export default function StaffManager({
         action={
           <button
             onClick={() => setShowInvite((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
@@ -186,7 +186,7 @@ export default function StaffManager({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Sending…' : 'Send invite'}
           </button>
@@ -238,7 +238,7 @@ export default function StaffManager({
                 <button
                   onClick={() => saveEdit(s.id)}
                   disabled={editSaving || !editName.trim()}
-                  className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-white disabled:opacity-50"
+                  className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-accent-contrast disabled:opacity-50"
                 >
                   {editSaving ? 'Saving…' : 'Save'}
                 </button>

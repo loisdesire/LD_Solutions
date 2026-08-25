@@ -175,7 +175,7 @@ export default function AdminDashboardBody({
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search customers or bookings"
                 placeholder="Search"
-                className="bg-transparent border-none outline-none text-body-sm text-ink placeholder-ink-faint w-full"
+                className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
               />
             </div>
           )}

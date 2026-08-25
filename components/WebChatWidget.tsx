@@ -213,7 +213,7 @@ export default function WebChatWidget({
           });
         }}
         aria-label={open ? 'Close chat' : 'Open chat'}
-        className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full flex items-center justify-center text-white shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
@@ -242,7 +242,7 @@ export default function WebChatWidget({
               genuinely always on, so it says so plainly rather than
               hedging. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-white" style={{ background: 'var(--accent)' }}>
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
               {businessName?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="min-w-0 flex-1">
@@ -283,10 +283,10 @@ export default function WebChatWidget({
               </div>
             )}
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
-                    m.role === 'user' ? 'text-ink rounded-br-md' : 'text-white rounded-bl-md'
+                    m.role === 'user' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
                   }`}
                   style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}
                 >
@@ -295,8 +295,8 @@ export default function WebChatWidget({
               </div>
             ))}
             {thinking && (
-              <div className="flex justify-start">
-                <div className="text-white rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px] opacity-70" style={{ background: 'var(--accent)' }}>
+              <div className="flex justify-start animate-rise">
+                <div className="text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px] opacity-70" style={{ background: 'var(--accent)' }}>
                   {THINKING_LINES[thinkingLineIndex]}
                 </div>
               </div>
@@ -314,13 +314,13 @@ export default function WebChatWidget({
                 }}
                 aria-label="Type a message"
                 placeholder="Type a message…"
-                className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint"
+                className="flex-1 bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13.5px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}
                 disabled={!value.trim() || thinking || revealing}
                 aria-label="Send"
-                className="h-8 w-8 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity disabled:opacity-30"
+                className="h-8 w-8 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
                 style={{ background: 'var(--accent)' }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

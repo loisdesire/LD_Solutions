@@ -60,7 +60,7 @@ export default async function InsightsPage({
           </p>
           <Link
             href={`/${slug}/admin/billing`}
-            className="inline-flex items-center rounded-full px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex items-center rounded-full px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90"
             style={{ background: 'var(--accent)' }}
           >
             See Business Intelligence

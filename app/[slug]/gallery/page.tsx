@@ -48,7 +48,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
             <div className="mt-12 text-center">
               <a
                 href={`/${slug}#book`}
-                className="inline-flex items-center gap-1.5 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] text-white transition-opacity hover:opacity-90 active:scale-95"
+                className="inline-flex items-center gap-1.5 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] text-accent-contrast transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent)' }}
               >
                 Book an appointment
