@@ -1,7 +1,13 @@
+import { formatMoney } from '@/lib/formatMoney';
+
 // A faithful mini-mockup of the real admin dashboard's Today strip and
 // appointment list - same structure, same labels, same tokens as the
 // actual /admin page, not an invented "dashboard-style" illustration.
-// This is what a business owner actually sees, not a promise.
+// This is what a business owner actually sees, not a promise. The revenue
+// figure used to hardcode "₦58k" - an abbreviation the real dashboard
+// never uses (it always shows the full formatMoney() figure) - so this
+// was quietly promising a dashboard that looks different from the one a
+// business actually gets.
 const SAMPLE_ROWS = [
   { time: '10:00', name: 'Amaka Johnson', service: 'Haircut', staff: 'John', status: 'Confirmed' },
   { time: '11:30', name: 'David Mensah', service: 'Beard trim', staff: 'Mike', status: 'Confirmed' },
@@ -43,7 +49,7 @@ export default function DashboardPreview() {
         <div className="rounded-xl bg-warm-surface px-4 py-4 mb-6 flex flex-wrap gap-x-5 gap-y-4">
           <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today</div><div className="font-display text-[18px] font-bold" style={{ color: 'var(--accent)' }}>3</div><div className="text-[9px] text-ink-faint">appointments</div></div>
           <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Next up</div><div className="font-display text-[18px] font-bold text-ink">10:00</div><div className="text-[9px] text-ink-faint truncate">Amaka · Haircut</div></div>
-          <div className="min-w-[70px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today&rsquo;s revenue</div><div className="font-display text-[18px] font-bold text-ink">₦58k</div></div>
+          <div className="min-w-[86px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today&rsquo;s revenue</div><div className="font-display text-[18px] font-bold text-ink">{formatMoney(58000)}</div></div>
           <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">This week</div><div className="font-display text-[18px] font-bold text-ink">8</div><div className="text-[9px] text-ink-faint">appointments</div></div>
         </div>
 
