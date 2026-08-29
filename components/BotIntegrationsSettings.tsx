@@ -66,15 +66,19 @@ export default function BotIntegrationsSettings({
           </span>
         </div>
         <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
-          <p className="text-body-sm text-ink-soft">Live on your booking page. Nothing to set up.</p>
+          <p className="text-body-sm text-ink-soft min-w-0">Live on your booking page. Nothing to set up.</p>
           {/* Was a permanently disabled "Set up" button that did nothing -
               the one channel this page can actually let you test right
-              now, with zero setup required, had no way to do that. */}
+              now, with zero setup required, had no way to do that.
+              whitespace-nowrap + shrink-0: on a narrow phone the row had
+              just enough space to squeeze "Try it" onto two lines instead
+              of letting the sentence beside it wrap first - a two-word
+              link split across two lines reads as broken, not urgent. */}
           <a
             href={`/${slug}#chat`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg text-accent hover:bg-accent-soft transition-colors"
+            className="text-caption font-semibold px-3 py-2 min-h-[40px] rounded-lg text-accent hover:bg-accent-soft transition-colors whitespace-nowrap shrink-0"
           >
             Try it
           </a>

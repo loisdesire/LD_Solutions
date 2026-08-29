@@ -44,7 +44,16 @@ export default function AssistantChat({
   const [error, setError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Was unconditional - fired on the very first render too, with zero
+  // messages yet, since `messages` changing from nothing to `[]` still
+  // counts as a change. bottomRef sits below the fold on an empty chat
+  // (suggestion chips, empty-state copy), so the browser dutifully
+  // scrolled the whole PAGE down to bring an empty div into view - not
+  // just this card - which on a short mobile viewport was enough to
+  // shove the page's own heading up behind the sticky header on load.
+  // Confirmed live: no messages, no reason to autoscroll anything yet.
   useEffect(() => {
+    if (messages.length === 0 && !loading) return;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 

@@ -375,10 +375,17 @@ export default function CalendarView({
           })}
         </div>
         {/* Fade hint that more days sit off to the right - mobile only,
-            since sm+ already shows all 7 as a grid with nothing to scroll. */}
+            since sm+ already shows all 7 as a grid with nothing to scroll.
+            Widened and pushed to full opacity well before the edge (was
+            transparent -> paper over the same 32px it covered, so a
+            booking's real text sitting right at that edge stayed legible
+            but half-cut - reading as clipped/broken, not as "swipe for
+            more". Reaching full paper opacity partway through the fade,
+            with a wider zone, means nothing readable-but-truncated is ever
+            sitting exposed at the edge - just an unambiguous fade. */}
         <div
-          className="sm:hidden pointer-events-none absolute top-0 right-0 bottom-2 w-8"
-          style={{ background: 'linear-gradient(to right, transparent, var(--paper))' }}
+          className="sm:hidden pointer-events-none absolute top-0 right-0 bottom-2 w-14"
+          style={{ background: 'linear-gradient(to right, transparent, var(--paper) 65%)' }}
           aria-hidden="true"
         />
         </div>
