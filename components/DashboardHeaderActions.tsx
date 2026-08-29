@@ -76,13 +76,21 @@ export default function DashboardHeaderActions({
           </svg>
           <span className="hidden sm:inline text-[13.5px] font-medium whitespace-nowrap">Export CSV</span>
         </button>
+      {/* Was full text + icon at every width, the only one of these three
+          that never collapsed - Copy link and Export CSV both already went
+          icon-only below sm, so this was the one thing forcing the whole
+          row wider than it needed to be on a phone. Same collapse now,
+          matching its siblings, still the one solid-accent circle among
+          two quiet outline ones so it stays the obvious primary action. */}
       <button
         onClick={() => setShowNewAppointment(true)}
-        className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
+        aria-label="New appointment"
+        title="New appointment"
+        className="h-10 sm:h-auto flex items-center justify-center sm:justify-start gap-2 rounded-full px-0 sm:px-5 sm:py-2.5 w-10 sm:w-auto text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
         style={{ background: 'var(--accent)' }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
-        New appointment
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0"><path d="M12 5v14M5 12h14" /></svg>
+        <span className="hidden sm:inline whitespace-nowrap">New appointment</span>
       </button>
 
       {showNewAppointment && (

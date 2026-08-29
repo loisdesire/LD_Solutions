@@ -247,14 +247,22 @@ export default function LandingPage() {
               calendar and confirms it, no back-and-forth, 24/7.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3.5">
-              <Button href="/signup" size="lg">
-                Start free for 14 days
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {/* grid grid-cols-2, not flex-wrap - the two buttons used to be
+                left-aligned and different widths, which stacked on mobile
+                (the full "Start free for 14 days" text left no room for
+                "See it live" beside it) rather than sitting side by side.
+                Equal columns forces equal width at every size; the label
+                itself shortens below sm; so it fits without wrapping
+                instead of just wrapping the same long text into a smaller
+                box. */}
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-3.5">
+              <Button href="/signup" size="lg" className="justify-center">
+                Start free<span className="hidden sm:inline">&nbsp;for 14 days</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
               </Button>
-              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg">
+              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center">
                 See it live
               </Button>
             </div>

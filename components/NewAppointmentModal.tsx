@@ -72,13 +72,6 @@ export default function NewAppointmentModal({
   const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
-
-  useEffect(() => {
     if (!serviceId || !date) return;
     setLoadingSlots(true);
     setSelectedSlot('');
@@ -116,14 +109,31 @@ export default function NewAppointmentModal({
     }
   }
 
+  // This alone locks background scroll while open and restores it on
+  // close (see useDialog.ts). This file used to ALSO do that itself in a
+  // separate effect - two independent locks racing on the same
+  // document.body.style.overflow. Confirmed live: closing this modal could
+  // leave the whole dashboard stuck unable to scroll afterward, since
+  // useDialog's own cleanup captured "hidden" as the value to restore to
+  // (this file's effect had already set it before useDialog's ran), not
+  // the real original value. One lock, not two.
   const dialogRef = useDialog(true, onClose);
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-label="New appointment" ref={dialogRef}>
-      <div className="absolute inset-0 backdrop-blur-sm animate-fade" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }} onClick={onClose} />
+    // This form is genuinely long - service, a full calendar, three fields,
+    // a submit button - and the floating-card treatment (small margin all
+    // round, rounded on every corner) was built for content that fits with
+    // real room to spare. On a phone it left almost no visible margin and
+    // rounded corners with nothing to round against, reading as "doesn't
+    // fit the screen" rather than "a dialog." Below sm: this is a full-
+    // screen sheet instead - no backdrop gap, no corner radius fighting
+    // the viewport edge, edge-to-edge like a real page. sm: and up is
+    // unchanged - there's genuine room for the card treatment there.
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label="New appointment" ref={dialogRef}>
+      <div className="absolute inset-0 backdrop-blur-sm animate-fade sm:block" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }} onClick={onClose} />
 
-      <div className="relative w-full max-w-lg max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
+      <div className="relative w-full h-full sm:h-auto sm:max-w-lg sm:max-h-[calc(100vh-3rem)] overflow-y-auto rounded-none sm:rounded-3xl bg-surface border-line sm:border-2 shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-line bg-surface">
           <h2 className="font-display text-[19px] font-semibold text-ink">
             {done ? 'Booked!' : 'New appointment'}
@@ -191,8 +201,13 @@ export default function NewAppointmentModal({
                       type="button"
                       onClick={() => setServiceId(s.id)}
                       style={isSel ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
+                      // Fill + border + inverted text already say "selected"
+                      // three ways over - a colored glow shadow on top of
+                      // that was a fourth, redundant signal stacked on for
+                      // no real gain, and it visibly bled outside the
+                      // pill's own shape on a phone screen.
                       className={`px-3.5 py-2 text-[13px] font-semibold border-2 rounded-full transition-all ${
-                        isSel ? 'shadow-[0_4px_12px_-4px_var(--accent)]' : 'border-line-strong bg-surface hover:border-[var(--accent)]'
+                        isSel ? '' : 'border-line-strong bg-surface hover:border-[var(--accent)]'
                       }`}
                     >
                       {s.name}
@@ -231,8 +246,12 @@ export default function NewAppointmentModal({
                               key={t}
                               onClick={() => setSelectedSlot(t)}
                               style={isSel ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
+                              // Same reasoning as the service pill above -
+                              // fill+border+text already carries "selected",
+                              // animate-punch is the real feedback moment;
+                              // the glow shadow was a redundant fourth signal.
                               className={`min-w-[76px] py-2 px-3 text-[13px] font-mono font-semibold tabular-nums border-2 rounded-full transition-all active:scale-95 ${
-                                isSel ? 'animate-punch shadow-[0_4px_12px_-2px_var(--accent)]' : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
+                                isSel ? 'animate-punch' : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
                               }`}
                             >
                               {formatTime(t)}
