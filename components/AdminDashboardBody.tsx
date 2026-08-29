@@ -26,6 +26,18 @@ type Booking = {
 // cancel...) live where they always did: click into a booking from the
 // list below. This card's job is just "what's the state of today," at a
 // glance, nothing more.
+//
+// Two genuinely different compositions, not one shrunk to fit the other.
+// Desktop (sm: and up) is unchanged: a vertical tile, four side by side.
+// Mobile was the same tile forced into a 2-column wrap (flex-wrap on the
+// parent) - two stats per row, but nothing made those rows align with
+// each other, so a stat with a sub-line sat at a different height than
+// its neighbour, and "Next up" empty ("-" in accent orange, alone, with
+// a full tile's worth of space around it) read like a rendering glitch
+// rather than an empty state. Below sm, this is now a single-column list
+// instead: label (+ sub, if any) on the left, value (+ delta, if any) on
+// the right, one row per stat, divided by real rules - the same shape
+// every stats list like this actually takes on a phone.
 function TodayStat({
   label,
   value,
@@ -48,17 +60,29 @@ function TodayStat({
     // sides of every stat puts 16px on each side of the divider instead,
     // and does the row's normal spacing job too, so gap-x-8 on the
     // parent goes away entirely rather than doubling up with this.
-    <div className="flex-1 min-w-[120px] px-4">
-      <div className="text-caption font-semibold text-ink-faint mb-1">{label}</div>
-      <div className="font-display text-[24px] font-bold leading-none" style={{ color }}>
-        {value}
+    <div className="flex items-center justify-between gap-4 py-3 sm:block sm:py-0 sm:flex-1 sm:min-w-[120px] sm:px-4">
+      <div className="min-w-0">
+        <div className="text-caption font-semibold text-ink-faint sm:mb-1">{label}</div>
+        {sub && <div className="text-caption text-ink-faint truncate sm:hidden">{sub}</div>}
       </div>
-      <div className="flex items-baseline gap-1.5 mt-1">
-        {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
+      <div className="text-right shrink-0 sm:text-left">
+        <div className="font-display text-[20px] sm:text-[24px] font-bold leading-none" style={{ color }}>
+          {value}
+        </div>
+        <div className="hidden items-baseline gap-1.5 mt-1 sm:flex">
+          {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
+          {delta && (
+            <span className={`text-caption font-semibold shrink-0 ${delta.up ? 'text-success' : 'text-error'}`}>
+              {delta.up ? '↑' : '↓'} {delta.value}
+            </span>
+          )}
+        </div>
         {delta && (
-          <span className={`text-caption font-semibold shrink-0 ${delta.up ? 'text-success' : 'text-error'}`}>
-            {delta.up ? '↑' : '↓'} {delta.value}
-          </span>
+          <div className="mt-0.5 sm:hidden">
+            <span className={`text-caption font-semibold ${delta.up ? 'text-success' : 'text-error'}`}>
+              {delta.up ? '↑' : '↓'} {delta.value}
+            </span>
+          </div>
         )}
       </div>
     </div>
@@ -249,12 +273,16 @@ export default function AdminDashboardBody({
               its own comment) so the first/last stat's content still
               lands exactly on the card's own px-5 edge instead of
               sitting 16px further in than every other card in the app. */}
-          <div className="flex flex-wrap -mx-4 gap-y-5 lg:divide-x lg:divide-line-strong">
+          <div className="flex flex-col divide-y divide-line-strong sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
             <TodayStat
               label="Next up"
               value={nextSlotLabel}
               sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
-              color="var(--accent)"
+              // Accent only when there's actually something to draw the eye
+              // to - on empty days this rendered a lone "-" in brand orange
+              // with nothing around it, which read as a glitch, not an
+              // empty state. Neutral ink when there's nothing next.
+              color={nextSlot ? 'var(--accent)' : 'var(--ink-faint)'}
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
             <TodayStat label="Today's revenue" value={formatMoney(todayRevenue)} />

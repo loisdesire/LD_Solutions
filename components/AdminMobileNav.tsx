@@ -150,37 +150,36 @@ export default function AdminMobileNav({
           )}
           <span className="font-semibold text-body-sm truncate">{businessName}</span>
         </div>
+        {/* Was a bordered pill with a chevron - the exact shape and affordance
+            of an HTML <select>, for what's actually the primary navigation
+            trigger. A menu control shouldn't look like a form field. This
+            keeps the same "which page am I on" info (genuinely useful with
+            no persistent sidebar to check against) but as a plain label
+            next to a real menu icon, the same open/close hamburger-to-X
+            swap used elsewhere in this app (see WebChatWidget's toggle) -
+            unambiguous as "this opens a menu," not "this picks a value." */}
         <button
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-controls="admin-mobile-nav-menu"
-          className="relative flex items-center gap-1.5 rounded-xl border-2 border-line-strong pl-3.5 pr-3 py-2 min-h-[40px] max-w-[52%] text-caption font-semibold text-ink shrink-0"
+          className="relative flex items-center gap-2 rounded-xl pl-3 pr-2 py-1.5 min-h-[40px] max-w-[58%] text-ink shrink-0 hover:bg-warm-surface transition-colors"
         >
-          {/* One dot on the trigger itself, not only inside the expanded
-              list - otherwise "something needs attention" is invisible
-              unless you'd already thought to open the menu. */}
-          {anyBadge && (
-            <span
-              className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-paper"
-              style={{ background: 'var(--warning)' }}
-              aria-hidden="true"
-              title="Something needs attention"
-            />
-          )}
-          <span className="truncate">{currentLabel}</span>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`shrink-0 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+          <span className="text-caption font-semibold truncate">{currentLabel}</span>
+          <span className="relative flex items-center justify-center h-8 w-8 rounded-lg bg-warm-surface shrink-0">
+            {anyBadge && (
+              <span
+                className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-paper"
+                style={{ background: 'var(--warning)' }}
+                aria-hidden="true"
+                title="Something needs attention"
+              />
+            )}
+            {menuOpen ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            )}
+          </span>
         </button>
       </div>
 
