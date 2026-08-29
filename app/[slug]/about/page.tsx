@@ -37,7 +37,14 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
         showContact={showContact}
       />
       <main className="pt-16">
-        <div className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20 text-center">
+        {/* pb- extended beyond py-16/20's matching top value - confirmed live
+            (real mobile screenshot, not a guess) that on a short About page
+            the hours line landed exactly under WebChatWidget's fixed
+            bottom-right button, genuinely unreadable, visible on first load
+            with zero scrolling. This guarantees real clearance below the
+            last piece of content regardless of how short the page's own
+            text is. */}
+        <div className="max-w-3xl mx-auto px-6 sm:px-10 pt-16 sm:pt-20 pb-28 sm:pb-20 text-center">
           {/* Reuses the same cover photo the hero already has (no new
               field/query) - this page was pure text with nothing to
               visually anchor it, noticeably barer than every other public
@@ -58,9 +65,19 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
               them) but never actually shown here - someone reading about
               the business is a natural moment to also tell them when
               they're open, not just leave it to the booking form to
-              reveal indirectly through which dates are available. */}
+              reveal indirectly through which dates are available.
+
+              mt-8 -> mt-20: fixes a real collision with WebChatWidget's
+              fixed bottom-right button - confirmed live (measured bounding
+              boxes, not a guess) that at mt-8 this line's rect sat at
+              788-809px from the viewport top, squarely inside the button's
+              fixed 768-824px band on a 390x844 mobile screen, unreadable
+              on first load with zero scrolling. Trailing padding on the
+              container below doesn't help - this element's screen position
+              is set entirely by what's above it. The extra ~48px clears it
+              outright. */}
           {hoursSummary && (
-            <div className="flex items-center justify-center gap-2.5 mt-8 text-ink-soft">
+            <div className="flex items-center justify-center gap-2.5 mt-20 text-ink-soft">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />

@@ -110,7 +110,12 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
         showContact={showContact}
       />
       <main className="pt-16">
-        <div className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20">
+        {/* Same defensive pb- as about/page.tsx and gallery/page.tsx - this
+            page's own CTA sits clear of the chat button today, but its
+            length depends entirely on how many contact methods a business
+            fills in, and a business with only one or two would land in the
+            same short-page situation those two pages actually had. */}
+        <div className="max-w-3xl mx-auto px-6 sm:px-10 pt-16 sm:pt-20 pb-28 sm:pb-20">
           <div className="text-center mb-12">
             <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-3">Get in touch</h1>
             {/* Actual hours, not filler - "We'd love to hear from you"

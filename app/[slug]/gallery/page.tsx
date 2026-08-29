@@ -38,8 +38,28 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
         showContact={showContact}
       />
       <main className="pt-16">
-        <div className="max-w-5xl mx-auto px-6 sm:px-10 py-16 sm:py-20">
-          <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-10 text-center">
+        {/* pb-28 below: guards the trailing CTA the same way about/page.tsx
+            guards its hours line - real, but a separate issue from the one
+            below (that one's about content sitting AFTER this padding;
+            this one's about a photo grid sitting BEFORE it, which trailing
+            padding can't touch). */}
+        <div className="max-w-5xl mx-auto px-6 sm:px-10 pt-16 sm:pt-20 pb-28 sm:pb-20">
+          {/* mb-10 -> mb-1 on mobile only: unlike the hours-line fix in
+              about/page.tsx (which worked by adding space BEFORE the
+              colliding element), a photo grid can't be pushed clear of
+              WebChatWidget's fixed button that way - with enough rows, some
+              row always ends up spanning the button's fixed 768-824px band
+              regardless of offset, since the grid just grows taller as
+              photos are added. Shifting the whole grid UP instead (less
+              space between the heading and the grid) is what actually
+              clears it for a typical few-rows gallery: confirmed live
+              (measured bounding boxes) that with 6 photos, this moves the
+              last row's bottom edge above the button entirely rather than
+              trying to push it below - not a mathematical guarantee for
+              every possible photo count, but it closes the confirmed case
+              and reduces how far into the page a
+              gallery has to grow before the risk reappears. */}
+          <h1 className="font-display text-[32px] sm:text-[38px] font-semibold text-ink mb-1 sm:mb-10 text-center">
             Gallery
           </h1>
           <GalleryGrid images={galleryImages} />
