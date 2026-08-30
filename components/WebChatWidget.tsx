@@ -277,7 +277,7 @@ export default function WebChatWidget({
               // clinic or a tutor, and asked people to compose a question
               // from nothing.
               <div className="px-1 py-4">
-                <p className="text-[13px] text-ink-soft text-center mb-3.5">
+                <p className="text-[14px] text-ink-soft text-center mb-3.5">
                   Ask anything, or start here
                 </p>
                 <div className="flex flex-col gap-2">
@@ -286,7 +286,7 @@ export default function WebChatWidget({
                       key={o}
                       type="button"
                       onClick={() => send(o)}
-                      className="text-left rounded-xl border border-line px-3.5 py-2.5 text-[13px] text-ink-soft hover:border-accent hover:text-accent transition-colors"
+                      className="text-left rounded-xl border border-line px-3.5 py-2.5 text-[14px] text-ink-soft hover:border-accent hover:text-accent transition-colors"
                     >
                       {o}
                     </button>
@@ -297,7 +297,7 @@ export default function WebChatWidget({
             {messages.map((m, i) => (
               <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[13.5px] leading-relaxed whitespace-pre-wrap ${
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap ${
                     m.role === 'user' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
                   }`}
                   style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}
@@ -308,7 +308,7 @@ export default function WebChatWidget({
             ))}
             {thinking && (
               <div className="flex justify-start animate-rise">
-                <div className="text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[13px] opacity-70" style={{ background: 'var(--accent)' }}>
+                <div className="text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[14px] opacity-80" style={{ background: 'var(--accent)' }}>
                   {THINKING_LINES[thinkingLineIndex]}
                 </div>
               </div>
@@ -326,7 +326,7 @@ export default function WebChatWidget({
                 }}
                 aria-label="Type a message"
                 placeholder="Type a message…"
-                className="flex-1 bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13.5px] text-ink placeholder-ink-faint"
+                className="flex-1 bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[14px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}

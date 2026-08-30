@@ -4,6 +4,8 @@ import { todayInTimezone, daysBetween } from '@/lib/timezone';
 import { getBusinessTimezone } from '@/lib/getBusinessTimezone';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { cleanIsoInstant, isUuid } from '@/lib/apiValidation';
+import { getAvailableSlots } from '@/lib/getAvailableSlots';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,12 +19,24 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!rateLimit(`reschedule:${getClientIp(req)}`, 10, 5 * 60_000)) {
+  if (!(await rateLimit(`reschedule:${getClientIp(req)}`, 10, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 
   const { id } = await params;
-  const { newStartTime } = await req.json();
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+  }
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  const validStartTime = cleanIsoInstant(body.newStartTime);
+  if (!validStartTime) {
+    return NextResponse.json({ error: 'That is not a valid time' }, { status: 400 });
+  }
 
   const { data: booking } = await supabaseAdmin
     .from('bookings')
@@ -58,15 +72,7 @@ export async function POST(
   }
 
   const duration = (booking.services as any)?.duration_minutes ?? 30;
-  const newStart = new Date(newStartTime);
-  // A missing/malformed newStartTime parses to an Invalid Date, whose
-  // getTime() is NaN - every comparison below (daysOut, the overlap check)
-  // is silently false against NaN, so those guards would let it straight
-  // through to the update, which then throws on .toISOString(). Reject it
-  // here instead, with the same clean 400 every other bad-input case gets.
-  if (Number.isNaN(newStart.getTime())) {
-    return NextResponse.json({ error: 'That is not a valid time' }, { status: 400 });
-  }
+  const newStart = new Date(validStartTime);
   const newEnd = new Date(newStart.getTime() + duration * 60000);
 
   const today = todayInTimezone(timeZone);
@@ -75,6 +81,11 @@ export async function POST(
 
   if (daysOut < 0 || daysOut > maxAdvanceDays) {
     return NextResponse.json({ error: 'That date is not available for booking' }, { status: 400 });
+  }
+
+  const realSlots = await getAvailableSlots(booking.business_id, booking.service_id, newStartDateInTz, id);
+  if (!realSlots.some((slot) => new Date(slot).getTime() === newStart.getTime())) {
+    return NextResponse.json({ error: 'That time is outside opening hours or no longer available' }, { status: 409 });
   }
 
   const { data: others } = await supabaseAdmin

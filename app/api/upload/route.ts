@@ -45,7 +45,7 @@ function ensureBucket(): Promise<void> {
 // business's own id in storage so one business can never overwrite or
 // enumerate another's files.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`upload:${getClientIp(req)}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`upload:${getClientIp(req)}`, 20, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many uploads, please try again shortly' }, { status: 429 });
   }
 

@@ -146,15 +146,12 @@ export default function SignupPage() {
         <div className="font-mono text-[11px] text-ink-faint">Free to start</div>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-14">
+      <div className="flex items-center justify-center px-4 py-8 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
-          {/* The value panel to the left disappears entirely below lg -
-              mobile got a completely blank, unbranded form with no idea
-              what it was signing up for. Same fix as the login screens. */}
-          <div className="lg:hidden">
+          <div className="lg:hidden mb-5">
             <AuthMark name="Vanova" label="Create your booking page" logoUrl="/logo.png" />
           </div>
-          <h2 className="font-display text-[26px] mb-7">Create your account</h2>
+          <h2 className="font-display text-[26px] mb-6 sm:mb-7">Create your account</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field label="Business name" required>
@@ -246,7 +243,7 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center text-ink-faint hover:text-ink transition-colors"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink transition-colors"
                   >
                     {showPassword ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

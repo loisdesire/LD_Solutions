@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
   // Not awaited - never let a dashboard-only timestamp affect the reply.
   markChannelActive(business.id, 'messenger');
 
-  if (!rateLimit(`messenger:${psid}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`messenger:${psid}`, 20, 5 * 60_000))) {
     await sendMessengerMessage(accessToken, psid, "You're sending messages a little fast, please wait a moment and try again.");
     return NextResponse.json({ ok: true });
   }

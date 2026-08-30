@@ -224,7 +224,7 @@ export default function NewAppointmentModal({
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2.5">
                 <span className={labelClass}>Available times</span>
-                {!loadingSlots && <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>}
+                {!loadingSlots && <span className="font-mono text-[12px] text-ink-faint">{slots.length} open</span>}
               </div>
               {loadingSlots ? (
                 <p className="text-ink-faint text-[13px]">Checking availability…</p>
@@ -236,7 +236,7 @@ export default function NewAppointmentModal({
                 <div className="space-y-4">
                   {slotGroups.map(([period, times]) => (
                     <div key={period}>
-                      <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-faint mb-2">{period}</div>
+                      <div className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint mb-2">{period}</div>
                       <div className="flex flex-wrap gap-2">
                         {times.map((t) => {
                           const isSel = t === selectedSlot;

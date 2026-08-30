@@ -171,7 +171,7 @@ export default function AdminDashboardBody({
           roughly 140px before any of the day's information. `now` is null
           until the effect runs, so the server never renders a
           time-dependent greeting and there is no hydration mismatch. */}
-      <div className="mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-accent mb-1">
             {now
@@ -184,7 +184,7 @@ export default function AdminDashboardBody({
           <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0 lg:pt-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end shrink-0 lg:pt-1">
           {/* Search only earns its place once there is enough to search
               through. Below that it is a permanent empty box on a page
               whose whole job is showing you a short list. */}

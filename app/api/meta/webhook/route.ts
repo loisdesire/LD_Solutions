@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   // Not awaited - never let a dashboard-only timestamp affect the reply.
   markChannelActive(business.id, 'whatsapp');
 
-  if (!rateLimit(`meta-whatsapp:${from}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`meta-whatsapp:${from}`, 20, 5 * 60_000))) {
     await sendWhatsappMessage(
       accessToken,
       phoneNumberId,

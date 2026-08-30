@@ -165,7 +165,7 @@ export default function CalendarPicker({
               key={mode}
               type="button"
               onClick={() => setViewMode(mode)}
-              className={`px-3.5 py-2 min-h-[40px] rounded-md text-[11px] font-mono font-medium uppercase tracking-wider transition-all duration-200 ${
+              className={`px-3.5 py-2 min-h-[40px] rounded-md text-[12px] font-mono font-medium uppercase tracking-wide transition-all duration-200 ${
                 viewMode === mode
                   ? 'bg-surface text-ink shadow-sm'
                   : 'text-ink-faint hover:text-ink'
@@ -204,7 +204,7 @@ export default function CalendarPicker({
                     : 'hover:bg-warm-surface active:scale-95'
                 }`}
               >
-                <span className={`text-[10px] font-mono uppercase tracking-widest ${
+                <span className={`text-[12px] font-mono uppercase tracking-wide ${
                   isSelected ? 'opacity-80' : 'text-ink-faint'
                 }`}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)}
@@ -231,7 +231,7 @@ export default function CalendarPicker({
         <div className="animate-rise">
           <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
             {weekdaysHeader.map((h) => (
-              <span key={h} className="text-[10px] font-mono uppercase tracking-widest text-ink-faint py-1 select-none">
+              <span key={h} className="text-[12px] font-mono uppercase tracking-wide text-ink-faint py-1 select-none">
                 {h}
               </span>
             ))}

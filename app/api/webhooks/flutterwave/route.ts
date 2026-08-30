@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   // route that also compared its secret with plain string inequality -
   // together, an unlimited number of timed guesses at the real secret.
   // Same budget as the other webhooks.
-  if (!rateLimit(`webhook:flutterwave:${getClientIp(req)}`, 30, 60_000)) {
+  if (!(await rateLimit(`webhook:flutterwave:${getClientIp(req)}`, 30, 60_000))) {
     return new NextResponse('Too many requests', { status: 429 });
   }
 

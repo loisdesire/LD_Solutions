@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 
 export type SettingsSection = {
   key: string;
@@ -11,10 +12,9 @@ export type SettingsSection = {
 // dropdown on the page. All three spent space inside the page choosing
 // which section to look at.
 //
-// The choice belongs in the sidebar, under the Settings item, where every
-// other destination already lives. This just renders whichever section the
-// URL names, so the page itself is only settings. No client state, so it
-// stays a server component.
+// Settings stays one sidebar destination. A compact in-page switcher keeps
+// its related sections discoverable without turning five configuration
+// details into five primary navigation destinations.
 export default function SettingsSections({
   sections,
   active,
@@ -27,6 +27,23 @@ export default function SettingsSections({
 
   return (
     <div>
+      <nav aria-label="Settings sections" className="flex flex-wrap gap-2 mb-6">
+        {sections.map((section) => {
+          const selected = section.key === current.key;
+          return (
+            <Link
+              key={section.key}
+              href={`?section=${section.key}`}
+              aria-current={selected ? 'page' : undefined}
+              className={`rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
+                selected ? 'bg-accent text-accent-contrast' : 'bg-surface border border-line text-ink-soft hover:text-ink hover:border-line-strong'
+              }`}
+            >
+              {section.label}
+            </Link>
+          );
+        })}
+      </nav>
       {/* Now the page's one real heading (see settings/page.tsx) - eyebrow
           + h1 + subtitle, the same weight every other admin page under
           Automate/Business gives its own heading, not a smaller h2 living

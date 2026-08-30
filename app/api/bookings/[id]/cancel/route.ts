@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { isUuid } from '@/lib/apiValidation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,11 +17,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!rateLimit(`cancel:${getClientIp(req)}`, 10, 5 * 60_000)) {
+  if (!(await rateLimit(`cancel:${getClientIp(req)}`, 10, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+  }
 
   const { data: existing } = await supabaseAdmin
     .from('bookings')

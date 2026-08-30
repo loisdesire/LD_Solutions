@@ -13,7 +13,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 //
 // Runs server-side because the secret key must never reach the browser.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`paystack-validate:${getClientIp(req)}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`paystack-validate:${getClientIp(req)}`, 20, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many attempts, please try again shortly' }, { status: 429 });
   }
 

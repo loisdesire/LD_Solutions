@@ -207,7 +207,7 @@ export default function ManageBooking({
           {/* Captions a button-grid calendar, not one input - a <label>
               with nothing for htmlFor to point at is the same
               half-association problem this pass exists to fix. */}
-          <span className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">
+          <span className="font-mono block text-[12px] uppercase tracking-[0.08em] text-ink-faint mb-2">
             New date
           </span>
           <CalendarPicker
@@ -226,11 +226,11 @@ export default function ManageBooking({
         {date && (
           <div className="pt-2 animate-rise">
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono block text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+              <span className="font-mono block text-[12px] uppercase tracking-[0.08em] text-ink-faint">
                 Available times
               </span>
               {!loadingSlots && !slotsError && (
-                <span className="font-mono text-[11px] text-ink-faint">{slots.length} open</span>
+                <span className="font-mono text-[12px] text-ink-faint">{slots.length} open</span>
               )}
             </div>
             {loadingSlots ? (
@@ -265,7 +265,7 @@ export default function ManageBooking({
               <div className="space-y-4 mb-4">
                 {slotGroups.map(([period, times]) => (
                   <div key={period}>
-                    <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-faint mb-2">
+                    <div className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint mb-2">
                       {period}
                     </div>
                     <div className="flex flex-wrap gap-2">

@@ -29,7 +29,7 @@ export default function SiteFooter({
 
   return (
     <footer className="bg-[var(--line)] border-t border-line mt-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full px-6 sm:px-10 py-12 max-w-5xl mx-auto text-center sm:text-left">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full px-4 sm:px-10 py-10 sm:py-12 max-w-5xl mx-auto text-center sm:text-left">
         <div>
           <div className="flex items-center gap-2.5 mb-3 justify-center sm:justify-start">
             {business.logo_url ? (
@@ -47,7 +47,7 @@ export default function SiteFooter({
             </span>
           </div>
           {business.description && (
-            <p className="text-[13.5px] text-ink-soft max-w-sm mx-auto sm:mx-0">{business.description}</p>
+            <p className="text-[14px] text-ink-soft max-w-sm mx-auto sm:mx-0">{business.description}</p>
           )}
         </div>
         <div className="flex flex-col items-center sm:items-end justify-center gap-3">
@@ -58,7 +58,7 @@ export default function SiteFooter({
                   href={business.instagram_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                  className="text-[14px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
                 >
                   Instagram
                 </a>
@@ -68,7 +68,7 @@ export default function SiteFooter({
                   href={business.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                  className="text-[14px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
                 >
                   Facebook
                 </a>
@@ -76,7 +76,7 @@ export default function SiteFooter({
               {business.contact_phone && (
                 <a
                   href={`tel:${business.contact_phone}`}
-                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                  className="text-[14px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
                 >
                   Call
                 </a>
@@ -84,15 +84,15 @@ export default function SiteFooter({
               {business.contact_email && (
                 <a
                   href={`mailto:${business.contact_email}`}
-                  className="text-[13px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
+                  className="text-[14px] font-medium text-ink-soft hover:text-[var(--accent)] transition-colors"
                 >
                   Email
                 </a>
               )}
             </div>
           )}
-          {hoursSummary && <p className="text-[12.5px] text-ink-faint">{hoursSummary}</p>}
-          <p className="text-[11.5px] text-ink-faint">
+          {hoursSummary && <p className="text-[13px] text-ink-faint">{hoursSummary}</p>}
+          <p className="text-[12.5px] text-ink-faint">
             © {new Date().getFullYear()} {business.name}
           </p>
         </div>

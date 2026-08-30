@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 // unrecognized number. This sends as the actual bot, continuing the same
 // thread, which is what escalation from the bot to a human should look like.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`admin-message:${getClientIp(req)}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`admin-message:${getClientIp(req)}`, 20, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 

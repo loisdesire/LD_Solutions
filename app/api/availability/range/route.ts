@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvailabilityForRange } from '@/lib/getAvailableSlots';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
+import { isCalendarDate, isUuid } from '@/lib/apiValidation';
 
 // GET /api/availability/range?businessId=...&serviceId=...&start=2026-07-15&end=2026-08-25
 // Answers "does this date have any open slot" for a whole visible
@@ -13,7 +14,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 // deserve its own rate-limit bucket rather than sharing the single-date
 // one.
 export async function GET(req: NextRequest) {
-  if (!rateLimit(`availability-range:${getClientIp(req)}`, 30, 60_000)) {
+  if (!(await rateLimit(`availability-range:${getClientIp(req)}`, 30, 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 
@@ -22,8 +23,14 @@ export async function GET(req: NextRequest) {
   const start = req.nextUrl.searchParams.get('start');
   const end = req.nextUrl.searchParams.get('end');
 
-  if (!businessId || !serviceId || !start || !end) {
-    return NextResponse.json({ error: 'Missing params' }, { status: 400 });
+  if (
+    !isUuid(businessId) ||
+    !isUuid(serviceId) ||
+    !isCalendarDate(start) ||
+    !isCalendarDate(end) ||
+    start > end
+  ) {
+    return NextResponse.json({ error: 'Invalid business, service, or date range' }, { status: 400 });
   }
 
   const days = await getAvailabilityForRange(businessId, serviceId, start, end);

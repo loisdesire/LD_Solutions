@@ -9,6 +9,14 @@ import { verifyPaystackTransaction } from '@/lib/paystack';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
 import { formatMoney } from '@/lib/formatMoney';
+import {
+  cleanEmail,
+  cleanIsoInstant,
+  cleanPhone,
+  cleanRequiredText,
+  cleanOptionalText,
+  isUuid,
+} from '@/lib/apiValidation';
 
 // Server-side only: the anon/publishable key's insert policy on bookings
 // isn't resolving correctly in this project even though `with check (true)`
@@ -24,11 +32,16 @@ const supabaseAdmin = createClient(
 // Centralizing this in an API route (rather than calling Supabase directly
 // from the browser) is what lets us also trigger email/SMS in one place.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`booking:${getClientIp(req)}`, 8, 5 * 60_000)) {
+  if (!(await rateLimit(`booking:${getClientIp(req)}`, 8, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
   const {
     businessId,
     serviceId,
@@ -40,14 +53,31 @@ export async function POST(req: NextRequest) {
     paymentReference,
   } = body;
 
-  if (!businessId || !(await canAcceptBookings(businessId))) {
+  const validName = cleanRequiredText(customerName, 100);
+  const validEmail = cleanEmail(customerEmail, true);
+  const validPhone = cleanPhone(customerPhone, true);
+  const validStartTime = cleanIsoInstant(startTime);
+  const validPaymentReference = cleanOptionalText(paymentReference, 160);
+
+  if (
+    !isUuid(businessId) ||
+    !isUuid(serviceId) ||
+    !validName ||
+    validEmail === undefined ||
+    validPhone === undefined ||
+    !validStartTime
+  ) {
+    return NextResponse.json({ error: 'Invalid booking details' }, { status: 400 });
+  }
+
+  if (!(await canAcceptBookings(businessId))) {
     return NextResponse.json(
       { error: 'This business isn\'t currently accepting online bookings. Please contact them directly.' },
       { status: 403 }
     );
   }
 
-  const start = new Date(startTime);
+  const start = new Date(validStartTime);
 
   // Enforce max_advance_days server-side too - the date picker already
   // caps this in the UI, but that's bypassable by calling this route
@@ -60,11 +90,17 @@ export async function POST(req: NextRequest) {
       .eq('business_id', businessId)
       .maybeSingle(),
     supabaseAdmin.from('businesses').select('timezone, paystack_secret_key, name, accent_color, logo_url, slug').eq('id', businessId).single(),
-    supabaseAdmin.from('services').select('price, name, duration_minutes').eq('id', serviceId).maybeSingle(),
+    supabaseAdmin
+      .from('services')
+      .select('price, name, duration_minutes')
+      .eq('id', serviceId)
+      .eq('business_id', businessId)
+      .eq('active', true)
+      .maybeSingle(),
   ]);
 
   if (!service) {
-    return NextResponse.json({ error: 'That service could not be found.' }, { status: 400 });
+    return NextResponse.json({ error: 'That service is not available for this business.' }, { status: 400 });
   }
 
   // The client's durationMinutes was previously trusted outright and used
@@ -124,20 +160,20 @@ export async function POST(req: NextRequest) {
       logError('api/bookings:payment-misconfigured', new Error('require_payment is on with no Paystack key'), { businessId });
       return NextResponse.json({ error: 'This business hasn\'t finished setting up payments. Please contact them directly.' }, { status: 503 });
     }
-    if (!paymentReference) {
+    if (!validPaymentReference) {
       return NextResponse.json({ error: 'Payment is required to book this service.' }, { status: 402 });
     }
 
     const expectedNaira = Math.round(service.price * ((rules.deposit_percentage ?? 100) / 100));
     const expectedKobo = expectedNaira * 100;
 
-    const verified = await verifyPaystackTransaction(business.paystack_secret_key, paymentReference);
+    const verified = await verifyPaystackTransaction(business.paystack_secret_key, validPaymentReference);
     // A few naira of rounding slack, not an exact-match requirement -
     // Paystack's own fee handling can shift the settled amount by a kobo
     // or two even when the customer paid the right thing.
     if (!verified || verified.status !== 'success' || Math.abs(verified.amount - expectedKobo) > 200) {
       logError('api/bookings:payment-verify-failed', new Error('Payment verification failed'), {
-        businessId, paymentReference, expectedKobo, got: verified,
+        businessId, paymentReference: validPaymentReference, expectedKobo, got: verified,
       });
       return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
     }
@@ -151,13 +187,13 @@ export async function POST(req: NextRequest) {
     .insert({
       business_id: businessId,
       service_id: serviceId,
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone,
+      customer_name: validName,
+      customer_email: validEmail,
+      customer_phone: validPhone,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       payment_status: paymentStatus,
-      payment_reference: paymentStatus ? paymentReference : null,
+      payment_reference: paymentStatus ? validPaymentReference : null,
       amount_paid: amountPaid,
     })
     .select()
@@ -201,7 +237,7 @@ export async function POST(req: NextRequest) {
   // show a different hour in the email if the server (e.g. a US-region
   // Vercel deploy) runs in a different zone.
   let emailSent = false;
-  if (customerEmail) {
+  if (validEmail) {
     const whenLabel = start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' });
     const bizName = business?.name ?? 'Your appointment';
 
@@ -219,7 +255,7 @@ export async function POST(req: NextRequest) {
     // this is only about telling the truth about the email specifically.
     emailSent = await sendEmail(
       {
-        to: customerEmail,
+        to: validEmail,
         subject: `Your ${bizName} appointment is confirmed`,
         html: renderEmail({
           businessName: bizName,
@@ -227,7 +263,7 @@ export async function POST(req: NextRequest) {
           logoUrl: business?.logo_url,
           preheader: `${service?.name ?? 'Your appointment'} - ${whenLabel}`,
           heading: "You're booked",
-          intro: `Hi ${customerName}, your appointment is confirmed. Here are the details.`,
+          intro: `Hi ${validName}, your appointment is confirmed. Here are the details.`,
           rows,
           cta: business?.slug
             ? { label: 'Manage this booking', url: `${SITE_URL}/${business.slug}/manage/${booking.id}` }

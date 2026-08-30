@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 
 // Both sidebar widths (the 72px rail and the full 256px one) used to
@@ -127,7 +127,6 @@ export default function AdminSidebar({
   navStatus: NavStatus;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
   // Products isn't part of the MVP - the page/route/data still work for
@@ -183,31 +182,11 @@ export default function AdminSidebar({
       ? [{ href: `/${slug}/admin/channels`, label: 'Channels', key: 'channels', badge: navStatus.channelsDisconnected }]
       : []),
   ];
-  // Promoted to top-level destinations, per the audit's original ask -
-  // these previously hung off one "Settings" nav item, visible only once
-  // you were already in Settings. Each is its own line here now, same
-  // page underneath (?section= still does the routing), just not nested.
-  const settingsSections = [
-    { key: 'profile', label: 'Business profile' },
-    { key: 'content', label: 'Website content' },
-    { key: 'rules', label: 'Booking rules' },
-    { key: 'payments', label: 'Payments' },
-    { key: 'domain', label: 'Custom domain' },
-  ];
   const settingsHref = `/${slug}/admin/settings`;
-  const activeSection = searchParams.get('section') ?? 'profile';
 
   const business: NavItem[] = [
     { href: `/${slug}/admin/billing`, label: 'Billing', key: 'billing', badge: navStatus.trialEndingSoon },
-    ...(isOwner
-      ? settingsSections.map((sec) => ({
-          href: `${settingsHref}?section=${sec.key}`,
-          label: sec.label,
-          key: 'settings',
-          badge: false,
-          active: pathname === settingsHref && activeSection === sec.key,
-        }))
-      : []),
+    ...(isOwner ? [{ href: settingsHref, label: 'Settings', key: 'settings', badge: false }] : []),
   ];
 
   // Flat list for the compact rail (see below) - same items, no group
@@ -232,7 +211,6 @@ export default function AdminSidebar({
     label: string;
     iconKey: string;
     badge?: boolean;
-    /** For items that share a pathname and differ only by query string (the promoted Settings sections) - `pathname === href` can't tell them apart on its own. */
     active?: boolean;
   }) {
     const active = activeOverride ?? pathname === href;

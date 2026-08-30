@@ -16,12 +16,6 @@ export const metadata: Metadata = {
 export default function PlatformLoginPage() {
   return (
     <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-paper">
-      {/* justify-center, not justify-between - this panel used to carry a
-          third element at the bottom (a "New here?" link), which is why it
-          was spread top/bottom. That link moved into the main column below
-          (see its own comment), so this is just the eyebrow and headline
-          now - centering them as one unit reads as intentional, not like
-          something is missing from the bottom of the panel. */}
       <div
         className="hidden lg:flex flex-col justify-center gap-6 p-14 border-r border-line"
         style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 65%)' }}
@@ -38,12 +32,12 @@ export default function PlatformLoginPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-14">
+      <div className="flex items-center justify-center px-4 py-8 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
-          <div className="lg:hidden">
+          <div className="lg:hidden mb-5">
             <AuthMark name="Vanova" label="Business owner login" logoUrl="/logo.png" />
           </div>
-          <h2 className="font-display text-[26px] mb-7">Log in</h2>
+          <h2 className="font-display text-[26px] mb-6 sm:mb-7">Log in</h2>
           <PlatformLoginForm />
           {/* Both doors, same column, same weight, at every screen width -
               this used to bury "Create a booking page" in the decorative

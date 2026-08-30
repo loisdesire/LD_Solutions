@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 
 // Was a single row of 6 pills in `overflow-x-auto` - on an actual phone
@@ -28,7 +28,6 @@ export default function AdminMobileNav({
   role: string;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -61,31 +60,13 @@ export default function AdminMobileNav({
     { href: `/${slug}/admin/assistant`, label: 'Assistant', badge: false },
     ...(isOwner ? [{ href: `/${slug}/admin/channels`, label: 'Channels', badge: navStatus.channelsDisconnected }] : []),
   ];
-  // Promoted to top-level, same as the desktop sidebar - these used to
-  // hang off one "Settings" item, only visible once you were already
-  // there. Same page underneath (?section= still routes it).
-  const settingsSections = [
-    { key: 'profile', label: 'Business profile' },
-    { key: 'content', label: 'Website content' },
-    { key: 'rules', label: 'Booking rules' },
-    { key: 'payments', label: 'Payments' },
-    { key: 'domain', label: 'Custom domain' },
-  ];
   const settingsHref = `/${slug}/admin/settings`;
-  const activeSection = searchParams.get('section') ?? 'profile';
 
   const business = [
     { href: `/${slug}/admin/billing`, label: 'Billing', badge: navStatus.trialEndingSoon, active: undefined as boolean | undefined },
-    ...(isOwner ? settingsSections : []).map((sec) => ({
-      href: `${settingsHref}?section=${sec.key}`,
-      label: sec.label,
-      badge: false,
-      active: pathname === settingsHref && activeSection === sec.key,
-    })),
+    ...(isOwner ? [{ href: settingsHref, label: 'Settings', badge: false, active: pathname === settingsHref }] : []),
   ];
-  const currentLabel = pathname === settingsHref
-    ? (settingsSections.find((sec) => sec.key === activeSection)?.label ?? 'Settings')
-    : [...today, ...setup, ...automate, ...business].find((t) => t.href === pathname)?.label ?? 'Dashboard';
+  const currentLabel = [...today, ...setup, ...automate, ...business].find((t) => t.href === pathname)?.label ?? 'Dashboard';
   const anyBadge = navStatus.setupIncomplete || navStatus.channelsDisconnected || navStatus.trialEndingSoon;
 
   async function handleSignOut() {

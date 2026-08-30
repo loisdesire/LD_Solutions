@@ -341,7 +341,7 @@ export default function BookingsList({
                 <div className={`flex flex-col gap-2.5 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>
                   <div className="flex items-center justify-between sm:block">
                     <div>
-                      <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint">
+                      <span className="font-mono text-[12px] uppercase tracking-[0.05em] text-ink-faint">
                         {relativeDay(new Date(b.start_time), startOfToday)}
                       </span>
                       <span
@@ -355,7 +355,7 @@ export default function BookingsList({
                       </span>
                     </div>
                     <span
-                      className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${statusStyle(b.status)}`}
+                      className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] shrink-0 ${statusStyle(b.status)}`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       {b.status.replace('_', ' ')}
@@ -365,7 +365,7 @@ export default function BookingsList({
                   <div className={b.status === 'cancelled' ? 'line-through' : ''}>
                     <div className="font-semibold text-[14px] truncate">{b.customer_name}</div>
                     {b.customer_email && (
-                      <div className="font-mono text-[11.5px] text-ink-faint truncate mt-0.5">
+                      <div className="font-mono text-[12.5px] text-ink-faint truncate mt-0.5">
                         {b.customer_email}
                       </div>
                     )}
@@ -393,7 +393,7 @@ export default function BookingsList({
                   </div>
 
                   <span
-                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 w-fit ${statusStyle(b.status)}`}
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] shrink-0 w-fit ${statusStyle(b.status)}`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {b.status.replace('_', ' ')}

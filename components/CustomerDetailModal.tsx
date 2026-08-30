@@ -81,17 +81,17 @@ export default function CustomerDetailModal({
 
         <div className="grid grid-cols-3 gap-3 px-6 pt-4">
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">Visits</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Visits</div>
             <div className="font-display text-[17px] font-bold text-ink mt-0.5">{customer.bookingCount}</div>
           </div>
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">Total spent</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Total spent</div>
             <div className="font-display text-[17px] font-bold text-ink mt-0.5">
               {customer.totalSpent ? formatMoney(customer.totalSpent) : '-'}
             </div>
           </div>
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">Last visit</div>
+            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Last visit</div>
             <div className="font-display text-[17px] font-bold text-ink mt-0.5">
               {new Date(customer.lastVisit).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             </div>
@@ -111,7 +111,7 @@ export default function CustomerDetailModal({
         )}
 
         <div className="px-6 pt-4 pb-6">
-          <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint mb-2 mt-2">
+          <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint mb-2 mt-2">
             Booking history
           </div>
           <div className="border-t border-line">
@@ -129,7 +129,7 @@ export default function CustomerDetailModal({
                   </div>
                 </div>
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.05em] shrink-0 ${statusStyle(b.status)}`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[11.5px] uppercase tracking-[0.04em] shrink-0 ${statusStyle(b.status)}`}
                 >
                   {statusLabel(b.status)}
                 </span>

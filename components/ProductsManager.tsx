@@ -276,7 +276,7 @@ export default function ProductsManager({
               />
             </div>
           </div>
-          <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_90px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+          <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_90px] gap-4 px-5 py-2.5 bg-paper border-b border-line font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint">
             <div>Product</div>
             <div>Price</div>
             <div>Stock</div>
@@ -363,7 +363,7 @@ export default function ProductsManager({
                     )}
                   </div>
                   <span
-                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
+                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] ${
                       p.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >
@@ -379,7 +379,7 @@ export default function ProductsManager({
                 </div>
                 <div className="hidden sm:block">
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] ${
                       p.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >

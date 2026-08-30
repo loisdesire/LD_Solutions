@@ -37,12 +37,12 @@ export default function Field({
       </label>
       {children({ id, 'aria-describedby': describedBy, 'aria-invalid': error ? true : undefined, required })}
       {hint && !error && (
-        <p id={hintId} className="text-ink-faint text-[12px] mt-1.5">
+        <p id={hintId} className="text-ink-faint text-[13px] mt-1.5">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} role="alert" className="text-error text-[12px] mt-1.5">
+        <p id={errorId} role="alert" className="text-error text-[13px] mt-1.5">
           {error}
         </p>
       )}

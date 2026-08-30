@@ -77,6 +77,16 @@ create table bookings (
   created_at timestamptz default now()
 );
 
+-- A service UUID is globally unique, but a pair-level foreign key is still
+-- needed to guarantee that bookings.business_id and the selected service's
+-- business_id describe the same tenant. Application queries enforce this
+-- too; this constraint is the final backstop if a future route forgets.
+alter table services add constraint services_id_business_id_key unique (id, business_id);
+
+alter table bookings add constraint bookings_service_business_fk
+  foreign key (service_id, business_id)
+  references services (id, business_id);
+
 -- The actual backstop against double-booking - not just app-level
 -- availability checks (those are the fast path / good UX), this is what
 -- closes the race condition where two customers hit "book" on the same
@@ -99,6 +109,52 @@ alter table bookings add constraint no_overlapping_bookings
     business_id with =,
     tstzrange(start_time, end_time) with &&
   ) where (status <> 'cancelled');
+
+-- Atomic, deployment-wide fixed-window rate limiting. API routes call this
+-- with the service role so every serverless instance shares one counter.
+create table if not exists rate_limit_buckets (
+  bucket_key text not null,
+  window_start timestamptz not null,
+  request_count integer not null default 0,
+  primary key (bucket_key, window_start)
+);
+
+create index if not exists rate_limit_buckets_window_start_idx
+  on rate_limit_buckets (window_start);
+
+alter table rate_limit_buckets enable row level security;
+
+create or replace function check_rate_limit(p_key text, p_limit integer, p_window_ms bigint)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_window timestamptz;
+  updated_count integer;
+begin
+  if p_limit < 1 or p_window_ms < 1000 or length(p_key) > 300 then
+    return false;
+  end if;
+
+  current_window := to_timestamp(
+    floor(extract(epoch from clock_timestamp()) * 1000 / p_window_ms) * p_window_ms / 1000.0
+  );
+
+  insert into rate_limit_buckets (bucket_key, window_start, request_count)
+  values (p_key, current_window, 1)
+  on conflict (bucket_key, window_start)
+  do update set request_count = rate_limit_buckets.request_count + 1
+  returning request_count into updated_count;
+
+  delete from rate_limit_buckets where window_start < clock_timestamp() - interval '1 day';
+  return updated_count <= p_limit;
+end;
+$$;
+
+revoke all on function check_rate_limit(text, integer, bigint) from public, anon, authenticated;
+grant execute on function check_rate_limit(text, integer, bigint) to service_role;
 
 -- ============================================
 -- Row Level Security: this is what makes multi-tenant isolation real,

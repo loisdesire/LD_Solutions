@@ -18,7 +18,7 @@ const GRAPH = 'https://graph.facebook.com/v21.0';
 // here on is server-side because it needs the App Secret, which must never
 // reach the browser.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`settings-whatsapp:${getClientIp(req)}`, 10, 5 * 60_000)) {
+  if (!(await rateLimit(`settings-whatsapp:${getClientIp(req)}`, 10, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 

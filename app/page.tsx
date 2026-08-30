@@ -108,8 +108,8 @@ const features = [
         <circle cx="15.5" cy="13" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
-    title: 'Your brand, your page',
-    description: 'Your own accent color, logo, and URL. It reads as your business, not a template.',
+    title: 'Styled for your business',
+    description: 'Use your logo, accent color, cover image, content, and URL on a booking page that keeps your business front and centre.',
   },
   {
     icon: (
@@ -180,31 +180,33 @@ export default function LandingPage() {
         className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
         style={{ background: 'color-mix(in srgb, var(--paper) 82%, transparent)' }}
       >
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-3.5 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
             <img src="/logo.png" alt="Vanova" className="h-8 w-8 shrink-0 object-contain" />
             <span className="text-[15px] font-semibold text-ink tracking-tight">Vanova</span>
           </div>
+
           <div className="hidden md:flex items-center gap-7">
-            <a href="#how-it-works" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
+            <a href="#how-it-works" className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors">
               How it works
             </a>
-            <a href="#features" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
+            <a href="#features" className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors">
               Features
             </a>
-            <a href="#pricing" className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors">
+            <a href="#pricing" className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors">
               Pricing
             </a>
           </div>
-          <div className="flex items-center gap-5">
+
+          <div className="flex items-center gap-2 sm:gap-5">
             <a
               href={`/${DEMO_SLUG}`}
-              className="text-[13.5px] font-medium text-ink-soft hover:text-ink transition-colors hidden sm:inline"
+              className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors hidden sm:inline"
             >
-              See a live demo
+              Demo
             </a>
-            <Button href="/signup" size="sm">
-              Get started
+            <Button href="/signup" size="sm" className="min-h-[40px]">
+              Start free
             </Button>
           </div>
         </div>
@@ -222,74 +224,43 @@ export default function LandingPage() {
           chip breaking its corner, the SlotGrid signature behind it),
           not in fighting the two-column-ness of a hero, which is a
           legible, well-established pattern for a reason. */}
-      <section className="relative max-w-6xl mx-auto px-6 lg:px-10 pt-14 sm:pt-20 pb-16 sm:pb-20 overflow-hidden">
-        {/* The signature: a grid of time slots quietly filling in behind
-            the demo card, not a gradient or a glow. Hidden below lg -
-            there's no negative space for it to read as texture rather
-            than clutter once the columns stack. */}
+      <section className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-10 sm:pt-20 pb-12 sm:pb-20 overflow-hidden">
         <div className="hidden lg:block absolute -right-[6%] top-0 w-[52%] h-full -z-10">
           <SlotGrid className="h-full" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-14 items-center">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1fr] lg:gap-14 items-center">
           <Reveal eager>
-            {/* Was clamp(2.6rem, 6vw, 4.6rem) - up to 73.6px, wrapping to
-                three lines and dominating most of the viewport height in
-                the actual rendered page. Down to a size that still reads
-                as a confident, bold headline without being the whole
-                screen. */}
-            <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-5 max-w-[560px] text-[clamp(2.1rem,3.6vw,3.1rem)]">
+            <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 max-w-[560px] text-[clamp(2.2rem,4vw,3.3rem)]">
               An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
             </h1>
 
-            <p className="text-[16px] text-ink-soft leading-relaxed mb-8 max-w-md">
+            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-md">
               Customers ask for a time on your website or Telegram. Vanova checks your real
               calendar and confirms it, no back-and-forth, 24/7.
             </p>
 
-            {/* grid grid-cols-2, not flex-wrap - the two buttons used to be
-                left-aligned and different widths, which stacked on mobile
-                (the full "Start free for 14 days" text left no room for
-                "See it live" beside it) rather than sitting side by side.
-                Equal columns forces equal width at every size; the label
-                itself shortens below sm; so it fits without wrapping
-                instead of just wrapping the same long text into a smaller
-                box. */}
-            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-3.5">
-              <Button href="/signup" size="lg" className="justify-center">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-center sm:gap-3.5">
+              <Button href="/signup" size="lg" className="justify-center w-full">
                 Start free<span className="hidden sm:inline">&nbsp;for 14 days</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
               </Button>
-              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center">
-                See it live
+              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center w-full">
+                Try live demo
               </Button>
             </div>
 
-            {/* "See it live" only ever showed the customer's side of this -
-                book an appointment, chat with the AI. The other half of
-                the pitch is what the business owner sees every morning,
-                and there was no way to show that without asking someone
-                to sign up first. This drops a visitor straight into the
-                real admin, logged in, no signup - same underlying account
-                every time, so nothing here is ever actually saved. */}
             <a
               href="/api/demo-login"
-              className="inline-flex items-center gap-1.5 mt-4 text-[13px] font-medium text-ink-faint hover:text-ink transition-colors"
+              className="inline-flex items-center gap-1.5 mt-4 text-[14px] font-medium text-ink-faint hover:text-ink transition-colors text-left"
             >
-              Or see the dashboard - no signup needed
+              Or explore the dashboard - no signup needed
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
             </a>
           </Reveal>
 
-          {/* Side-by-side with the text now, not offset below it. The
-              rotation and the floating "Booked in 6 messages" proof
-              chip that used to sit here were both dropped - templated
-              SaaS-hero tells rather than anything specific to this
-              product. The SlotGrid texture behind it and the demo card
-              itself (which is real product UI, not a mockup) already
-              earn the "this is a real object" read without them. */}
           <div className="relative">
             <Reveal eager delay={120} className="relative">
               <SelfBookingDemo />
@@ -298,17 +269,55 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Product proof through the actual system loop—not invented customer
+          counts or testimonials the business does not have yet. The dark
+          interruption also gives the long warm page a deliberate visual
+          signature: a message visibly travels into a confirmed booking. */}
+      <section className="bg-secondary-dark text-white border-y border-black/20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-12 sm:py-16">
+          <Reveal className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+            <div className="max-w-2xl">
+              <p className="text-[13px] font-semibold text-white/60 mb-2">More than a chatbot</p>
+              <h2 className="font-display text-[2rem] sm:text-4xl leading-tight">
+                A real message goes all the way to <span className="italic text-[#f28a63]">booked.</span>
+              </h2>
+            </div>
+            <a href={`/${DEMO_SLUG}`} className="text-[14px] font-semibold text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">
+              Test the live booking page →
+            </a>
+          </Reveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              ['01', 'Customer asks', 'In plain language, on your website or a connected channel.'],
+              ['02', 'Vanova checks', 'Your active services, opening hours, rules, and existing bookings.'],
+              ['03', 'The slot is secured', 'The database blocks conflicting appointments—even if two people try at once.'],
+              ['04', 'Everyone sees it', 'The customer gets confirmation and your dashboard updates.'],
+            ].map(([number, title, copy], index) => (
+              <Reveal key={title} delay={index * 60}>
+                <div className="relative h-full rounded-2xl border border-white/15 bg-white/[0.06] p-5 sm:p-6">
+                  <span className="font-display text-[13px] font-semibold text-[#f28a63]">{number}</span>
+                  <h3 className="font-display text-[19px] font-semibold mt-6 mb-2">{title}</h3>
+                  <p className="text-[14px] leading-relaxed text-white/65">{copy}</p>
+                  {index < 3 && <span className="hidden lg:flex absolute -right-2.5 top-8 z-10 h-5 w-5 items-center justify-center rounded-full bg-[#f28a63] text-secondary-dark text-[12px]">→</span>}
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       {/* Channel strip - honest about what's live vs. coming, on purpose */}
       <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-9">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
           <Reveal className="flex flex-col items-center text-center">
-            <p className="text-[13px] font-medium text-ink-faint mb-5">
+            <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
               One receptionist. Every channel your customers already use.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
               {CHANNELS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 text-[13px] font-medium">
+                <span key={c.label} className="inline-flex items-center gap-1.5 text-[14px] font-medium">
                   <span
                     className="h-1.5 w-1.5 rounded-full shrink-0"
                     style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
@@ -324,13 +333,13 @@ export default function LandingPage() {
 
       {/* Dashboard preview follows the channel separation: customers ask,
           the AI books, and the owner sees the appointment immediately. */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-14 items-center">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 items-center">
           <Reveal>
-            <h2 className="font-display text-4xl sm:text-5xl text-ink mb-5 leading-[0.95] tracking-[-0.04em]">
+            <h2 className="font-display text-[2.1rem] sm:text-5xl text-ink mb-4 sm:mb-5 leading-[0.95] tracking-[-0.04em]">
               Your whole day, <span className="italic" style={{ color: 'var(--accent)' }}>at a glance.</span>
             </h2>
-            <p className="text-[15px] text-ink-soft leading-relaxed mb-6 max-w-md">
+            <p className="text-[15px] text-ink-soft leading-relaxed mb-0 max-w-md">
               Once the AI books an appointment, it appears here automatically. See what&rsquo;s
               coming up, who&rsquo;s next, and how the day is shaping up without chasing messages
               or checking calendars.
@@ -344,9 +353,9 @@ export default function LandingPage() {
 
       {/* Before / after */}
       <section className="border-t border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-12 max-w-xl mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+        <Reveal className="mb-8 sm:mb-12 max-w-xl mx-auto text-center">
+          <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-3 leading-snug">
             Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
           </h2>
           <p className="text-[15px] text-ink-soft leading-relaxed">
@@ -362,13 +371,13 @@ export default function LandingPage() {
 
       {/* How it works - a connected path keeps the sequence feeling like one
           process instead of four separate feature cards. */}
-      <section id="how-it-works" className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-16 sm:py-16">
-          <Reveal className="mb-10 max-w-xl mx-auto text-center">
-            <h2 className="font-display text-3xl sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
+      <section id="how-it-works" className="border-y border-line bg-paper">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-16">
+          <Reveal className="mb-8 sm:mb-10 max-w-xl mx-auto text-center">
+            <h2 className="font-display text-[2rem] sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
             <p className="text-[15px] text-ink-soft">A simple path from the first question to a confirmed appointment.</p>
           </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-9 lg:gap-x-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 sm:gap-x-10 lg:gap-x-12">
             {steps.map((step, i) => (
               <Reveal key={step.title} delay={i * 60} className="relative">
                 <div className="flex items-baseline gap-3 mb-3">
@@ -389,9 +398,9 @@ export default function LandingPage() {
 
       {/* Features */}
       <section id="features" className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="mb-12 mx-auto text-center">
-            <h2 className="font-display text-3xl text-ink mb-2 lg:whitespace-nowrap">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal className="mb-8 sm:mb-12 mx-auto text-center">
+            <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-2 lg:whitespace-nowrap">
               The work gets lighter, <span className="italic" style={{ color: 'var(--accent)' }}>the bookings keep coming.</span>
             </h2>
             <p className="text-[15px] text-ink-soft">
@@ -399,7 +408,7 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10">
             {features.map((feature, index) => (
               <Reveal key={feature.title} delay={index * 50}>
                 <div className="h-full border-t-2 border-line pt-5">
@@ -420,9 +429,9 @@ export default function LandingPage() {
       </section>
 
       {/* Who it's for */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-        <Reveal className="mb-10 mx-auto text-center">
-          <h2 className="font-display text-3xl text-ink mb-3 leading-snug lg:whitespace-nowrap">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+        <Reveal className="mb-8 sm:mb-10 mx-auto text-center">
+          <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-3 leading-snug lg:whitespace-nowrap">
             Built for businesses that <span className="italic">take appointments.</span>
           </h2>
           <p className="text-[15px] text-ink-soft leading-relaxed">
@@ -434,7 +443,7 @@ export default function LandingPage() {
           {businessTypes.map((biz) => (
             <span
               key={biz}
-              className="px-5 py-2.5 rounded-full border border-line bg-surface text-[13px] font-medium text-ink-soft shadow-lift"
+              className="px-5 py-2.5 rounded-full border border-line bg-surface text-[14px] font-medium text-ink-soft shadow-lift"
             >
               {biz}
             </span>
@@ -444,25 +453,25 @@ export default function LandingPage() {
 
       {/* Pricing - one plan, stated plainly, no tiers to compare */}
       <section id="pricing" className="border-t border-line">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20">
-          <Reveal className="text-center mb-12">
-            <h2 className="font-display text-3xl text-ink mb-2">Two plans. Both start free.</h2>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal className="text-center mb-8 sm:mb-12">
+            <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-2">Two plans. Both start free.</h2>
             <p className="text-[15px] text-ink-soft">
               Everything you need to take bookings is in the first one. The second adds an AI that answers questions about your business.
             </p>
           </Reveal>
 
-          <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
             <Reveal delay={80}>
               <div className="rounded-3xl bg-surface border border-line shadow-soft p-8 h-full flex flex-col">
-                <div className="text-[13px] font-semibold text-ink-faint">
+                <div className="text-[14px] font-semibold text-ink-faint">
                   {PLAN_LABEL.core}
                 </div>
                 <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
                   {formatMoney(PLAN_PRICE_NGN.core)}
                   <span className="text-[15px] font-normal text-ink-faint"> /month</span>
                 </div>
-                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
+                <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
 
                 <div className="text-left mt-7 space-y-3 flex-1">
                   {CORE_INCLUDES.map((item) => (
@@ -483,19 +492,19 @@ export default function LandingPage() {
             <Reveal delay={140}>
               <div className="rounded-3xl bg-surface border-2 border-accent shadow-card p-8 h-full flex flex-col relative">
                 <span
-                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-semibold text-accent-contrast"
+                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[12px] font-semibold text-accent-contrast"
                   style={{ background: 'var(--accent)' }}
                 >
                   Most popular
                 </span>
-                <div className="text-[13px] font-semibold" style={{ color: 'var(--accent)' }}>
+                <div className="text-[14px] font-semibold" style={{ color: 'var(--accent)' }}>
                   {PLAN_LABEL.business_intelligence}
                 </div>
                 <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
                   {formatMoney(PLAN_PRICE_NGN.business_intelligence)}
                   <span className="text-[15px] font-normal text-ink-faint"> /month</span>
                 </div>
-                <p className="text-[13px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
+                <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
 
                 <div className="text-left mt-7 space-y-3 flex-1">
                   <p className="text-body-sm font-semibold text-ink">Everything in {PLAN_LABEL.core}, plus:</p>
@@ -516,7 +525,7 @@ export default function LandingPage() {
             </Reveal>
           </div>
 
-          <p className="text-center text-[13px] text-ink-faint mt-8">
+          <p className="text-center text-[14px] text-ink-faint mt-8">
             Not sure? Start on {PLAN_LABEL.core}. You can change plan from your dashboard later.
           </p>
         </div>
@@ -530,7 +539,7 @@ export default function LandingPage() {
               Ready to stop typing <span className="italic">&ldquo;what time works?&rdquo;</span>
             </h2>
             <Button href="/signup">
-              Start free trial
+              Start free for 14 days
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
@@ -554,22 +563,22 @@ export default function LandingPage() {
                 <img src="/logo.png" alt="Vanova" className="h-8 w-8 shrink-0 object-contain" />
                 <span className="text-[14px] font-semibold text-ink tracking-tight">Vanova</span>
               </div>
-              <p className="text-[13px] text-ink-soft leading-relaxed">
+              <p className="text-[14px] text-ink-soft leading-relaxed">
                 An AI receptionist for appointment businesses. Your customers ask, it books.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 md:items-end">
               <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
-                <a href="#how-it-works" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">How it works</a>
-                <a href="#features" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Features</a>
-                <a href="#pricing" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Pricing</a>
-                <a href={`/${DEMO_SLUG}`} className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Live demo</a>
+                <a href="#how-it-works" className="text-[14px] text-ink-soft hover:text-ink transition-colors">How it works</a>
+                <a href="#features" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Features</a>
+                <a href="#pricing" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Pricing</a>
+                <a href={`/${DEMO_SLUG}`} className="text-[14px] text-ink-soft hover:text-ink transition-colors">Live demo</a>
               </nav>
               <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
-                <Link href="/signup" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Create an account</Link>
-                <Link href="/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">Business login</Link>
-                <Link href="/account/login" className="text-[13.5px] text-ink-soft hover:text-ink transition-colors">My bookings</Link>
+                <Link href="/signup" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Create an account</Link>
+                <Link href="/login" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Business login</Link>
+                <Link href="/account/login" className="text-[14px] text-ink-soft hover:text-ink transition-colors">My bookings</Link>
               </nav>
             </div>
           </div>

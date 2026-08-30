@@ -173,17 +173,17 @@ function GridBlock({ booking, onOpen }: { booking: PositionedBooking; onOpen: ()
     >
       <div className={`flex items-baseline gap-1.5 min-w-0 ${compact ? '' : 'flex-col items-start gap-0'}`}>
         <span
-          className={`font-mono text-[10px] font-semibold shrink-0 ${cancelled ? 'line-through' : ''}`}
+          className={`font-mono text-[12px] font-semibold shrink-0 ${cancelled ? 'line-through' : ''}`}
           style={{ color: 'var(--accent)' }}
         >
           {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </span>
-        <span className={`text-[12px] font-medium truncate ${cancelled ? 'line-through' : ''}`}>
+        <span className={`text-[13px] font-medium truncate ${cancelled ? 'line-through' : ''}`}>
           {booking.customer_name}
         </span>
       </div>
       {!compact && (
-        <div className="text-[10.5px] text-ink-faint truncate">
+        <div className="text-[12px] text-ink-faint truncate">
           {serviceName}
           {staffName ? ` · ${staffName}` : ''}
         </div>

@@ -15,7 +15,7 @@ import { logError } from '@/lib/logger';
 // Business Intelligence feature, and that is decided per request below
 // rather than by which URL the browser hit.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`assistant:${getClientIp(req)}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`assistant:${getClientIp(req)}`, 20, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 

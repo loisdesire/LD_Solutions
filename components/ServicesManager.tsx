@@ -478,7 +478,7 @@ export default function ServicesManager({
             </div>
           </div>
 
-          <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_100px] gap-4 px-5 py-3 bg-paper border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+          <div className="hidden sm:grid grid-cols-[1.6fr_1fr_1fr_1fr_100px] gap-4 px-5 py-3 bg-paper border-b border-line font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint">
             <div>Service</div>
             <div>Duration</div>
             <div>Price</div>
@@ -574,12 +574,12 @@ export default function ServicesManager({
                     <div className="min-w-0">
                       <p className="font-semibold text-[14.5px] truncate">{s.name}</p>
                       {s.category && (
-                        <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">{s.category}</p>
+                        <p className="font-mono text-[11.5px] uppercase tracking-[0.05em] text-ink-faint">{s.category}</p>
                       )}
                     </div>
                   </div>
                   <span
-                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] shrink-0 ${
+                    className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] shrink-0 ${
                       s.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >
@@ -596,7 +596,7 @@ export default function ServicesManager({
                 </div>
                 <div className="hidden sm:block">
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] ${
                       s.active ? 'bg-success-bg text-success' : 'bg-ink-wash text-ink-faint'
                     }`}
                   >

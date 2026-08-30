@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { cleanEmail, cleanRequiredText, cleanSlug, isAcceptablePassword } from '@/lib/apiValidation';
 
 // Uses the service role key because this needs to create both an auth user
 // and rows in businesses/staff - the anon key + RLS policies aren't meant
@@ -12,11 +13,23 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`signup:${getClientIp(req)}`, 5, 60 * 60_000)) {
+  if (!(await rateLimit(`signup:${getClientIp(req)}`, 5, 60 * 60_000))) {
     return NextResponse.json({ error: 'Too many signup attempts, please try again later' }, { status: 429 });
   }
 
-  const { businessName, slug, ownerEmail, ownerPassword } = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  const businessName = cleanRequiredText(body.businessName, 100);
+  const slug = cleanSlug(body.slug);
+  const ownerEmail = cleanEmail(body.ownerEmail, true);
+  const ownerPassword = body.ownerPassword;
+  if (!businessName || !slug || !ownerEmail || !isAcceptablePassword(ownerPassword)) {
+    return NextResponse.json({ error: 'Please provide a valid business name, URL, email, and password' }, { status: 400 });
+  }
 
   // 1. Make sure the slug isn't already taken
   const { data: existing } = await supabaseAdmin

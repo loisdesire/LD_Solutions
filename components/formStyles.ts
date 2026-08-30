@@ -18,7 +18,7 @@ export const inputClass =
 export const smallInputClass =
   'rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[13.5px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
 
-export const labelClass = 'block text-[13px] font-medium text-ink-soft mb-1.5';
+export const labelClass = 'block text-[14px] font-medium text-ink-soft mb-1.5';
 
 export const iconBtnClass =
   'h-8 w-8 flex items-center justify-center rounded-lg border border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
+import { isUuid } from '@/lib/apiValidation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,9 +12,12 @@ const supabaseAdmin = createClient(
 // so this looks the invite up with the service role and returns only the
 // minimum needed to render the accept-invite form (not the whole row).
 export async function GET(req: NextRequest) {
+  if (!(await rateLimit(`invite-info:${getClientIp(req)}`, 30, 5 * 60_000))) {
+    return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
+  }
   const token = req.nextUrl.searchParams.get('token');
-  if (!token) {
-    return NextResponse.json({ error: 'Missing token' }, { status: 400 });
+  if (!isUuid(token)) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
   }
 
   const { data: invite } = await supabaseAdmin

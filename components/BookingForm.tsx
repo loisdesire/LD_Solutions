@@ -102,7 +102,7 @@ function StepIndicator({ step }: { step: number }) {
 function ConfirmationRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-dashed border-line last:border-0">
-      <span className="text-[13px] text-ink-faint">{label}</span>
+      <span className="text-[14px] text-ink-faint">{label}</span>
       <span className="text-[14px] font-semibold text-ink">{value}</span>
     </div>
   );
@@ -384,7 +384,7 @@ export default function BookingForm({
 
   if (step === 'confirmed') {
     return (
-      <div className="animate-rise max-w-xl mx-auto">
+      <div className="animate-rise max-w-xl mx-auto px-0 sm:px-0">
         <div className="rounded-3xl bg-surface border border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
           <div
             className="px-6 sm:px-8 pt-10 pb-7 text-center"
@@ -451,7 +451,7 @@ export default function BookingForm({
 
         {/* Was a single ~20px-tall text link. Someone who has just booked
             wants to save it or return to the business - neither was offered. */}
-        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 px-2 sm:px-0">
           {selectedService && selectedSlot && (
             <a
               href={googleCalendarUrl({
@@ -506,7 +506,7 @@ export default function BookingForm({
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
-              <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-ink-faint">
+              <div className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-ink-faint">
                 <span>{formatDuration(selectedService.duration_minutes)}</span>
                 {selectedService.price != null && (
                   <>
@@ -566,8 +566,8 @@ export default function BookingForm({
 
       {step === 'service' && (
         <div className="animate-rise">
-          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">What would you like?</h2>
-          <p className="text-[14.5px] text-ink-faint mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
+          <h2 className="font-display text-[24px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">What would you like?</h2>
+          <p className="text-[14.5px] text-ink-faint mb-6 sm:mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
             <div className="max-w-lg mx-auto text-center py-12">
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
@@ -647,7 +647,7 @@ export default function BookingForm({
           <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">When works for you?</h2>
           <p className={`text-[14px] text-ink-faint text-center ${tzLabel ? 'mb-1' : 'mb-6'}`}>Select a date and an available slot</p>
           {tzLabel && (
-            <p className="text-[12px] text-ink-faint mb-6 text-center">Times shown in {businessName}&rsquo;s timezone ({tzLabel})</p>
+            <p className="text-[13px] text-ink-faint mb-6 text-center">Times shown in {businessName}&rsquo;s timezone ({tzLabel})</p>
           )}
 
           {/* A 409 (slot taken while they were filling in details) sends
@@ -712,7 +712,7 @@ export default function BookingForm({
                 <path d="M12 8v5M12 16h.01" strokeLinecap="round" />
               </svg>
               <p className="text-ink-soft text-[14px]">We couldn&rsquo;t load available times</p>
-              <p className="text-ink-faint text-[12px] mt-1 mb-4">This is us, not you. The times may still be free.</p>
+              <p className="text-ink-faint text-[13px] mt-1 mb-4">This is us, not you. The times may still be free.</p>
               <button
                 type="button"
                 onClick={() => setReloadKey((k) => k + 1)}
@@ -728,13 +728,13 @@ export default function BookingForm({
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
               <p className="text-ink-soft text-[14px]">No openings on this day</p>
-              <p className="text-ink-faint text-[12px] mt-1">Try selecting a different date</p>
+              <p className="text-ink-faint text-[13px] mt-1">Try selecting a different date</p>
             </div>
           ) : (
             <div className="space-y-5 mb-6">
               {slotGroups.map(([period, times]) => (
                 <div key={period}>
-                  <div className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint mb-2.5">
+                  <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint mb-2.5">
                     {period}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -867,7 +867,7 @@ export default function BookingForm({
                   {formatMoney(amountDue)}
                 </span>
               </div>
-              <p className="text-ink-faint text-[11.5px] mt-1.5">
+              <p className="text-ink-faint text-[13px] mt-1.5 leading-relaxed">
                 Paid via Paystack (card or bank transfer).
                 {depositPercentage < 100 && selectedService.price != null && (
                   <> {formatMoney(selectedService.price - amountDue)} due at your visit.</>
@@ -883,7 +883,7 @@ export default function BookingForm({
               just without the deposit/Paystack text that only applies when
               money's actually moving. */}
           {!paymentActive && (
-            <p className="text-ink-faint text-[11.5px] text-center mb-6">
+            <p className="text-ink-faint text-[13px] text-center mb-6 leading-relaxed">
               Free to cancel or reschedule up to {cancellationWindowHours} hour
               {cancellationWindowHours === 1 ? '' : 's'} before your appointment.
             </p>

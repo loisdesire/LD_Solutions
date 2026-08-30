@@ -17,7 +17,7 @@ const supabaseAdmin = createClient(
 // the Telegram flow self-registers its own webhook - fully self-serve
 // once you have the token.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`settings-messenger:${getClientIp(req)}`, 10, 5 * 60_000)) {
+  if (!(await rateLimit(`settings-messenger:${getClientIp(req)}`, 10, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 

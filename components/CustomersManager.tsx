@@ -161,7 +161,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
       </div>
 
       <div className="border-t-2 border-line">
-        <div className="hidden sm:grid grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] gap-4 px-2 py-2.5 border-b border-line font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+        <div className="hidden sm:grid grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] gap-4 px-2 py-2.5 border-b border-line font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint">
           <div>Customer</div>
           <div>Contact</div>
           <div>Visits</div>
@@ -204,7 +204,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                           come back. */}
                       {c.nextVisit && (
                         <span
-                          className="font-mono text-[9.5px] uppercase tracking-[0.05em] rounded-full px-2 py-0.5 shrink-0"
+                          className="font-mono text-[11.5px] uppercase tracking-[0.04em] rounded-full px-2 py-0.5 shrink-0"
                           style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                         >
                           Next {relativeDay(c.nextVisit)}
@@ -212,7 +212,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                       )}
                     </div>
                     {c.lastService && (
-                      <p className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-faint truncate mt-0.5">
+                      <p className="font-mono text-[12px] uppercase tracking-[0.05em] text-ink-faint truncate mt-0.5">
                         Last booked {c.lastService}
                       </p>
                     )}

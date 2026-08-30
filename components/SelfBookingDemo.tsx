@@ -121,7 +121,7 @@ export default function SelfBookingDemo() {
 
       <div className="px-5 pt-3 border-t border-line">
         <p className="font-mono text-[10px] text-ink-faint mb-3">
-          {booked ? 'The business owner never typed a word.' : 'This is the real chat, replaying a real booking.'}
+          {booked ? 'The business owner never typed a word.' : 'Example conversation — see how AI booking works.'}
         </p>
         {/* Decorative, not a real input - this card is a replay, not a
             live chat - but the bar itself is drawn to match the actual

@@ -38,7 +38,8 @@ async function expireStalePaymentHolds(businessId: string) {
 export async function getAvailableSlots(
   businessId: string,
   serviceId: string,
-  dateISO: string // e.g. '2026-07-15' - a calendar date in the business's own timezone
+  dateISO: string, // e.g. '2026-07-15' - a calendar date in the business's own timezone
+  excludeBookingId?: string
 ) {
   await expireStalePaymentHolds(businessId);
 
@@ -50,7 +51,9 @@ export async function getAvailableSlots(
     .from('services')
     .select('duration_minutes')
     .eq('id', serviceId)
-    .single();
+    .eq('business_id', businessId)
+    .eq('active', true)
+    .maybeSingle();
 
   if (!service) return [];
 
@@ -86,13 +89,16 @@ export async function getAvailableSlots(
   const dayStart = zonedTimeToUtc(dateISO, '00:00', timeZone);
   const dayEnd = new Date(dayStart.getTime() + 36 * 3600000); // 36h covers any timezone's full day + margin
 
-  const { data: existingBookings } = await supabaseAdmin
+  let bookingsQuery = supabaseAdmin
     .from('bookings')
     .select('start_time, end_time')
     .eq('business_id', businessId)
     .neq('status', 'cancelled')
     .gte('start_time', dayStart.toISOString())
     .lte('start_time', dayEnd.toISOString());
+
+  if (excludeBookingId) bookingsQuery = bookingsQuery.neq('id', excludeBookingId);
+  const { data: existingBookings } = await bookingsQuery;
 
   // 5. Generate candidate slots and filter out anything that overlaps an
   // existing booking (expanded by the buffer on each side).
@@ -153,7 +159,9 @@ export async function getAvailabilityForRange(
     .from('services')
     .select('duration_minutes')
     .eq('id', serviceId)
-    .single();
+    .eq('business_id', businessId)
+    .eq('active', true)
+    .maybeSingle();
 
   if (!service) return {};
 

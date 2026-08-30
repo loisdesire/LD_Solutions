@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
+import { cleanSlug } from '@/lib/apiValidation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,12 +15,12 @@ const supabaseAdmin = createClient(
 // creating anything - this is purely a faster no for the common case,
 // not the source of truth.
 export async function GET(req: NextRequest) {
-  if (!rateLimit(`check-slug:${getClientIp(req)}`, 30, 60_000)) {
+  if (!(await rateLimit(`check-slug:${getClientIp(req)}`, 30, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
-  const slug = req.nextUrl.searchParams.get('slug')?.trim().toLowerCase();
-  if (!slug || slug.length < 2) {
+  const slug = cleanSlug(req.nextUrl.searchParams.get('slug'));
+  if (!slug) {
     return NextResponse.json({ available: false });
   }
 

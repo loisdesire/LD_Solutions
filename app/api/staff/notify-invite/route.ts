@@ -27,7 +27,7 @@ const supabaseAdmin = createClient(
 // reaches the email - recipient, business name, link - is looked up
 // server-side from the invite row, so none of it is caller-controlled.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`invite-email:${getClientIp(req)}`, 10, 10 * 60_000)) {
+  if (!(await rateLimit(`invite-email:${getClientIp(req)}`, 10, 10 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 

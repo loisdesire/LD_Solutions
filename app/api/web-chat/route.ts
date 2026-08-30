@@ -5,6 +5,7 @@ import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { createCustomerServerSupabase } from '@/lib/supabase-server';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { cleanRequiredText, isUuid } from '@/lib/apiValidation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,8 +56,8 @@ export async function GET(req: NextRequest) {
   const businessId = req.nextUrl.searchParams.get('businessId');
   const sessionId = req.nextUrl.searchParams.get('sessionId');
   const bookingId = req.nextUrl.searchParams.get('bookingId');
-  if (!businessId || (!sessionId && !bookingId)) {
-    return NextResponse.json({ error: 'Missing businessId or sessionId' }, { status: 400 });
+  if (!isUuid(businessId) || (sessionId != null && !isUuid(sessionId)) || (bookingId != null && !isUuid(bookingId)) || (!sessionId && !bookingId)) {
+    return NextResponse.json({ error: 'Invalid business, session, or booking' }, { status: 400 });
   }
 
   const identity = await resolveIdentity(businessId, bookingId, sessionId);
@@ -75,16 +76,23 @@ export async function GET(req: NextRequest) {
 // per-channel customer identifier the other channels already use, unless
 // resolveIdentity above found a real, verified one to use instead.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`web-chat:${getClientIp(req)}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`web-chat:${getClientIp(req)}`, 20, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many messages, please slow down.' }, { status: 429 });
   }
 
-  const { businessId, sessionId, bookingId, message } = await req.json();
-  if (!businessId || (!sessionId && !bookingId) || typeof message !== 'string' || !message.trim()) {
-    return NextResponse.json({ error: 'Missing businessId, sessionId, or message' }, { status: 400 });
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  const { businessId, sessionId, bookingId, message } = body;
+  const safeMessage = cleanRequiredText(message, 2000);
+  if (!isUuid(businessId) || (sessionId != null && !isUuid(sessionId)) || (bookingId != null && !isUuid(bookingId)) || (!sessionId && !bookingId) || !safeMessage) {
+    return NextResponse.json({ error: 'Invalid business, session, booking, or message' }, { status: 400 });
   }
 
-  const identity = await resolveIdentity(businessId, bookingId ?? null, sessionId ?? null);
+  const identity = await resolveIdentity(businessId, typeof bookingId === 'string' ? bookingId : null, typeof sessionId === 'string' ? sessionId : null);
   if (!identity) {
     return NextResponse.json({ error: 'Missing businessId, sessionId, or message' }, { status: 400 });
   }
@@ -93,7 +101,7 @@ export async function POST(req: NextRequest) {
     const reply = await runWhatsappAgent({
       businessId,
       customerPhone: identity,
-      incomingText: message.trim(),
+      incomingText: safeMessage,
     });
     return NextResponse.json({ reply });
   } catch (err) {

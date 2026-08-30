@@ -137,7 +137,7 @@ export default async function BusinessBookingPage({
           on a phone. A fixed height plus overflow-hidden below used to
           silently clip whatever didn't fit; min-height lets the section
           grow to whatever the content actually needs instead. */}
-      <section className="relative min-h-[420px] sm:min-h-[480px] pt-14 sm:pt-16 pb-8 sm:pb-0 flex items-center overflow-hidden">
+      <section className="relative min-h-[420px] sm:min-h-[480px] pt-10 sm:pt-16 pb-8 sm:pb-0 flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           {business.cover_image_url ? (
             // alt="" is correct, not an oversight - decorative background
@@ -174,7 +174,7 @@ export default async function BusinessBookingPage({
           <div className="absolute inset-0 bg-black/45" />
         </div>
 
-        <div className="relative z-10 w-full px-6 sm:px-10 max-w-5xl mx-auto text-white">
+        <div className="relative z-10 w-full px-4 sm:px-10 max-w-5xl mx-auto text-white">
           <div className="max-w-2xl" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.45)' }}>
             {/* The marketing site's own "see it live" link already says
                 "demo" in its own text, but that disclosure lived only on
@@ -233,35 +233,28 @@ export default async function BusinessBookingPage({
               </div>
             )}
 
-            {/* Chatting with the AI agent is a first-class way to book,
-                not a minor extra - it gets equal billing with "Book now"
-                here in the hero, not just a small corner bubble someone
-                has to notice on their own. */}
-            <div className="flex flex-wrap items-center gap-3 mt-6 sm:mt-8">
+            {/* The deterministic form is the primary conversion path. Chat
+                remains easy to discover for customers who prefer it, but
+                no longer competes at equal visual weight with two other
+                booking entry points (the form CTA and floating widget). */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 sm:mt-8">
               <a
                 href="#book"
-                className="px-6 py-3 min-h-[48px] flex items-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                className="w-full sm:w-auto px-6 py-3 min-h-[48px] flex items-center justify-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
               >
                 Book an appointment
               </a>
-              {/* Was "Not sure? Just ask" - equal visual weight to Book
-                  now, but copy that still framed chat as the confused-
-                  person's fallback, not an equally real way to book. The
-                  actual promise ("an AI receptionist that books the
-                  appointment") never shows up if the one place a
-                  customer meets it talks itself down to a help option.
-                  This says what it does. */}
               <a
                 href="#chat"
-                className="flex items-center gap-2 px-6 py-3 min-h-[48px] rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
-                style={{ background: 'rgba(255,255,255,0.16)', color: '#fff', border: '2px solid rgba(255,255,255,0.9)', textShadow: 'none' }}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 min-h-[48px] rounded-full font-medium text-[14px] transition-colors hover:bg-white/10 active:scale-95"
+                style={{ color: '#fff', textShadow: 'none' }}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 4h16v12H8l-4 4V4z" />
                   <path d="M8 9h8M8 12h5" />
                 </svg>
-                Chat to book
+                Prefer to chat? Ask our AI
               </a>
             </div>
 
@@ -270,7 +263,7 @@ export default async function BusinessBookingPage({
                 the two questions a first-time visitor actually has before
                 they'll click "Book". */}
             {(startingPrice != null || requirePayment) && (
-              <p className="text-[13px] text-white/80 mt-4">
+              <p className="text-[14px] text-white/85 mt-4">
                 {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
                 {startingPrice != null && requirePayment && ' · '}
                 {requirePayment && (
@@ -287,7 +280,7 @@ export default async function BusinessBookingPage({
         </div>
       </section>
 
-      <main id="book" className="relative max-w-5xl mx-auto px-6 sm:px-10 py-16 sm:py-20 scroll-mt-20">
+      <main id="book" className="relative max-w-5xl mx-auto px-4 sm:px-10 py-12 sm:py-20 scroll-mt-20">
         {acceptingBookings ? (
           <BookingForm
             businessId={business.id}

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ ok: true });
   }
 
-  if (!rateLimit(`telegram:${chatId}`, 20, 5 * 60_000)) {
+  if (!(await rateLimit(`telegram:${chatId}`, 20, 5 * 60_000))) {
     await sendTelegramMessage(token, chatId, "You're sending messages a little fast, please wait a moment and try again.");
     return NextResponse.json({ ok: true });
   }

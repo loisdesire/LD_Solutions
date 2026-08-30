@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(
 // via Telegram's API (no manual console step needed, unlike Twilio), and
 // save it. Fully self-serve, unlike WhatsApp's semi-manual flow below.
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`settings-telegram:${getClientIp(req)}`, 10, 5 * 60_000)) {
+  if (!(await rateLimit(`settings-telegram:${getClientIp(req)}`, 10, 5 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
   }
 
