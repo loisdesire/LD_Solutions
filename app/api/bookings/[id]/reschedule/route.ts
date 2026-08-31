@@ -57,7 +57,6 @@ export async function POST(
     getBusinessTimezone(booking.business_id),
   ]);
 
-  const bufferMinutes = rules?.buffer_minutes ?? 0;
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
   const windowHours = rules?.cancellation_window_hours ?? 24;
 
@@ -83,26 +82,19 @@ export async function POST(
     return NextResponse.json({ error: 'That date is not available for booking' }, { status: 400 });
   }
 
+  // getAvailableSlots is the real check - it's already staff-capacity
+  // aware (see lib/slotGenerator.ts) and already excludes this exact
+  // booking via excludeBookingId, so it correctly answers "is there
+  // actually room" for a multi-staff business, not just "is the whole
+  // business clear". A second, cruder overlap check used to run right
+  // after this one - unlike this one, staff-blind, so in a multi-staff
+  // business it could reject a reschedule this check had just approved,
+  // purely because some unrelated staff member had a booking at the
+  // overlapping time. Removed rather than staff-scoped: it was fully
+  // redundant with this check once this one became capacity-aware.
   const realSlots = await getAvailableSlots(booking.business_id, booking.service_id, newStartDateInTz, id);
   if (!realSlots.some((slot) => new Date(slot).getTime() === newStart.getTime())) {
     return NextResponse.json({ error: 'That time is outside opening hours or no longer available' }, { status: 409 });
-  }
-
-  const { data: others } = await supabaseAdmin
-    .from('bookings')
-    .select('start_time, end_time')
-    .eq('business_id', booking.business_id)
-    .neq('id', id)
-    .neq('status', 'cancelled');
-
-  const overlaps = (others ?? []).some((b) => {
-    const bStart = new Date(new Date(b.start_time).getTime() - bufferMinutes * 60000);
-    const bEnd = new Date(new Date(b.end_time).getTime() + bufferMinutes * 60000);
-    return newStart < bEnd && newEnd > bStart;
-  });
-
-  if (overlaps) {
-    return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });
   }
 
   const { data: updated, error } = await supabaseAdmin

@@ -10,6 +10,7 @@ import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
 import { formatMoney } from '@/lib/formatMoney';
 import { notifyStaffOfNewBooking } from '@/lib/pushNotify';
+import { pickAvailableStaffId } from '@/lib/assignStaff';
 import {
   cleanEmail,
   cleanIsoInstant,
@@ -183,11 +184,25 @@ export async function POST(req: NextRequest) {
     amountPaid = expectedNaira;
   }
 
+  // Picks whichever staff member is actually free for this window - see
+  // lib/assignStaff.ts. No staff free (every one of them already has a
+  // conflicting booking) reads the same as "the slot's gone": the
+  // availability check that offered this time should already have
+  // excluded it once every staff member was accounted for, so reaching
+  // this with nobody free means it was taken in the gap between that
+  // check and this request, same race the exclusion constraint below
+  // also guards against.
+  const assignedStaffId = await pickAvailableStaffId(businessId, start.toISOString(), end.toISOString());
+  if (!assignedStaffId) {
+    return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });
+  }
+
   const { data: booking, error } = await supabaseAdmin
     .from('bookings')
     .insert({
       business_id: businessId,
       service_id: serviceId,
+      staff_id: assignedStaffId,
       customer_name: validName,
       customer_email: validEmail,
       customer_phone: validPhone,
@@ -202,10 +217,12 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     // 23P01 = Postgres exclusion_violation - the DB-level guarantee that no
-    // two non-cancelled bookings for the same business can overlap in time.
+    // two non-cancelled bookings for the same staff member can overlap in
+    // time (see supabase/schema.sql - staff-scoped now, not business-wide).
     // This is what actually closes the race condition two customers could
-    // hit booking the same slot at the same moment; everything upstream
-    // (the availability check) is just the fast path / good UX.
+    // hit booking the same staff member's slot at the same moment;
+    // everything upstream (the availability check, the pickAvailableStaffId
+    // call above) is just the fast path / good UX.
     if ((error as { code?: string }).code === '23P01') {
       return NextResponse.json({ error: 'That time is no longer available' }, { status: 409 });
     }

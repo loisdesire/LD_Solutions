@@ -115,16 +115,47 @@ end $$;
 -- slot within the same second. Whichever insert lands first wins; the
 -- second gets Postgres error 23P01, which app/api/bookings/route.ts and
 -- the AI agent's create_booking tool both already catch and turn into
--- "that time is no longer available." Scoped to (business_id, time_range)
--- only, not staff_id - two different staff members currently can't be
--- double-booked into the same slot either, since bookings aren't actually
--- assigned to a specific staff_id anywhere in the live booking flow yet.
--- (This constraint already exists in the live database; added here only
--- so schema.sql matches reality, since it must have been added by hand at
--- some point rather than through this file.)
--- Needed for the "=" comparison on a non-range column (business_id) inside
+-- "that time is no longer available."
+-- Needed for the "=" comparison on a non-range column (staff_id) inside
 -- a GIST exclusion constraint.
 create extension if not exists btree_gist;
+
+-- Was scoped to (business_id, time_range) only, not staff_id - since
+-- bookings.staff_id was never actually set by any live booking-creation
+-- path, that was the only option at the time, but it meant a business
+-- with three staff could only ever have ONE appointment at a time across
+-- its whole team: any second booking anywhere in the business at an
+-- overlapping time got rejected as a conflict, staff-blind. Now that
+-- lib/assignStaff.ts assigns a real staff_id to every new booking, this
+-- is scoped per staff member instead - different staff can be booked
+-- concurrently, the same staff member still can't be double-booked.
+-- Restricted to staff_id is not null so it only ever applies to rows that
+-- actually have one (every new booking, going forward) - see the backfill
+-- below for what happens to existing rows that don't yet.
+do $$ begin
+  alter table bookings drop constraint if exists no_overlapping_bookings;
+exception when undefined_object then null;
+end $$;
+
+-- Existing upcoming bookings all predate staff_id being set at all, so
+-- they're not covered by the new staff-scoped constraint below until
+-- they have one. Backfilling every business's staff to whichever of its
+-- staff rows is oldest (arbitrary but deterministic - there's no way to
+-- know in hindsight who actually served a given historical booking, and
+-- it doesn't matter for conflict-prevention purposes: the OLD business-
+-- wide constraint already guarantees none of these ever overlapped each
+-- other in the first place, regardless of which staff member ends up
+-- attached). Only touches bookings that are still upcoming and not
+-- cancelled - a past booking has no future conflict to protect against,
+-- so it's left alone rather than rewriting history for no operational
+-- benefit.
+update bookings b
+set staff_id = (
+  select s.id from staff s where s.business_id = b.business_id order by s.created_at asc limit 1
+)
+where b.staff_id is null
+  and b.status <> 'cancelled'
+  and b.end_time > now();
 
 -- A GIST exclusion constraint is backed by its own index under the hood,
 -- so a name collision here raises 42P07 (duplicate_table), not 42710
@@ -133,11 +164,11 @@ create extension if not exists btree_gist;
 -- transaction (and everything else in the same pasted script) the first
 -- time this ran against a database where the constraint already existed.
 do $$ begin
-  alter table bookings add constraint no_overlapping_bookings
+  alter table bookings add constraint no_overlapping_bookings_per_staff
     exclude using gist (
-      business_id with =,
+      staff_id with =,
       tstzrange(start_time, end_time) with &&
-    ) where (status <> 'cancelled');
+    ) where (status <> 'cancelled' and staff_id is not null);
 exception when duplicate_object or duplicate_table then null;
 end $$;
 

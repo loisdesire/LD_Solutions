@@ -8,6 +8,15 @@ type Booking = { start_time: string; end_time: string };
 // for the business's timezone, and excludes anything that overlaps an
 // existing booking (padded by the buffer on each side). Split out from
 // getAvailableSlots so this logic can be unit tested without a database.
+//
+// staffCapacity defaults to 1, which reproduces the exact old behavior
+// (excluded the moment ANY booking overlapped) for a single-staff
+// business or any caller that doesn't pass it. A business with N staff
+// can have up to N overlapping bookings before a slot actually counts as
+// full - see lib/assignStaff.ts for the matching change on the
+// booking-creation side (this only decides what's OFFERED as bookable;
+// which specific staff member a booking actually lands on is decided
+// there, at insert time).
 export function generateSlots({
   dateISO,
   timeZone,
@@ -15,6 +24,7 @@ export function generateSlots({
   durationMinutes,
   bufferMinutes,
   booked,
+  staffCapacity = 1,
 }: {
   dateISO: string;
   timeZone: string;
@@ -22,6 +32,7 @@ export function generateSlots({
   durationMinutes: number;
   bufferMinutes: number;
   booked: Booking[];
+  staffCapacity?: number;
 }): string[] {
   const slots: string[] = [];
 
@@ -33,13 +44,13 @@ export function generateSlots({
       const slotStart = new Date(cursor);
       const slotEnd = new Date(cursor.getTime() + durationMinutes * 60000);
 
-      const overlaps = booked.some((b) => {
+      const overlapCount = booked.filter((b) => {
         const bStart = new Date(new Date(b.start_time).getTime() - bufferMinutes * 60000);
         const bEnd = new Date(new Date(b.end_time).getTime() + bufferMinutes * 60000);
         return slotStart < bEnd && slotEnd > bStart;
-      });
+      }).length;
 
-      if (!overlaps) {
+      if (overlapCount < Math.max(1, staffCapacity)) {
         slots.push(slotStart.toISOString());
       }
 

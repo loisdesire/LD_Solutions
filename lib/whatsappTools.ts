@@ -9,6 +9,7 @@ import { SITE_URL } from './site';
 import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
 import { formatMoney } from './formatMoney';
 import { notifyStaffOfNewBooking } from './pushNotify';
+import { pickAvailableStaffId } from './assignStaff';
 import { logError } from './logger';
 import { randomUUID } from 'crypto';
 
@@ -241,11 +242,24 @@ export async function createBooking(
   const start = zonedTimeToUtc(args.date, args.time, timeZone);
   const end = new Date(start.getTime() + service.duration_minutes * 60000);
 
+  // Same reasoning as app/api/bookings/route.ts - picks whichever staff
+  // member is actually free for this window (see lib/assignStaff.ts) so
+  // the exclusion constraint below is scoped to a real person, not the
+  // whole business. Checked here even for the payment-hold path: the hold
+  // itself is what reserves this specific staff member's slot while the
+  // customer pays, so it needs a real staff_id from the moment it's
+  // created, not just once payment confirms.
+  const assignedStaffId = await pickAvailableStaffId(ctx.businessId, start.toISOString(), end.toISOString());
+  if (!assignedStaffId) {
+    return { error: 'That time is no longer available. Please choose another slot.' };
+  }
+
   const { data: booking, error } = await supabaseAdmin
     .from('bookings')
     .insert({
       business_id: ctx.businessId,
       service_id: service.id,
+      staff_id: assignedStaffId,
       status: paymentRequired ? 'pending_payment' : 'confirmed',
       payment_status: paymentRequired ? 'pending' : null,
       payment_expires_at: paymentRequired ? new Date(Date.now() + 15 * 60_000).toISOString() : null,
@@ -260,6 +274,9 @@ export async function createBooking(
     .single();
 
   if (error) {
+    // 23P01 = exclusion_violation - the staff-scoped DB backstop (see
+    // supabase/schema.sql) against the same race pickAvailableStaffId
+    // above is the fast-path check for.
     if ((error as { code?: string }).code === '23P01') {
       return { error: 'That time is no longer available. Please choose another slot.' };
     }
@@ -598,7 +615,7 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
 
   const { data } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, customer_phone, status, start_time, service_id, services(duration_minutes)')
+    .select('id, business_id, customer_phone, status, start_time, service_id, staff_id, services(duration_minutes)')
     .eq('business_id', ctx.businessId)
     .eq('customer_phone', ctx.customerPhone)
     .eq('service_id', service.id)
@@ -665,12 +682,26 @@ export async function rescheduleBooking(
   if (daysOut < 0 || daysOut > maxAdvanceDays) return { error: 'That date is not available for booking.' };
 
   const bufferMinutes = rules?.buffer_minutes ?? 0;
-  const { data: others } = await supabaseAdmin
+  const existingStaffId = (existing as unknown as { staff_id: string | null }).staff_id;
+  // Scoped to the SAME staff member this booking is already assigned to -
+  // rescheduling doesn't reassign staff, it just needs to know whether
+  // THAT person is free at the new time, not whether the whole business
+  // is. Was checking every other booking business-wide regardless of
+  // staff, which meant a reschedule in a multi-staff business could be
+  // refused as "not available" purely because some other staff member had
+  // an unrelated booking at the overlapping time - the same staff-blind
+  // bug the booking-creation paths had, just on the reschedule side.
+  // Falls back to the old business-wide check only if this booking
+  // somehow has no staff_id yet (shouldn't happen once every booking is
+  // assigned one, but safer than assuming).
+  let othersQuery = supabaseAdmin
     .from('bookings')
     .select('start_time, end_time')
     .eq('business_id', ctx.businessId)
     .neq('id', existing.id)
     .neq('status', 'cancelled');
+  othersQuery = existingStaffId ? othersQuery.eq('staff_id', existingStaffId) : othersQuery;
+  const { data: others } = await othersQuery;
 
   const overlaps = (others ?? []).some((b) => {
     const bStart = new Date(new Date(b.start_time).getTime() - bufferMinutes * 60000);

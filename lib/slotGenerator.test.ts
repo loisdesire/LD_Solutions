@@ -77,4 +77,40 @@ describe('generateSlots', () => {
       true
     );
   });
+
+  describe('staffCapacity (multi-staff businesses)', () => {
+    it('with 2 staff, one booking still leaves the slot offered (someone else is free)', () => {
+      const slots = generateSlots({
+        ...baseArgs,
+        staffCapacity: 2,
+        booked: [{ start_time: '2026-07-13T09:45:00.000Z', end_time: '2026-07-13T10:30:00.000Z' }],
+      });
+      expect(slots).toContain('2026-07-13T09:45:00.000Z');
+    });
+
+    it('with 2 staff, two overlapping bookings fill the slot (everyone is busy)', () => {
+      const slots = generateSlots({
+        ...baseArgs,
+        staffCapacity: 2,
+        booked: [
+          { start_time: '2026-07-13T09:45:00.000Z', end_time: '2026-07-13T10:30:00.000Z' },
+          { start_time: '2026-07-13T09:50:00.000Z', end_time: '2026-07-13T10:15:00.000Z' },
+        ],
+      });
+      expect(slots).not.toContain('2026-07-13T09:45:00.000Z');
+    });
+
+    it('defaults to 1 (unchanged single-staff behavior) when omitted', () => {
+      const slots = generateSlots({
+        ...baseArgs,
+        booked: [{ start_time: '2026-07-13T09:45:00.000Z', end_time: '2026-07-13T10:30:00.000Z' }],
+      });
+      expect(slots).not.toContain('2026-07-13T09:45:00.000Z');
+    });
+
+    it('staffCapacity 0 is treated as 1, not "always full"', () => {
+      const slots = generateSlots({ ...baseArgs, staffCapacity: 0 });
+      expect(slots.length).toBeGreaterThan(0);
+    });
+  });
 });
