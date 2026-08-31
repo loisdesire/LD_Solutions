@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -31,6 +31,21 @@ export default function AdminMobileNav({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // The menu panel used to just be inline content pushing this sticky
+  // header taller - so the page underneath kept scrolling normally
+  // behind/past it while it stayed pinned at the top, which read as the
+  // background "still scrolling" while the menu was open. Locked here,
+  // same as ChatGPT's own mobile sidebar: the page holds still, only the
+  // panel's own content (capped with overflow-y-auto below) scrolls.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [menuOpen]);
 
   // Staff, Channels, and the Settings sections all redirect a non-owner
   // straight back to the dashboard - same reasoning as AdminSidebar.
@@ -166,7 +181,12 @@ export default function AdminMobileNav({
       </div>
 
       {menuOpen && (
-        <div id="admin-mobile-nav-menu" role="menu" className="border-t border-line px-4 py-4 animate-rise">
+        <div
+          id="admin-mobile-nav-menu"
+          role="menu"
+          className="border-t border-line px-4 py-4 animate-rise overflow-y-auto"
+          style={{ maxHeight: 'calc(100vh - 64px)' }}
+        >
           <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
             Today
           </div>

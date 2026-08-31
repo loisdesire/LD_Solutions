@@ -16,10 +16,13 @@ export const metadata: Metadata = { title: 'Billing' };
 // a plain message for a non-owner rather than ever redirecting away.
 export default async function BillingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ locked?: string }>;
 }) {
   const { slug } = await params;
+  const { locked } = await searchParams;
   const { business, supabase, staff } = await requireStaffSession(slug, { skipSubscriptionCheck: true });
 
   if (staff.role !== 'owner') {
@@ -65,7 +68,7 @@ export default async function BillingPage({
   return (
     <div>
       <PageHeader eyebrow="Business" title="Billing" />
-      <BillingManager slug={slug} state={state} history={history ?? []} />
+      <BillingManager slug={slug} state={state} history={history ?? []} initiallyLocked={locked === '1'} />
     </div>
   );
 }

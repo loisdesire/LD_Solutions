@@ -136,6 +136,23 @@ export default function WebChatWidget({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, thinking]);
 
+  // Below sm, the panel now takes over most of the screen (see the
+  // className below) rather than sitting as a small corner card, so it
+  // reads as a real screen, not a widget floating over one - lock
+  // background scroll to match, same as any other mobile sheet. Left
+  // alone above sm, where the panel still coexists with the page exactly
+  // as the comment on the dialog below describes.
+  useEffect(() => {
+    if (!open) return;
+    const isMobile = typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches;
+    if (!isMobile) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   // Stray interval outliving the component (widget closed/unmounted
   // mid-reveal) would keep calling setState on nothing.
   useEffect(() => {
@@ -228,7 +245,7 @@ export default function WebChatWidget({
           });
         }}
         aria-label={open ? 'Close chat' : 'Open chat'}
-        className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
+        className={`fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${open ? 'hidden sm:flex' : 'flex'}`}
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
@@ -244,10 +261,18 @@ export default function WebChatWidget({
       </button>
 
       {open && (
+        // Below sm: true edge-to-edge takeover (inset-0, square corners)
+        // rather than a card with margins - a margined card left gaps at
+        // the top/bottom where the real page (header, page content) was
+        // still visible behind it, which read as broken, not "blurred".
+        // Fully opaque and covering the whole viewport, so there's
+        // nothing left behind it to blur - no separate backdrop needed.
+        // sm and up: unchanged, still the small corner card that
+        // coexists with the page (see the comment below).
         <div
           role="dialog"
           aria-label={`Chat with ${businessName ?? 'us'}`}
-          className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] rounded-2xl bg-surface border border-line shadow-card flex flex-col overflow-hidden animate-rise"
+          className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[520px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border border-line shadow-card flex flex-col overflow-hidden animate-rise"
         >
           {/* Matches SelfBookingDemo's header exactly, on purpose - that's
               the "new chatbot" look: a solid accent avatar carrying the

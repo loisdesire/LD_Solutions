@@ -55,7 +55,11 @@ export async function requireStaffSession(
       .maybeSingle();
 
     if (!getSubscriptionState(sub).hasAccess) {
-      redirect(`/${slug}/admin/billing`);
+      // The query param is what lets the billing page tell "you landed
+      // here because access ran out" apart from "you came here on your
+      // own to check your plan" - only the former should interrupt with
+      // the popup below; the latter already knows why they're there.
+      redirect(`/${slug}/admin/billing?locked=1`);
     }
   }
 

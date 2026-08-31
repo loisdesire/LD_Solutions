@@ -6,6 +6,46 @@ import Link from 'next/link';
 type Message = { role: 'user' | 'assistant'; content: string };
 type PendingImage = { url: string; previewUrl: string };
 
+// The model naturally reaches for markdown when it summarizes a set of
+// details (bold, "- " bullets, occasionally a [text](url) link) - this
+// used to render as literal asterisks, hyphens and bracket/paren syntax
+// since the bubble below was plain whitespace-pre-wrap text with no
+// parsing at all. Deliberately small: just the handful of patterns the
+// model actually produces, not a full markdown parser. A link's raw
+// href never shows even if the model includes one (see the assistant/
+// onboarding system prompts, which now ask it not to) - only the link
+// text renders, so a stray URL can't dump raw storage links into the
+// chat regardless of what the model does.
+function formatAssistantContent(text: string): ReactNode {
+  return text.split('\n').map((line, i) => {
+    const bullet = line.match(/^(\s*)[-*]\s+(.*)/);
+    return (
+      <span key={i} className="block">
+        {bullet ? `• ${formatInline(bullet[2])}` : formatInline(line)}
+      </span>
+    );
+  });
+}
+
+function formatInline(text: string): ReactNode {
+  const pattern = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = pattern.exec(text))) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    if (match[1] !== undefined) {
+      parts.push(<strong key={key++}>{match[1]}</strong>);
+    } else if (match[2] !== undefined) {
+      parts.push(<span key={key++} className="font-medium">{match[2]}</span>);
+    }
+    lastIndex = pattern.lastIndex;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length > 0 ? parts : text;
+}
+
 // Shared chat widget behind both dashboard AI assistants (Insights,
 // Schedule assistant) - was two copies of the identical fetch/state/
 // scroll-to-bottom/message-rendering logic, differing only in which
@@ -204,7 +244,7 @@ export default function AssistantChat({
                   m.role === 'user' ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink'
                 }`}
               >
-                {m.content}
+                {m.role === 'assistant' ? formatAssistantContent(m.content) : m.content}
               </div>
             </div>
           ))}
