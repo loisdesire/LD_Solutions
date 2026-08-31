@@ -279,7 +279,7 @@ export default function LandingPage() {
             <div className="max-w-2xl">
               <p className="text-[13px] font-semibold text-white/60 mb-2">More than a chatbot</p>
               <h2 className="font-display text-[2rem] sm:text-4xl leading-tight">
-                A real message goes all the way to <span className="italic text-[#f28a63]">booked.</span>
+                A real message goes all the way to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span>
               </h2>
             </div>
             <a href={`/${DEMO_SLUG}`} className="text-[14px] font-semibold text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">
@@ -296,10 +296,24 @@ export default function LandingPage() {
             ].map(([number, title, copy], index) => (
               <Reveal key={title} delay={index * 60}>
                 <div className="relative h-full rounded-2xl border border-white/15 bg-white/[0.06] p-5 sm:p-6">
-                  <span className="font-display text-[13px] font-semibold text-[#f28a63]">{number}</span>
+                  {/* Real accent (#c74a1e), not the invented #f28a63 this
+                      section originally shipped with - that color doesn't
+                      exist anywhere else in the brand. Sized up a touch
+                      from 13px and kept semibold so the label still clears
+                      AA text contrast against this dark background (plain
+                      accent-on-#171717 is ~3.8:1, enough for the larger
+                      bold heading above but not for small text on its own). */}
+                  <span className="font-display text-[14px] font-bold" style={{ color: 'var(--accent)' }}>{number}</span>
                   <h3 className="font-display text-[19px] font-semibold mt-6 mb-2">{title}</h3>
                   <p className="text-[14px] leading-relaxed text-white/65">{copy}</p>
-                  {index < 3 && <span className="hidden lg:flex absolute -right-2.5 top-8 z-10 h-5 w-5 items-center justify-center rounded-full bg-[#f28a63] text-secondary-dark text-[12px]">→</span>}
+                  {index < 3 && (
+                    <span
+                      className="hidden lg:flex absolute -right-2.5 top-8 z-10 h-5 w-5 items-center justify-center rounded-full text-accent-contrast text-[12px]"
+                      style={{ background: 'var(--accent)' }}
+                    >
+                      →
+                    </span>
+                  )}
                 </div>
               </Reveal>
             ))}
@@ -377,7 +391,35 @@ export default function LandingPage() {
             <h2 className="font-display text-[2rem] sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
             <p className="text-[15px] text-ink-soft">A simple path from the first question to a confirmed appointment.</p>
           </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 sm:gap-x-10 lg:gap-x-12">
+          {/* Below sm: a real vertical timeline, not the sm:/lg: grid below
+              with its connecting arrows just switched off. This IS a real
+              sequence (the frontend-design skill's own rule: numbered
+              markers earn their place only when order carries information -
+              here it genuinely does), so on a phone it gets the idiomatic
+              mobile shape for that: a connecting line and number badges
+              running top to bottom, not four unlabelled paragraphs with a
+              stray "01" in front of each. */}
+          <div className="sm:hidden flex flex-col">
+            {steps.map((step, i) => (
+              <Reveal key={step.title} delay={i * 60} className="flex gap-4">
+                <div className="flex flex-col items-center shrink-0">
+                  <span
+                    className="h-9 w-9 rounded-full flex items-center justify-center font-display text-[14px] font-bold shrink-0"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  >
+                    {i + 1}
+                  </span>
+                  {i < steps.length - 1 && <span className="w-px flex-1 my-1" style={{ background: 'var(--line-strong)' }} />}
+                </div>
+                <div className={i < steps.length - 1 ? 'pb-8' : ''}>
+                  <h3 className="font-display text-[18px] font-semibold text-ink leading-tight mb-1.5">{step.title}</h3>
+                  <p className="text-[15px] text-ink-soft leading-relaxed">{step.description}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8 lg:gap-x-12">
             {steps.map((step, i) => (
               <Reveal key={step.title} delay={i * 60} className="relative">
                 <div className="flex items-baseline gap-3 mb-3">
@@ -531,12 +573,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line bg-warm-surface">
+      {/* CTA - the page's second and last dark beat, bookending the hero-
+          adjacent proof section rather than repeating warm-surface again.
+          Deliberately the only two dark moments on the page - a third
+          (e.g. the footer too) would turn a signature into a pattern. */}
+      <section className="bg-secondary-dark text-white border-t border-black/20">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20 text-center">
           <Reveal>
-            <h2 className="font-display text-4xl text-ink mb-8">
-              Ready to stop typing <span className="italic">&ldquo;what time works?&rdquo;</span>
+            <h2 className="font-display text-4xl mb-8">
+              Ready to stop typing <span className="italic" style={{ color: 'var(--accent)' }}>&ldquo;what time works?&rdquo;</span>
             </h2>
             <Button href="/signup">
               Start free for 14 days

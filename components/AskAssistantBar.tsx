@@ -56,8 +56,14 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
              cornered rectangle floating mid-row. rounded-lg + a touch of
              padding (negative-margined back out so the input's own text
              doesn't shift against the icon/button either side of it) gives
-             that same outline a shape to actually hug. */
-          className="flex-1 min-w-0 bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint"
+             that same outline a shape to actually hug. truncate (overflow-
+             hidden + text-ellipsis + whitespace-nowrap) matters specifically
+             for the placeholder here: on a narrow phone this row is icon +
+             input + "Ask" button all sharing one line, and the full
+             placeholder sentence doesn't fit - without this it hard-clipped
+             mid-word ("...or say v"), which read as broken. An ellipsis
+             reads as "there's more," not as a cut-off render. */
+          className="flex-1 min-w-0 truncate bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint"
         />
         <button
           type="submit"

@@ -166,43 +166,23 @@ export default function AdminDashboardBody({
 
   return (
     <div>
-      {/* Two rows became one. The greeting sat alone above a row holding
-          only the search box and the action buttons, so the page spent
-          roughly 140px before any of the day's information. `now` is null
-          until the effect runs, so the server never renders a
-          time-dependent greeting and there is no hydration mismatch. */}
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="text-[13px] font-semibold text-accent mb-1">
+      {/* Was: greeting block and a search+actions block, laid out as two
+          side-by-side columns above lg: and two full-width stacked rows
+          below it - which meant Copy link/Export/New appointment claimed
+          an entire row of their own under the greeting on every phone
+          width, mostly empty space around three small buttons. One
+          consistent shape now, at every width: a compact top strip pairing
+          the short date label with the actions (they're comparable widths,
+          so they actually belong on the same line), then the real content
+          - name, summary, search - flows below as its own full-width
+          block instead of fighting the actions for horizontal room. */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[13px] font-semibold text-accent">
             {now
               ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
               : 'Today'}
           </div>
-          <h1 className="font-display text-h1 text-ink">
-            {now ? `${greeting}, ${businessName}` : businessName}
-          </h1>
-          <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end shrink-0 lg:pt-1">
-          {/* Search only earns its place once there is enough to search
-              through. Below that it is a permanent empty box on a page
-              whose whole job is showing you a short list. */}
-          {all.length > 8 && (
-            <div className="flex items-center gap-2 bg-surface border border-line-strong rounded-lg px-4 py-2.5 min-h-[44px] flex-1 lg:flex-none lg:w-64 transition-colors focus-within:border-[var(--accent)]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.3-4.3" />
-              </svg>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search customers or bookings"
-                placeholder="Search"
-                className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
-              />
-            </div>
-          )}
           <DashboardHeaderActions
             slug={slug}
             businessId={businessId}
@@ -210,6 +190,29 @@ export default function AdminDashboardBody({
             maxAdvanceDays={maxAdvanceDays}
           />
         </div>
+        <h1 className="font-display text-h1 text-ink mt-1">
+          {now ? `${greeting}, ${businessName}` : businessName}
+        </h1>
+        <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
+
+        {/* Search only earns its place once there is enough to search
+            through. Below that it is a permanent empty box on a page
+            whose whole job is showing you a short list. */}
+        {all.length > 8 && (
+          <div className="flex items-center gap-2 bg-surface border border-line-strong rounded-lg px-4 py-2.5 min-h-[44px] mt-4 lg:w-64 transition-colors focus-within:border-[var(--accent)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search customers or bookings"
+              placeholder="Search"
+              className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
+            />
+          </div>
+        )}
       </div>
 
       <SetupChecklist
