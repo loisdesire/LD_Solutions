@@ -8,13 +8,20 @@ export type AgentMessage = { role: 'user' | 'assistant'; content: string };
 // Every agent's system prompt already says "no markdown" - that instruction
 // is not reliably followed on its own (confirmed live: the dashboard
 // assistant produced "**Promotions and Discounts:**" style bold markup
-// despite its prompt explicitly forbidding it), and none of these surfaces
-// render markdown - WhatsApp/Telegram show it as literal asterisks, and the
-// admin chat UIs (AssistantChat.tsx) are a plain whitespace-pre-wrap bubble,
-// not a markdown renderer. Shared here (was previously copied only inside
-// whatsappAgent.ts) so every runToolAgent caller can pass it as
-// `postProcess` and get the same deterministic guarantee, rather than
-// re-trusting the prompt in each new agent.
+// despite its prompt explicitly forbidding it). WhatsApp/Telegram still
+// show any of this as literal characters, so it's stripped here
+// regardless of surface. AssistantChat.tsx (the admin chat UIs) now
+// parses **bold**/bullets/[label](/path) links client-side instead of
+// rendering plain whitespace-pre-wrap text - bold and headers still get
+// stripped here too as a deterministic backstop (redundant with that
+// parsing for **bold**, cheap insurance for the surfaces that don't
+// parse it), but [label](url) links are deliberately left untouched:
+// assistantAgent.ts is now allowed to produce those on purpose (see its
+// own comment), and stripping them here would defeat that. Shared here
+// (was previously copied only inside whatsappAgent.ts) so every
+// runToolAgent caller can pass it as `postProcess` and get the same
+// deterministic guarantee, rather than re-trusting the prompt in each
+// new agent.
 export function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*(.*?)\*\*/g, '$1')

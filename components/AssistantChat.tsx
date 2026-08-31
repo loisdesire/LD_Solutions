@@ -11,20 +11,31 @@ type PendingImage = { url: string; previewUrl: string };
 // used to render as literal asterisks, hyphens and bracket/paren syntax
 // since the bubble below was plain whitespace-pre-wrap text with no
 // parsing at all. Deliberately small: just the handful of patterns the
-// model actually produces, not a full markdown parser. A link's raw
-// href never shows even if the model includes one (see the assistant/
-// onboarding system prompts, which now ask it not to) - only the link
-// text renders, so a stray URL can't dump raw storage links into the
-// chat regardless of what the model does.
+// model actually produces, not a full markdown parser.
+//
+// A link only ever renders as a real, clickable <Link> when its href is
+// a genuine relative in-app path (isSafeInternalPath below) - the exact
+// shape assistantAgent.ts's system prompt now uses for "delete a
+// service? that's on the real Services page" style replies (see its own
+// allowlist of paths). Anything else - a full https:// URL, a
+// protocol-relative //host, a stray storage link the model shouldn't be
+// echoing back at all (see that same prompt's "never paste the raw URL"
+// instruction) - falls back to showing the link TEXT ONLY, never the
+// href, so a URL the model has been told not to expose still can't leak
+// through this renderer even if it does anyway.
 function formatAssistantContent(text: string): ReactNode {
   return text.split('\n').map((line, i) => {
     const bullet = line.match(/^(\s*)[-*]\s+(.*)/);
     return (
       <span key={i} className="block">
-        {bullet ? `• ${formatInline(bullet[2])}` : formatInline(line)}
+        {bullet ? <>• {formatInline(bullet[2])}</> : formatInline(line)}
       </span>
     );
   });
+}
+
+function isSafeInternalPath(href: string): boolean {
+  return href.startsWith('/') && !href.startsWith('//');
 }
 
 function formatInline(text: string): ReactNode {
@@ -38,7 +49,16 @@ function formatInline(text: string): ReactNode {
     if (match[1] !== undefined) {
       parts.push(<strong key={key++}>{match[1]}</strong>);
     } else if (match[2] !== undefined) {
-      parts.push(<span key={key++} className="font-medium">{match[2]}</span>);
+      const href = match[3];
+      parts.push(
+        isSafeInternalPath(href) ? (
+          <Link key={key++} href={href} className="font-medium underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+            {match[2]}
+          </Link>
+        ) : (
+          <span key={key++} className="font-medium">{match[2]}</span>
+        )
+      );
     }
     lastIndex = pattern.lastIndex;
   }
