@@ -4,6 +4,7 @@ import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { sendTelegramMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import crypto from 'crypto';
 
 type TelegramUpdate = {
   message?: {
@@ -23,8 +24,23 @@ type TelegramUpdate = {
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
-  const secret = req.headers.get('x-telegram-bot-api-secret-token');
-  if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+  // Was a plain !== comparison - the same timing-attack surface the
+  // Paystack/Flutterwave/Meta webhooks (see their own comments) were
+  // already hardened against, just missed here. A response's timing can
+  // leak how many leading bytes of a guess matched a fixed secret when
+  // compared byte-by-byte with early exit; timingSafeEqual compares in
+  // constant time regardless. Length-checked first since
+  // timingSafeEqual throws (rather than returning false) on a length
+  // mismatch.
+  const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
+  const expected = process.env.TELEGRAM_WEBHOOK_SECRET ?? '';
+  const secretBuf = Buffer.from(secret);
+  const expectedBuf = Buffer.from(expected);
+  const validSecret =
+    expected.length > 0 &&
+    secretBuf.length === expectedBuf.length &&
+    crypto.timingSafeEqual(secretBuf, expectedBuf);
+  if (!validSecret) {
     logError('api/telegram/webhook:secret', new Error('Invalid Telegram webhook secret'));
     return new NextResponse('Forbidden', { status: 403 });
   }

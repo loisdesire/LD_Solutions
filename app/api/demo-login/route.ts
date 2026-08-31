@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { DEMO_VIEWER_EMAIL } from '@/lib/demo';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +22,21 @@ const supabaseAdmin = createClient(
 // exchangeCodeForSession(code) only because this side originates the link
 // itself (via the admin API) rather than receiving one a visitor clicked
 // in an email.
-export async function GET() {
+// The only unauthenticated route in the API that calls Supabase's admin
+// API (generateLink) on every hit, with no rate limit until now - every
+// other public route that does real work (bookings, staff invites,
+// reschedule...) already has one. Low severity (this mints a session for
+// a single fixed, write-blocked demo account - see lib/demo.ts and
+// schema.sql's "block writes at the database itself" section - so
+// there's no data at risk), but an unlimited hammer on this still burns
+// Supabase's own admin-API quota for the whole project, which could
+// degrade real magic-link logins elsewhere. Same limit shape as the
+// booking routes.
+export async function GET(req: NextRequest) {
+  if (!(await rateLimit(`demo-login:${getClientIp(req)}`, 10, 5 * 60_000))) {
+    return NextResponse.redirect(`${SITE_URL}/`);
+  }
+
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: 'magiclink',
     email: DEMO_VIEWER_EMAIL,

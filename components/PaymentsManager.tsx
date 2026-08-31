@@ -6,7 +6,7 @@ import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
 import { useUnsavedChangesWarning } from './useUnsavedChangesWarning';
-import { inputClass, smallInputClass, labelClass } from './formStyles';
+import { inputClass, smallInputClass, labelClass, connectedBadgeClass, connectedDotClass } from './formStyles';
 
 // Split out of what used to be SettingsManager - a live Paystack secret
 // key used to share one Save button with buffer times and a Zapier
@@ -202,8 +202,8 @@ export default function PaymentsManager({
                   captions two separate key fields, not one. */}
               <span className={labelClass}>Paystack keys</span>
               {paystackConnected && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                <span className={connectedBadgeClass}>
+                  <span className={connectedDotClass} />
                   Connected
                 </span>
               )}

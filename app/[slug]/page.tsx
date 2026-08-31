@@ -12,6 +12,7 @@ import { AccentScope } from '@/components/AccentScope';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { canAcceptBookings } from '@/lib/subscription-server';
 import { formatMoney } from '@/lib/formatMoney';
+import { safeJsonLdString } from '@/lib/jsonLd';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -116,7 +117,7 @@ export default async function BusinessBookingPage({
     <AccentScope color={business.accent_color} className="min-h-screen bg-paper">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(jsonLd) }}
       />
 
       <SiteHeader

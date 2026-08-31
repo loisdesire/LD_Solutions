@@ -27,3 +27,12 @@ export const pillClass = (active: boolean) =>
   `px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
     active ? 'bg-accent text-white' : 'text-ink-soft hover:text-ink bg-warm-surface'
   }`;
+
+// The small "● Connected" badge next to a channel/integration name -
+// was the same literal class string retyped at 5 call sites
+// (BotIntegrationsSettings.tsx's WhatsApp/Telegram/Messenger sections,
+// PaymentsManager.tsx's Paystack section). Pair with connectedDotClass
+// for the small filled circle inside it.
+export const connectedBadgeClass =
+  'inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent';
+export const connectedDotClass = 'h-1.5 w-1.5 rounded-full bg-current';

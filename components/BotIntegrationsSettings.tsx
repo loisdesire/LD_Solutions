@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
-
-const inputClass =
-  'w-full rounded-xl border-2 border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] font-mono text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft';
+// Was its own local copy of the old style (2px border, mono text) -
+// every other manager (BusinessProfile/Payments/BookingRules/Staff/
+// CustomDomain/Services/Products) already moved to the shared one; this
+// was the one file that never picked it up, so the Channels page's token
+// inputs visibly looked like an older design pass than the rest of
+// Settings.
+import { inputClass, connectedBadgeClass, connectedDotClass } from './formStyles';
 
 // "Connected" alone doesn't say whether a channel is actually being used -
 // null just means no real customer message has come through it yet
@@ -89,8 +93,8 @@ export default function BotIntegrationsSettings({
       <div>
         <div className="flex items-center gap-2 mb-2">
           <p className="text-[14px] font-semibold text-ink">Website chat</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+          <span className={connectedBadgeClass}>
+            <span className={connectedDotClass} aria-hidden="true" />
             Always on
           </span>
         </div>
@@ -211,8 +215,8 @@ function MessengerSection({
       <div className="flex items-center gap-2 mb-2">
         <p className="text-[14px] font-semibold text-ink">Facebook Messenger</p>
         {pageName ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          <span className={connectedBadgeClass}>
+            <span className={connectedDotClass} />
             Connected
           </span>
         ) : !WHATSAPP_MESSENGER_LIVE ? (
@@ -352,8 +356,8 @@ function TelegramSection({
       <div className="flex items-center gap-2 mb-2">
         <p className="text-[14px] font-semibold text-ink">Telegram</p>
         {username && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          <span className={connectedBadgeClass}>
+            <span className={connectedDotClass} />
             Connected
           </span>
         )}
@@ -565,8 +569,8 @@ function WhatsappSection({
       <div className="flex items-center gap-2 mb-2">
         <p className="text-[14px] font-semibold text-ink">WhatsApp</p>
         {number ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          <span className={connectedBadgeClass}>
+            <span className={connectedDotClass} />
             Connected
           </span>
         ) : !WHATSAPP_MESSENGER_LIVE ? (

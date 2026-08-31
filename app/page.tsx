@@ -10,6 +10,7 @@ import Button from '@/components/Button';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import { formatMoney } from '@/lib/formatMoney';
+import { safeJsonLdString } from '@/lib/jsonLd';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -180,7 +181,7 @@ export default function LandingPage() {
     <div className="landing min-h-screen bg-paper">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString(homepageJsonLd) }}
       />
       {/* Nav - sentence-case links, not the tiny-mono-uppercase treatment
           the whole previous system defaulted to for every label. */}
