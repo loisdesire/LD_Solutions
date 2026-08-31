@@ -9,14 +9,17 @@ export const metadata: Metadata = {
   alternates: { canonical: '/terms' },
 };
 
-const LAST_UPDATED = 'August 23, 2026';
+const LAST_UPDATED = 'August 31, 2026';
 
 // Same grounding rule as privacy/page.tsx: every concrete claim here
 // (pricing, trial length, what payment providers actually handle) is
 // checked against the real code (lib/subscription.ts, the signup flow,
 // BookingForm's payment path) rather than generic SaaS boilerplate.
-// Legal-entity/jurisdiction specifics are [TODO], not invented. Real
-// legal review before this is treated as binding.
+// Contact email and jurisdiction are real, confirmed with the business
+// owner. No registered legal entity/address yet - Vanova Hub isn't
+// incorporated as of this writing, so this deliberately doesn't claim
+// one. Real legal review still recommended before this is treated as
+// binding.
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-paper">
@@ -110,10 +113,10 @@ export default function TermsPage() {
 
           <h2>Contact</h2>
           <p>
-            Questions about these terms: <span className="text-ink-faint">[TODO: real contact email/address for Vanova Hub]</span>.
+            Questions about these terms: <a href="mailto:vanovahub@gmail.com">vanovahub@gmail.com</a>.
           </p>
           <p className="text-caption text-ink-faint">
-            Operated by Vanova Hub. <span className="italic">[TODO: registered legal entity name, address, and governing jurisdiction - fill in before this page is treated as final; this draft doesn't invent those facts.]</span>
+            Operated by Vanova Hub, based in Nigeria and governed by the laws of the Federal Republic of Nigeria.
           </p>
         </Prose>
       </main>

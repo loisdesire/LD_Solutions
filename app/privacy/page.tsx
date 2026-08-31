@@ -7,19 +7,18 @@ export const metadata: Metadata = {
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'August 23, 2026';
+const LAST_UPDATED = 'August 31, 2026';
 
 // Grounded in what the app actually does - every claim below is checked
 // against the real data flows in this codebase (Supabase for storage/
 // auth, Resend for email, OpenAI for the AI receptionist, Paystack for
 // customer payments, Flutterwave for platform billing, Telegram/Meta for
-// the optional chat channels) rather than generic boilerplate. Company
-// registration details (legal entity, registered address, governing
-// jurisdiction, a real contact address) are marked [TODO] rather than
-// invented - those are facts only the business owner has, and a
-// plausible-sounding fake one is worse than an honest placeholder here.
-// This should get a real legal review before being treated as binding;
-// it's a genuine, accurate starting point, not a final document.
+// the optional chat channels) rather than generic boilerplate. Contact
+// email and jurisdiction are real, confirmed with the business owner.
+// No registered legal entity/address yet - Vanova Hub isn't incorporated
+// as of this writing, so this deliberately doesn't claim one; add those
+// once that changes rather than inventing them now. This should still
+// get a real legal review before being treated as binding.
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-paper">
@@ -121,10 +120,10 @@ export default function PrivacyPage() {
 
           <h2>Contact</h2>
           <p>
-            Questions about this policy, or a request about your data: <span className="text-ink-faint">[TODO: real contact email/address for Vanova Hub]</span>.
+            Questions about this policy, or a request about your data: <a href="mailto:vanovahub@gmail.com">vanovahub@gmail.com</a>.
           </p>
           <p className="text-caption text-ink-faint">
-            Operated by Vanova Hub. <span className="italic">[TODO: registered legal entity name, address, and governing jurisdiction - fill in before this page is treated as final; this draft doesn't invent those facts.]</span>
+            Operated by Vanova Hub, based in Nigeria and governed by the laws of the Federal Republic of Nigeria.
           </p>
         </Prose>
       </main>
