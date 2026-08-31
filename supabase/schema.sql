@@ -126,13 +126,19 @@ end $$;
 -- a GIST exclusion constraint.
 create extension if not exists btree_gist;
 
+-- A GIST exclusion constraint is backed by its own index under the hood,
+-- so a name collision here raises 42P07 (duplicate_table), not 42710
+-- (duplicate_object) like the two plain constraints above - catching only
+-- duplicate_object let this one escape uncaught, which aborted the whole
+-- transaction (and everything else in the same pasted script) the first
+-- time this ran against a database where the constraint already existed.
 do $$ begin
   alter table bookings add constraint no_overlapping_bookings
     exclude using gist (
       business_id with =,
       tstzrange(start_time, end_time) with &&
     ) where (status <> 'cancelled');
-exception when duplicate_object then null;
+exception when duplicate_object or duplicate_table then null;
 end $$;
 
 -- Atomic, deployment-wide fixed-window rate limiting. API routes call this

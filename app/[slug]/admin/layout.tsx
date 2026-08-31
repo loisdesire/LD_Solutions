@@ -73,7 +73,9 @@ export default async function AdminLayout({
   // once per navigation rather than each page inventing its own version.
   // Same three required-setup signals SetupChecklist uses on the
   // dashboard, so the sidebar dot and the dashboard checklist can never
-  // disagree about whether setup is actually done.
+  // disagree about whether setup is actually done. Also mirrored in
+  // lib/onboardingProgress.ts for the first-time onboarding chat - keep
+  // both in sync if this formula ever changes.
   const [{ data: bizExtra }, { count: servicesCount }, { count: hoursCount }, { data: sub }] = await Promise.all([
     supabase
       .from('businesses')

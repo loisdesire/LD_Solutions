@@ -29,6 +29,7 @@ export default function AssistantChat({
   inputPlaceholder,
   banner,
   initialMessage,
+  onReplyData,
 }: {
   slug: string;
   endpoint: string;
@@ -38,6 +39,9 @@ export default function AssistantChat({
   /** Asked automatically on mount, so a question typed elsewhere can open straight into its answer. */
   initialMessage?: string;
   banner?: ReactNode;
+  /** Called with the full parsed response body after every successful reply - additive to `reply`, for a caller
+   * that needs more than the message text back (e.g. onboarding's live progress checklist, see OnboardingChat.tsx). */
+  onReplyData?: (data: Record<string, unknown>) => void;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -144,6 +148,7 @@ export default function AssistantChat({
         return;
       }
       setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
+      onReplyData?.(data);
     } catch {
       setLoading(false);
       setError("Couldn't reach the server. Check your connection and try again.");

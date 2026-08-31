@@ -63,14 +63,44 @@ function cleanPrice(value: unknown): number | null | undefined {
   return Number.isFinite(n) && n >= 0 && n <= 10_000_000 ? n : undefined;
 }
 
+// A SELECT of a genuinely nonexistent column fails with Postgres's own raw
+// 42703 error; an INSERT/UPDATE with an unrecognized key in the JSON
+// payload never reaches Postgres at all - PostgREST checks it against its
+// own cached schema first and fails with PGRST204 instead. Both mean the
+// same real-world thing (the services.description/image_url/category
+// migration hasn't been run against this database yet), so every fallback
+// below has to check for both codes, not just one.
+function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === '42703' || error?.code === 'PGRST204';
+}
+
 async function findServiceByName(businessId: string, name: string) {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('services')
     .select('id, name, duration_minutes, price, description, image_url, category, active')
     .eq('business_id', businessId)
     .ilike('name', `%${name}%`)
     .order('active', { ascending: false })
     .limit(5);
+
+  // 42703 = the services.description/image_url/category migration
+  // (supabase/schema.sql) hasn't been run against this database yet - a
+  // combined select fails as one unit on ANY missing column, which would
+  // otherwise take down every service lookup (create, update, toggle) at
+  // once. Falls back to the columns that do exist so the rest of "manage
+  // your business by chat" keeps working; the caller just won't see a
+  // description/photo/category for now.
+  if (isMissingColumnError(error)) {
+    const fallback = await supabaseAdmin
+      .from('services')
+      .select('id, name, duration_minutes, price, active')
+      .eq('business_id', businessId)
+      .ilike('name', `%${name}%`)
+      .order('active', { ascending: false })
+      .limit(5);
+    return (fallback.data ?? []).map((s) => ({ ...s, description: null as string | null, image_url: null as string | null, category: null as string | null }));
+  }
+
   return data ?? [];
 }
 
@@ -127,7 +157,7 @@ export async function applyCreateService(
     return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
   }
 
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from('services')
     .insert({
       business_id: businessId,
@@ -141,8 +171,31 @@ export async function applyCreateService(
     .select('id, name')
     .single();
 
+  // Same missing-column fallback as findServiceByName above - the service itself
+  // (name, duration, price, all it needs to be bookable) still gets
+  // created; only the description/photo/category are dropped, and the
+  // caller is told plainly rather than silently losing them.
+  let droppedExtras = false;
+  if (isMissingColumnError(error)) {
+    const fallback = await supabaseAdmin
+      .from('services')
+      .insert({ business_id: businessId, name, duration_minutes: durationMinutes, price })
+      .select('id, name')
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+    droppedExtras = !error && (description != null || imageUrl != null || Boolean(args.category));
+  }
+
   if (error) return { error: "That didn't save - please try again." };
-  return { created: true, service_id: data.id, name: data.name };
+  return {
+    created: true,
+    service_id: data!.id,
+    name: data!.name,
+    ...(droppedExtras
+      ? { note: "The service itself saved, but the description/photo/category couldn't - a pending database update needs to be run first. Tell the owner the service was created and that part can be added once that's done." }
+      : {}),
+  };
 }
 
 export async function proposeUpdateService(
@@ -246,9 +299,32 @@ export async function applyUpdateService(
 
   if (Object.keys(update).length === 0) return { error: 'Nothing to update.' };
 
-  const { error } = await supabaseAdmin.from('services').update(update).eq('id', current.id).eq('business_id', businessId);
+  let { error } = await supabaseAdmin.from('services').update(update).eq('id', current.id).eq('business_id', businessId);
+
+  // Same missing-column fallback as findServiceByName/applyCreateService - if the
+  // only things being changed were description/image, there's nothing left
+  // to retry; otherwise apply everything else and say plainly what didn't
+  // stick.
+  let droppedExtras = false;
+  if (isMissingColumnError(error)) {
+    const { description: _d, image_url: _i, ...rest } = update;
+    if (Object.keys(rest).length > 0) {
+      const fallback = await supabaseAdmin.from('services').update(rest).eq('id', current.id).eq('business_id', businessId);
+      error = fallback.error;
+      droppedExtras = !error;
+    } else {
+      return { error: "The description/photo can't be saved yet - a pending database update needs to be run first. Tell the owner, and skip this change for now." };
+    }
+  }
+
   if (error) return { error: "That didn't save - please try again." };
-  return { updated: true, name: (update.name as string) ?? current.name };
+  return {
+    updated: true,
+    name: (update.name as string) ?? current.name,
+    ...(droppedExtras
+      ? { note: "Everything else saved, but the description/photo couldn't - a pending database update needs to be run first. Tell the owner." }
+      : {}),
+  };
 }
 
 const TOGGLE_TABLE: Record<string, 'businesses' | 'booking_rules'> = {

@@ -101,7 +101,11 @@ export default function SignupPage() {
         return;
       }
 
-      router.push(`/${slug}/admin`);
+      // Straight into the guided setup conversation, not the dashboard - a
+      // brand-new business has nothing on it yet (no services, no hours),
+      // so the dashboard would just be empty widgets. See
+      // app/[slug]/onboarding/page.tsx.
+      router.push(`/${slug}/onboarding`);
       router.refresh();
     } catch (err) {
       setError(friendlyError(err, 'Something went wrong. Please try again.'));
