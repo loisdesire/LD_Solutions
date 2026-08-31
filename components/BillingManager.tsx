@@ -1,14 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import type { SubscriptionState, Plan } from '@/lib/subscription';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
+import { useDialog } from './useDialog';
 import { formatMoney } from '@/lib/formatMoney';
 
+const LOCKED_NOTICE_COPY: Record<'trial' | 'payment', { title: string; message: string }> = {
+  trial: {
+    title: 'Your free trial has ended',
+    message:
+      "That's why you've landed here instead of where you were headed. Nothing's been touched - every booking, customer and setting is exactly how you left it. Pick a plan below and you'll be straight back in.",
+  },
+  payment: {
+    title: "Your last payment didn't go through",
+    message:
+      "That's why you've landed here instead of where you were headed. Nothing's been touched - subscribe again below and you'll be straight back in.",
+  },
+};
+
 const PLAN_BLURB: Record<Plan, string> = {
-  core: 'Bookings, the AI receptionist, everything you need to run the calendar.',
+  core: 'Bookings, the AI receptionist, everything to run the calendar.',
   business_intelligence: 'Everything in Core, plus an AI insights panel for you and richer AI answers for customers.',
 };
 
@@ -37,11 +51,32 @@ export default function BillingManager({
   slug,
   state,
   history,
+  initiallyLocked = false,
 }: {
   slug: string;
   state: SubscriptionState;
   history: PaymentRecord[];
+  /** True when requireStaffSession redirected here because access ran out, as opposed to the owner just checking
+   * their plan on their own - only the former should interrupt with the popup below. */
+  initiallyLocked?: boolean;
 }) {
+  // Only actually show it if they're still locked out by the time this
+  // renders - a stale ?locked=1 sitting in a bookmarked/shared URL
+  // shouldn't pop this up for someone who has since subscribed.
+  const [showLockedNotice, setShowLockedNotice] = useState(initiallyLocked && !state.hasAccess);
+  const lockedDialogRef = useDialog(showLockedNotice, () => setShowLockedNotice(false));
+
+  // Clears ?locked=1 from the address bar once shown, same reasoning as
+  // AssistantChat's ?q= cleanup - otherwise refreshing this exact URL
+  // (or someone sharing it) re-triggers the popup every time.
+  useEffect(() => {
+    if (!initiallyLocked) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('locked');
+    window.history.replaceState(null, '', url.pathname + url.search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cancelled, setCancelled] = useState(false);
@@ -167,23 +202,30 @@ export default function BillingManager({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2.5 mb-4">
+              {/* Was a fixed grid-cols-2, so on a narrow phone each card
+                  was ~150px wide with a 3-4 line description wrapping
+                  inside it - two squeezed columns rather than two real
+                  choices. Single column below sm, side by side from
+                  there up where there's actually room for it. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
                 {(Object.keys(PLAN_PRICE_NGN) as Plan[]).map((plan) => (
                   <button
                     key={plan}
                     type="button"
                     onClick={() => setSelectedPlan(plan)}
-                    className={`text-left rounded-xl border-2 px-3.5 py-3 transition-colors ${
+                    className={`text-left rounded-xl border-2 px-4 py-3.5 transition-colors ${
                       selectedPlan === plan ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
                     }`}
                   >
-                    <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
-                      {PLAN_LABEL[plan]}
+                    <div className="flex items-baseline justify-between gap-3 sm:block">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
+                        {PLAN_LABEL[plan]}
+                      </div>
+                      <div className="font-display text-[17px] text-ink sm:mt-0.5">
+                        {formatMoney(PLAN_PRICE_NGN[plan])}
+                      </div>
                     </div>
-                    <div className="font-display text-[17px] text-ink mt-0.5">
-                      {formatMoney(PLAN_PRICE_NGN[plan])}
-                    </div>
-                    <p className="text-[11.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB[plan]}</p>
+                    <p className="text-[12.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB[plan]}</p>
                   </button>
                 ))}
               </div>
@@ -275,6 +317,53 @@ export default function BillingManager({
         onConfirm={handleCancel}
         onCancel={() => setConfirmingCancel(false)}
       />
+
+      {/* What used to happen instead: requireStaffSession silently
+          redirected here with no explanation, so someone would just find
+          themselves on Billing mid-task with no idea why. Same visual
+          language as ConfirmDialog (built on the same useDialog primitive
+          - focus trap, Escape, scroll lock), but a single reassuring
+          "got it" rather than a decision to make. */}
+      {showLockedNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowLockedNotice(false)}>
+          <div
+            className="absolute inset-0 backdrop-blur-sm animate-fade"
+            style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}
+          />
+          <div
+            ref={lockedDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="locked-notice-title"
+            aria-describedby="locked-notice-message"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-2xl bg-surface border-2 border-line shadow-card p-6 text-center animate-rise"
+          >
+            <div
+              className="h-11 w-11 rounded-full flex items-center justify-center mx-auto mb-3.5"
+              style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+            </div>
+            <h2 id="locked-notice-title" className="font-display text-[18px] font-semibold text-ink mb-1.5">
+              {LOCKED_NOTICE_COPY[state.phase === 'past_due' ? 'payment' : 'trial'].title}
+            </h2>
+            <p id="locked-notice-message" className="text-body-sm text-ink-soft leading-relaxed">
+              {LOCKED_NOTICE_COPY[state.phase === 'past_due' ? 'payment' : 'trial'].message}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowLockedNotice(false)}
+              className="w-full rounded-xl bg-accent px-5 py-2.5 text-[14px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 active:scale-95 mt-5"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

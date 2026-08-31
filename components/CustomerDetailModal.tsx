@@ -79,21 +79,36 @@ export default function CustomerDetailModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 px-6 pt-4">
-          <div>
-            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Visits</div>
-            <div className="font-display text-[17px] font-bold text-ink mt-0.5">{customer.bookingCount}</div>
+        {/* "Total spent" was the one label with any real chance of
+            wrapping across 3 equal columns on a phone-width modal - not
+            broken, but tighter than it needed to be for values this
+            short. Same move CustomersManager already makes for its own
+            three-stat summary: one compact line below sm, real columns
+            above it where there's room to give each its own label. */}
+        <div className="px-6 pt-4">
+          <div className="flex items-center gap-1.5 font-mono text-[12.5px] text-ink-soft sm:hidden">
+            <span>{customer.bookingCount} {customer.bookingCount === 1 ? 'visit' : 'visits'}</span>
+            <span className="text-ink-faint">·</span>
+            <span>{customer.totalSpent ? formatMoney(customer.totalSpent) : 'Nothing spent yet'}</span>
+            <span className="text-ink-faint">·</span>
+            <span>Last {new Date(customer.lastVisit).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
           </div>
-          <div>
-            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Total spent</div>
-            <div className="font-display text-[17px] font-bold text-ink mt-0.5">
-              {customer.totalSpent ? formatMoney(customer.totalSpent) : '-'}
+          <div className="hidden sm:grid grid-cols-3 gap-3">
+            <div>
+              <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Visits</div>
+              <div className="font-display text-[17px] font-bold text-ink mt-0.5">{customer.bookingCount}</div>
             </div>
-          </div>
-          <div>
-            <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Last visit</div>
-            <div className="font-display text-[17px] font-bold text-ink mt-0.5">
-              {new Date(customer.lastVisit).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            <div>
+              <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Total spent</div>
+              <div className="font-display text-[17px] font-bold text-ink mt-0.5">
+                {customer.totalSpent ? formatMoney(customer.totalSpent) : '-'}
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-[12px] uppercase tracking-[0.06em] text-ink-faint">Last visit</div>
+              <div className="font-display text-[17px] font-bold text-ink mt-0.5">
+                {new Date(customer.lastVisit).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </div>
             </div>
           </div>
         </div>

@@ -41,12 +41,32 @@ export default function AdminAssistantWidget({
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  // Same reasoning as WebChatWidget: below sm the panel takes over most
+  // of the screen instead of sitting as a small corner card, so
+  // background scroll gets locked to match while it's open.
+  useEffect(() => {
+    if (!open) return;
+    const isMobile = typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches;
+    if (!isMobile) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   return (
     <>
+      {/* Hidden rather than left floating once the panel is open on
+          mobile - it used to sit at bottom-5 right-5 regardless, which
+          the mobile panel's own inset margins didn't fully cover,
+          leaving this button visibly overlapping the panel's corner.
+          Full-screen inset-0 below makes that moot (nothing to overlap),
+          but hiding it here is what actually fixes it, not the sizing. */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
-        className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
+        className={`fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${open ? 'hidden sm:flex' : 'flex'}`}
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
@@ -61,10 +81,17 @@ export default function AdminAssistantWidget({
       </button>
 
       {open && (
+        // Below sm: true edge-to-edge takeover (inset-0, square corners)
+        // rather than a card with margins - a margined card left gaps at
+        // the top/bottom where the real page (header, page content) was
+        // still visible and legible behind it, which read as broken, not
+        // "blurred". Fully opaque and covering the whole viewport, so
+        // there's nothing left behind it to blur - no separate backdrop
+        // needed. sm and up: unchanged, still the small corner card.
         <div
           role="dialog"
           aria-label={`Assistant for ${businessName}`}
-          className="fixed bottom-[86px] right-5 z-50 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[560px] rounded-2xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col"
+          className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[560px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col"
         >
           {/* Same header shape as WebChatWidget's own panel - a business
               mark + name up front, so it's unambiguous this is a different
