@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
+import NotificationBell from './NotificationBell';
 
 // Both sidebar widths (the 72px rail and the full 256px one) used to
 // hard-code a solid accent square with the business's first letter in
@@ -304,16 +305,19 @@ export default function AdminSidebar({
       {allNavItems.map((tab) => (
         <RailLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} active={tab.active} />
       ))}
-      <button
-        onClick={handleSignOut}
-        aria-label="Sign out"
-        title="Sign out"
-        className="mt-auto h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-        </svg>
-      </button>
+      <div className="mt-auto flex flex-col items-center gap-1.5">
+        <NotificationBell slug={slug} variant="rail" />
+        <button
+          onClick={handleSignOut}
+          aria-label="Sign out"
+          title="Sign out"
+          className="h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+        </button>
+      </div>
     </aside>
 
     <aside className="hidden min-[900px]:flex md:w-[256px] shrink-0 bg-surface border-r border-line flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
@@ -371,26 +375,29 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="mt-auto pt-5 border-t border-line flex items-center gap-2.5 px-1">
-        <div
-          className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
-          style={{ background: 'var(--accent)' }}
-        >
-          {userEmail?.[0]?.toUpperCase()}
+      <div className="mt-auto pt-5 border-t border-line">
+        <NotificationBell slug={slug} variant="row" />
+        <div className="flex items-center gap-2.5 px-1 mt-1.5">
+          <div
+            className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
+            style={{ background: 'var(--accent)' }}
+          >
+            {userEmail?.[0]?.toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-caption font-medium truncate">{userEmail}</div>
+            <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+          </button>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-caption font-medium truncate">{userEmail}</div>
-          <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
-        </div>
-        <button
-          onClick={handleSignOut}
-          aria-label="Sign out"
-          className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-        </button>
       </div>
     </aside>
     </>

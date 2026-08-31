@@ -3,8 +3,9 @@ import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { getSubscriptionState } from '@/lib/subscription';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminMobileNav from '@/components/AdminMobileNav';
+import PwaRegister from '@/components/PwaRegister';
 import { ToastProvider } from '@/components/Toast';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 // Private staff area - never indexed, regardless of what any individual
 // admin page under here does or doesn't set.
@@ -30,6 +31,26 @@ export async function generateMetadata({
   return {
     title: { default: name, template: `%s - ${name}` },
     robots: { index: false, follow: false },
+    // Installable dashboard (PWA) - manifest is per-business (own name,
+    // own accent color, opens straight into /admin) via
+    // app/api/manifest/[slug]/route.ts, not a single shared manifest.
+    manifest: `/api/manifest/${slug}`,
+    appleWebApp: { capable: true, statusBarStyle: 'default', title: name },
+    icons: { apple: '/apple-touch-icon.png' },
+  };
+}
+
+// Separate from `metadata` per Next's own convention (themeColor moved out
+// of Metadata in Next 14) - per-business so the iOS status bar / Android
+// task-switcher chrome around the installed app matches this business's
+// own brand color, not a fixed platform default.
+export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
+  const { slug } = await params;
+  const data = await getBusinessBySlug(slug);
+  return {
+    themeColor: data?.business.accent_color || '#C74A1E',
+    width: 'device-width',
+    initialScale: 1,
   };
 }
 
@@ -77,6 +98,7 @@ export default async function AdminLayout({
 
   return (
     <ToastProvider>
+      <PwaRegister slug={slug} />
       <div className="min-h-screen bg-warm-surface md:flex">
         <AdminSidebar
           slug={slug}

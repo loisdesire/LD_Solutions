@@ -747,3 +747,37 @@ create trigger reject_demo_writes before insert or update or delete on staff
 drop trigger if exists reject_demo_writes on staff_invites;
 create trigger reject_demo_writes before insert or update or delete on staff_invites
   for each row execute function reject_demo_viewer_writes();
+
+-- ============================================
+-- PWA push notifications: one row per device/browser a staff member has
+-- enabled notifications on (components/NotificationBell.tsx). Deliberately
+-- keyed to staff_id, not just business_id - "who can turn this device's
+-- subscription off" needs to be that one staff member, not anyone at the
+-- business. lib/pushNotify.ts reads these to notify staff the moment a
+-- booking is CONFIRMED (web checkout, chat-channel booking, or a chat
+-- booking's payment webhook - see the three call sites, never on a
+-- pending_payment hold).
+-- ============================================
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  staff_id uuid references staff(id) on delete cascade not null,
+  endpoint text unique not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists push_subscriptions_business_id_idx on push_subscriptions(business_id);
+
+alter table push_subscriptions enable row level security;
+
+create policy "staff can manage own push subscriptions"
+  on push_subscriptions for all
+  using (
+    staff_id in (select id from staff where auth_id = auth.uid())
+  );
+
+drop trigger if exists reject_demo_writes on push_subscriptions;
+create trigger reject_demo_writes before insert or update or delete on push_subscriptions
+  for each row execute function reject_demo_viewer_writes();

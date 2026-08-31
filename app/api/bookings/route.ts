@@ -9,6 +9,7 @@ import { verifyPaystackTransaction } from '@/lib/paystack';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
 import { formatMoney } from '@/lib/formatMoney';
+import { notifyStaffOfNewBooking } from '@/lib/pushNotify';
 import {
   cleanEmail,
   cleanIsoInstant,
@@ -230,15 +231,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Formatted in the business's own timezone, not the server's - a real bug
+  // this was hitting before: a booking confirmed for "8:00 AM" Lagos time
+  // could show a different hour if the server (e.g. a US-region Vercel
+  // deploy) runs in a different zone. Shared between the customer's
+  // confirmation email below and the business's push notification.
+  const whenLabel = start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' });
+
+  // Never blocks or fails the booking itself - notifyStaffOfNewBooking
+  // already catches per-device send failures internally; this try/catch is
+  // only for the (unlikely) case its own DB lookups throw.
+  try {
+    await notifyStaffOfNewBooking(businessId, {
+      customerName: validName,
+      serviceName: service?.name ?? 'Appointment',
+      whenLabel,
+    });
+  } catch (err) {
+    logError('api/bookings:push-notify', err, { businessId });
+  }
+
   // Awaited, but never fails the booking itself - sendEmail swallows its
-  // own errors and returns false rather than throwing. Formatted in the
-  // business's own timezone, not the server's - a real bug this was
-  // hitting before: a booking confirmed for "8:00 AM" Lagos time could
-  // show a different hour in the email if the server (e.g. a US-region
-  // Vercel deploy) runs in a different zone.
+  // own errors and returns false rather than throwing.
   let emailSent = false;
   if (validEmail) {
-    const whenLabel = start.toLocaleString('en-US', { timeZone, dateStyle: 'full', timeStyle: 'short' });
     const bizName = business?.name ?? 'Your appointment';
 
     const rows = [

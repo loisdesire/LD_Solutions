@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
+import NotificationBell from './NotificationBell';
 
 // Was a single row of 6 pills in `overflow-x-auto` - on an actual phone
 // width that's maybe 3 pills visible and the rest scrolled off with no
@@ -202,12 +203,15 @@ export default function AdminMobileNav({
             ))}
           </nav>
 
-          <button
-            onClick={handleSignOut}
-            className="w-full text-left px-3 py-2.5 rounded-xl text-[14px] text-ink-faint border-t border-line pt-4 mt-1"
-          >
-            Sign out
-          </button>
+          <div className="border-t border-line pt-1 mt-1">
+            <NotificationBell slug={slug} variant="row" />
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-3 py-2.5 rounded-xl text-[14px] text-ink-faint"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -8,6 +8,8 @@ import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
 import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
 import { formatMoney } from './formatMoney';
+import { notifyStaffOfNewBooking } from './pushNotify';
+import { logError } from './logger';
 import { randomUUID } from 'crypto';
 
 // Server-side only. This file has zero awareness of OpenAI, Anthropic, or
@@ -323,6 +325,16 @@ export async function createBooking(
     );
   }
 
+  try {
+    await notifyStaffOfNewBooking(ctx.businessId, {
+      customerName: args.customerName,
+      serviceName: service.name,
+      whenLabel: formatLocalDateTime(booking.start_time, timeZone),
+    });
+  } catch (err) {
+    logError('whatsappTools:createBooking:push-notify', err, { businessId: ctx.businessId });
+  }
+
   return {
     confirmed: true,
     booking_id: booking.id,
@@ -449,7 +461,7 @@ export async function confirmPaidBooking(
 ): Promise<{ confirmed: boolean; when?: string; reason?: string; alternatives?: string[] }> {
   const { data: booking } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, service_id, status, start_time, end_time, payment_expires_at')
+    .select('id, business_id, service_id, status, start_time, end_time, payment_expires_at, customer_name')
     .eq('id', bookingId)
     .maybeSingle();
 
@@ -506,6 +518,16 @@ export async function confirmPaidBooking(
       };
     }
     return { confirmed: false, reason: 'update_failed' };
+  }
+
+  try {
+    await notifyStaffOfNewBooking(booking.business_id, {
+      customerName: booking.customer_name,
+      serviceName: service?.name ?? 'Appointment',
+      whenLabel: formatLocalDateTime(booking.start_time, timeZone),
+    });
+  } catch (err) {
+    logError('whatsappTools:confirmPaidBooking:push-notify', err, { businessId: booking.business_id });
   }
 
   return { confirmed: true, when: formatLocalDateTime(booking.start_time, timeZone) };
