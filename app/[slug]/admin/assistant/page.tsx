@@ -1,27 +1,12 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { hasBusinessIntelligence } from '@/lib/subscription-server';
 import { getAssistantHistory } from '@/lib/assistantHistory';
+import { ASSISTANT_SUGGESTIONS_CORE, ASSISTANT_SUGGESTIONS_FULL } from '@/lib/assistantSuggestions';
 import AssistantChat from '@/components/AssistantChat';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Assistant' };
-
-// Grouped, not one flat list - "Move Ada to Monday" and "Who are my top
-// customers?" are different kinds of ask (one changes something, one
-// doesn't), even though they go to the same thread. See AssistantChat.tsx
-// for why this stays one assistant rather than two separate tools.
-const GROUPS_CORE = [
-  {
-    label: 'Change something',
-    items: ["I'm out sick tomorrow 9am to 1pm", 'Move Ada to Monday', 'Block off next Tuesday afternoon'],
-  },
-];
-
-const GROUPS_FULL = [
-  { label: 'Ask', items: ['How much did I make this month?', 'Who are my top customers?', 'When am I busiest?'] },
-  { label: 'Change something', items: ["I'm out sick tomorrow 9am to 1pm"] },
-];
 
 export default async function AssistantPage({
   params,
@@ -60,7 +45,7 @@ export default async function AssistantPage({
             ? `Ask ${business.name} anything, or tell it what needs moving.`
             : `Tell it what needs moving and it will work out where everyone affected should go.`
         }
-        suggestionGroups={analyticsEnabled ? GROUPS_FULL : GROUPS_CORE}
+        suggestionGroups={analyticsEnabled ? ASSISTANT_SUGGESTIONS_FULL : ASSISTANT_SUGGESTIONS_CORE}
         initialMessage={q?.slice(0, 500)}
         initialMessages={history}
         inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}

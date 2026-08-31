@@ -1,9 +1,12 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { getSubscriptionState } from '@/lib/subscription';
+import { hasBusinessIntelligence } from '@/lib/subscription-server';
+import { getAssistantHistory } from '@/lib/assistantHistory';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminMobileNav from '@/components/AdminMobileNav';
 import PwaRegister from '@/components/PwaRegister';
+import AdminAssistantWidget from '@/components/AdminAssistantWidget';
 import { ToastProvider } from '@/components/Toast';
 import type { Metadata, Viewport } from 'next';
 
@@ -76,16 +79,22 @@ export default async function AdminLayout({
   // disagree about whether setup is actually done. Also mirrored in
   // lib/onboardingProgress.ts for the first-time onboarding chat - keep
   // both in sync if this formula ever changes.
-  const [{ data: bizExtra }, { count: servicesCount }, { count: hoursCount }, { data: sub }] = await Promise.all([
-    supabase
-      .from('businesses')
-      .select('description, logo_url, telegram_bot_username, whatsapp_display_number, messenger_page_name')
-      .eq('id', business.id)
-      .maybeSingle(),
-    supabase.from('services').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('active', true),
-    supabase.from('availability').select('id', { count: 'exact', head: true }).eq('business_id', business.id).is('staff_id', null),
-    supabase.from('subscriptions').select('status, trial_ends_at, current_period_end, plan').eq('business_id', business.id).maybeSingle(),
-  ]);
+  const [{ data: bizExtra }, { count: servicesCount }, { count: hoursCount }, { data: sub }, analyticsEnabled, assistantHistory] =
+    await Promise.all([
+      supabase
+        .from('businesses')
+        .select('description, logo_url, telegram_bot_username, whatsapp_display_number, messenger_page_name')
+        .eq('id', business.id)
+        .maybeSingle(),
+      supabase.from('services').select('id', { count: 'exact', head: true }).eq('business_id', business.id).eq('active', true),
+      supabase.from('availability').select('id', { count: 'exact', head: true }).eq('business_id', business.id).is('staff_id', null),
+      supabase.from('subscriptions').select('status, trial_ends_at, current_period_end, plan').eq('business_id', business.id).maybeSingle(),
+      // For AdminAssistantWidget below - computed once here (same as every
+      // other nav-status signal above) rather than each page inventing its
+      // own version.
+      hasBusinessIntelligence(business.id),
+      getAssistantHistory(business.id, staff.id, 'assistant'),
+    ]);
 
   const setupIncomplete = !(
     Boolean(bizExtra?.description?.trim() || bizExtra?.logo_url) &&
@@ -101,6 +110,18 @@ export default async function AdminLayout({
   return (
     <ToastProvider>
       <PwaRegister slug={slug} />
+      {/* Everywhere, not just the dashboard - was AskAssistantBar, which
+          only rendered on the dashboard homepage, meaning "ask the
+          assistant" meant leaving whatever you were doing on Services or
+          Calendar first. Same conversation either way (shares history with
+          the full /admin/assistant page via assistantHistory above). */}
+      <AdminAssistantWidget
+        slug={slug}
+        businessName={business.name}
+        logoUrl={bizExtra?.logo_url ?? null}
+        analyticsEnabled={analyticsEnabled}
+        initialMessages={assistantHistory}
+      />
       <div className="min-h-screen bg-warm-surface md:flex">
         <AdminSidebar
           slug={slug}

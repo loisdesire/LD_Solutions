@@ -31,6 +31,7 @@ export default function AssistantChat({
   initialMessage,
   initialMessages,
   onReplyData,
+  bare = false,
 }: {
   slug: string;
   endpoint: string;
@@ -46,6 +47,10 @@ export default function AssistantChat({
   /** Called with the full parsed response body after every successful reply - additive to `reply`, for a caller
    * that needs more than the message text back (e.g. onboarding's live progress checklist, see OnboardingChat.tsx). */
   onReplyData?: (data: Record<string, unknown>) => void;
+  /** Drops this component's own card chrome (border/rounding/background/fixed height) and fills its parent's
+   * height instead - for a caller that already provides its own frame, like AdminAssistantWidget.tsx's floating
+   * panel. Default false keeps the normal self-contained card used inline on a page (the Assistant/onboarding pages). */
+  bare?: boolean;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [input, setInput] = useState('');
@@ -163,7 +168,7 @@ export default function AssistantChat({
     <div>
       {banner}
 
-      <div className="border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70vh]">
+      <div className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70vh]'}>
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3.5">
           {messages.length === 0 && (
             <div className="my-auto text-center">

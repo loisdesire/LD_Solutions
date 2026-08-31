@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
-import AskAssistantBar from './AskAssistantBar';
 import SetupChecklist from './SetupChecklist';
 import { formatMoney } from '@/lib/formatMoney';
 
@@ -93,7 +92,6 @@ export default function AdminDashboardBody({
   slug,
   businessName,
   businessId,
-  logoUrl,
   services,
   maxAdvanceDays,
   all,
@@ -112,7 +110,6 @@ export default function AdminDashboardBody({
   slug: string;
   businessName: string;
   businessId: string;
-  logoUrl?: string | null;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
   all: Booking[];
@@ -224,13 +221,6 @@ export default function AdminDashboardBody({
         hoursDone={hoursDone}
         paymentDone={paymentDone}
       />
-
-      {/* Ask bar sits above the summary now, not below it - it's the
-          entry point to the thing this product is actually built
-          around, so it shouldn't come after the reader has already
-          finished the numbers and started scanning down toward the
-          list. */}
-      <AskAssistantBar slug={slug} businessName={businessName} logoUrl={logoUrl} />
 
       {/* One card, one line - Next up, Today, Today's revenue, This week
           all the same size, side by side, not a detail panel with its
