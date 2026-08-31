@@ -9,6 +9,7 @@ import PillTabs from './PillTabs';
 import { useDialog } from './useDialog';
 import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
 import ConfirmDialog from './ConfirmDialog';
+import ImageUploadField from './ImageUploadField';
 
 type Service = {
   id: string;
@@ -17,7 +18,18 @@ type Service = {
   price: number | null;
   active: boolean;
   category: string | null;
+  description: string | null;
+  image_url: string | null;
 };
+
+// 42703 (a plain select referencing a nonexistent column) or PGRST204 (an
+// insert/update whose payload references one PostgREST doesn't recognize)
+// both mean the same thing here: the services.description/image_url
+// migration hasn't been run against this database yet. Same fallback
+// pattern as lib/manageTools.ts, just client-side.
+function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === '42703' || error?.code === 'PGRST204';
+}
 
 type BookingStats = Record<string, { count: number; revenue: number }>;
 
@@ -31,6 +43,7 @@ function formatDuration(min: number): string {
 }
 
 function AddServiceModal({
+  slug,
   name,
   setName,
   category,
@@ -39,12 +52,17 @@ function AddServiceModal({
   setDuration,
   price,
   setPrice,
+  description,
+  setDescription,
+  imageUrl,
+  setImageUrl,
   categories,
   saving,
   error,
   onSubmit,
   onClose,
 }: {
+  slug: string;
   name: string;
   setName: (v: string) => void;
   category: string;
@@ -53,6 +71,10 @@ function AddServiceModal({
   setDuration: (v: number) => void;
   price: string;
   setPrice: (v: string) => void;
+  description: string;
+  setDescription: (v: string) => void;
+  imageUrl: string | null;
+  setImageUrl: (v: string | null) => void;
   categories: string[];
   saving: boolean;
   error: string;
@@ -64,6 +86,7 @@ function AddServiceModal({
   const categoryId = useId();
   const durationId = useId();
   const priceId = useId();
+  const descriptionId = useId();
 
   return (
     <div
@@ -151,6 +174,21 @@ function AddServiceModal({
               </div>
             </div>
           </div>
+          <div>
+            <label htmlFor={descriptionId} className={labelClass}>Description</label>
+            <textarea
+              id={descriptionId}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={inputClass}
+              rows={2}
+              placeholder="What's included, what to expect - shown to customers on the booking page (optional)"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Photo</label>
+            <ImageUploadField slug={slug} value={imageUrl} onChange={setImageUrl} shape="avatar" label="Photo" />
+          </div>
 
           {error && <p className="text-sm text-error">{error}</p>}
 
@@ -168,10 +206,12 @@ function AddServiceModal({
 }
 
 export default function ServicesManager({
+  slug,
   businessId,
   initialServices,
   bookingStats,
 }: {
+  slug: string;
   businessId: string;
   initialServices: Service[];
   bookingStats: BookingStats;
@@ -180,13 +220,22 @@ export default function ServicesManager({
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState(30);
   const [price, setPrice] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const [editingId, setEditingId] = useState('');
-  const [editDraft, setEditDraft] = useState({ name: '', category: '', duration_minutes: 30, price: '' });
+  const [editDraft, setEditDraft] = useState({
+    name: '',
+    category: '',
+    duration_minutes: 30,
+    price: '',
+    description: '',
+    image_url: null as string | null,
+  });
   const [editSaving, setEditSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -269,7 +318,7 @@ export default function ServicesManager({
     setSaving(true);
     setError('');
 
-    const { data, error: insertError } = await supabase
+    let { data, error: insertError } = await supabase
       .from('services')
       .insert({
         business_id: businessId,
@@ -277,9 +326,24 @@ export default function ServicesManager({
         category: category.trim() || null,
         duration_minutes: duration,
         price: price ? Number(price) : null,
+        description: description.trim() || null,
+        image_url: imageUrl,
       })
       .select()
       .single();
+
+    // The migration adding description/image_url hasn't run against this
+    // database yet - fall back to saving the service without them rather
+    // than losing the whole thing (see isMissingColumnError above).
+    if (isMissingColumnError(insertError)) {
+      const fallback = await supabase
+        .from('services')
+        .insert({ business_id: businessId, name, category: category.trim() || null, duration_minutes: duration, price: price ? Number(price) : null })
+        .select()
+        .single();
+      data = fallback.data;
+      insertError = fallback.error;
+    }
 
     setSaving(false);
 
@@ -288,11 +352,19 @@ export default function ServicesManager({
       return;
     }
 
-    setServices((prev) => [...prev, data]);
+    // A toast, not the modal's inline error - this fires right before the
+    // modal closes below, so an inline message would never be seen.
+    if (!data.description && !data.image_url && (description.trim() || imageUrl)) {
+      showToast('Service saved - the description/photo need a pending database update first, so those weren\'t saved this time.', 'error');
+    }
+
+    setServices((prev) => [...prev, { ...data, description: data.description ?? null, image_url: data.image_url ?? null }]);
     setName('');
     setCategory('');
     setDuration(30);
     setPrice('');
+    setDescription('');
+    setImageUrl(null);
     setShowAdd(false);
   }
 
@@ -334,40 +406,48 @@ export default function ServicesManager({
       category: service.category ?? '',
       duration_minutes: service.duration_minutes,
       price: service.price ? String(service.price) : '',
+      description: service.description ?? '',
+      image_url: service.image_url,
     });
   }
 
   async function saveEdit(id: string) {
     setEditSaving(true);
-    setError('');
 
-    const { error: updateError } = await supabase
-      .from('services')
-      .update({
-        name: editDraft.name,
-        category: editDraft.category.trim() || null,
-        duration_minutes: editDraft.duration_minutes,
-        price: editDraft.price ? Number(editDraft.price) : null,
-      })
-      .eq('id', id);
+    const update = {
+      name: editDraft.name,
+      category: editDraft.category.trim() || null,
+      duration_minutes: editDraft.duration_minutes,
+      price: editDraft.price ? Number(editDraft.price) : null,
+      description: editDraft.description.trim() || null,
+      image_url: editDraft.image_url,
+    };
+
+    let { error: updateError } = await supabase.from('services').update(update).eq('id', id);
+
+    // Same missing-column fallback as handleAdd above.
+    let droppedExtras = false;
+    if (isMissingColumnError(updateError)) {
+      const { description: _d, image_url: _i, ...rest } = update;
+      const fallback = await supabase.from('services').update(rest).eq('id', id);
+      updateError = fallback.error;
+      droppedExtras = !updateError;
+    }
 
     setEditSaving(false);
 
     if (updateError) {
-      setError(friendlyError(updateError));
+      showToast('Could not save that service', 'error');
       return;
+    }
+    if (droppedExtras) {
+      showToast('Saved - but the description/photo need a pending database update first, so those weren\'t saved this time.', 'error');
     }
 
     setServices((prev) =>
       prev.map((s) =>
         s.id === id
-          ? {
-              ...s,
-              name: editDraft.name,
-              category: editDraft.category.trim() || null,
-              duration_minutes: editDraft.duration_minutes,
-              price: editDraft.price ? Number(editDraft.price) : null,
-            }
+          ? { ...s, ...update, description: droppedExtras ? s.description : update.description, image_url: droppedExtras ? s.image_url : update.image_url }
           : s
       )
     );
@@ -397,6 +477,7 @@ export default function ServicesManager({
           (useDialog: focus trap, Escape, scroll lock) as NewAppointmentModal. */}
       {showAdd && (
         <AddServiceModal
+          slug={slug}
           name={name}
           setName={setName}
           category={category}
@@ -405,6 +486,10 @@ export default function ServicesManager({
           setDuration={setDuration}
           price={price}
           setPrice={setPrice}
+          description={description}
+          setDescription={setDescription}
+          imageUrl={imageUrl}
+          setImageUrl={setImageUrl}
           categories={categories}
           saving={saving}
           error={error}
@@ -494,50 +579,69 @@ export default function ServicesManager({
             editingId === s.id ? (
               <div
                 key={s.id}
-                className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-3 ${
+                className={`flex flex-col gap-3 p-4 ${
                   i !== paged.length - 1 ? 'border-b border-line' : ''
                 }`}
                 style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
               >
-                <input
-                  aria-label="Service name"
-                  value={editDraft.name}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
-                  className={`${smallInputClass} flex-1`}
-                />
-                <input
-                  aria-label="Category"
-                  value={editDraft.category}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
-                  placeholder="Category"
-                  className={`${smallInputClass} w-28`}
-                />
-                <input
-                  type="number"
-                  min={5}
-                  step={5}
-                  aria-label="Duration in minutes"
-                  value={editDraft.duration_minutes}
-                  onChange={(e) =>
-                    setEditDraft((d) => ({ ...d, duration_minutes: Number(e.target.value) }))
-                  }
-                  className={`${smallInputClass} w-24`}
-                />
-                <div className="relative w-28">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint text-[12.5px] pointer-events-none">
-                    ₦
-                  </span>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+                  <input
+                    aria-label="Service name"
+                    value={editDraft.name}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
+                    className={`${smallInputClass} flex-1`}
+                  />
+                  <input
+                    aria-label="Category"
+                    value={editDraft.category}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
+                    placeholder="Category"
+                    className={`${smallInputClass} w-28`}
+                  />
                   <input
                     type="number"
-                    min={0}
-                    aria-label="Price"
-                    value={editDraft.price}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
-                    placeholder="Price"
-                    className={`${smallInputClass} w-full pl-6`}
+                    min={5}
+                    step={5}
+                    aria-label="Duration in minutes"
+                    value={editDraft.duration_minutes}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({ ...d, duration_minutes: Number(e.target.value) }))
+                    }
+                    className={`${smallInputClass} w-24`}
+                  />
+                  <div className="relative w-28">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint text-[12.5px] pointer-events-none">
+                      ₦
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      aria-label="Price"
+                      value={editDraft.price}
+                      onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
+                      placeholder="Price"
+                      className={`${smallInputClass} w-full pl-6`}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <textarea
+                    aria-label="Description"
+                    value={editDraft.description}
+                    onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))}
+                    placeholder="Description (optional)"
+                    rows={2}
+                    className={`${smallInputClass} flex-1`}
+                  />
+                  <ImageUploadField
+                    slug={slug}
+                    value={editDraft.image_url}
+                    onChange={(url) => setEditDraft((d) => ({ ...d, image_url: url }))}
+                    shape="avatar"
+                    label="Photo"
                   />
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => saveEdit(s.id)}
                     disabled={editSaving}
@@ -562,15 +666,23 @@ export default function ServicesManager({
               >
                 <div className="flex items-center justify-between sm:justify-start gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span
-                      className="hidden sm:flex h-8 w-8 rounded-xl items-center justify-center shrink-0"
-                      style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M9 12l2 2 4-4" />
-                      </svg>
-                    </span>
+                    {s.image_url ? (
+                      <img
+                        src={s.image_url}
+                        alt=""
+                        className="hidden sm:block h-8 w-8 rounded-xl object-cover shrink-0 border border-line"
+                      />
+                    ) : (
+                      <span
+                        className="hidden sm:flex h-8 w-8 rounded-xl items-center justify-center shrink-0"
+                        style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M9 12l2 2 4-4" />
+                        </svg>
+                      </span>
+                    )}
                     <div className="min-w-0">
                       <p className="font-semibold text-[14.5px] truncate">{s.name}</p>
                       {s.category && (

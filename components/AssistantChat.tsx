@@ -29,6 +29,7 @@ export default function AssistantChat({
   inputPlaceholder,
   banner,
   initialMessage,
+  initialMessages,
   onReplyData,
 }: {
   slug: string;
@@ -38,12 +39,15 @@ export default function AssistantChat({
   inputPlaceholder: string;
   /** Asked automatically on mount, so a question typed elsewhere can open straight into its answer. */
   initialMessage?: string;
+  /** Prior turns to restore on mount (fetched server-side by the page) - so navigating away mid-conversation and
+   * coming back doesn't drop it. Seeds state once; this component owns the conversation from there. */
+  initialMessages?: Message[];
   banner?: ReactNode;
   /** Called with the full parsed response body after every successful reply - additive to `reply`, for a caller
    * that needs more than the message text back (e.g. onboarding's live progress checklist, see OnboardingChat.tsx). */
   onReplyData?: (data: Record<string, unknown>) => void;
 }) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -278,6 +282,18 @@ export default function AssistantChat({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              // Belt and braces alongside the form's onSubmit below - some
+              // mobile browsers don't reliably turn a soft keyboard's
+              // return/go key into a real submit event. isComposing guards
+              // against IME input, where Enter confirms a character rather
+              // than sending the message.
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                send(input);
+              }
+            }}
+            enterKeyHint="send"
             aria-label="Ask your assistant"
             placeholder={inputPlaceholder}
             className="flex-1 min-w-0 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[14px] outline-none focus:border-accent transition-colors"

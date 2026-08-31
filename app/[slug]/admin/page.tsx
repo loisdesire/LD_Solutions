@@ -135,6 +135,7 @@ export default async function AdminDashboard({
       slug={slug}
       businessName={business.name}
       businessId={business.id}
+      logoUrl={business.logo_url}
       services={bookableServices ?? []}
       maxAdvanceDays={rules?.max_advance_days ?? 30}
       all={all}

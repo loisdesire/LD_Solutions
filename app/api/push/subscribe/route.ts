@@ -54,10 +54,12 @@ export async function POST(req: NextRequest) {
   );
 
   if (error) {
-    // 42P01 = the push_subscriptions migration hasn't been run yet on this
-    // database - fail clearly rather than a raw Postgres error reaching the
-    // client, same convention as the rate-limit RPC fallback.
-    if (error.code === '42P01') {
+    // The push_subscriptions migration hasn't been run yet on this
+    // database - fail clearly rather than a raw error reaching the client.
+    // PGRST205, not Postgres's own 42P01 - confirmed live that a missing
+    // table surfaces through PostgREST (what this client actually talks
+    // to) under its own code, not the raw Postgres one.
+    if (error.code === 'PGRST205') {
       return NextResponse.json({ error: 'Push notifications are not set up yet.' }, { status: 501 });
     }
     return NextResponse.json({ error: 'Could not save subscription' }, { status: 500 });

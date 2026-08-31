@@ -1,5 +1,6 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { hasBusinessIntelligence } from '@/lib/subscription-server';
+import { getAssistantHistory } from '@/lib/assistantHistory';
 import AssistantChat from '@/components/AssistantChat';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -33,8 +34,11 @@ export default async function AssistantPage({
   // Lets the dashboard hand a question straight over, so asking from there
   // lands on the answer rather than on an empty chat.
   const { q } = await searchParams;
-  const { business } = await requireStaffSession(slug);
-  const analyticsEnabled = await hasBusinessIntelligence(business.id);
+  const { business, staff } = await requireStaffSession(slug);
+  const [analyticsEnabled, history] = await Promise.all([
+    hasBusinessIntelligence(business.id),
+    getAssistantHistory(business.id, staff.id, 'assistant'),
+  ]);
 
   return (
     <div>
@@ -58,6 +62,7 @@ export default async function AssistantPage({
         }
         suggestionGroups={analyticsEnabled ? GROUPS_FULL : GROUPS_CORE}
         initialMessage={q?.slice(0, 500)}
+        initialMessages={history}
         inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}
         banner={
           // A trust feature, not a small disclaimer - this is the one

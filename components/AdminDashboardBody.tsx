@@ -93,6 +93,7 @@ export default function AdminDashboardBody({
   slug,
   businessName,
   businessId,
+  logoUrl,
   services,
   maxAdvanceDays,
   all,
@@ -111,6 +112,7 @@ export default function AdminDashboardBody({
   slug: string;
   businessName: string;
   businessId: string;
+  logoUrl?: string | null;
   services: { id: string; name: string; duration_minutes: number; price: number | null }[];
   maxAdvanceDays: number;
   all: Booking[];
@@ -228,7 +230,7 @@ export default function AdminDashboardBody({
           around, so it shouldn't come after the reader has already
           finished the numbers and started scanning down toward the
           list. */}
-      <AskAssistantBar slug={slug} />
+      <AskAssistantBar slug={slug} businessName={businessName} logoUrl={logoUrl} />
 
       {/* One card, one line - Next up, Today, Today's revenue, This week
           all the same size, side by side, not a detail panel with its

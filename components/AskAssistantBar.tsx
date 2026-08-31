@@ -10,7 +10,15 @@ import { useRouter } from 'next/navigation';
 // This puts it where they already land every day. Typing here opens the
 // assistant already answering, so the first experience of it is an answer
 // rather than an empty chat box asking them to think of something.
-export default function AskAssistantBar({ slug }: { slug: string }) {
+export default function AskAssistantBar({
+  slug,
+  businessName,
+  logoUrl,
+}: {
+  slug: string;
+  businessName: string;
+  logoUrl?: string | null;
+}) {
   const [value, setValue] = useState('');
   const router = useRouter();
 
@@ -36,16 +44,38 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
         }}
         className="flex items-center gap-2.5 px-4 py-2.5"
       >
-        <span
-          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
-          style={{ background: 'var(--accent)' }}
-          aria-hidden="true"
-        >
-          <img src="/logo.png" alt="" className="h-[18px] w-[18px] object-contain" />
-        </span>
+        {/* This business's own logo, not Vanova's - the owner is chatting
+            with their assistant, not the platform's. Same fallback as
+            BusinessMark (AdminSidebar) when there isn't one: a first-letter
+            square, not a generic icon that means nothing to them. */}
+        {logoUrl ? (
+          <span className="h-7 w-7 rounded-lg overflow-hidden shrink-0 border border-line">
+            <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+          </span>
+        ) : (
+          <span
+            className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-accent-contrast font-display text-[13px] font-semibold"
+            style={{ background: 'var(--accent)' }}
+            aria-hidden="true"
+          >
+            {businessName?.[0]?.toUpperCase()}
+          </span>
+        )}
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            // Belt and braces alongside the form's onSubmit below - some
+            // mobile browsers don't reliably turn a soft keyboard's
+            // return/go key into a real submit event. isComposing guards
+            // against IME input (Japanese/Chinese/Korean etc.), where
+            // Enter confirms a character rather than sending the message.
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              ask(value);
+            }
+          }}
+          enterKeyHint="send"
           aria-label="Ask your assistant"
           placeholder="Ask about your bookings, or say what needs moving…"
           /* globals.css puts a 2px outline on every input's :focus-visible -

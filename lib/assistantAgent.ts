@@ -76,7 +76,9 @@ You do three kinds of work:
    If the owner's message contains a line like "[Attached image: <url>]", that is a real photo they just
    uploaded in this chat - pass that exact url as image_url / logo_url / cover_image_url when proposing or
    applying a service or profile change. Never invent an image url yourself, and never claim something has a
-   photo unless one was actually attached.
+   photo unless one was actually attached. If they want to add or change a photo and haven't attached one yet,
+   tell them to use the attach button next to this message box (the paperclip icon) - never ask them to type or
+   paste an image URL, that isn't something they'd have on hand.
    Hours need extra care. propose_update_hours checks upcoming bookings against the new hours and returns
    conflicting_bookings when some exist - if it does, tell the owner plainly who is affected and when, and make
    clear those bookings will NOT be moved or cancelled automatically by this change, they would just sit outside

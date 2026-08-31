@@ -29,10 +29,10 @@ export async function getBusinessBySlug(slug: string) {
 
   if (error || !business) return null;
 
-  const [{ data: services }, { count: productCount }, { data: hours }] = await Promise.all([
+  const [servicesResult, { count: productCount }, { data: hours }] = await Promise.all([
     supabasePublic
       .from('services')
-      .select('id, name, duration_minutes, price')
+      .select('id, name, duration_minutes, price, description, image_url')
       .eq('business_id', business.id)
       .eq('active', true)
       .order('name'),
@@ -47,6 +47,20 @@ export async function getBusinessBySlug(slug: string) {
       .eq('business_id', business.id)
       .is('staff_id', null),
   ]);
+
+  // Same 42703 fallback as above - this is the public booking page, so a
+  // missing description/image_url migration must never take the whole
+  // service list (and with it, the ability to book at all) down.
+  let services = servicesResult.data;
+  if (servicesResult.error?.code === '42703') {
+    const fallback = await supabasePublic
+      .from('services')
+      .select('id, name, duration_minutes, price')
+      .eq('business_id', business.id)
+      .eq('active', true)
+      .order('name');
+    services = (fallback.data ?? []).map((s) => ({ ...s, description: null, image_url: null }));
+  }
 
   return {
     business,

@@ -787,3 +787,38 @@ create policy "staff can manage own push subscriptions"
 drop trigger if exists reject_demo_writes on push_subscriptions;
 create trigger reject_demo_writes before insert or update or delete on push_subscriptions
   for each row execute function reject_demo_viewer_writes();
+
+-- ============================================
+-- Assistant/onboarding chat history - one row per message, so leaving the
+-- page (e.g. clicking to Services mid-conversation) and coming back
+-- restores it instead of dropping the thread. `kind` keeps the regular
+-- assistant and the first-time onboarding chat as separate threads even
+-- though both reuse the same AssistantChat.tsx component. Scoped to
+-- staff_id, not just business_id - two staff members each get their own
+-- conversation, not one shared thread. lib/assistantHistory.ts is the only
+-- thing that reads/writes this.
+-- ============================================
+create table if not exists assistant_messages (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  staff_id uuid references staff(id) on delete cascade not null,
+  kind text not null default 'assistant',
+  role text not null,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists assistant_messages_lookup_idx
+  on assistant_messages (business_id, staff_id, kind, created_at);
+
+alter table assistant_messages enable row level security;
+
+create policy "staff can manage own assistant messages"
+  on assistant_messages for all
+  using (
+    staff_id in (select id from staff where auth_id = auth.uid())
+  );
+
+drop trigger if exists reject_demo_writes on assistant_messages;
+create trigger reject_demo_writes before insert or update or delete on assistant_messages
+  for each row execute function reject_demo_viewer_writes();

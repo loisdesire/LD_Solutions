@@ -4,6 +4,7 @@ import { runOnboardingAgent } from '@/lib/onboardingAgent';
 import { getOnboardingProgress } from '@/lib/onboardingProgress';
 import type { AgentMessage } from '@/lib/agentLoop';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
+import { appendAssistantMessages } from '@/lib/assistantHistory';
 import { logError } from '@/lib/logger';
 
 // POST /api/onboarding/chat - the first-time setup conversation
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireStaffApiSession(req, slug, 'id, name', { requireOwner: true });
   if (auth.error) return auth.error;
-  const { business } = auth;
+  const { business, staff } = auth;
 
   // Same verification as app/api/assistant/chat/route.ts - only ever pass
   // the model a URL that's actually this app's own Storage bucket.
@@ -40,19 +41,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const cleanMessage = String(message).slice(0, 2000);
+
   try {
     const progress = await getOnboardingProgress(business.id, slug);
     const reply = await runOnboardingAgent({
       businessId: business.id,
       businessName: business.name,
       history: Array.isArray(history) ? (history as AgentMessage[]).slice(-20) : [],
-      message: String(message).slice(0, 2000),
+      message: cleanMessage,
       progress,
       imageUrl: safeImageUrl,
     });
     // Re-read after the agent's tool calls, if any, so what's returned
     // reflects what actually got saved this turn, not the state going in.
     const progressAfter = await getOnboardingProgress(business.id, slug);
+    // So leaving mid-setup and coming back restores the conversation
+    // instead of starting over - see lib/assistantHistory.ts. Awaited for
+    // the same reason as app/api/assistant/chat/route.ts.
+    await appendAssistantMessages(business.id, staff.id, 'onboarding', [
+      { role: 'user', content: cleanMessage },
+      { role: 'assistant', content: reply },
+    ]);
     return NextResponse.json({ reply, progress: progressAfter });
   } catch (err) {
     logError('api/onboarding/chat', err, { businessId: business.id });

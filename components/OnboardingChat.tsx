@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AssistantChat from './AssistantChat';
 
+type Message = { role: 'user' | 'assistant'; content: string };
+
 export type OnboardingProgress = {
   profileDone: boolean;
   servicesDone: boolean;
@@ -46,10 +48,12 @@ export default function OnboardingChat({
   slug,
   businessName,
   initialProgress,
+  initialMessages,
 }: {
   slug: string;
   businessName: string;
   initialProgress: OnboardingProgress;
+  initialMessages?: Message[];
 }) {
   const router = useRouter();
   const [progress, setProgress] = useState(initialProgress);
@@ -71,7 +75,12 @@ export default function OnboardingChat({
         emptyStateText={`Let's get ${businessName} ready to take bookings.`}
         suggestionGroups={[]}
         inputPlaceholder="Type your answer…"
-        initialMessage="Hi! I just signed up."
+        initialMessages={initialMessages}
+        // Only greet on a genuinely fresh start - once there's real history
+        // to restore, auto-sending this again on every return visit would
+        // re-greet someone mid-conversation instead of just picking up
+        // where they left off.
+        initialMessage={!initialMessages || initialMessages.length === 0 ? 'Hi! I just signed up.' : undefined}
         onReplyData={(data) => {
           if (data.progress) setProgress(data.progress as OnboardingProgress);
         }}

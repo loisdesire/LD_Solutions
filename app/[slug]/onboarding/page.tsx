@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getOnboardingProgress } from '@/lib/onboardingProgress';
+import { getAssistantHistory } from '@/lib/assistantHistory';
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import AuthMark from '@/components/AuthMark';
 import OnboardingChat from '@/components/OnboardingChat';
@@ -37,8 +38,11 @@ export async function generateMetadata({
 // immediately, so a business landing here is always inside it.
 export default async function OnboardingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { business } = await requireStaffSession(slug, { requireOwner: true });
-  const progress = await getOnboardingProgress(business.id, slug);
+  const { business, staff } = await requireStaffSession(slug, { requireOwner: true });
+  const [progress, history] = await Promise.all([
+    getOnboardingProgress(business.id, slug),
+    getAssistantHistory(business.id, staff.id, 'onboarding'),
+  ]);
 
   return (
     <main className="min-h-screen bg-paper">
@@ -63,7 +67,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ slu
           Answer a few questions here - no forms. Say as much or as little as you want in each message.
         </p>
 
-        <OnboardingChat slug={slug} businessName={business.name} initialProgress={progress} />
+        <OnboardingChat slug={slug} businessName={business.name} initialProgress={progress} initialMessages={history} />
       </div>
     </main>
   );

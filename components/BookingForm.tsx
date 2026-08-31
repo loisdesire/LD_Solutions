@@ -13,6 +13,8 @@ type Service = {
   name: string;
   duration_minutes: number;
   price: number | null;
+  description?: string | null;
+  image_url?: string | null;
 };
 
 type Step = 'service' | 'datetime' | 'details' | 'confirmed';
@@ -583,14 +585,32 @@ export default function BookingForm({
                   onClick={() => selectService(s)}
                   className="group w-full flex items-center justify-between gap-4 py-5 px-1 text-left border-b border-line last:border-0 transition-colors hover:bg-warm-surface"
                 >
-                  <div className="min-w-0">
-                    <h3 className="font-display text-[18px] font-semibold text-ink leading-tight">{s.name}</h3>
-                    <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 6v6l4 2" />
-                      </svg>
-                      <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
+                  <div className="flex items-center gap-4 min-w-0">
+                    {/* Optional - most services won't have one, and the row
+                        already reads fine without it (this is the flat-menu
+                        treatment the design brief specifically calls for).
+                        Shown when a business has actually added a photo, so
+                        a customer can see what they're booking rather than
+                        guessing from a name alone. */}
+                    {s.image_url && (
+                      <img
+                        src={s.image_url}
+                        alt=""
+                        className="hidden sm:block h-14 w-14 rounded-xl object-cover shrink-0 border border-line"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-display text-[18px] font-semibold text-ink leading-tight">{s.name}</h3>
+                      <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 6v6l4 2" />
+                        </svg>
+                        <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
+                      </div>
+                      {s.description && (
+                        <p className="text-[13px] text-ink-faint mt-1 line-clamp-1 max-w-xs">{s.description}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
