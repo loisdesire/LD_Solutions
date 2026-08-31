@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import SlotGrid from '@/components/SlotGrid';
 import SelfBookingDemo from '@/components/SelfBookingDemo';
+import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
 import Button from '@/components/Button';
@@ -434,6 +435,55 @@ export default function LandingPage() {
                 )}
               </Reveal>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* The owner's side of the same idea the hero opens with - that one
+          shows a customer talking to the AI to book; this shows the
+          business owner talking to the same kind of assistant to run the
+          business itself. No explicit background (so it inherits the
+          page's own paper tone, same as how-it-works right above it) -
+          this reads as a direct continuation of that section, not a new
+          chapter, since it's genuinely the second half of the same
+          thought. */}
+      <section className="border-b border-line">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <Reveal>
+              <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
+                The owner&rsquo;s side
+              </div>
+              <h2 className="font-display text-[2rem] sm:text-4xl leading-[1.12] text-ink mb-4">
+                You don&rsquo;t fill out the form.
+                <br />
+                You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
+              </h2>
+              <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-7 max-w-md">
+                Add a service, change your hours, update your profile - straight from a chat, right on your
+                dashboard. No settings page to hunt through. Tell it what you want, it shows you exactly what&rsquo;s
+                about to change, and only saves once you say yes.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  '"We\'re open till 8 on Fridays now"',
+                  '"Turn on payments for bookings"',
+                  '"Change my logo" - just attach the photo',
+                ].map((example) => (
+                  <span
+                    key={example}
+                    className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-paper px-3.5 py-2 text-[13px] text-ink-soft"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />
+                    {example}
+                  </span>
+                ))}
+              </div>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <OwnerChatDemo />
+            </Reveal>
           </div>
         </div>
       </section>
