@@ -14,7 +14,10 @@ const REVEAL_MS_PER_WORD = 35;
 const REVEAL_MAX_MS = 1400;
 const REVEAL_MIN_MS = 300;
 
-const THINKING_LINES = ['Checking availability…', 'One moment…', 'Almost there…'];
+// Generic on purpose - this widget answers anything about the business,
+// not just booking questions, so a fixed "Checking availability…" showed
+// up even when someone asked for the address or opening hours.
+const THINKING_LINES = ['Thinking…', 'One moment…', 'Almost there…'];
 
 // A random per-visitor id, one per business (a customer browsing two
 // different businesses' pages should get two separate conversations, not
@@ -142,9 +145,9 @@ export default function WebChatWidget({
   }, []);
 
   // THINKING_LINES has 3 messages so a reply that takes a couple of
-  // seconds doesn't just sit on the same static "Checking availability…"
-  // the whole time - cycles while thinking is true, resets to the first
-  // line at the start of every new request.
+  // seconds doesn't just sit on the same static "Thinking…" the whole
+  // time - cycles while thinking is true, resets to the first line at the
+  // start of every new request.
   useEffect(() => {
     if (!thinking) {
       setThinkingLineIndex(0);
