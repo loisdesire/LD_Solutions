@@ -326,7 +326,7 @@ export default function WebChatWidget({
                 }}
                 aria-label="Type a message"
                 placeholder="Type a message…"
-                className="flex-1 bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[14px] text-ink placeholder-ink-faint"
+                className="flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-[14px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}

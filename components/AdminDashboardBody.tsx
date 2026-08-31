@@ -209,7 +209,7 @@ export default function AdminDashboardBody({
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search customers or bookings"
               placeholder="Search"
-              className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
+              className="bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
             />
           </div>
         )}
@@ -288,7 +288,17 @@ export default function AdminDashboardBody({
               color={nextSlot ? 'var(--accent)' : 'var(--ink-faint)'}
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
-            <TodayStat label="Today's revenue" value={formatMoney(todayRevenue)} />
+            {/* Was the one stat in this row with nothing under its number -
+                every neighbour has a second line, so this one read as
+                incomplete/broken rather than just "nothing to add here."
+                todayCount is already in scope; ties the revenue figure back
+                to where it came from instead of a bare number floating on
+                its own. */}
+            <TodayStat
+              label="Today's revenue"
+              value={formatMoney(todayRevenue)}
+              sub={todayCount === 0 ? 'no bookings yet' : `from ${todayCount} ${todayCount === 1 ? 'appointment' : 'appointments'}`}
+            />
             <TodayStat
               label="This week"
               value={String(thisWeekCount)}

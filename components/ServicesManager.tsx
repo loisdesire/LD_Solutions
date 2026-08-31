@@ -440,7 +440,7 @@ export default function ServicesManager({
               }}
             />
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2">
+              <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 border border-transparent transition-colors focus-within:border-accent">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
@@ -452,7 +452,7 @@ export default function ServicesManager({
                     setPage(0);
                   }}
                   placeholder="Search services…"
-                  className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-36"
+                  className="bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-36"
                 />
               </div>
               <button

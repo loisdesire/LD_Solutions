@@ -28,7 +28,7 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
     // reads as the input's boundary. Matches the same solid-accent
     // icon-square brand mark SelfBookingDemo and WebChatWidget use, so
     // the assistant looks like the same thing everywhere it shows up.
-    <div className="rounded-2xl border border-line bg-surface shadow-soft mb-8 overflow-hidden">
+    <div className="rounded-2xl border border-line bg-surface shadow-soft mb-8 overflow-hidden transition-colors focus-within:border-accent">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -37,33 +37,32 @@ export default function AskAssistantBar({ slug }: { slug: string }) {
         className="flex items-center gap-2.5 px-4 py-2.5"
       >
         <span
-          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-accent-contrast"
+          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
           style={{ background: 'var(--accent)' }}
           aria-hidden="true"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
-          </svg>
+          <img src="/logo.png" alt="" className="h-[18px] w-[18px] object-contain" />
         </span>
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           aria-label="Ask your assistant"
           placeholder="Ask about your bookings, or say what needs moving…"
-          /* globals.css puts a 2px outline on every input's :focus-visible so
-             keyboard focus is never *only* a colour change - correct, but on
-             a bare, unpadded, unrounded input it drew as a stray sharp-
-             cornered rectangle floating mid-row. rounded-lg + a touch of
-             padding (negative-margined back out so the input's own text
-             doesn't shift against the icon/button either side of it) gives
-             that same outline a shape to actually hug. truncate (overflow-
-             hidden + text-ellipsis + whitespace-nowrap) matters specifically
-             for the placeholder here: on a narrow phone this row is icon +
-             input + "Ask" button all sharing one line, and the full
-             placeholder sentence doesn't fit - without this it hard-clipped
-             mid-word ("...or say v"), which read as broken. An ellipsis
-             reads as "there's more," not as a cut-off render. */
-          className="flex-1 min-w-0 truncate bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint"
+          /* globals.css puts a 2px outline on every input's :focus-visible -
+             correct, keyboard focus should never be *only* a colour change,
+             but plain `outline-none` (specificity 0,1,0) actually LOSES to
+             that bare `input:focus-visible` rule (0,1,1), so it kept
+             drawing anyway - rounding its corners earlier only softened a
+             box that was still there, it never actually suppressed it.
+             `focus:outline-none` is the conditional form (0,2,0), which
+             does win. The real replacement lives one level up: the whole
+             card's border goes accent-coloured on focus-within, the same
+             "the card itself lights up" treatment WebChatWidget's own
+             input already uses, instead of a rectangle drawn tightly
+             around just the input segment inside an otherwise seamless
+             pill. truncate matters separately, for the placeholder on a
+             narrow phone where icon + input + "Ask" share one line. */
+          className="flex-1 min-w-0 truncate bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint"
         />
         <button
           type="submit"

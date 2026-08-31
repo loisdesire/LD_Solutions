@@ -263,7 +263,7 @@ export default function ProductsManager({
       ) : (
         <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex items-center justify-end">
-            <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 w-full sm:w-64">
+            <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 w-full sm:w-64 border border-transparent transition-colors focus-within:border-accent">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.3-4.3" />
@@ -272,7 +272,7 @@ export default function ProductsManager({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search products…"
-                className="bg-transparent border-none outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-full"
+                className="bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-[13px] text-ink placeholder-ink-faint w-full"
               />
             </div>
           </div>
