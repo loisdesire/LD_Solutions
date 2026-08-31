@@ -44,6 +44,18 @@ create table services (
 -- categories exist, never a fixed placeholder set.
 alter table services add column if not exists category text;
 
+-- A written description and a photo per service - added for the "manage
+-- your business by chat" assistant tools (lib/manageTools.ts): telling it
+-- "create a service, here's a description, here's a photo" needed
+-- somewhere on the row to actually put that description and photo. The
+-- manual Services form in the dashboard doesn't expose these yet; that's
+-- a real, deliberate gap - the AI path and the manual path should
+-- eventually offer the same fields, but the chat tools were the ask that
+-- needed these columns to exist at all, so they're not blocked on the
+-- form catching up.
+alter table services add column if not exists description text;
+alter table services add column if not exists image_url text;
+
 -- Availability (working hours, per staff or business-wide if staff_id is null)
 create table availability (
   id uuid primary key default gen_random_uuid(),
@@ -81,11 +93,21 @@ create table bookings (
 -- needed to guarantee that bookings.business_id and the selected service's
 -- business_id describe the same tenant. Application queries enforce this
 -- too; this constraint is the final backstop if a future route forgets.
-alter table services add constraint services_id_business_id_key unique (id, business_id);
+-- Wrapped so re-running this file is always safe regardless of whether
+-- these two already exist on a given database - a plain `alter table add
+-- constraint` errors outright on a name that's already taken, and
+-- Postgres has no `add constraint if not exists`.
+do $$ begin
+  alter table services add constraint services_id_business_id_key unique (id, business_id);
+exception when duplicate_object then null;
+end $$;
 
-alter table bookings add constraint bookings_service_business_fk
-  foreign key (service_id, business_id)
-  references services (id, business_id);
+do $$ begin
+  alter table bookings add constraint bookings_service_business_fk
+    foreign key (service_id, business_id)
+    references services (id, business_id);
+exception when duplicate_object then null;
+end $$;
 
 -- The actual backstop against double-booking - not just app-level
 -- availability checks (those are the fast path / good UX), this is what
@@ -104,11 +126,14 @@ alter table bookings add constraint bookings_service_business_fk
 -- a GIST exclusion constraint.
 create extension if not exists btree_gist;
 
-alter table bookings add constraint no_overlapping_bookings
-  exclude using gist (
-    business_id with =,
-    tstzrange(start_time, end_time) with &&
-  ) where (status <> 'cancelled');
+do $$ begin
+  alter table bookings add constraint no_overlapping_bookings
+    exclude using gist (
+      business_id with =,
+      tstzrange(start_time, end_time) with &&
+    ) where (status <> 'cancelled');
+exception when duplicate_object then null;
+end $$;
 
 -- Atomic, deployment-wide fixed-window rate limiting. API routes call this
 -- with the service role so every serverless instance shares one counter.

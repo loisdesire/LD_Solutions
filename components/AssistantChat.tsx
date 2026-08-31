@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 
 type Message = { role: 'user' | 'assistant'; content: string };
+type PendingImage = { url: string; previewUrl: string };
 
 // Shared chat widget behind both dashboard AI assistants (Insights,
 // Schedule assistant) - was two copies of the identical fetch/state/
@@ -42,7 +43,39 @@ export default function AssistantChat({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // The one thing this chat can attach - a photo for a service the AI's
+  // about to create or update (see lib/manageTools.ts). Uploaded the
+  // moment it's picked (same /api/upload endpoint ImageUploadField.tsx
+  // already uses), not deferred to send time, so a broken upload shows up
+  // as its own error right away rather than failing silently inside a
+  // chat message later.
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  async function handleAttach(file: File) {
+    setError('');
+    setUploadingImage(true);
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`/api/upload?slug=${slug}`, { method: 'POST', body: formData });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error ?? 'Upload failed. Please try again.');
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+      setPendingImage({ url: data.url, previewUrl });
+    } catch {
+      setError("Upload failed - check your connection and try again.");
+      URL.revokeObjectURL(previewUrl);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   // Was unconditional - fired on the very first render too, with zero
   // messages yet, since `messages` changing from nothing to `[]` still
@@ -83,9 +116,15 @@ export default function AssistantChat({
 
   async function send(text: string) {
     if (!text.trim() || loading) return;
+    const imageUrl = pendingImage?.url ?? null;
     const nextMessages: Message[] = [...messages, { role: 'user', content: text }];
     setMessages(nextMessages);
     setInput('');
+    // Cleared immediately, not after the request resolves - once it's on
+    // its way to this specific message, holding it in the composer would
+    // just mean the next message accidentally reattaches the same photo.
+    if (pendingImage) URL.revokeObjectURL(pendingImage.previewUrl);
+    setPendingImage(null);
     setLoading(true);
     setError('');
 
@@ -95,7 +134,7 @@ export default function AssistantChat({
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, message: text, history: messages }),
+        body: JSON.stringify({ slug, message: text, history: messages, imageUrl }),
       });
       const data = await res.json();
       setLoading(false);
@@ -165,6 +204,44 @@ export default function AssistantChat({
 
         {error && <p className="text-error text-[13px] px-5 pb-1">{error}</p>}
 
+        {/* A photo, once picked, sits here until it's actually sent - so
+            it's obvious what "Create the haircut service with this photo"
+            is about to attach, and there's a clear way to back out of it
+            before it goes anywhere. */}
+        {(pendingImage || uploadingImage) && (
+          <div className="border-t border-line px-3 pt-3 flex items-center gap-2">
+            <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-line-strong shrink-0 bg-warm-surface">
+              {pendingImage && (
+                // eslint-disable-next-line @next/next/no-img-element -- a local blob: preview, next/image can't load those
+                <img src={pendingImage.previewUrl} alt="Attached" className="h-full w-full object-cover" />
+              )}
+              {uploadingImage && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}>
+                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="60" strokeDashoffset="20" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <p className="text-[13px] text-ink-soft flex-1">
+              {uploadingImage ? 'Uploading photo…' : 'Photo attached - it\'ll go with your next message.'}
+            </p>
+            {pendingImage && !uploadingImage && (
+              <button
+                type="button"
+                onClick={() => {
+                  URL.revokeObjectURL(pendingImage.previewUrl);
+                  setPendingImage(null);
+                }}
+                aria-label="Remove attached photo"
+                className="text-[13px] font-medium text-ink-faint hover:text-error transition-colors shrink-0"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -173,16 +250,37 @@ export default function AssistantChat({
           className="border-t border-line p-3 flex gap-2"
         >
           <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) handleAttach(file);
+            }}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+            aria-label="Attach a photo"
+            title="Attach a photo"
+            className="rounded-xl border border-line px-3 text-ink-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-50 shrink-0"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+          </button>
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             aria-label="Ask your assistant"
             placeholder={inputPlaceholder}
-            className="flex-1 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[14px] outline-none focus:border-accent transition-colors"
+            className="flex-1 min-w-0 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[14px] outline-none focus:border-accent transition-colors"
           />
           <button
             type="submit"
-            disabled={loading || !input.trim()}
-            className="rounded-xl bg-accent px-4 py-2.5 text-[14px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+            disabled={loading || uploadingImage || !input.trim()}
+            className="rounded-xl bg-accent px-4 py-2.5 text-[14px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 shrink-0"
           >
             Send
           </button>
