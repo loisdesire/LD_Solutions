@@ -339,7 +339,15 @@ export default function AdminSidebar({
         </div>
       </div>
 
-      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+      {/* Was plain small semibold text (11.5px, mixed case) - reading
+          smaller than the 14px nav items it's supposed to introduce, with
+          nothing else about it signaling "structural label" rather than
+          "diminished body text", so it lost the visual-hierarchy job it
+          was there to do. Same font-mono/uppercase/tracking eyebrow
+          treatment already used for section labels elsewhere in this app
+          (SettingsSections, the Assistant/Settings page headers) - reads
+          as a deliberate label at a small size instead of weak text. */}
+      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
         Today
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
@@ -348,7 +356,7 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
         Set up
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
@@ -357,7 +365,7 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
         Automate
       </div>
       <nav className="flex flex-col gap-0.5 mb-5">
@@ -366,7 +374,7 @@ export default function AdminSidebar({
         ))}
       </nav>
 
-      <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
         Business
       </div>
       <nav className="flex flex-col gap-0.5">

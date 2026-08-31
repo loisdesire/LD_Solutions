@@ -27,7 +27,14 @@ export default function SettingsSections({
 
   return (
     <div>
-      <nav aria-label="Settings sections" className="flex flex-wrap gap-2 mb-6">
+      {/* Scrolls horizontally on mobile instead of wrapping to a second
+          (and third) stacked row - five section pills wrapped at phone
+          widths, pushing the actual heading and content down and reading
+          like part of the page's structure rather than a single scannable
+          switcher. -mx-4/px-4 lets the scroll area bleed to the true edge
+          of the screen (so a partially-cut-off last pill hints there's
+          more) while the pills themselves keep the page's normal margin. */}
+      <nav aria-label="Settings sections" className="flex gap-2 mb-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         {sections.map((section) => {
           const selected = section.key === current.key;
           return (
@@ -35,7 +42,7 @@ export default function SettingsSections({
               key={section.key}
               href={`?section=${section.key}`}
               aria-current={selected ? 'page' : undefined}
-              className={`rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
+              className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
                 selected ? 'bg-accent text-accent-contrast' : 'bg-surface border border-line text-ink-soft hover:text-ink hover:border-line-strong'
               }`}
             >

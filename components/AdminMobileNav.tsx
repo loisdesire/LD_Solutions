@@ -167,7 +167,7 @@ export default function AdminMobileNav({
 
       {menuOpen && (
         <div id="admin-mobile-nav-menu" role="menu" className="border-t border-line px-4 py-4 animate-rise">
-          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
             Today
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
@@ -176,7 +176,7 @@ export default function AdminMobileNav({
             ))}
           </nav>
 
-          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
             Set up
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
@@ -185,7 +185,7 @@ export default function AdminMobileNav({
             ))}
           </nav>
 
-          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
             Automate
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
@@ -194,7 +194,7 @@ export default function AdminMobileNav({
             ))}
           </nav>
 
-          <div className="text-[11.5px] font-semibold text-ink-faint px-3 mb-1.5">
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
             Business
           </div>
           <nav className="flex flex-col gap-0.5 mb-4">
