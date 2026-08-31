@@ -6,6 +6,7 @@ import SelfBookingDemo from '@/components/SelfBookingDemo';
 import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
+import LandingMobileNav from '@/components/LandingMobileNav';
 import Button from '@/components/Button';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
@@ -136,13 +137,6 @@ const features = [
 // A real sequence - this is the one place on the page a numbered list
 // actually earns its keep, since these four things genuinely happen in
 // this order, not four unrelated feature bullets.
-const steps = [
-  { title: 'They ask', description: 'A customer messages you on your website, or on Telegram.' },
-  { title: 'It checks', description: 'The AI checks your real availability, instantly, against your actual calendar.' },
-  { title: 'It books', description: "It's confirmed and booked. No back-and-forth, no waiting on you." },
-  { title: 'You see it', description: 'The appointment lands on your dashboard automatically. You never touch it.' },
-];
-
 // Mirrors what the code actually gates. hasBusinessIntelligence() guards
 // exactly two things - the analytics half of the owner's assistant and the
 // customer bot's get_popular_services tool - so everything else belongs in
@@ -186,7 +180,7 @@ export default function LandingPage() {
       {/* Nav - sentence-case links, not the tiny-mono-uppercase treatment
           the whole previous system defaulted to for every label. */}
       <nav
-        className="sticky top-0 z-50 border-b border-line backdrop-blur-md"
+        className="relative sticky top-0 z-50 border-b border-line backdrop-blur-md"
         style={{ background: 'color-mix(in srgb, var(--paper) 82%, transparent)' }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-3.5 sm:py-4 flex items-center justify-between">
@@ -217,6 +211,7 @@ export default function LandingPage() {
             <Button href="/signup" size="sm" className="min-h-[40px]">
               Start free
             </Button>
+            <LandingMobileNav demoHref={`/${DEMO_SLUG}`} />
           </div>
         </div>
       </nav>
@@ -281,8 +276,16 @@ export default function LandingPage() {
       {/* Product proof through the actual system loop—not invented customer
           counts or testimonials the business does not have yet. The dark
           interruption also gives the long warm page a deliberate visual
-          signature: a message visibly travels into a confirmed booking. */}
-      <section className="bg-secondary-dark text-white border-y border-black/20">
+          signature: a message visibly travels into a confirmed booking.
+          Carries the nav's "How it works" anchor - this section now IS the
+          answer to that question; a second "From message to booked" section
+          further down told the identical four-step story in near-identical
+          words (They ask/It checks/It books/You see it vs. this section's
+          own Customer asks/Vanova checks/slot secured/confirmed) right
+          after this one, which read as the page repeating itself rather
+          than building. Removed rather than differentiated - this version
+          already does the job better (real moments, not paragraph cards). */}
+      <section id="how-it-works" className="bg-secondary-dark text-white border-y border-black/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-12 sm:py-16">
           <Reveal className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
             <div className="max-w-2xl">
@@ -296,13 +299,71 @@ export default function LandingPage() {
             </a>
           </Reveal>
 
+          {/* Each card now shows the actual moment, not just a description of
+              it - a real chat bubble, a real checklist, a real "held" chip, a
+              real confirmed-booking chip, styled off the same product these
+              represent (WebChatWidget's bubbles, SelfBookingDemo's booked
+              chip) rather than four identical paragraph blocks. Numbered
+              because this genuinely is a sequence, not decoration - no
+              connecting arrows between them, the moments read as a sequence
+              on their own. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              ['01', 'Customer asks', 'In plain language, on your website or a connected channel.'],
-              ['02', 'Vanova checks', 'Your active services, opening hours, rules, and existing bookings.'],
-              ['03', 'The slot is secured', 'The database blocks conflicting appointments—even if two people try at once.'],
-              ['04', 'Everyone sees it', 'The customer gets confirmation and your dashboard updates.'],
-            ].map(([number, title, copy], index) => (
+              {
+                number: '01',
+                title: 'Customer asks',
+                copy: 'In plain language, on your website or a connected channel.',
+                moment: (
+                  <div className="inline-block rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[13px] text-white/90 bg-white/10">
+                    &ldquo;Can I come tomorrow around 2?&rdquo;
+                  </div>
+                ),
+              },
+              {
+                number: '02',
+                title: 'Vanova checks',
+                copy: 'Your active services, opening hours, rules, and existing bookings.',
+                moment: (
+                  <div className="flex flex-col gap-1.5">
+                    {['Calendar', 'Services & hours', 'Existing bookings'].map((item) => (
+                      <div key={item} className="flex items-center gap-2 text-[12px] text-white/70">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }} aria-hidden="true">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                ),
+              },
+              {
+                number: '03',
+                title: 'The slot is secured',
+                copy: 'Vanova prevents double bookings, even when two customers request the same time.',
+                moment: (
+                  <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5" style={{ borderColor: 'var(--accent)' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }} aria-hidden="true">
+                      <rect x="4" y="10" width="16" height="10" rx="2" />
+                      <path d="M8 10V7a4 4 0 018 0v3" />
+                    </svg>
+                    <span className="font-mono text-[12px] text-white/85">2:30 PM held</span>
+                  </div>
+                ),
+              },
+              {
+                number: '04',
+                title: 'The booking is confirmed',
+                copy: 'The customer gets confirmation, and the appointment appears on your dashboard.',
+                moment: (
+                  <div className="inline-flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--accent)' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    <span className="text-[12px] font-semibold text-white">Amaka · Tomorrow, 2:30 PM</span>
+                  </div>
+                ),
+              },
+            ].map(({ number, title, copy, moment }, index) => (
               <Reveal key={title} delay={index * 60}>
                 <div className="relative h-full rounded-2xl border border-white/15 bg-white/[0.06] p-5 sm:p-6">
                   {/* Real accent (#c74a1e), not the invented #f28a63 this
@@ -313,8 +374,9 @@ export default function LandingPage() {
                       accent-on-#171717 is ~3.8:1, enough for the larger
                       bold heading above but not for small text on its own). */}
                   <span className="font-display text-[14px] font-bold" style={{ color: 'var(--accent)' }}>{number}</span>
-                  <h3 className="font-display text-[19px] font-semibold mt-6 mb-2">{title}</h3>
-                  <p className="text-[14px] leading-relaxed text-white/65">{copy}</p>
+                  <h3 className="font-display text-[19px] font-semibold mt-6 mb-4">{title}</h3>
+                  <div className="mb-4">{moment}</div>
+                  <p className="text-[13px] leading-relaxed text-white/60">{copy}</p>
                 </div>
               </Reveal>
             ))}
@@ -384,69 +446,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works - a connected path keeps the sequence feeling like one
-          process instead of four separate feature cards. */}
-      <section id="how-it-works" className="border-y border-line bg-paper">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-16">
-          <Reveal className="mb-8 sm:mb-10 max-w-xl mx-auto text-center">
-            <h2 className="font-display text-[2rem] sm:text-4xl text-ink mb-2">From message to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span></h2>
-            <p className="text-[15px] text-ink-soft">A simple path from the first question to a confirmed appointment.</p>
-          </Reveal>
-          {/* Below sm: a real vertical timeline, not the sm:/lg: grid below
-              with its connecting arrows just switched off. This IS a real
-              sequence (the frontend-design skill's own rule: numbered
-              markers earn their place only when order carries information -
-              here it genuinely does), so on a phone it gets the idiomatic
-              mobile shape for that: a connecting line and number badges
-              running top to bottom, not four unlabelled paragraphs with a
-              stray "01" in front of each. */}
-          <div className="sm:hidden flex flex-col">
-            {steps.map((step, i) => (
-              <Reveal key={step.title} delay={i * 60} className="flex gap-4">
-                <div className="flex flex-col items-center shrink-0">
-                  <span
-                    className="h-9 w-9 rounded-full flex items-center justify-center font-display text-[14px] font-bold shrink-0"
-                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                  >
-                    {i + 1}
-                  </span>
-                  {i < steps.length - 1 && <span className="w-px flex-1 my-1" style={{ background: 'var(--line-strong)' }} />}
-                </div>
-                <div className={i < steps.length - 1 ? 'pb-8' : ''}>
-                  <h3 className="font-display text-[18px] font-semibold text-ink leading-tight mb-1.5">{step.title}</h3>
-                  <p className="text-[15px] text-ink-soft leading-relaxed">{step.description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-
-          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8 lg:gap-x-12">
-            {steps.map((step, i) => (
-              <Reveal key={step.title} delay={i * 60} className="relative">
-                <div className="flex items-baseline gap-3 mb-3">
-                  <span className="font-display text-[24px] font-normal leading-none" style={{ color: 'var(--accent)' }}>{String(i + 1).padStart(2, '0')}</span>
-                  <h3 className="font-display text-[20px] font-normal text-ink leading-tight">{step.title}</h3>
-                </div>
-                <p className="text-[15px] text-ink-soft leading-relaxed max-w-[230px]">{step.description}</p>
-                {i < steps.length - 1 && (
-                  <svg aria-hidden="true" className="hidden lg:block absolute -right-5 top-1/2 -translate-y-1/2 w-11 h-3 text-ink-faint" viewBox="0 0 44 12" fill="none">
-                    <path d="M1 6h38M35 1l5 5-5 5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* The owner's side of the same idea the hero opens with - that one
           shows a customer talking to the AI to book; this shows the
           business owner talking to the same kind of assistant to run the
           business itself. No explicit background (so it inherits the
-          page's own paper tone, same as how-it-works right above it) -
-          this reads as a direct continuation of that section, not a new
-          chapter, since it's genuinely the second half of the same
-          thought. */}
+          page's own paper tone), giving it a beat of its own after the
+          warm-surface Before/After section above, rather than reading as
+          a continuation of it. */}
       <section className="border-b border-line">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">

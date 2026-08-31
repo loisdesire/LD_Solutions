@@ -93,7 +93,15 @@ export default function SelfBookingDemo() {
         {visible.map((step, i) =>
           step.kind === 'user' ? (
             <div key={i} className="flex justify-end animate-rise">
-              <div className="max-w-[80%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] text-ink" style={{ background: 'var(--accent-soft)' }}>
+              {/* accent-soft alone (10% opacity) reads as barely-there
+                  against the white card behind it - a visible border gives
+                  the bubble a real edge without darkening the fill, so it
+                  stays a light customer-side bubble rather than starting to
+                  compete with the assistant's solid-accent one. */}
+              <div
+                className="max-w-[80%] rounded-2xl rounded-br-md border px-3.5 py-2 text-[13.5px] text-ink"
+                style={{ background: 'var(--accent-soft)', borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)' }}
+              >
                 {step.text}
               </div>
             </div>
