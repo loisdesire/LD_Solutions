@@ -14,9 +14,28 @@ function urlBase64ToUint8Array(base64String: string) {
   return output;
 }
 
-type Status = 'checking' | 'unsupported' | 'off' | 'denied' | 'on' | 'busy';
+type Status = 'checking' | 'unsupported' | 'ios-install-first' | 'off' | 'denied' | 'on' | 'busy';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
+// iPadOS 13+ deliberately reports as "MacIntel" in the user agent (Apple's
+// own compatibility choice) - maxTouchPoints is what actually tells an
+// iPad apart from a real Mac, which has none.
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Safari on iOS actually exposes the Push/Notification APIs even in a
+// plain browser tab (so the earlier feature-detect below would otherwise
+// call this "supported") - Notification.requestPermission() is the thing
+// Apple restricts, silently going nowhere unless the site has actually
+// been added to the home screen and opened from there. standalone is the
+// iOS-specific signal for that; display-mode covers Android/desktop too.
+function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (window.navigator as unknown as { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+}
 
 function BellIcon({ filled }: { filled: boolean }) {
   return (
@@ -31,16 +50,27 @@ function BellIcon({ filled }: { filled: boolean }) {
 // so this lives wherever a staff member can sign in from (desktop sidebar,
 // compact rail, mobile menu), not a single global toggle. Renders nothing
 // at all when push isn't set up on this deployment yet (no VAPID key) or
-// isn't supported in this browser (notably: iOS Safari only supports Web
-// Push once the dashboard has actually been added to the home screen and
-// opened from there, not from a regular browser tab).
+// isn't supported at all in this browser. On iOS specifically (Safari or
+// any other iOS browser, since they all use WebKit under the hood) this
+// shows an explanatory note instead of a working toggle when the site
+// hasn't been added to the home screen yet - Apple only allows Web Push
+// once it's opened from there, and silently going nowhere with no
+// explanation is worse than telling someone the one extra step first.
 export default function NotificationBell({ slug, variant }: { slug: string; variant: 'row' | 'rail' }) {
   const [status, setStatus] = useState<Status>('checking');
 
   useEffect(() => {
     let cancelled = false;
     async function check() {
-      if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator)) {
+        if (!cancelled) setStatus('unsupported');
+        return;
+      }
+      if (isIOS() && !isStandalone()) {
+        if (!cancelled) setStatus('ios-install-first');
+        return;
+      }
+      if (!('PushManager' in window)) {
         if (!cancelled) setStatus('unsupported');
         return;
       }
@@ -111,14 +141,32 @@ export default function NotificationBell({ slug, variant }: { slug: string; vari
 
   if (status === 'checking' || status === 'unsupported') return null;
 
-  const label = status === 'on' ? 'Notifications on' : status === 'denied' ? 'Notifications blocked' : status === 'busy' ? 'Working…' : 'Enable notifications';
+  const iosNote = 'On iPhone/iPad: tap Share, then "Add to Home Screen" - notifications only work once this is opened from there, not from Safari itself';
+  const label =
+    status === 'on'
+      ? 'Notifications on'
+      : status === 'denied'
+      ? 'Notifications blocked'
+      : status === 'busy'
+      ? 'Working…'
+      : status === 'ios-install-first'
+      ? 'Add to Home Screen to get notified'
+      : 'Enable notifications';
+  const disabledTitle =
+    status === 'denied'
+      ? 'Blocked in your browser settings - allow notifications for this site to turn it back on'
+      : status === 'ios-install-first'
+      ? iosNote
+      : undefined;
+  const clickHandler = status === 'on' ? disable : status === 'off' ? enable : undefined;
+  const isDisabled = status === 'busy' || status === 'denied' || status === 'ios-install-first';
 
   if (variant === 'rail') {
     return (
       <button
-        onClick={status === 'on' ? disable : status === 'off' ? enable : undefined}
-        disabled={status === 'busy' || status === 'denied'}
-        title={status === 'denied' ? 'Blocked in your browser settings - allow notifications for this site to turn it back on' : label}
+        onClick={clickHandler}
+        disabled={isDisabled}
+        title={disabledTitle ?? label}
         aria-label={label}
         className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors disabled:cursor-default"
         style={status === 'on' ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
@@ -131,16 +179,23 @@ export default function NotificationBell({ slug, variant }: { slug: string; vari
   }
 
   return (
-    <button
-      onClick={status === 'on' ? disable : status === 'off' ? enable : undefined}
-      disabled={status === 'busy' || status === 'denied'}
-      title={status === 'denied' ? 'Blocked in your browser settings - allow notifications for this site to turn it back on' : undefined}
-      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body-sm text-ink-soft hover:bg-warm-surface hover:text-ink transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-    >
-      <span className={status === 'on' ? 'shrink-0' : 'shrink-0 text-ink-faint'} style={status === 'on' ? { color: 'var(--accent)' } : undefined}>
-        <BellIcon filled={status === 'on'} />
-      </span>
-      {label}
-    </button>
+    <div>
+      <button
+        onClick={clickHandler}
+        disabled={isDisabled}
+        title={status === 'denied' ? disabledTitle : undefined}
+        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body-sm text-ink-soft hover:bg-warm-surface hover:text-ink transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+      >
+        <span className={status === 'on' ? 'shrink-0' : 'shrink-0 text-ink-faint'} style={status === 'on' ? { color: 'var(--accent)' } : undefined}>
+          <BellIcon filled={status === 'on'} />
+        </span>
+        {label}
+      </button>
+      {/* Spelled out rather than left to a tooltip - a tooltip needs a
+          hover a touch device never gets, and this is the one status that
+          isn't self-explanatory (unlike "blocked", which the browser's own
+          UI already told them about). */}
+      {status === 'ios-install-first' && <p className="px-3 text-[11.5px] text-ink-faint leading-snug -mt-0.5">{iosNote}</p>}
+    </div>
   );
 }
