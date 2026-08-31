@@ -4,6 +4,7 @@ import { todayInTimezone } from './timezone';
 import { INSIGHTS_TOOLS, executeInsightsTool } from './insightsAgent';
 import { RESCHEDULE_TOOLS, executeRescheduleTool } from './rescheduleAgent';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
+import { describeManageToolChange, notifyOwnerOfManageChange } from './notifyOwnerOfChange';
 
 // One assistant for the business owner, replacing what used to be two
 // separate tabs (Insights and Schedule assistant). Splitting them was an
@@ -107,12 +108,25 @@ naira sign like ₦12,000. Keep answers short and direct; this is a working dash
     history,
     message,
     tools,
-    executeTool: (name, args) => {
+    executeTool: async (name, args) => {
       if (RESCHEDULE_TOOLS.some((t) => t.type === 'function' && t.function.name === name)) {
         return executeRescheduleTool(name, args, businessId);
       }
       if (MANAGE_TOOLS.some((t) => t.type === 'function' && t.function.name === name)) {
-        return executeManageTool(name, args, businessId);
+        const result = await executeManageTool(name, args, businessId);
+        // "a confirmation, and an email for every time you make changes" -
+        // the confirmation is the propose/apply pattern itself; this is the
+        // email half, an audit trail to the owner's inbox for every
+        // successful write, regardless of who was chatting or which
+        // channel they used. Fires here, not inside executeManageTool
+        // itself, so lib/onboardingAgent.ts (which shares the same
+        // dispatcher) stays quiet - nobody wants five emails in a row
+        // while they're actively watching first-time setup happen live.
+        const summary = describeManageToolChange(name, args, result);
+        if (summary) {
+          await notifyOwnerOfManageChange(businessId, summary);
+        }
+        return result;
       }
       return executeInsightsTool(name, args, businessId);
     },

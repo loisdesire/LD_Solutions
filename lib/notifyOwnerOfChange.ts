@@ -1,0 +1,124 @@
+import { createClient } from '@supabase/supabase-js';
+import { sendEmail } from './email';
+import { renderEmail } from './emailTemplate';
+import { formatMoney } from './formatMoney';
+import { SITE_URL } from './site';
+import { logError } from './logger';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// "for every change, there's a confirmation AND an email" - the confirmation
+// half already existed (the propose/apply pattern itself, and the model's
+// own reply). This is the email half: an audit trail to the owner's inbox
+// every time the assistant actually changes something, regardless of which
+// channel it happened on (WhatsApp, Telegram, web chat, the dashboard's own
+// Ask bar) or who was chatting (owner or staff - the assistant doesn't gate
+// MANAGE_TOOLS by role, so this is also how an owner finds out a staff
+// member changed something without having to ask).
+//
+// Scoped to MANAGE_TOOLS only, not reschedule/booking tools - those already
+// notify the affected customer directly, which is a different,
+// already-solved problem. If reschedule/booking changes need their own
+// owner-facing trail later, that's a separate, deliberate addition.
+const SETTING_LABELS: Record<string, string> = {
+  about: 'the About page',
+  gallery: 'the Gallery page',
+  contact: 'the Contact page',
+  payment: 'requiring payment to confirm a booking',
+};
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const PROFILE_FIELD_LABELS: Record<string, string> = {
+  name: 'business name',
+  description: 'description',
+  logo_url: 'logo',
+  cover_image_url: 'cover photo',
+  accent_color: 'accent color',
+};
+
+const SERVICE_FIELD_LABELS: Record<string, string> = {
+  name: 'name',
+  duration_minutes: 'duration',
+  price: 'price',
+  description: 'description',
+  image_url: 'photo',
+  active: 'visibility',
+};
+
+function listChangedFields(args: Record<string, unknown>, labels: Record<string, string>): string {
+  const changed = Object.keys(args)
+    .filter((k) => k in labels && args[k] !== undefined)
+    .map((k) => labels[k]);
+  return changed.length > 0 ? changed.join(', ') : 'details';
+}
+
+// Turns a successful apply_* tool call into a plain-language summary for
+// the email below. Returns null for a propose_* call (nothing changed
+// yet), or for any apply_* whose result carries an error (the write
+// itself failed, so there's nothing to report).
+export function describeManageToolChange(name: string, args: Record<string, unknown>, result: unknown): string | null {
+  if (!name.startsWith('apply_')) return null;
+  const r = result as Record<string, unknown> | null;
+  if (!r || typeof r !== 'object' || 'error' in r) return null;
+
+  switch (name) {
+    case 'apply_create_service':
+      return `Created a new service: "${String(args.name)}"${args.price != null ? ` at ${formatMoney(Number(args.price))}` : ''}.`;
+    case 'apply_update_service': {
+      const changes = (args.changes as Record<string, unknown>) ?? {};
+      return `Updated "${String(args.service_name)}" - changed: ${listChangedFields(changes, SERVICE_FIELD_LABELS)}.`;
+    }
+    case 'apply_toggle_setting':
+      return `Turned ${SETTING_LABELS[String(args.setting)] ?? String(args.setting)} ${args.enabled ? 'on' : 'off'}.`;
+    case 'apply_update_profile':
+      return `Updated your business profile - changed: ${listChangedFields(args, PROFILE_FIELD_LABELS)}.`;
+    case 'apply_update_hours': {
+      const day = DAY_NAMES[Number(args.day_of_week)] ?? 'a day';
+      return args.closed ? `Set ${day} to closed.` : `Set ${day}'s hours to ${args.start_time}-${args.end_time}.`;
+    }
+    default:
+      return null;
+  }
+}
+
+// Always to the owner specifically, not whoever made the change - the
+// point is oversight (an owner who wasn't the one chatting still finds
+// out), not a receipt for the actor, who already saw it happen in the
+// conversation itself.
+export async function notifyOwnerOfManageChange(businessId: string, summary: string): Promise<void> {
+  const [{ data: business }, { data: owner }] = await Promise.all([
+    supabaseAdmin.from('businesses').select('name, accent_color, logo_url, slug').eq('id', businessId).maybeSingle(),
+    supabaseAdmin.from('staff').select('email').eq('business_id', businessId).eq('role', 'owner').maybeSingle(),
+  ]);
+
+  if (!owner?.email) return;
+
+  try {
+    await sendEmail(
+      {
+        to: owner.email,
+        subject: `A change was made to ${business?.name ?? 'your business'}`,
+        html: renderEmail({
+          businessName: business?.name ?? 'Your business',
+          accentColor: business?.accent_color,
+          logoUrl: business?.logo_url,
+          preheader: summary,
+          heading: 'Your assistant made a change',
+          intro: summary,
+          cta: business?.slug ? { label: 'Open your dashboard', url: `${SITE_URL}/${business.slug}/admin` } : null,
+          footerNote: "Wasn't you? Check who has access to your assistant and reach out to us if something looks wrong.",
+        }),
+      },
+      'notifyOwnerOfManageChange',
+      { businessId }
+    );
+  } catch (err) {
+    // Never let a notification failure surface as if the actual change
+    // (already made and already confirmed to whoever asked for it) failed.
+    logError('notifyOwnerOfManageChange', err, { businessId });
+  }
+}
