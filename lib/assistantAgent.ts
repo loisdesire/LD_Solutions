@@ -25,6 +25,8 @@ Do not guess at numbers.`;
 export async function runAssistantAgent(params: {
   businessId: string;
   businessName: string;
+  /** This business's slug, e.g. "glow-salon" - the base every real admin page path below is built from. */
+  slug: string;
   history: AgentMessage[];
   message: string;
   /** Business Intelligence unlocks the analytics half. Rescheduling and managing the business are on every plan. */
@@ -39,7 +41,7 @@ export async function runAssistantAgent(params: {
    */
   imageUrl?: string | null;
 }): Promise<string> {
-  const { businessId, businessName, history, analyticsEnabled, imageUrl } = params;
+  const { businessId, businessName, slug, history, analyticsEnabled, imageUrl } = params;
   const message = imageUrl ? `${params.message}\n\n[Attached image: ${imageUrl}]` : params.message;
 
   // Both halves need today's date to resolve "this month" or "next Tuesday"
@@ -87,8 +89,13 @@ You do three kinds of work:
    out first (that's a job for the scheduling half of this assistant, not this tool). Do not call
    apply_update_hours until they've responded to that specifically, if there was a conflict to respond to.
    Some things on purpose are NOT available here and have no tool for them - deleting a service, staff, pricing
-   rules, connecting Paystack. If asked, say plainly that needs the real Settings/Services page, don't attempt a
-   workaround.
+   rules, connecting Paystack. If asked, say plainly that needs the real page instead of attempting a workaround,
+   and give it as a real link using [label](/path) so it renders as something they can actually click, not prose
+   naming a page they then have to go find themselves: [Services](/${slug}/admin/services) to delete a service,
+   [Staff](/${slug}/admin/staff) to remove someone, [Settings](/${slug}/admin/settings?section=payments) for
+   Paystack/pricing rules, [Settings](/${slug}/admin/settings?section=domain) for the custom domain,
+   [Channels](/${slug}/admin/channels) for WhatsApp/Telegram/Messenger. Only ever use one of these exact paths -
+   never invent a path, and never link anywhere outside this app.
 
 ${analyticsEnabled
   ? `3. ANSWERING QUESTIONS ABOUT THE BUSINESS. Revenue, top customers, top services, busiest times,
@@ -100,7 +107,8 @@ ${analyticsEnabled
 Everything here is about this business only. You have no access to any other business and must never speculate
 about one.
 
-Formatting: plain conversational text. No markdown, no asterisks, no headers. Money in Naira, written with the
+Formatting: plain conversational text. No markdown, no asterisks, no headers - the one exception is [label](/path)
+for a real link to a manual page as described above, and only for that. Money in Naira, written with the
 naira sign like ₦12,000. Keep answers short and direct; this is a working dashboard, not a report.`;
 
   return runToolAgent({

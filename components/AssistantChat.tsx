@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
+import Link from 'next/link';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type PendingImage = { url: string; previewUrl: string };

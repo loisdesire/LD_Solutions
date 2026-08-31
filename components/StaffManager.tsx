@@ -55,19 +55,47 @@ export default function StaffManager({
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError('');
+
+    // Checked against what's already loaded (current staff + pending
+    // invites), not a fresh query - this is the same information the
+    // page already has on screen, so nothing here needed a round trip.
+    // Someone being invited from a second tab at the exact same moment
+    // is a real but narrow gap; the unique constraint this relies on
+    // existing at the DB level is the actual backstop for that, this is
+    // just what turns it into a clear message instead of a raw
+    // insert-conflict error.
+    const normalized = email.trim().toLowerCase();
+    const alreadyStaff = staff.some((s) => s.email.toLowerCase() === normalized);
+    const alreadyInvited = invites.some((i) => i.email.toLowerCase() === normalized);
+    if (alreadyStaff) {
+      setError('Someone with that email is already on your team.');
+      return;
+    }
+    if (alreadyInvited) {
+      setError('There’s already a pending invite for that email - see it below, or copy the link again from there.');
+      return;
+    }
+
+    setSaving(true);
 
     const { data, error: insertError } = await supabase
       .from('staff_invites')
-      .insert({ business_id: businessId, email })
+      .insert({ business_id: businessId, email: normalized })
       .select()
       .single();
 
     setSaving(false);
 
     if (insertError) {
-      setError(friendlyError(insertError));
+      // 23505 = unique_violation - the narrow concurrent-invite gap the
+      // comment above describes. Same message as the pre-check above,
+      // not the raw constraint error.
+      if ((insertError as { code?: string }).code === '23505') {
+        setError('There’s already a pending invite for that email.');
+      } else {
+        setError(friendlyError(insertError));
+      }
       return;
     }
 
@@ -75,13 +103,13 @@ export default function StaffManager({
     setEmail('');
     setShowInvite(false);
 
-    // Was fire-and-forget with a swallowed .catch() - the toast said
-    // "Invite sent" unconditionally, whether or not the email actually
-    // went anywhere. A misconfigured sender (Resend's test address only
-    // ever delivers to the Resend account's own inbox, per lib/email.ts)
-    // or any other delivery failure was invisible: the invite row exists,
-    // but nothing tells the person to just copy the link and send it
-    // themselves instead of waiting on an email that's never coming.
+    // sendEmail (lib/email.ts) never throws on a rejected send - it logs
+    // the failure and resolves to false, by design - so the notify-invite
+    // route now reports that back explicitly as `emailSent` instead of
+    // this only checking res.ok. res.ok alone used to read as success
+    // even when the send itself had failed server-side, since the route
+    // always responded 200 regardless of whether Resend actually
+    // accepted the message.
     try {
       const res = await fetch('/api/staff/notify-invite', {
         method: 'POST',
@@ -91,7 +119,8 @@ export default function StaffManager({
         // be chosen by whoever calls the endpoint.
         body: JSON.stringify({ slug, token: data.token }),
       });
-      if (res.ok) {
+      const result = await res.json().catch(() => null);
+      if (res.ok && result?.emailSent) {
         showToast(`Invite sent to ${data.email}`);
       } else {
         showToast(`Invite created, but the email couldn't be sent - copy the link below and share it directly`, 'error');

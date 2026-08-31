@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
 import SetupChecklist from './SetupChecklist';
+import EnableNotificationsBanner from './EnableNotificationsBanner';
 import { formatMoney } from '@/lib/formatMoney';
 
 type Booking = {
@@ -213,6 +214,12 @@ export default function AdminDashboardBody({
           </div>
         )}
       </div>
+
+      {/* Was findable only by going looking in the nav (sidebar/rail/
+          mobile menu) - this puts the same ask on the one screen
+          everyone actually lands on. Renders nothing once notifications
+          are already on/blocked/unsupported, or once dismissed. */}
+      <EnableNotificationsBanner slug={slug} />
 
       <SetupChecklist
         slug={slug}

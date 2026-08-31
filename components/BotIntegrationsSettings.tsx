@@ -23,6 +23,35 @@ function formatLastActive(iso: string | null): string {
   return `Last active ${new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 }
 
+// Both channels are fully built and testable in Meta's dev mode, but not
+// cleared for a random business to turn on for real customers until App
+// Review actually approves the app - still pending, no date. Flip this
+// once it lands; nothing else about either section needs to change.
+const WHATSAPP_MESSENGER_LIVE = false;
+
+// The deactivated look the not-yet-connected state gets while
+// WHATSAPP_MESSENGER_LIVE is false - explains itself via <details>
+// (keyboard/touch/screen-reader accessible for free, no extra state) so
+// this reads as "not yet, here's why" rather than a button that quietly
+// does nothing or, worse, looks fully available and isn't.
+function ComingSoonRow({ channel }: { channel: string }) {
+  return (
+    <details className="group border-2 border-dashed border-line rounded-xl px-4 py-3">
+      <summary className="flex items-center justify-between gap-4 cursor-pointer list-none marker:content-none">
+        <p className="text-body-sm text-ink-faint">Not available yet</p>
+        <span className="text-caption font-semibold px-3 py-2 min-h-[40px] flex items-center rounded-lg text-ink-faint">
+          Why? <span className="ml-1 transition-transform group-open:rotate-180">⌄</span>
+        </span>
+      </summary>
+      <p className="text-caption text-ink-faint mt-2 leading-relaxed">
+        {channel} needs Meta&rsquo;s App Review before it can go live for real customers - we&rsquo;ve submitted it
+        and we&rsquo;re waiting on approval, not something you need to do on your end. We&rsquo;ll email you the
+        moment it&rsquo;s ready to connect.
+      </p>
+    </details>
+  );
+}
+
 declare global {
   interface Window {
     FB?: { init: (opts: Record<string, unknown>) => void; login: (cb: (res: unknown) => void, opts: Record<string, unknown>) => void };
@@ -181,12 +210,16 @@ function MessengerSection({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <p className="text-[14px] font-semibold text-ink">Facebook Messenger</p>
-        {pageName && (
+        {pageName ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             Connected
           </span>
-        )}
+        ) : !WHATSAPP_MESSENGER_LIVE ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
+            Coming soon
+          </span>
+        ) : null}
       </div>
       <p className="text-caption text-ink-faint mb-2">
         Customers can ask about availability, get recommendations, and book directly in the chat.
@@ -208,6 +241,8 @@ function MessengerSection({
             Disconnect
           </button>
         </div>
+      ) : !WHATSAPP_MESSENGER_LIVE ? (
+        <ComingSoonRow channel="Facebook Messenger" />
       ) : !expanded ? (
         <NotConnectedRow onConnect={() => setExpanded(true)} />
       ) : (
@@ -529,12 +564,16 @@ function WhatsappSection({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <p className="text-[14px] font-semibold text-ink">WhatsApp</p>
-        {number && (
+        {number ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             Connected
           </span>
-        )}
+        ) : !WHATSAPP_MESSENGER_LIVE ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
+            Coming soon
+          </span>
+        ) : null}
       </div>
       <p className="text-caption text-ink-faint mb-2">
         Customers can ask about availability, get recommendations, and book directly in the chat.
@@ -568,6 +607,8 @@ function WhatsappSection({
             </button>
           </div>
         </div>
+      ) : !WHATSAPP_MESSENGER_LIVE ? (
+        <ComingSoonRow channel="WhatsApp" />
       ) : !expanded ? (
         <NotConnectedRow onConnect={() => setExpanded(true)} />
       ) : (

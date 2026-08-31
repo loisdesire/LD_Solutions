@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     const reply = await runAssistantAgent({
       businessId: business.id,
       businessName: business.name,
+      slug,
       history: Array.isArray(history) ? (history as AgentMessage[]).slice(-20) : [],
       message: cleanMessage,
       analyticsEnabled: await hasBusinessIntelligence(business.id),

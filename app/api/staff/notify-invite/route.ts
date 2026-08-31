@@ -55,7 +55,14 @@ export async function POST(req: NextRequest) {
 
   const inviteUrl = `${SITE_URL}/${encodeURIComponent(slug)}/accept-invite?token=${encodeURIComponent(token)}`;
 
-  await sendEmail(
+  // sendEmail never throws on a rejected send (bad recipient, domain
+  // issue, rate limit) - it logs the failure and resolves to `false`, by
+  // design (see its own comment). This route used to discard that return
+  // value entirely and respond `{ ok: true }` unconditionally, so a
+  // silently-failed send looked identical to a real one: the client's
+  // toast said "Invite sent" either way, with no server-side signal ever
+  // reaching the owner that it hadn't actually gone anywhere.
+  const sent = await sendEmail(
     {
       to: invite.email,
       subject: `You have been invited to join ${business.name}`,
@@ -74,5 +81,5 @@ export async function POST(req: NextRequest) {
     { businessId: business.id }
   );
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, emailSent: sent });
 }

@@ -44,11 +44,24 @@ export default function DashboardPreview() {
         </div>
 
         <div className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-faint mb-1">Manage</div>
-        <h3 className="font-display text-[22px] text-ink mb-5">Dashboard</h3>
+        {/* "Dashboard" as a plain heading, no greeting - the real page
+            (AdminDashboardBody.tsx) replaced that with "Good morning,
+            {businessName}" plus a one-line day summary a while back; this
+            mockup never followed. Kept short/generic here on purpose
+            (a real name would look staged in a mockup a prospect hasn't
+            signed up under yet), but the shape - greeting-weight heading,
+            summary line beneath, not a bare "Dashboard" label - now
+            matches. */}
+        <h3 className="font-display text-[22px] text-ink">Good morning</h3>
+        <p className="text-ink-soft text-[11px] mt-1 mb-5">3 appointments today. Next is Amaka at 10:00.</p>
 
+        {/* Order now matches AdminDashboardBody's own Next up / Today /
+            Today's revenue / This week - this mockup had Today first,
+            which the real strip hasn't shown since that page's own
+            redesign pass. */}
         <div className="rounded-xl bg-warm-surface px-4 py-4 mb-6 flex flex-wrap gap-x-5 gap-y-4">
-          <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today</div><div className="font-display text-[18px] font-bold" style={{ color: 'var(--accent)' }}>3</div><div className="text-[9px] text-ink-faint">appointments</div></div>
-          <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Next up</div><div className="font-display text-[18px] font-bold text-ink">10:00</div><div className="text-[9px] text-ink-faint truncate">Amaka · Haircut</div></div>
+          <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Next up</div><div className="font-display text-[18px] font-bold" style={{ color: 'var(--accent)' }}>10:00</div><div className="text-[9px] text-ink-faint truncate">Amaka · Haircut</div></div>
+          <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today</div><div className="font-display text-[18px] font-bold text-ink">3</div><div className="text-[9px] text-ink-faint">appointments</div></div>
           <div className="min-w-[86px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">Today&rsquo;s revenue</div><div className="font-display text-[18px] font-bold text-ink">{formatMoney(58000)}</div></div>
           <div className="min-w-[54px] flex-1"><div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">This week</div><div className="font-display text-[18px] font-bold text-ink">8</div><div className="text-[9px] text-ink-faint">appointments</div></div>
         </div>

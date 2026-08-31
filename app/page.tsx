@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   // rendering with no brand name in the tab or in search results at all.
   title: 'Vanova | An AI receptionist for appointment businesses',
   description:
-    'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram today, WhatsApp and Messenger coming soon. Every booking lands on one dashboard. 14 days free.',
+    'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram. Every booking lands on one dashboard. 14 days free.',
   alternates: { canonical: '/' },
   openGraph: {
     title: 'Vanova | An AI receptionist for appointment businesses',
@@ -50,11 +50,18 @@ const homepageJsonLd = {
   },
 };
 
-const CHANNELS = [
-  { label: 'Website chat', status: 'live' as const },
-  { label: 'Telegram', status: 'live' as const },
-  { label: 'WhatsApp', status: 'soon' as const },
-  { label: 'Messenger', status: 'soon' as const },
+// WhatsApp/Messenger deliberately left off entirely here - not even a
+// "coming soon" - until Meta App Review actually clears (still
+// pending, no date as of this writing). Promoting a
+// channel that isn't live yet on the page most likely to set a
+// prospective owner's first expectation isn't worth it; add them back
+// once there's a real date. Doesn't touch the admin Channels page
+// (components/BotIntegrationsSettings.tsx), where they still need to
+// stay visible - an owner can already start connecting either one
+// ahead of approval landing.
+const CHANNELS: { label: string; status: 'live' | 'soon' }[] = [
+  { label: 'Website chat', status: 'live' },
+  { label: 'Telegram', status: 'live' },
 ];
 
 const features = [
@@ -98,7 +105,7 @@ const features = [
       </svg>
     ),
     title: 'Every booking, one dashboard',
-    description: 'Website, Telegram, and soon WhatsApp. Wherever the message came from, it lands in the same place.',
+    description: 'Website or Telegram - wherever the message came from, it lands in the same place.',
   },
   {
     icon: (
@@ -141,7 +148,7 @@ const steps = [
 // Core. Payments, custom domains and rescheduling are deliberately NOT
 // upsells.
 const CORE_INCLUDES = [
-  'AI receptionist on your website (Telegram included, WhatsApp & Messenger coming)',
+  'AI receptionist on your website (Telegram included)',
   'Unlimited bookings and services',
   'One dashboard for every appointment',
   'Automatic email confirmations and reminders',
@@ -307,14 +314,6 @@ export default function LandingPage() {
                   <span className="font-display text-[14px] font-bold" style={{ color: 'var(--accent)' }}>{number}</span>
                   <h3 className="font-display text-[19px] font-semibold mt-6 mb-2">{title}</h3>
                   <p className="text-[14px] leading-relaxed text-white/65">{copy}</p>
-                  {index < 3 && (
-                    <span
-                      className="hidden lg:flex absolute -right-2.5 top-8 z-10 h-5 w-5 items-center justify-center rounded-full text-accent-contrast text-[12px]"
-                      style={{ background: 'var(--accent)' }}
-                    >
-                      →
-                    </span>
-                  )}
                 </div>
               </Reveal>
             ))}

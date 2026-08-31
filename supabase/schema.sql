@@ -676,6 +676,19 @@ create policy "owner can delete invites"
     )
   );
 
+-- No unique constraint on (business_id, email) meant nothing stopped a
+-- second invite to the same address while the first was still pending -
+-- StaffManager.tsx checks this client-side against what's already
+-- loaded first (so the common case shows a clear message instantly,
+-- no round trip), but that alone doesn't cover two invites landing at
+-- the same moment from two tabs/sessions. Partial (accepted = false
+-- only) so re-inviting someone whose earlier invite already got
+-- accepted, or was deleted, is still allowed - this only blocks a
+-- second PENDING invite for the same address.
+create unique index if not exists staff_invites_pending_email_unique
+  on staff_invites (business_id, lower(email))
+  where not accepted;
+
 -- ============================================
 -- Currency (prep for international payments)
 -- ============================================
