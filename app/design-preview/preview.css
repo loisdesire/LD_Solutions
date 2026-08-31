@@ -3,11 +3,17 @@
    committed direction; Kept Ledger kept only as a quick visual reference
    via the .theme-ledger class on <body> (toggle in PreviewDevBar).
 
-   This is the original, full-bodied version - thick borders, hard
-   offset "sticker" shadows, gold accent, tilt, the mono label font -
-   restored deliberately after two toned-down passes, so the repo shows
-   the complete visual vocabulary before anything gets selectively
-   merged into the real app elsewhere (see Claude Design prompt). */
+   Rebalanced pass: Market Day's "sticker everywhere" treatment (thick
+   dark borders, hard offset shadows, tilt on nearly everything, a mono
+   label font, a gold+primary+navy three-hue system) sat too far from
+   the real app's own restraint. Real tokens/conventions referenced
+   throughout are from app/globals.css and components/AdminAssistantWidget.tsx -
+   two fonts, one accent, thin --line borders, soft blurred shadows,
+   rounded-2xl for cards, no rotation anywhere. The calm defaults below
+   now match that. Bold/asymmetric/floaty treatment is kept ONLY on the
+   pieces called out as genuinely wanted: the hero's floating chat card,
+   the dark numbered proof section, and the dashboard assistant banner's
+   silhouette (its skin is calmed to match everything else). */
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -21,13 +27,20 @@
 
 .theme-market {
   --bg: #FBF3E4; --surface: #FFFFFF; --surface-2: #F3E4C9;
-  --ink: #211A12; --ink-soft: #5C5142; --ink-faint: #8C8069;
+  --ink: #211A12; --ink-soft: #5C5142; --ink-faint: #6B5F4C;
   --line: #E8D8B4; --line-strong: #D9BE85;
+  --border: #8B5E3C; --border-soft: rgba(139,94,60,0.22); --border-soft-strong: rgba(139,94,60,0.32);
   --primary: #C2410C; --primary-hover: #9A3409;
   --accent: #1E3A5F; --accent-soft: rgba(30,58,95,0.1);
   --gold: #D4A017;
   --on-primary: #FFF8EC;
-  --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Work Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+  /* Two fonts only - display + body. --font-mono now aliases --font-body
+     (kept as a variable, not hunted out of every usage, the same move
+     the real app made: globals.css:189 repurposes .font-mono as "the
+     small uppercase label treatment" rather than an actual monospace
+     face) so every label/eyebrow/mono usage below just inherits Work
+     Sans instead of a third typeface, with no per-element changes. */
+  --font-display: 'Bricolage Grotesque', sans-serif; --font-body: 'Work Sans', sans-serif; --font-mono: var(--font-body);
   --radius: 20px; --radius-lg: 28px;
 }
 .theme-ledger {
@@ -45,7 +58,8 @@
 .dp-root p { margin: 0; }
 .dp-root .mono { font-family: var(--font-mono); }
 
-/* Dev bar - tool chrome, not part of any theme */
+/* Dev bar - tool chrome, not part of any theme. Left as-is, technical on
+   purpose - it's the "you're in a design tool" signal, not the design. */
 .dp-devbar { position: sticky; top: 0; z-index: 100; background: #17140F; border-bottom: 1px solid #2E2A22; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-family: 'Instrument Sans', sans-serif; }
 .dp-devbar .dp-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .dp-devbar .dp-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8C8577; margin-right: 2px; }
@@ -76,7 +90,7 @@ nav.site-nav { display: flex; align-items: center; justify-content: space-betwee
 
 .dash-shell { padding: 32px 24px 100px; }
 .dash-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
-.dash-head h2 { font-size: 26px; }
+.dash-head h2 { font-size: 24px; }
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
 .stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px 20px; }
 .stat-card .label { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 8px; }
@@ -98,69 +112,70 @@ nav.site-nav { display: flex; align-items: center; justify-content: space-betwee
 .theme-ledger .slot-pill { border-radius: 2px; }
 .theme-ledger .confirm-check { border-radius: 6px; }
 
-/* Market Day - real structure, not a recolor */
+/* ============================================
+   Market Day - calm by default now
+   ============================================
+   Everything below is deliberately small. Most of what used to live here
+   (thick 2px borders, hard offset "sticker" shadows, tilt on cards/pills,
+   a gold hard-shadow convention) has been removed rather than lightened -
+   the base rules above already read as calm and close to the real app's
+   own language, so most components need NO theme-market override at all
+   now. What's left is: a soft woven background texture, a floating pill
+   nav, a little logo tilt, calmer buttons, and three deliberately kept
+   signature moments (marked below). */
 .theme-market .dp-root { background-color: var(--bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23D9BE85' stroke-width='1.4' stroke-opacity='0.5'%3E%3Cpath d='M0 28L28 0L56 28L28 56Z'/%3E%3Cpath d='M0 28L28 56M28 0L56 28' /%3E%3C/g%3E%3C/svg%3E"); background-size: 56px 56px; }
-.theme-market .site-nav { background: var(--surface); margin: 14px 20px 0; border: 2px solid var(--ink); border-radius: 999px; padding: 12px 22px; box-shadow: 4px 4px 0 var(--primary); }
+.theme-market .site-nav { background: var(--surface); margin: 14px 20px 0; border: 1px solid var(--line); border-radius: 999px; padding: 12px 22px; box-shadow: 0 10px 24px -16px rgba(33,26,18,0.25); }
 .theme-market .logo { transform: rotate(-2deg); }
 .theme-market .hero { background: none; }
-.theme-market .btn { border-radius: 14px; border: 2px solid var(--ink); font-weight: 700; box-shadow: 4px 4px 0 var(--ink); transition: transform 0.12s ease, box-shadow 0.12s ease; }
-.theme-market .btn-primary { background: var(--primary); color: #FFF8EC; }
-.theme-market .btn-outline { background: var(--surface); }
-.theme-market .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
-.theme-market .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.theme-market .btn:hover { transform: translateY(-1px); }
+.theme-market .btn:active { transform: translateY(0) scale(0.98); }
+
+/* Signature moment 1/3: the hero's floating chat card. Kept - shape and
+   tilt preserved. Layered depth restored after an earlier pass
+   accidentally blurred it away: a solid hard-offset primary-colored
+   shape sits tight behind the card (the thing that reads as "something
+   underneath it"), plus a softer, more-rotated gold blob further back
+   still (::before below) - two distinct layers, not one flat shadow. */
 .theme-market .hero-inner > div:last-child { position: relative; }
-.theme-market #homeVisual { transform: rotate(-2.5deg); border: 2px solid var(--ink); box-shadow: 8px 8px 0 var(--primary); border-radius: 22px; background: var(--surface); position: relative; z-index: 2; }
+.theme-market #homeVisual { transform: rotate(-2.5deg); border: 1.5px solid var(--border-soft-strong); box-shadow: 8px 8px 0 var(--primary), 0 28px 54px -26px rgba(33,26,18,0.3); border-radius: 22px; background: var(--surface); position: relative; z-index: 2; }
 .theme-market .hero-inner > div:last-child::before { content: ''; position: absolute; inset: 18px -18px -18px 18px; border-radius: 22px; background: var(--gold); opacity: 0.5; transform: rotate(3deg); z-index: 1; }
-.theme-market .stat-card, .theme-market .feat, .theme-market .plan-card, .theme-market .service-row, .theme-market .card, .theme-market .proof-card {
-  border: 2px solid var(--ink); border-radius: 26px 10px 26px 10px; box-shadow: 5px 5px 0 rgba(23,20,15,0.18); transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+/* Ordinary cards/panels - thin border, soft shadow, calm radius. No
+   rotation, no thick stroke. This is the resting state everything else
+   (stat cards, plan cards, the generic .card wrapper used on Assistant/
+   Customers/Staff/Settings/etc) now gets. */
+.theme-market .stat-card, .theme-market .plan-card, .theme-market .card {
+  border: 1.5px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(33,26,18,0.05); transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.theme-market .stat-card:hover, .theme-market .feat:hover, .theme-market .service-row:hover, .theme-market .proof-card:hover { transform: translateY(-3px) rotate(0deg) !important; box-shadow: 7px 7px 0 rgba(23,20,15,0.22); }
-.theme-market .stat-row .stat-card { border-bottom: none; }
-.theme-market .stat-row .stat-card:hover { transform: translateY(-3px) !important; }
-.theme-market .service-list .service-row { transform: none; }
-.theme-market .feat:nth-child(3n+1) { transform: rotate(-0.8deg); border-top: 2px solid var(--ink); }
-.theme-market .feat:nth-child(3n+2) { transform: rotate(0.7deg); border-top: 2px solid var(--ink); }
-.theme-market .feat:nth-child(3n+3) { transform: rotate(-0.5deg); border-top: 2px solid var(--ink); }
-.theme-market .plan-card { border-radius: 30px 10px 30px 10px; }
-.theme-market .plan-card.featured { border-color: var(--ink); }
-.theme-market .proof-card { border-radius: 20px 8px 20px 8px; background: rgba(255,255,255,0.05); }
+.theme-market .stat-card:hover, .theme-market .card:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -18px rgba(33,26,18,0.2); }
+
+.theme-market .auth-card { background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 28px 10px 28px 10px; box-shadow: 0 24px 48px -22px rgba(33,26,18,0.22); padding: 32px; }
+.theme-market .biz-pill { border: 1px solid var(--line-strong); font-weight: 600; }
+.theme-market .biz-pill:nth-child(4n+1) { border-color: var(--primary); color: var(--primary); }
+.theme-market .biz-pill:nth-child(4n+2) { border-color: var(--gold); color: #8a6a10; }
+
+.theme-market .step-num { font-size: 26px; font-weight: 700; color: var(--primary); }
+.theme-market .cal-cell.today { box-shadow: inset 0 0 0 2px var(--primary); background: var(--accent-soft); }
+.theme-market .swatch.picked { border-color: var(--primary); }
+
+/* Signature moment 2/3: the dark numbered proof section. Kept close to
+   its original subtlety (translucent hairline border, no box-shadow) -
+   the tilt and the numbered layout are what make it, not a thick
+   border, so it never had one here beyond the brief detour last round. */
+.theme-market .proof-card { border-radius: 20px 8px 20px 8px; }
 .theme-market .proof-card:nth-child(odd) { transform: rotate(-1deg); }
 .theme-market .proof-card:nth-child(even) { transform: rotate(0.8deg); }
-.theme-market .biz-pill { border: 2px solid var(--ink); font-weight: 600; box-shadow: 3px 3px 0 rgba(23,20,15,0.15); }
-.theme-market .biz-pill:nth-child(4n+1) { transform: rotate(-2deg); border-color: var(--primary); color: var(--primary); }
-.theme-market .biz-pill:nth-child(4n+2) { transform: rotate(1.6deg); border-color: var(--gold); color: #8a6a10; }
-.theme-market .biz-pill:nth-child(4n+3) { transform: rotate(-1.2deg); }
-.theme-market .biz-pill:nth-child(4n+4) { transform: rotate(2deg); }
-.theme-market .step-num { font-size: 40px; -webkit-text-stroke: 2px var(--ink); color: var(--gold); }
-.theme-market .cal-grid, .theme-market .table { border: 2px solid var(--ink); border-radius: 18px; overflow: hidden; }
-.theme-market .avatar-sm { border: 2px solid var(--ink); }
-.theme-market .confirm-check { border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--gold); position: relative; }
-.theme-market .confirm-check::before, .theme-market .confirm-check::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 3px; }
-.theme-market .confirm-check::before { background: var(--gold); top: -22px; left: -30px; transform: rotate(20deg); }
-.theme-market .confirm-check::after { background: var(--accent); top: -14px; right: -34px; transform: rotate(-15deg); }
-.theme-market .dark-beat { background: #241708; }
-.theme-market .field input, .theme-market .field textarea, .theme-market .field select { border: 2px solid var(--ink); border-radius: 12px; background: var(--surface); }
-.theme-market .field input:focus, .theme-market .field textarea:focus { outline: none; box-shadow: 3px 3px 0 var(--gold); }
-.theme-market .slot-pill { border: 2px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 rgba(23,20,15,0.15); }
-.theme-market .slot-pill.picked { box-shadow: 3px 3px 0 var(--gold); }
-.theme-market .chat-bubble { border: 2px solid var(--ink); }
-.theme-market .chat-row.theirs .chat-bubble { border-radius: 16px 16px 16px 4px; }
-.theme-market .chat-row.mine .chat-bubble { border-radius: 16px 16px 4px 16px; box-shadow: 3px 3px 0 rgba(23,20,15,0.12); }
-.theme-market .auth-card { background: var(--surface); border: 2px solid var(--ink); border-radius: 28px 10px 28px 10px; box-shadow: 7px 7px 0 var(--gold); padding: 32px; }
-.theme-market .customer-bot-btn { border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--gold); border-radius: 20px; }
-.theme-market .customer-bot-panel { border: 2px solid var(--ink); border-radius: 22px 22px 8px 22px; box-shadow: 6px 6px 0 var(--gold); }
-.theme-market .checklist .cl-dot { border: 2px solid var(--ink); }
-.theme-market .checklist .cl-item.on .cl-dot { box-shadow: 2px 2px 0 var(--gold); }
-.theme-market .swatch.picked { border-color: var(--ink); box-shadow: 0 0 0 2px var(--gold); }
-.theme-market .cal-cell.today { box-shadow: inset 0 0 0 2px var(--primary); background: var(--accent-soft); }
-.theme-market .wire-input-row input { border: 2px solid var(--ink); border-radius: 12px; }
-.theme-market .wire-input-row button { border: 2px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--gold); }
-.theme-market .market-banner { border-radius: 26px 10px 26px 10px; padding: 26px 28px; margin-bottom: 28px; position: relative; overflow: hidden; background: var(--primary); color: #FFF8EC; border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--gold); background-image: linear-gradient(135deg, rgba(255,255,255,0.09) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.09) 75%, transparent 75%, transparent); background-size: 26px 26px; }
-.theme-market .market-banner .mb-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-.theme-market .market-banner .mb-icon { width: 52px; height: 52px; border-radius: 16px 6px 16px 6px; background: rgba(255,255,255,0.16); flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); font-family: var(--font-display); font-weight: 800; font-size: 22px; color: #FFF8EC; }
-.theme-market .market-banner h3 { font-size: 24px; color: #FFF8EC; margin-bottom: 4px; }
-.theme-market .market-banner p { font-size: 14.5px; color: rgba(255,248,236,0.85); }
-.theme-market .market-banner .btn { background: var(--gold); color: #2A1E04; flex-shrink: 0; border-color: var(--ink); }
+
+/* Signature moment 3/3: the dashboard assistant banner. Shape kept
+   (that's the part you said you liked); skin rebuilt calm - a plain
+   surface card with a soft accent-tinted icon badge and a normal
+   primary button, not a primary-filled textured card with a gold
+   button. Floats via a soft blurred shadow, same as everything else. */
+.theme-market .market-banner { border-radius: 26px 10px 26px 10px; padding: 22px 26px; margin-bottom: 28px; position: relative; background: var(--surface); border: 1.5px solid var(--line-strong); box-shadow: 0 20px 44px -24px rgba(33,26,18,0.22); }
+.theme-market .market-banner .mb-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.theme-market .market-banner .mb-icon { width: 44px; height: 44px; border-radius: 14px 6px 14px 6px; background: var(--accent-soft); color: var(--primary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+.theme-market .market-banner h3 { font-size: 17px; color: var(--ink); margin-bottom: 3px; }
+.theme-market .market-banner p { font-size: 13.5px; color: var(--ink-soft); }
 
 .dark-beat { background: #171717; color: #fff; }
 .proof-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-lg); padding: 20px; }
@@ -190,6 +205,7 @@ nav.site-nav { display: flex; align-items: center; justify-content: space-betwee
 .field { margin-bottom: 16px; }
 .field label { display: block; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 7px; }
 .field input, .field textarea, .field select { width: 100%; border: 1.5px solid var(--line-strong); background: var(--surface); border-radius: var(--radius); padding: 11px 14px; font-family: var(--font-body); font-size: 14.5px; color: var(--ink); }
+.field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
 .field textarea { resize: none; }
 .table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .table th { text-align: left; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); font-weight: 500; padding: 0 10px 10px; border-bottom: 1px solid var(--line); }
@@ -245,29 +261,26 @@ nav.site-nav { display: flex; align-items: center; justify-content: space-betwee
 .wire-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px 16px; color: var(--ink-faint); font-family: var(--font-body); font-size: 14.5px; }
 .wire-input-row button { background: var(--primary); color: var(--on-primary); border: none; border-radius: 10px; padding: 0 20px; font-weight: 700; cursor: pointer; }
 
-/* Day-selector rhythm bar (Hours) and team list (Staff) - added after
-   the original build to fix a real structural gap (these were flat
-   placeholders that didn't match how HoursManager/StaffManager
-   actually work), re-skinned here in the same bold language as
-   everything else above rather than the calmer pass this went through
-   in between. */
+/* Day-selector rhythm bar (Hours) and team list (Staff) - structural
+   ports of the real HoursManager/StaffManager patterns, not generic
+   placeholders. Calm skin to match everything above. */
 .day-rhythm { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
-.day-chip { border: 2px solid var(--ink); background: var(--surface-2); border-radius: 14px 4px 14px 4px; padding: 12px 4px; text-align: center; cursor: pointer; font-family: var(--font-mono); box-shadow: 2px 2px 0 rgba(23,20,15,0.15); }
-.day-chip .dc-name { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.day-chip { border: none; background: var(--surface-2); border-radius: 14px; padding: 12px 4px; text-align: center; cursor: pointer; font-family: var(--font-body); }
+.day-chip .dc-name { display: block; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
 .day-chip .dc-dot { margin: 8px auto 0; display: block; width: 7px; height: 7px; border-radius: 999px; background: var(--line-strong); }
 .day-chip.open .dc-dot { background: var(--primary); }
-.day-chip.active { background: var(--primary); border-color: var(--ink); box-shadow: 3px 3px 0 var(--gold); transform: rotate(-2deg); }
+.day-chip.active { background: var(--primary); }
 .day-chip.active .dc-name { color: rgba(255,248,236,0.85); }
 .day-chip.active .dc-dot { background: #fff; }
 .day-chip.active.closed .dc-dot { background: rgba(255,255,255,0.4); }
 .window-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.window-row input[type="time"] { border: 2px solid var(--ink); background: var(--surface); border-radius: 10px; padding: 9px 10px; font-family: var(--font-mono); font-size: 13.5px; color: var(--ink); }
-.window-row .to { font-size: 12px; color: var(--ink-faint); font-family: var(--font-mono); }
+.window-row input[type="time"] { border: 1.5px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 9px 10px; font-family: var(--font-body); font-size: 13.5px; color: var(--ink); }
+.window-row .to { font-size: 12px; color: var(--ink-faint); }
 .slot-preview { display: flex; flex-wrap: wrap; gap: 6px; }
-.slot-preview span { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); background: var(--surface-2); border: 1.5px solid var(--ink); border-radius: 999px; padding: 4px 10px; }
-.team-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--ink); }
+.slot-preview span { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); background: var(--surface-2); border-radius: 999px; padding: 4px 10px; }
+.team-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .team-row:last-child { border-bottom: none; }
-.role-pill { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-2); color: var(--ink-faint); border: 1.5px solid var(--ink); border-radius: 999px; padding: 3px 10px; }
-.role-pill.you { background: var(--accent-soft); color: var(--primary); border-color: var(--primary); }
-.invite-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 2px dashed var(--ink); }
+.role-pill { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-2); color: var(--ink-faint); border-radius: 999px; padding: 3px 10px; }
+.role-pill.you { background: var(--accent-soft); color: var(--primary); }
+.invite-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px dashed var(--line); }
 .invite-row:last-child { border-bottom: none; }
