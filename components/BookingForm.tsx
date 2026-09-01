@@ -556,7 +556,13 @@ export default function BookingForm({
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
-            <div className="max-w-5xl mx-auto grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+            // Fewer, wider columns (xl:3, was xl:4) and a bigger gap
+            // (gap-6, was gap-3.5) - four narrow columns with tight gaps
+            // read as cramped, "suffered in that space" rather than
+            // presented. Photo area taller too (aspect-[4/3], was 5/3)
+            // and more internal padding (p-5, was p-4) so each card has
+            // real room to breathe, not just more width.
+            <div className="max-w-5xl mx-auto grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {services.map((s) => (
                 <button
                   key={s.id}
@@ -564,7 +570,7 @@ export default function BookingForm({
                   className="group overflow-hidden rounded-[18px] border border-line-strong bg-surface text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[0_16px_28px_-22px_var(--accent-soft)]"
                 >
                   {s.image_url ? (
-                    <div className="aspect-[5/3] w-full overflow-hidden bg-warm-surface">
+                    <div className="aspect-[4/3] w-full overflow-hidden bg-warm-surface">
                       <img
                         src={s.image_url}
                         alt=""
@@ -573,19 +579,19 @@ export default function BookingForm({
                     </div>
                   ) : (
                     <div
-                      className="flex aspect-[5/3] w-full items-center justify-center"
+                      className="flex aspect-[4/3] w-full items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, var(--accent-soft), rgba(255,255,255,0.8))' }}
                     >
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <rect x="3" y="5" width="18" height="16" rx="2" />
                         <path d="M3 9.5H21" />
                         <path d="M8 3V6.5M16 3V6.5" strokeLinecap="round" />
                       </svg>
                     </div>
                   )}
-                  <div className="p-4">
-                    <div className="mb-2 flex items-start justify-between gap-3">
-                      <h3 className="font-display text-[17px] font-semibold leading-tight text-ink">{s.name}</h3>
+                  <div className="p-5">
+                    <div className="mb-2.5 flex items-start justify-between gap-3">
+                      <h3 className="font-display text-[18px] font-semibold leading-tight text-ink">{s.name}</h3>
                       {s.price != null ? (
                         <span className="shrink-0 rounded-full border border-[var(--accent-soft)] bg-[var(--accent-soft)] px-2 py-1 text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
                           {formatMoney(s.price)}
@@ -595,9 +601,9 @@ export default function BookingForm({
                       )}
                     </div>
                     {s.description && (
-                      <p className="mb-2 text-[12.5px] leading-snug text-ink-faint line-clamp-2">{s.description}</p>
+                      <p className="mb-3 text-[13px] leading-snug text-ink-faint line-clamp-2">{s.description}</p>
                     )}
-                    <div className="flex items-center justify-between gap-2 border-t border-line pt-2">
+                    <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
                       <span className="flex shrink-0 items-center gap-1.5 text-ink-faint">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                           <circle cx="12" cy="12" r="10" />
