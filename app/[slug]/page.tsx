@@ -129,7 +129,15 @@ export default async function BusinessBookingPage({
         showContact={showContact}
       />
 
-      <section className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2 sm:pb-4">
+      {/* Full-bleed now - was boxed inside max-w-6xl with side padding and
+          margin all round, so the photo itself never actually reached
+          either edge of the screen (the thing "fill the screen" was
+          actually asking for - the height already filled the viewport,
+          the width didn't). No horizontal constraint here at all now;
+          the text/button content below gets its own max-w-6xl centering
+          instead, so it stays readable on a wide screen without the
+          photo being boxed in to match it. */}
+      <section className="relative">
         <div className="relative overflow-hidden bg-surface shadow-card">
           {/* Fills the viewport below SiteHeader's own sticky nav (64px -
               matches the top-16 offset used elsewhere in this codebase to
@@ -179,6 +187,7 @@ export default async function BusinessBookingPage({
             </div>
 
             <div className="relative z-10 flex min-h-[calc(100dvh-64px)] items-end p-4 sm:p-6 lg:p-8">
+              <div className="w-full max-w-6xl mx-auto">
               <div className="max-w-2xl">
                 {hoursSummary && (
                   <span
@@ -240,6 +249,7 @@ export default async function BusinessBookingPage({
                     Ask AI
                   </a>
                 </div>
+              </div>
               </div>
             </div>
           </div>
