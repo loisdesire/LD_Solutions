@@ -131,7 +131,16 @@ export default async function BusinessBookingPage({
 
       <section className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2 sm:pb-4">
         <div className="relative overflow-hidden bg-surface shadow-card">
-          <div className="relative min-h-[360px] sm:min-h-[440px]">
+          {/* Fills the viewport below SiteHeader's own sticky nav (64px -
+              matches the top-16 offset used elsewhere in this codebase to
+              clear that same header) - was a fixed 360/440px regardless of
+              screen size, which left real empty space unused on anything
+              taller than a small phone. 100dvh, not 100vh - a mobile
+              browser's address bar showing/hiding changes 100vh's actual
+              value mid-scroll, which is exactly the "page jumps/scrolls
+              for no reason" bug already fixed on the login/signup pages
+              this same session; dvh accounts for that instead. */}
+          <div className="relative min-h-[calc(100dvh-64px)]">
             <div className="absolute inset-0 z-0">
               {business.cover_image_url ? (
                 <>
@@ -169,7 +178,7 @@ export default async function BusinessBookingPage({
               />
             </div>
 
-            <div className="relative z-10 flex min-h-[360px] items-end p-4 sm:min-h-[440px] sm:p-6 lg:p-8">
+            <div className="relative z-10 flex min-h-[calc(100dvh-64px)] items-end p-4 sm:p-6 lg:p-8">
               <div className="max-w-2xl">
                 {hoursSummary && (
                   <span
