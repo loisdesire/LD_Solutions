@@ -455,24 +455,30 @@ export default function LandingPage() {
           then what actually happens. Nothing staged to disbelieve. */}
       <section className="border-b border-line">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-          <Reveal className="max-w-md mx-auto text-center">
-            <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
-              The owner&rsquo;s side
-            </div>
-            {/* Sized up (2rem -> 2.25rem on mobile) - this is the section's
-                only visual anchor now that there's no demo mockup to carry
-                some of the visual weight, so the same size that worked
-                paired with one reads as undersized standing alone. */}
-            <h2 className="font-display text-[2.25rem] sm:text-4xl leading-[1.12] text-ink mb-4">
-              You don&rsquo;t fill out the form.
-              <br />
-              You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
-            </h2>
-            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-9 max-w-sm mx-auto">
-              Add a service, change your hours, update your profile, straight from a chat on your dashboard.
-            </p>
-          </Reveal>
-          <div className="max-w-sm mx-auto space-y-5">
+          {/* Side by side from lg up (was one stacked, centered column) -
+              text and the capability list each get their own half instead
+              of sharing one narrow column, so neither has to compress to
+              fit above or below the other. Text stays centered below lg,
+              where there's only room for one column anyway. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <Reveal className="max-w-md mx-auto lg:mx-0 text-center lg:text-left">
+              <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
+                The owner&rsquo;s side
+              </div>
+              {/* Sized up (2rem -> 2.25rem on mobile) - stacked on mobile,
+                  this is the first thing the section shows with nothing
+                  else to carry visual weight, so the old size read as
+                  undersized on its own. */}
+              <h2 className="font-display text-[2.25rem] sm:text-4xl leading-[1.12] text-ink mb-4">
+                You don&rsquo;t fill out the form.
+                <br />
+                You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
+              </h2>
+              <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed max-w-sm mx-auto lg:mx-0">
+                Add a service, change your hours, update your profile, straight from a chat on your dashboard.
+              </p>
+            </Reveal>
+            <div className="max-w-sm mx-auto lg:mx-0 lg:max-w-none w-full space-y-5">
             {[
               {
                 icon: (
@@ -515,6 +521,7 @@ export default function LandingPage() {
                 </div>
               </Reveal>
             ))}
+            </div>
           </div>
         </div>
       </section>
