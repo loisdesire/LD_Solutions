@@ -139,16 +139,14 @@ export default async function BusinessBookingPage({
           photo being boxed in to match it. */}
       <section className="relative">
         <div className="relative overflow-hidden bg-surface shadow-card">
-          {/* Fills the viewport below SiteHeader's own sticky nav (64px -
-              matches the top-16 offset used elsewhere in this codebase to
-              clear that same header) - was a fixed 360/440px regardless of
-              screen size, which left real empty space unused on anything
-              taller than a small phone. 100dvh, not 100vh - a mobile
-              browser's address bar showing/hiding changes 100vh's actual
-              value mid-scroll, which is exactly the "page jumps/scrolls
-              for no reason" bug already fixed on the login/signup pages
-              this same session; dvh accounts for that instead. */}
-          <div className="relative min-h-[calc(100dvh-64px)]">
+          {/* min-h-[70vh], not the full calc(100dvh-64px) this briefly was -
+              filling the entire screen below the nav made a real cover
+              photo (not an abstract pattern - actual chairs/pillars/floor)
+              stretch into a tall, repetitive, oddly-proportioned strip
+              once seen live on a wide desktop screen. Still a big,
+              confident hero (70% of the viewport), just not stretched
+              past what the photo's own composition can carry. */}
+          <div className="relative min-h-[70vh]">
             <div className="absolute inset-0 z-0">
               {business.cover_image_url ? (
                 <>
@@ -186,9 +184,15 @@ export default async function BusinessBookingPage({
               />
             </div>
 
-            <div className="relative z-10 flex min-h-[calc(100dvh-64px)] items-end p-4 sm:p-6 lg:p-8">
+            <div className="relative z-10 flex min-h-[70vh] items-center p-4 sm:p-6 lg:p-8">
               <div className="w-full max-w-6xl mx-auto">
-              <div className="max-w-2xl">
+              {/* Centered now, not left/bottom-anchored - with the section
+                  actually filling real vertical space (70vh) on a wide
+                  screen, a left-anchored text block left most of the
+                  frame reading as empty photo with content shoved in one
+                  corner. Centering makes the size the hero now has feel
+                  intentional instead of unused. */}
+              <div className="max-w-2xl mx-auto text-center">
                 {hoursSummary && (
                   <span
                     className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
@@ -213,21 +217,26 @@ export default async function BusinessBookingPage({
                   </span>
                 )}
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="min-w-0">
-                    <h1 className="font-display text-[36px] font-semibold leading-[0.94] tracking-[-0.05em] text-white sm:text-[54px] lg:text-[58px]">
+                    {/* Bigger and bolder - 36/54/58px read as modest
+                        against a hero this large, once the section
+                        actually had 70vh of real height to fill rather
+                        than a tight 360/440px box. font-bold, not
+                        semibold, to hold its own at this size. */}
+                    <h1 className="font-display text-[46px] font-bold leading-[0.96] tracking-[-0.04em] text-white sm:text-[76px] lg:text-[92px]">
                       {business.name}
                     </h1>
                   </div>
 
                   {business.description && (
-                    <p className="max-w-[54ch] text-[16px] leading-relaxed text-white/90 sm:text-[17px]">
+                    <p className="max-w-[54ch] mx-auto text-[17px] leading-relaxed text-white/90 sm:text-[19px]">
                       {business.description}
                     </p>
                   )}
                 </div>
 
-                <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
                   <a
                     href="#book"
                     className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
