@@ -14,17 +14,28 @@ import { useEffect, useRef, useState } from 'react';
 // type it the way a person actually would (shorthand, "8k" not
 // "₦8,000"), and the assistant shows it understood by translating that
 // AND by offering a real next step instead of just parroting it back.
+//
+// The final step used to be a generic "Saved" outcome chip - a styled
+// checkmark that only ever claimed something changed, the same "trust me"
+// gap a plain confirmation sentence has. Switched to an hours example
+// specifically so the payoff can be the real settings table itself, with
+// the one row that actually changed visibly different from the others -
+// that's causality you can see, not a claim in a bubble.
 type Step =
   | { kind: 'user'; text: string }
   | { kind: 'assistant'; text: string }
   | { kind: 'saved' };
 
 const SCRIPT: Step[] = [
-  { kind: 'user', text: 'Add gel manicures, 45 mins, 8k' },
-  { kind: 'assistant', text: 'Got it: Gel Manicure, 45 min, ₦8,000. Want a quick description too, or just save it?' },
-  { kind: 'user', text: 'Just save it' },
-  { kind: 'assistant', text: "Done! It's live on your booking page 🎉" },
+  { kind: 'user', text: "We're open till 8 on Fridays now" },
+  { kind: 'assistant', text: 'Done — Fridays now close at 8:00 PM.' },
   { kind: 'saved' },
+];
+
+const HOURS_PREVIEW = [
+  { day: 'Thursday', hours: '9:00 AM – 6:00 PM', changed: false },
+  { day: 'Friday', hours: '9:00 AM – 8:00 PM', changed: true },
+  { day: 'Saturday', hours: '10:00 AM – 4:00 PM', changed: false },
 ];
 
 const STEP_DELAY_MS = 900;
@@ -106,14 +117,26 @@ export default function OwnerChatDemo() {
               </div>
             </div>
           ) : (
+            // The actual settings table, not a generic "saved" chip - the
+            // one row that changed reads visibly differently (accent
+            // background, bold) from its two neighbours, so the proof is
+            // in the table itself, not a claim about it.
             <div key={i} className="animate-popIn pt-1">
-              <div className="rounded-2xl p-3.5 flex items-center gap-3 border-2" style={{ background: 'var(--cream-surface)', borderColor: 'var(--cream-hover)' }}>
-                <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                </div>
-                <div className="min-w-0">
-                  <p className="font-mono text-[9.5px] uppercase tracking-[0.08em]" style={{ color: 'var(--accent)' }}>New service · on your booking page</p>
-                  <p className="text-[13.5px] font-semibold text-ink mt-0.5">Gel Manicure · 45 min · ₦8,000</p>
+              <div className="rounded-2xl p-3 border-2" style={{ background: 'var(--surface)', borderColor: 'var(--cream-hover)' }}>
+                <p className="font-mono text-[9.5px] uppercase tracking-[0.08em] px-1 mb-2" style={{ color: 'var(--accent)' }}>
+                  Hours updated · on your booking page
+                </p>
+                <div className="space-y-1">
+                  {HOURS_PREVIEW.map((row) => (
+                    <div
+                      key={row.day}
+                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[12.5px] ${row.changed ? 'font-semibold' : 'text-ink-soft'}`}
+                      style={row.changed ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+                    >
+                      <span>{row.day}</span>
+                      <span className="tabular-nums">{row.hours}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -123,7 +146,7 @@ export default function OwnerChatDemo() {
 
       <div className="px-5 pt-3 border-t border-line">
         <p className="font-mono text-[10px] text-ink-faint mb-3">
-          {saved ? 'No form. No settings page. Just told it what to do.' : 'Example conversation, see how it works.'}
+          {saved ? "Never opened the Hours page. It just updated." : 'Example conversation, see how it works.'}
         </p>
         {/* Decorative, not a real input - same rounded pill and send
             button as WebChatWidget's real one. */}
