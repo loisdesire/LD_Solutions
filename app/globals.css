@@ -201,6 +201,18 @@ textarea {
   letter-spacing: 0.02em;
 }
 
+/* For scroll-driven pickers (SlotTimePicker's hour/minute wheels) where
+   the track itself is the whole UI, not a document you're scrolling
+   through - a visible scrollbar there reads as "this is a list", which
+   is exactly the discrete-list impression the wheel is built to avoid. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    Keyboard focus
    ============================================

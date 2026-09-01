@@ -103,13 +103,6 @@ function Wheel({
 
   return (
     <div className="relative w-[92px]">
-      {/* The center "slot" the numbers scroll through - decorative only,
-          the real selection is just whatever row is scrolled to center. */}
-      <div
-        className="pointer-events-none absolute left-0 right-0 rounded-xl border-y-2"
-        style={{ top: ROW_H, height: ROW_H, borderColor: 'var(--accent-soft)' }}
-        aria-hidden="true"
-      />
       <div
         ref={ref}
         onScroll={handleScroll}
@@ -117,7 +110,7 @@ function Wheel({
         tabIndex={0}
         role="listbox"
         aria-label={ariaLabel}
-        className="h-[132px] overflow-y-auto snap-y snap-mandatory scroll-smooth outline-none"
+        className="h-[132px] overflow-y-auto no-scrollbar snap-y snap-mandatory scroll-smooth outline-none"
         style={{
           paddingTop: ROW_H,
           paddingBottom: ROW_H,
