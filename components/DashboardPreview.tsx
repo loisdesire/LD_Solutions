@@ -13,10 +13,14 @@ import { formatMoney } from '@/lib/formatMoney';
 // landing at a different height than its neighbour read as a rendering
 // glitch. Sidebar now shows the real four job-named groups (Today/Set up/
 // Automate/Business), abbreviated to fit 154px rather than all ten items.
+// Trimmed from 3 rows to 2 - on mobile, the header row + greeting + the
+// 4-stat card + "Upcoming bookings" + 3 full booking cards (each with
+// time/name/service/duration/status) added up to a genuinely long scroll
+// for what's meant to be a quick "here's what this looks like" teaser,
+// not an exhaustive product screenshot.
 const SAMPLE_ROWS = [
   { day: 'Today', time: '10:00', name: 'Amaka Johnson', service: 'Haircut', duration: '45 min', staff: 'John' },
   { day: 'Today', time: '11:30', name: 'David Mensah', service: 'Beard trim', duration: '20 min', staff: 'Mike' },
-  { day: 'Today', time: '1:00', name: 'Priya Anand', service: 'Colour & gloss', duration: '90 min', staff: 'John' },
 ];
 
 export default function DashboardPreview() {
@@ -77,7 +81,7 @@ export default function DashboardPreview() {
           </div>
 
           <h3 className="font-display text-[22px] text-ink">Good morning</h3>
-          <p className="text-ink-soft text-[11px] mt-1 mb-5">3 appointments today. Next is Amaka at 10:00.</p>
+          <p className="text-ink-soft text-[11px] mt-1 mb-5">2 appointments today. Next is Amaka at 10:00.</p>
 
           {/* Real background (cream mixed into paper, not white-adjacent
               warm-surface), no border, shadow-soft - and the real stat
@@ -92,8 +96,8 @@ export default function DashboardPreview() {
             <div className="flex flex-col divide-y divide-line-strong sm:flex-row sm:flex-wrap sm:divide-y-0 sm:gap-x-5 sm:gap-y-4">
               {[
                 { label: 'Next up', value: '10:00', sub: 'Amaka · Haircut', color: 'var(--accent)' },
-                { label: 'Today', value: '3', sub: 'appointments' },
-                { label: "Today's revenue", value: formatMoney(58000), sub: 'from 3 appointments' },
+                { label: 'Today', value: '2', sub: 'appointments' },
+                { label: "Today's revenue", value: formatMoney(58000), sub: 'from 2 appointments' },
                 { label: 'This week', value: '8', sub: formatMoney(184000) },
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center justify-between gap-3 py-2 sm:block sm:py-0 sm:min-w-[64px] sm:flex-1">

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
+import HeroAmbientSlots from '@/components/HeroAmbientSlots';
 import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
@@ -226,7 +227,13 @@ export default function LandingPage() {
           subhead, and CTAs, nothing competing for attention before the
           visitor has even decided to care. Plenty of strong SaaS pages
           carry a hero on copy and a clear CTA alone. */}
-      <section className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-10 sm:pt-20 pb-12 sm:pb-20 text-center">
+      <section className="relative pt-10 sm:pt-20 pb-12 sm:pb-20 text-center overflow-hidden">
+        {/* Full section width, not the inner max-w-2xl column - the point
+            is visible around the text's edges on a wide screen, which a
+            container as narrow as the copy itself couldn't give it room
+            to do. */}
+        <HeroAmbientSlots />
+        <div className="relative max-w-2xl mx-auto px-4 sm:px-6">
         <Reveal eager>
           <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 mx-auto text-[clamp(2.2rem,4vw,3.3rem)]">
             An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
@@ -248,15 +255,43 @@ export default function LandingPage() {
               Try live demo
             </Button>
           </div>
-
-          <a
-            href="/api/demo-login"
-            className="inline-flex items-center gap-1.5 mt-4 text-[14px] font-medium text-ink-faint hover:text-ink transition-colors"
-          >
-            Or explore the dashboard, no signup needed
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-          </a>
+          {/* "Or explore the dashboard" dropped - within one mobile scroll
+              this sat next to "Try live demo" (same idea, different
+              destination) and "Test the live booking page" in the section
+              right below (same idea again). Three "go try it" links in one
+              screen was the actual complaint; "Try live demo" alone
+              carries that job here. */}
         </Reveal>
+        </div>
+      </section>
+
+      {/* Channel strip moved up, right after the hero - was sitting after
+          the dark "how it works" section, which meant that (denser, more
+          reading-heavy) section landed within the very first mobile
+          scroll. This is short and calm on purpose; it's meant to close
+          out the first screen, not add to it, so the how-it-works section
+          becomes something you scroll INTO rather than something dumped
+          on you immediately. */}
+      <section className="border-y border-line bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+          <Reveal className="flex flex-col items-center text-center">
+            <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
+              One receptionist. Every channel your customers already use.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
+              {CHANNELS.map((c) => (
+                <span key={c.label} className="inline-flex items-center gap-1.5 text-[14px] font-medium">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
+                  />
+                  <span className={c.status === 'live' ? 'text-ink' : 'text-ink-faint'}>{c.label}</span>
+                  {c.status === 'soon' && <span className="text-ink-faint">· soon</span>}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       {/* Product proof through the actual system loop—not invented customer
@@ -273,16 +308,16 @@ export default function LandingPage() {
           already does the job better (real moments, not paragraph cards). */}
       <section id="how-it-works" className="bg-secondary-dark text-white border-y border-black/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-12 sm:py-16">
-          <Reveal className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
-            <div className="max-w-2xl">
-              <p className="text-[13px] font-semibold text-white/60 mb-2">More than a chatbot</p>
-              <h2 className="font-display text-[2rem] sm:text-4xl leading-tight">
-                A real message goes all the way to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span>
-              </h2>
-            </div>
-            <a href={`/${DEMO_SLUG}`} className="text-[14px] font-semibold text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">
-              Test the live booking page →
-            </a>
+          {/* The "Test the live booking page" link that used to sit here
+              was the third "go try it" link within one scroll (after
+              "Try live demo" in the hero and, before the reorder, the
+              channel strip's own proximity) - dropped for the same reason
+              the hero's "explore the dashboard" link was. */}
+          <Reveal className="max-w-2xl mb-8">
+            <p className="text-[13px] font-semibold text-white/60 mb-2">More than a chatbot</p>
+            <h2 className="font-display text-[2rem] sm:text-4xl leading-tight">
+              A real message goes all the way to <span className="italic" style={{ color: 'var(--accent)' }}>booked.</span>
+            </h2>
           </Reveal>
 
           {/* Each card now shows the actual moment, not just a description of
@@ -367,30 +402,6 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
-        </div>
-      </section>
-
-
-      {/* Channel strip - honest about what's live vs. coming, on purpose */}
-      <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
-          <Reveal className="flex flex-col items-center text-center">
-            <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
-              One receptionist. Every channel your customers already use.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
-              {CHANNELS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 text-[14px] font-medium">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
-                  />
-                  <span className={c.status === 'live' ? 'text-ink' : 'text-ink-faint'}>{c.label}</span>
-                  {c.status === 'soon' && <span className="text-ink-faint">· soon</span>}
-                </span>
-              ))}
-            </div>
-          </Reveal>
         </div>
       </section>
 
@@ -529,15 +540,28 @@ export default function LandingPage() {
             If your customers need to book time with you, this is for you.
           </p>
         </Reveal>
-        <Reveal delay={80} className="flex flex-wrap justify-center gap-3">
+        {/* Grid on mobile, not flex-wrap - eight pills of very different
+            label lengths wrapping freely meant most rows held exactly one
+            (a long label leaves no room for a neighbour), so the list ran
+            to roughly six full-width rows on a phone. Two even columns
+            fits the same eight in four rows instead. Smaller pills below
+            sm too - they don't need full desktop size to stay legible.
+            The trailing dashed pill (not counted in businessTypes, so it
+            never reads as a real ninth category) is the inclusivity fix:
+            eight named types with nothing signaling "and more" reads as
+            an exhaustive list to a business that isn't one of them. */}
+        <Reveal delay={80} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-3">
           {businessTypes.map((biz) => (
             <span
               key={biz}
-              className="px-5 py-2.5 rounded-full border border-line bg-surface text-[14px] font-medium text-ink-soft shadow-lift"
+              className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-full border border-line bg-surface text-[13px] sm:text-[14px] font-medium text-ink-soft shadow-lift text-center sm:text-left"
             >
               {biz}
             </span>
           ))}
+          <span className="col-span-2 sm:col-auto px-3 py-2 sm:px-5 sm:py-2.5 rounded-full border border-dashed border-line-strong text-[13px] sm:text-[14px] font-medium text-ink-faint text-center">
+            + whatever yours is
+          </span>
         </Reveal>
       </section>
 
