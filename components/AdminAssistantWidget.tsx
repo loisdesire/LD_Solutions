@@ -118,7 +118,12 @@ export default function AdminAssistantWidget({
           {/* Same header shape as WebChatWidget's own panel - a business
               mark + name up front, so it's unambiguous this is a different
               conversation from the customer-facing widget, even though
-              nobody ever sees both at once. */}
+              nobody ever sees both at once. No close button in here
+              anymore either, same fix as WebChatWidget: the floating FAB
+              is always visible now (z-[60], reachable over this panel on
+              mobile too), so a second, smaller, differently-sized close
+              control in the header was redundant rather than a real
+              backup. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0 border border-line" />
@@ -131,13 +136,6 @@ export default function AdminAssistantWidget({
               <p className="text-[14px] font-semibold text-ink truncate">Assistant</p>
               <p className="text-[10.5px] text-ink-faint truncate">{businessName}</p>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label="Close assistant"
-              className="h-7 w-7 rounded-full flex items-center justify-center text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
           </div>
           <div className="flex-1 min-h-0">
             <AssistantChat

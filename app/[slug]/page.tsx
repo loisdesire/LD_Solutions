@@ -241,17 +241,17 @@ export default async function BusinessBookingPage({
                   )}
                 </div>
 
-                {/* w-full sm:w-auto on both now - stacked on mobile
-                    (flex-col), plain inline-flex sized each button to its
-                    own text, so "Ask AI" (short) ended up visibly
-                    stubbier than "Book an appointment" (long) right above
-                    it. Full-width on mobile makes them read as a matched
-                    pair; side by side at sm+, their own natural widths
-                    look normal again, so that's unchanged there. */}
+                {/* w-full on mobile, a shared fixed width from sm up (was
+                    sm:w-auto, sizing each button to its own text - "Ask
+                    AI" stayed visibly stubbier than "Book an appointment"
+                    side by side too, just less obviously than when they
+                    were stacked). sm:w-[236px] fits the longer label
+                    comfortably; the shorter one now matches it exactly
+                    rather than just "close enough". */}
                 <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
                   <a
                     href="#book"
-                    className="w-full sm:w-auto inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+                    className="w-full sm:w-[236px] inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
                     style={{ background: 'var(--accent-contrast)', color: 'var(--accent)' }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -262,7 +262,7 @@ export default async function BusinessBookingPage({
 
                   <a
                     href="#chat"
-                    className="w-full sm:w-auto inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/50 bg-white/10 px-6 py-3.5 text-[14px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 active:scale-[0.98]"
+                    className="w-full sm:w-[236px] inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/50 bg-white/10 px-6 py-3.5 text-[14px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 active:scale-[0.98]"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M4 4h16v12H8l-4 4V4z" />

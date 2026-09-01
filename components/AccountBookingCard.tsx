@@ -65,13 +65,16 @@ export default function AccountBookingCard({
           </span>
           <div className="flex items-center gap-2">
             {business?.id && (
+              // Was h-7 w-7 (28px) - below a comfortable mobile touch
+              // size. 44px minimum now, same convention as every other
+              // icon-only tap target in the app.
               <button
                 onClick={() => setWidgetOpen(true)}
                 aria-label={`Message ${business.name}`}
                 title={`Message ${business.name}`}
-                className="h-7 w-7 rounded-full flex items-center justify-center text-ink-faint hover:text-accent hover:bg-accent-soft transition-colors"
+                className="h-11 w-11 rounded-full flex items-center justify-center text-ink-faint hover:text-accent hover:bg-accent-soft transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 4h16v12H8l-4 4V4z" />
                   <path d="M8 9h8M8 12h5" />
                 </svg>
@@ -81,9 +84,13 @@ export default function AccountBookingCard({
                 above it - "Manage" is the actual primary action on this
                 card (reschedule, cancel), so it gets button weight now. */}
             {business?.slug && (
+              // min-h-11 to match the message button next to it now that
+              // it's sized up - a 44px button beside a much shorter one
+              // in the same row read as mismatched once the other one
+              // was fixed.
               <Link
                 href={`/${business.slug}/manage/${booking.id}`}
-                className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
+                className="min-h-11 inline-flex items-center rounded-full px-4 text-[12px] font-semibold text-accent-contrast transition-opacity hover:opacity-90"
                 style={{ background: 'var(--accent)' }}
               >
                 Manage
