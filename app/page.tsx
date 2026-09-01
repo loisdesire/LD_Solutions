@@ -227,7 +227,17 @@ export default function LandingPage() {
           subhead, and CTAs, nothing competing for attention before the
           visitor has even decided to care. Plenty of strong SaaS pages
           carry a hero on copy and a clear CTA alone. */}
-      <section className="relative pt-10 sm:pt-20 pb-12 sm:pb-20 text-center overflow-hidden">
+      {/* z-0 alongside relative, not just relative alone - this is the
+          real reason HeroAmbientSlots was never actually visible. relative
+          without an explicit z-index doesn't create a stacking context, so
+          the grid's -z-10 wasn't resolving "behind this section's text" at
+          all - it was resolving at the page ROOT, landing it behind the
+          whole page's own bg-paper background. Boosting its opacity/colors
+          earlier never touched the real bug: it was rendering at full
+          brightness the entire time, just behind an opaque wall. z-0 gives
+          this section its own stacking context, so -z-10 now means what it
+          was always meant to mean. */}
+      <section className="relative z-0 pt-10 sm:pt-20 pb-12 sm:pb-20 text-center overflow-hidden">
         {/* Full section width, not the inner max-w-2xl column - the point
             is visible around the text's edges on a wide screen, which a
             container as narrow as the copy itself couldn't give it room
