@@ -35,18 +35,19 @@ export default function HeroAmbientSlots() {
   return (
     <div
       aria-hidden="true"
-      // Was 0.16 opacity accent fill on 0.4-opacity faint-token borders -
-      // essentially invisible, which is the actual reason this didn't
-      // read as "glam" at all: the code was live and doing exactly what
-      // it was told, just too timid to register as a real hero element.
-      // Filled cells go a real, visible accent tint now (not a bare hint
-      // of one), borders use the accent color too instead of the near-
-      // invisible --line token, and the mask's clear zone is smaller so
-      // more of the pattern is actually on screen.
+      // Turned back down after actually being visible for the first time -
+      // now that the stacking-context bug is fixed (see git history) it
+      // was reading as genuinely bright, glow included, competing with the
+      // buttons for attention instead of sitting behind them as texture.
+      // Opacity roughly halved from that pass, the glow dropped entirely
+      // (that was the biggest single source of "too much orange" - it
+      // bled accent-colored light beyond each cell's own edges), and the
+      // mask's clear zone widened so the grid stays further from the
+      // headline/button column instead of crowding right up to it.
       className="hidden lg:block absolute inset-0 -z-10 overflow-hidden"
       style={{
-        maskImage: 'radial-gradient(ellipse 480px 300px at center, transparent 50%, black 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 480px 300px at center, transparent 50%, black 100%)',
+        maskImage: 'radial-gradient(ellipse 620px 380px at center, transparent 55%, black 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 620px 380px at center, transparent 55%, black 100%)',
       }}
     >
       <div
@@ -59,9 +60,8 @@ export default function HeroAmbientSlots() {
             className="m-[3px] rounded-[4px] transition-all duration-700"
             style={{
               background: filled.has(i) ? 'var(--accent)' : 'transparent',
-              border: filled.has(i) ? 'none' : '1.5px solid var(--accent)',
-              opacity: filled.has(i) ? 0.55 : 0.22,
-              boxShadow: filled.has(i) ? '0 4px 14px -4px var(--accent)' : 'none',
+              border: filled.has(i) ? 'none' : '1px solid var(--accent)',
+              opacity: filled.has(i) ? 0.28 : 0.11,
             }}
           />
         ))}
