@@ -258,9 +258,18 @@ export default async function BusinessBookingPage({
               </div>
             </div>
 
-            {hoursSummary && (
-              <p className="text-[13.5px] text-white/80 mt-3">{hoursSummary}</p>
-            )}
+            {/* The standalone hours line that used to sit here is gone -
+                the pill above already answers the one question that
+                actually matters at a glance (can I book right now), and
+                keeping both the pill AND a full "Mon-Fri - 9 AM-5 PM"
+                line was exactly the over-stacking problem: this banner
+                kept every line the old version had (badge, description,
+                price) and then had new elements (logo, pill, second CTA)
+                added on top rather than traded off against anything,
+                which is how it ended up considerably busier than the
+                reference it was built from, not more premium. The full
+                schedule is still one tap away once you're choosing a
+                time. */}
             {business.description && (
               // line-clamp on mobile only - on a short phone viewport a
               // long description was pushing the CTAs further down the
@@ -290,9 +299,16 @@ export default async function BusinessBookingPage({
                 </svg>
                 Book an appointment
               </a>
+              {/* bg-white/15 + a visible border, not a border alone - a
+                  faint outline with no fill all but disappeared against
+                  a photo with any midtone detail in it (confirmed on a
+                  real photo, not just a theory), reading as a broken or
+                  unfinished button rather than a real secondary CTA. A
+                  translucent fill gives it an actual button shape
+                  regardless of what's behind it. */}
               <a
                 href="#chat"
-                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] border-2 border-white/45 text-white transition-colors hover:bg-white/10 active:scale-95"
+                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] border border-white/60 bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/25 active:scale-95"
                 style={{ textShadow: 'none' }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
