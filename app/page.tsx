@@ -538,68 +538,54 @@ export default function LandingPage() {
                 Add a service, change your hours, update your profile, straight from a chat on your dashboard.
               </p>
             </Reveal>
-            <div className="max-w-sm mx-auto lg:mx-0 lg:max-w-none w-full space-y-5">
-            {[
-              {
-                icon: (
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
-                  </svg>
-                ),
-                title: 'Change your hours',
-                example: 'We’re open till 8 on Fridays now',
-                result: 'Updated',
-              },
-              {
-                icon: (
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="2.5" y="5.5" width="19" height="13" rx="2" /><path d="M2.5 10h19" />
-                  </svg>
-                ),
-                title: 'Turn on payments',
-                example: 'Turn on payments for bookings',
-                result: 'Turned on',
-              },
-              {
-                icon: (
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="M21 15.5l-5.5-5.5L5 20" />
-                  </svg>
-                ),
-                title: 'Update your logo or profile',
-                example: 'Just uploaded my new logo',
-                result: 'Updated',
-              },
-            ].map((item, index) => (
-              // Was a title + a description SENTENCE ("say it once, it
-              // updates everywhere") - that's an assertion, not a
-              // demonstration; it reads as marketing copy asking to be
-              // believed rather than something explanatory. This shows
-              // the actual mechanism instead: the literal phrase you'd
-              // type, then what happens - no chat bubble, no avatar, no
-              // typing animation, none of the chrome that made the
-              // original demo feel like it was doing too much. Just the
-              // one thing that's actually explanatory: input, then result.
-              <Reveal key={item.title} delay={index * 70} className="flex items-start gap-3.5 text-left">
-                <div
-                  className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center mt-0.5"
-                  style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                >
-                  {item.icon}
+            {/* One real change, shown fully - was a 3-item list of
+                "quoted command -> arrow -> one-word result" chips, which
+                turned out to be its own cliche: that exact device (fake
+                command syntax, arrow, "Updated") is all over AI-product
+                marketing right now, recognizable as a template independent
+                of what product it's attached to, and two of the three
+                results just said "Updated" with nothing concrete actually
+                shown changing. This instead shows the real artifact: an
+                actual hours table, the kind that's really on the admin
+                Hours page, with the one row that changed genuinely
+                different from its neighbours (background, weight) - proof
+                you can see, not an assertion in a bubble or a chip. The
+                one line tying it back to "you just said this" is real
+                copy, not a fake command-syntax quote. */}
+            <Reveal delay={70} className="max-w-sm mx-auto lg:mx-0 lg:max-w-none w-full">
+              <div className="rounded-2xl border border-line-strong bg-surface overflow-hidden shadow-[0_20px_50px_-20px_var(--accent-soft)]">
+                <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
+                  <span className="text-[13.5px] font-semibold text-ink">Hours · This week</span>
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold shrink-0"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  >
+                    Changed via chat
+                  </span>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[14.5px] font-semibold text-ink mb-1.5">{item.title}</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-warm-surface px-2.5 py-1.5">
-                    <span className="text-[12px] text-ink-soft italic">&ldquo;{item.example}&rdquo;</span>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-ink-faint shrink-0" aria-hidden="true">
-                      <path d="M5 12h14M13 5l7 7-7 7" />
-                    </svg>
-                    <span className="text-[12px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>{item.result}</span>
-                  </div>
+                <div className="p-4 space-y-1">
+                  {[
+                    { day: 'Thursday', hours: '9:00 AM – 6:00 PM', changed: false },
+                    { day: 'Friday', hours: '9:00 AM – 8:00 PM', changed: true },
+                    { day: 'Saturday', hours: '10:00 AM – 4:00 PM', changed: false },
+                  ].map((row) => (
+                    <div
+                      key={row.day}
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-[13.5px] ${row.changed ? 'font-semibold' : 'text-ink-soft'}`}
+                      style={row.changed ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+                    >
+                      <span>{row.day}</span>
+                      <span className="tabular-nums">{row.hours}</span>
+                    </div>
+                  ))}
                 </div>
-              </Reveal>
-            ))}
-            </div>
+                <div className="px-5 py-3.5 border-t border-dashed border-line">
+                  <p className="text-[12.5px] text-ink-faint leading-relaxed">
+                    &ldquo;We&rsquo;re open till 8 on Fridays now.&rdquo; That was the whole conversation.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
