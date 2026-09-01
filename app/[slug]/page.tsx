@@ -129,8 +129,8 @@ export default async function BusinessBookingPage({
         showContact={showContact}
       />
 
-      <section className="relative mx-auto max-w-5xl px-4 sm:px-10 pt-4 sm:pt-6 pb-2 sm:pb-4">
-        <div className="relative overflow-hidden rounded-[30px] bg-surface shadow-card">
+      <section className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2 sm:pb-4">
+        <div className="relative overflow-hidden bg-surface shadow-card">
           <div className="relative min-h-[360px] sm:min-h-[440px]">
             <div className="absolute inset-0 z-0">
               {business.cover_image_url ? (
@@ -139,7 +139,7 @@ export default async function BusinessBookingPage({
                     className="absolute inset-0"
                     style={{
                       background:
-                        'linear-gradient(90deg, rgba(23,20,18,0.26) 0%, rgba(23,20,18,0.12) 36%, rgba(23,20,18,0.18) 100%)',
+                        'linear-gradient(90deg, rgba(23,20,18,0.28) 0%, rgba(23,20,18,0.15) 36%, rgba(23,20,18,0.2) 100%)',
                     }}
                   />
                   <Image
@@ -164,13 +164,13 @@ export default async function BusinessBookingPage({
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(180deg, rgba(17,17,17,0.04) 0%, rgba(17,17,17,0.15) 42%, rgba(17,17,17,0.35) 100%)',
+                    'linear-gradient(180deg, rgba(17,17,17,0.04) 0%, rgba(17,17,17,0.18) 42%, rgba(17,17,17,0.38) 100%)',
                 }}
               />
             </div>
 
             <div className="relative z-10 flex min-h-[360px] items-end p-4 sm:min-h-[440px] sm:p-6 lg:p-8">
-              <div className="max-w-xl bg-black/10 p-2 sm:p-3">
+              <div className="max-w-2xl">
                 {hoursSummary && (
                   <span
                     className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
@@ -195,15 +195,15 @@ export default async function BusinessBookingPage({
                   </span>
                 )}
 
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="min-w-0">
-                    <h1 className="font-display text-[32px] font-semibold leading-[0.96] tracking-[-0.04em] text-white sm:text-[48px]">
+                    <h1 className="font-display text-[36px] font-semibold leading-[0.94] tracking-[-0.05em] text-white sm:text-[54px] lg:text-[58px]">
                       {business.name}
                     </h1>
                   </div>
 
                   {business.description && (
-                    <p className="max-w-[52ch] text-[15px] leading-relaxed text-white/90 sm:text-[16px]">
+                    <p className="max-w-[54ch] text-[16px] leading-relaxed text-white/90 sm:text-[17px]">
                       {business.description}
                     </p>
                   )}
@@ -237,7 +237,7 @@ export default async function BusinessBookingPage({
         </div>
       </section>
 
-      <main id="book" className="relative max-w-5xl mx-auto px-4 sm:px-10 py-12 sm:py-20 scroll-mt-20">
+      <main id="book" className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 scroll-mt-20">
         {acceptingBookings ? (
           <BookingForm
             businessId={business.id}
