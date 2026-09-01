@@ -25,10 +25,45 @@ const CURRENCY_LOCALE: Record<string, string> = {
 // breathing room, but it can't ever wrap the symbol away from its number.
 const SYMBOL_GAP = ' ';
 
+// Symbols this codebase constructs by hand rather than trusting Intl's
+// `style: 'currency'` to insert one - see the comment inside formatMoney
+// for why. Only NGN is actually live; every other currency in
+// CURRENCY_LOCALE still goes through Intl below since international
+// payments aren't shipped yet (see the international-payments project
+// note) and there's no live bug report for any of them.
+const CURRENCY_SYMBOL: Partial<Record<string, string>> = {
+  NGN: '₦',
+};
+
 export function formatMoney(amount: number | null | undefined, currency: string = 'NGN'): string {
   if (amount == null) return '-';
+  const locale = CURRENCY_LOCALE[currency] ?? 'en-US';
+  const symbol = CURRENCY_SYMBOL[currency];
+  if (symbol) {
+    // A prior fix here assumed the reported "price looks struck through"
+    // bug was the Naira glyph's own strokes visually bleeding into the
+    // following digit under .font-display's negative letter-spacing, and
+    // inserted a space between the symbol and the number. That shipped,
+    // live, and the bug still recurred - including on plain body-text
+    // prices that were never under that letter-spacing to begin with,
+    // which rules that theory out. The real uncertainty `style:
+    // 'currency'` carries is what the visitor's OWN browser's Intl/ICU
+    // data actually produces for 'en-NG'/'NGN' - this runs client-side in
+    // BookingForm and other 'use client' components, not on this
+    // codebase's dev machine, so there was never a way to verify from
+    // here what Android Chrome specifically inserts around the symbol.
+    // Building the string by hand removes that uncertainty rather than
+    // theorizing about it again: this exact "₦" (the single, verified-
+    // clean U+20A6 codepoint, nothing else), a plain digit-grouped
+    // number, nothing left for Intl to choose on its own.
+    const digits = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+    return `${symbol}${SYMBOL_GAP}${digits}`;
+  }
   try {
-    const parts = new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? 'en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       // Whole units only, matching the existing site-wide convention
@@ -36,15 +71,7 @@ export function formatMoney(amount: number | null | undefined, currency: string 
       // just what every current display already does.
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).formatToParts(amount);
-    // Real bug this fixes: with no space between them, "₦" sitting flush
-    // against the first digit - combined with the negative letter-spacing
-    // every .font-display price runs under - let the Naira sign's own
-    // horizontal strokes visually bleed into the number, reading as the
-    // whole amount struck through rather than a currency symbol next to
-    // one. Only the symbol needs the gap; grouping/decimal separators
-    // stay exactly as Intl produces them.
-    return parts.map((p) => (p.type === 'currency' ? p.value + SYMBOL_GAP : p.value)).join('');
+    }).format(amount);
   } catch {
     // An unrecognized currency code shouldn't crash a page - fall back to
     // a plain pinned-locale number rather than the amount vanishing.

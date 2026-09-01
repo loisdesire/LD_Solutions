@@ -513,23 +513,21 @@ export default function BookingForm({
         // below that header's z-50 so the two never fight for a corner.
         <div className="sticky top-16 z-30 max-w-xl mx-auto rounded-2xl bg-warm-surface overflow-hidden mb-6 animate-rise shadow-soft">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
+            {/* Was up to five stacked lines (name, duration+price, date+
+                time, timezone wrapping onto its own line on a narrow phone,
+                then a separate deposit line) - a real "info overload"
+                complaint, not just a lot of content. Down to three: name, a
+                single date+time+duration meta line, and one payment line
+                that states the deposit against the total directly instead
+                of two separate amounts a customer had to mentally connect
+                themselves. Timezone dropped from here - it's already
+                disclosed once, up front, in the datetime step's own
+                heading area; repeating it on every step after that was
+                what caused the wrap in the first place. */}
             <div className="min-w-0">
               <span className="text-[14px] font-semibold text-ink truncate block">{selectedService.name}</span>
-              <div className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-ink-faint">
-                <span>{formatDuration(selectedService.duration_minutes)}</span>
-                {selectedService.price != null && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span>
-                      {paymentActive && depositPercentage < 100
-                        ? `${formatMoney(selectedService.price)} total`
-                        : formatMoney(selectedService.price)}
-                    </span>
-                  </>
-                )}
-              </div>
               {selectedSlot && (
-                <span className="text-[12px] text-ink-faint">
+                <div className="text-[12.5px] text-ink-faint mt-0.5">
                   {new Date(selectedSlot).toLocaleDateString(undefined, {
                     weekday: 'short',
                     month: 'short',
@@ -537,12 +535,17 @@ export default function BookingForm({
                   })}
                   {' · '}
                   {formatTime(selectedSlot)}
-                  {tzLabel && ` ${tzLabel}`}
-                </span>
+                  {' · '}
+                  {formatDuration(selectedService.duration_minutes)}
+                </div>
               )}
-              {paymentActive && (
-                <span className="text-[12px] font-semibold block mt-0.5" style={{ color: 'var(--accent)' }}>
-                  {depositPercentage < 100 ? `Deposit due: ${formatMoney(amountDue)}` : `Due: ${formatMoney(amountDue)}`}
+              {selectedService.price != null && (
+                <span className="text-[12.5px] font-semibold block mt-0.5" style={{ color: 'var(--accent)' }}>
+                  {paymentActive
+                    ? depositPercentage < 100
+                      ? `Deposit ${formatMoney(amountDue)} of ${formatMoney(selectedService.price)}`
+                      : `Due ${formatMoney(amountDue)}`
+                    : formatMoney(selectedService.price)}
                 </span>
               )}
             </div>
@@ -918,12 +921,17 @@ export default function BookingForm({
                   {formatMoney(amountDue)}
                 </span>
               </div>
+              {/* Trimmed further - "(card or bank transfer)" was detail
+                  Paystack's own checkout screen already shows a breath
+                  later; cutting it left room for the balance and
+                  cancellation facts to read as two short sentences
+                  instead of one that ran on. */}
               <p className="text-ink-faint text-[13px] mt-1.5 leading-relaxed">
-                Paid via Paystack (card or bank transfer).
+                Paid via Paystack.
                 {depositPercentage < 100 && selectedService.price != null && (
                   <> {formatMoney(selectedService.price - amountDue)} due at your visit.</>
                 )}
-                {' '}Free to cancel or reschedule up to {cancellationWindowHours} hour
+                {' '}Free to cancel up to {cancellationWindowHours} hour
                 {cancellationWindowHours === 1 ? '' : 's'} before.
               </p>
             </div>
