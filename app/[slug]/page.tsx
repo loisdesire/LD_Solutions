@@ -129,6 +129,21 @@ export default async function BusinessBookingPage({
         showContact={showContact}
       />
 
+      {/* Its own strip now, not sharing the hero's badge row with the
+          open/closed status - the two were competing for the same small
+          slot at the top of the centered content, and status (can I book
+          right now) is the one that actually matters to every visitor,
+          demo or not. A plain, persistent strip reads as "site-wide
+          notice" too, which is closer to what this actually is. */}
+      {slug === DEMO_SLUG && (
+        <div className="text-center py-2 px-4" style={{ background: 'var(--accent-soft)' }}>
+          <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: 'var(--accent)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>
+            Demo business - try booking, nothing&apos;s real
+          </span>
+        </div>
+      )}
+
       {/* Full-bleed now - was boxed inside max-w-6xl with side padding and
           margin all round, so the photo itself never actually reached
           either edge of the screen (the thing "fill the screen" was
@@ -207,24 +222,13 @@ export default async function BusinessBookingPage({
                   </span>
                 )}
 
-                {slug === DEMO_SLUG && (
-                  <span
-                    className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/85 px-3 py-1.5 text-[11.5px] font-semibold tracking-[0.02em]"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>
-                    Demo business - try booking, nothing&apos;s real
-                  </span>
-                )}
-
                 <div className="space-y-4">
                   <div className="min-w-0">
-                    {/* Bigger and bolder - 36/54/58px read as modest
-                        against a hero this large, once the section
-                        actually had 70vh of real height to fill rather
-                        than a tight 360/440px box. font-bold, not
-                        semibold, to hold its own at this size. */}
-                    <h1 className="font-display text-[46px] font-bold leading-[0.96] tracking-[-0.04em] text-white sm:text-[76px] lg:text-[92px]">
+                    {/* Sized down two steps at each breakpoint from the
+                        previous pass (46/76/92 -> 40/66/80) - the jump to
+                        bold+big for a centered 70vh hero was right, that
+                        was just one notch past it. */}
+                    <h1 className="font-display text-[40px] font-bold leading-[0.96] tracking-[-0.04em] text-white sm:text-[66px] lg:text-[80px]">
                       {business.name}
                     </h1>
                   </div>
