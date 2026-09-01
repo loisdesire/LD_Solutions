@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
-import Link from 'next/link';
+'use client';
+
+import { useState, type ReactNode } from 'react';
 
 export type SettingsSection = {
   key: string;
@@ -15,6 +16,19 @@ export type SettingsSection = {
 // Settings stays one sidebar destination. A compact in-page switcher keeps
 // its related sections discoverable without turning five configuration
 // details into five primary navigation destinations.
+//
+// Switching is client state now, not a <Link> to a new ?section= URL -
+// every section's content is already fully fetched and passed in on the
+// one initial page load (settings/page.tsx fetches everything up front),
+// so there was never a real reason a tab click needed a fresh server
+// round-trip. It used to be one, because `active` came straight from
+// searchParams on a fully async Server Component - every single pill
+// click re-ran that component's own auth check and two Supabase queries
+// before the new tab's (already-available) content could show, which is
+// exactly the "takes forever to load before it switches" being reported.
+// The initial section still honors the URL - SetupChecklist links
+// straight to ?section=profile/rules from elsewhere in the app - just via
+// one read on mount rather than on every click.
 export default function SettingsSections({
   sections,
   active,
@@ -22,7 +36,8 @@ export default function SettingsSections({
   sections: SettingsSection[];
   active?: string;
 }) {
-  const current = sections.find((s) => s.key === active) ?? sections[0];
+  const [activeKey, setActiveKey] = useState(active ?? sections[0]?.key);
+  const current = sections.find((s) => s.key === activeKey) ?? sections[0];
   if (!current) return null;
 
   return (
@@ -38,16 +53,17 @@ export default function SettingsSections({
         {sections.map((section) => {
           const selected = section.key === current.key;
           return (
-            <Link
+            <button
               key={section.key}
-              href={`?section=${section.key}`}
+              type="button"
+              onClick={() => setActiveKey(section.key)}
               aria-current={selected ? 'page' : undefined}
               className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
                 selected ? 'bg-accent text-accent-contrast' : 'bg-surface border border-line text-ink-soft hover:text-ink hover:border-line-strong'
               }`}
             >
               {section.label}
-            </Link>
+            </button>
           );
         })}
       </nav>
