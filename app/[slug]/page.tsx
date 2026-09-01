@@ -137,8 +137,15 @@ export default async function BusinessBookingPage({
           wraps to two lines, and an hours line together can exceed 420px
           on a phone. A fixed height plus overflow-hidden below used to
           silently clip whatever didn't fit; min-height lets the section
-          grow to whatever the content actually needs instead. */}
-      <section className="relative min-h-[420px] sm:min-h-[480px] pt-10 sm:pt-16 pb-8 sm:pb-0 flex items-center overflow-hidden">
+          grow to whatever the content actually needs instead.
+
+          Bottom-anchored now, not vertically centered - center-anchored
+          text over a flat uniform scrim is the generic "stock hero
+          template" look; anchoring the text to the bottom over a graduated
+          shadow (the dominant convention on real hospitality/booking
+          sites - Airbnb, Booking.com, Fresha all do this) reads as a
+          considered photo treatment instead. */}
+      <section className="relative min-h-[440px] sm:min-h-[500px] pt-10 sm:pt-16 pb-8 sm:pb-10 flex items-end overflow-hidden">
         <div className="absolute inset-0 z-0">
           {business.cover_image_url ? (
             // alt="" is correct, not an oversight - decorative background
@@ -165,14 +172,24 @@ export default async function BusinessBookingPage({
               }}
             />
           )}
-          {/* A flat 35% overlay only gets white text to ~2.5:1 contrast
-              against a bright uploaded photo - well under the 4.5:1 body
-              text needs. 45% gets large text (the headline) to a safe
-              ~3.4:1 on its own; the text-shadow below is the real
-              backstop for everything else, since it holds legibility
-              near the glyph edge regardless of how bright the photo
-              actually is, without having to guess its composition. */}
-          <div className="absolute inset-0 bg-black/45" />
+          {/* Graduated, accent-tinted scrim instead of a flat black wash -
+              a uniform bg-black/45 across the whole photo was the other
+              half of the "generic template" read (every stock booking
+              site uses exactly that). Strongest right where the text
+              actually sits (the bottom third, ~85% black, safely over
+              4.5:1 for body text against any photo brightness), fading up
+              through the business's own accent hue rather than straight
+              through to neutral black, so the photo still reads as this
+              business's brand color even where it's darkened. Nearly
+              clear at the very top so the photo itself stays visible and
+              gets to do some of the work. */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to top, rgba(0,0,0,0.85), color-mix(in srgb, var(--accent) 35%, black) 32%, transparent 78%)',
+            }}
+          />
         </div>
 
         <div className="relative z-10 w-full px-4 sm:px-10 max-w-5xl mx-auto text-white">
@@ -191,21 +208,28 @@ export default async function BusinessBookingPage({
                 Demo business - try booking, nothing&apos;s real
               </span>
             )}
+            {/* Personalized rather than a static "Book your visit" on
+                every business's page - the first thing a visitor should
+                know is whose page this actually is. Sized up and tightened
+                (32/52px -> 36/58px, tracking added) to match the confidence
+                the marketing hero's own headline carries now - this was
+                sized for the old center-anchored layout and read small
+                against a full-bleed photo. */}
+            <h1 className="font-display text-[36px] sm:text-[58px] font-semibold leading-[1.02] tracking-[-0.02em]">
+              Book with {business.name}
+            </h1>
             {business.description && (
               // line-clamp on mobile only - on a short phone viewport a
-              // long description was pushing the name, hours, and both
-              // CTAs further down the stack than a first glance should
-              // need to scan. The full description still shows at sm+.
-              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mb-4 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
+              // long description was pushing the hours and CTA further
+              // down the stack than a first glance should need to scan.
+              // The full description still shows at sm+. Moved below the
+              // headline (was above it) now that the headline is the
+              // first thing your eye should hit reading bottom-up from
+              // the CTA, matching the section's new bottom-anchored flow.
+              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-3 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
                 {business.description}
               </p>
             )}
-            {/* Personalized rather than a static "Book your visit" on
-                every business's page - the first thing a visitor should
-                know is whose page this actually is. */}
-            <h1 className="font-display text-[32px] sm:text-[52px] font-semibold leading-[1.05]">
-              Book with {business.name}
-            </h1>
             {/* One compact line instead of an icon+text pair sitting next
                 to a separate status pill - two visually distinct chunks
                 doing one job (telling you the hours) read as more than

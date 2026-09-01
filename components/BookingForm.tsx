@@ -46,47 +46,26 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-// A thin progress rule + a plain mono label, not three bold circles with
-// glow rings - this page's job is to feel like a considered reservation
-// on a business's own site, not a SaaS onboarding wizard. The admin
-// dashboard earns its heavier chrome because it's a working tool; a
-// customer booking an appointment doesn't need to feel like they're
-// filling out a form.
-// Labels match the step headings word for word. They used to read
-// Service/Time/Details against headings of "What would you like?" etc, so
-// the progress bar and the page named the same step differently.
+// Was a visible progress bar + "Step X of 3" label - explicitly called
+// out as the thing that made this page feel like an old-school SaaS
+// checkout wizard rather than a considered reservation on a business's
+// own site. Dropped entirely rather than replaced with a subtler version
+// of the same idea: the step heading itself ("What would you like?" ->
+// "When works for you?" -> "Almost there") already tells you where you
+// are, and the sticky summary bar below (once a service/time is picked)
+// already shows what's been chosen and lets you jump back - a formal
+// progress meter on top of both of those was redundant chrome, not
+// missing information. The screen-reader announcement stays; it's real
+// information a sighted visitor gets for free just by seeing the new
+// heading render, which a screen reader user doesn't get unless
+// something says so explicitly.
 const STEP_LABELS = ['What you want', 'When', 'Your details'];
 
-function StepIndicator({ step }: { step: number }) {
+function StepAnnouncer({ step }: { step: number }) {
   return (
-    <div className="max-w-xs mx-auto mb-10">
-      {/* The whole flow was silent to screen readers - moving between steps
-          changed everything on screen and announced nothing. */}
-      <p className="sr-only" role="status" aria-live="polite">
-        Step {step} of 3: {STEP_LABELS[step - 1]}
-      </p>
-      <div className="flex items-center justify-between mb-2.5" aria-hidden="true">
-        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-faint">
-          Step {step} of 3
-        </span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: 'var(--accent)' }}>
-          {STEP_LABELS[step - 1]}
-        </span>
-      </div>
-      <div
-        className="h-[3px] rounded-full bg-line overflow-hidden"
-        role="progressbar"
-        aria-valuenow={step}
-        aria-valuemin={1}
-        aria-valuemax={3}
-        aria-label="Booking progress"
-      >
-        <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${(step / 3) * 100}%`, background: 'var(--accent)' }}
-        />
-      </div>
-    </div>
+    <p className="sr-only" role="status" aria-live="polite">
+      Step {step} of 3: {STEP_LABELS[step - 1]}
+    </p>
   );
 }
 
@@ -482,7 +461,7 @@ export default function BookingForm({
 
   return (
     <div>
-      <StepIndicator step={stepNum} />
+      <StepAnnouncer step={stepNum} />
 
       {step !== 'service' && selectedService && (
         // Sticky, not just present - the calendar and slot list below can
@@ -672,7 +651,16 @@ export default function BookingForm({
             </div>
           )}
 
-          <div className="rounded-2xl bg-surface border border-line shadow-soft p-4 sm:p-5 mb-6">
+          {/* bg-warm-surface + no border, was bg-surface (stark white) +
+              border-line - a thin gray line around a white box on a white
+              page is the exact "generic form card" look; dropping the
+              border and warming the fill toward cream instead lets a
+              softer accent-tinted shadow alone define the edge, the same
+              device the redesigned service cards elsewhere already use. */}
+          <div
+            className="rounded-2xl bg-warm-surface p-4 sm:p-5 mb-6"
+            style={{ boxShadow: '0 20px 44px -28px var(--accent-soft), 0 2px 8px -2px rgba(32,32,32,0.06)' }}
+          >
             <CalendarPicker
               selectedDate={selectedDate}
               onChange={(d) => {
