@@ -651,14 +651,16 @@ export default function BookingForm({
             </div>
           )}
 
-          {/* bg-warm-surface + no border, was bg-surface (stark white) +
-              border-line - a thin gray line around a white box on a white
-              page is the exact "generic form card" look; dropping the
-              border and warming the fill toward cream instead lets a
-              softer accent-tinted shadow alone define the edge, the same
-              device the redesigned service cards elsewhere already use. */}
+          {/* bg-surface (not bg-warm-surface) - the sticky summary bar
+              right above this is ALREADY warm-toned, and matching it here
+              too meant two adjacent same-colored blocks with no border
+              between them just merged into one flat beige mass with no
+              visible boundary at all - worse than the gray-line problem
+              this was meant to fix. White against the page's own warm-
+              tinted bg-paper background gives real, unambiguous
+              separation on its own, so the border still isn't needed. */}
           <div
-            className="rounded-2xl bg-warm-surface p-4 sm:p-5 mb-6"
+            className="rounded-2xl bg-surface p-4 sm:p-5 mb-6"
             style={{ boxShadow: '0 20px 44px -28px var(--accent-soft), 0 2px 8px -2px rgba(32,32,32,0.06)' }}
           >
             <CalendarPicker

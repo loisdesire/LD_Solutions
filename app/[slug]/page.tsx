@@ -172,22 +172,22 @@ export default async function BusinessBookingPage({
               }}
             />
           )}
-          {/* Graduated, accent-tinted scrim instead of a flat black wash -
-              a uniform bg-black/45 across the whole photo was the other
-              half of the "generic template" read (every stock booking
-              site uses exactly that). Strongest right where the text
-              actually sits (the bottom third, ~85% black, safely over
-              4.5:1 for body text against any photo brightness), fading up
-              through the business's own accent hue rather than straight
-              through to neutral black, so the photo still reads as this
-              business's brand color even where it's darkened. Nearly
-              clear at the very top so the photo itself stays visible and
-              gets to do some of the work. */}
+          {/* First version of this gradient (dark 0.85 -> transparent at
+              78%) was sized as a percentage of the SECTION's own height -
+              on mobile, where the badge/headline/description/hours/
+              button/price stack pushes the section tall, that meant the
+              dark zone's percentage covered nearly the entire banner,
+              leaving almost none of the actual photo visible. Compressed
+              the dark band to a much smaller share of the height instead
+              (transparent by 40% up from the bottom, was 78%) and lowered
+              its peak darkness - the text-shadow on the copy below is
+              still doing real contrast work on its own regardless, the
+              same backstop the original flat-overlay version relied on. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to top, rgba(0,0,0,0.85), color-mix(in srgb, var(--accent) 35%, black) 32%, transparent 78%)',
+                'linear-gradient(to top, rgba(0,0,0,0.6), color-mix(in srgb, var(--accent) 30%, black) 16%, transparent 40%)',
             }}
           />
         </div>
