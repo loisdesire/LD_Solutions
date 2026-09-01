@@ -237,7 +237,12 @@ export default function LandingPage() {
           brightness the entire time, just behind an opaque wall. z-0 gives
           this section its own stacking context, so -z-10 now means what it
           was always meant to mean. */}
-      <section className="relative z-0 pt-10 sm:pt-20 pb-12 sm:pb-20 text-center overflow-hidden">
+      {/* lg:min-h-[calc(100vh-80px)] - fills the viewport below the sticky
+          nav on desktop (80px is that nav's own real rendered height at
+          desktop padding). Scoped to lg only, not sm/mobile - see the
+          commit message for why mobile is staying content-hugging for
+          now rather than getting the same treatment. */}
+      <section className="relative z-0 pt-10 sm:pt-20 pb-12 sm:pb-20 lg:py-0 lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center lg:justify-center text-center overflow-hidden">
         {/* Full section width, not the inner max-w-2xl column - the point
             is visible around the text's edges on a wide screen, which a
             container as narrow as the copy itself couldn't give it room
