@@ -245,8 +245,14 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3.5">
+            {/* Button's flex gap-2 applies between EVERY child - "Start
+                free" and the conditional span used to be two separate
+                flex items, so the gap inserted an extra 8px between "free"
+                and "for 14 days" on top of the space already there.
+                Wrapped as one span so the gap only lands where it should:
+                between the whole text and the icon. */}
             <Button href="/signup" size="lg" className="justify-center w-full sm:w-auto">
-              Start free<span className="hidden sm:inline">&nbsp;for 14 days</span>
+              <span>Start free<span className="hidden sm:inline"> for 14 days</span></span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>

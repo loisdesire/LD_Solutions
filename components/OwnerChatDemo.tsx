@@ -79,10 +79,31 @@ export default function OwnerChatDemo() {
   }, [visibleCount]);
 
   const visible = SCRIPT.slice(0, visibleCount);
-  const saved = visible.some((s) => s.kind === 'saved');
 
   return (
-    <div ref={containerRef} className="rounded-3xl bg-surface border-2 border-line shadow-[0_20px_50px_-20px_var(--accent-soft)] overflow-hidden">
+    // Browser-shell frame - traffic-light dots + a URL pill, the actual
+    // chat card sitting inside it like a real page in a real browser.
+    // Reads as "here's a real screenshot" rather than an illustrated chat
+    // bubble floating on the page, which is the same "why does the other
+    // one only work because it's black and white" credibility gap a
+    // photo-on-a-raw-background hero has without a proper frame.
+    <div ref={containerRef} className="rounded-2xl border border-line-strong bg-warm-surface overflow-hidden shadow-[0_20px_50px_-20px_var(--accent-soft)]">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ED6A5E' }} />
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#F4BF4F' }} />
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#61C454' }} />
+        </div>
+        <div className="flex-1 flex justify-center min-w-0">
+          <span className="text-[10.5px] font-mono text-ink-faint bg-surface border border-line rounded-full px-3 py-1 truncate max-w-full">
+            vanovahub.com/glow-salon/admin
+          </span>
+        </div>
+        <div className="w-[46px] shrink-0" aria-hidden="true" />
+      </div>
+
+      <div className="p-3 sm:p-4">
+      <div className="rounded-2xl bg-surface border border-line overflow-hidden">
       <div className="px-5 py-4 border-b border-line flex items-center gap-3">
         <div className="h-9 w-9 rounded-xl flex items-center justify-center text-accent-contrast font-display text-[14px] font-bold shrink-0" style={{ background: 'var(--accent)' }}>
           G
@@ -144,10 +165,7 @@ export default function OwnerChatDemo() {
         )}
       </div>
 
-      <div className="px-5 pt-3 border-t border-line">
-        <p className="font-mono text-[10px] text-ink-faint mb-3">
-          {saved ? "Never opened the Hours page. It just updated." : 'Example conversation, see how it works.'}
-        </p>
+      <div className="px-5 pt-4 border-t border-line">
         {/* Decorative, not a real input - same rounded pill and send
             button as WebChatWidget's real one. */}
         <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 mb-4">
@@ -161,6 +179,8 @@ export default function OwnerChatDemo() {
             </svg>
           </span>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );

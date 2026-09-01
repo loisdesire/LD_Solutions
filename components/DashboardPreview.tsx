@@ -90,22 +90,26 @@ export default function DashboardPreview() {
             className="rounded-xl px-4 py-4 mb-6 shadow-[0_1px_3px_rgba(32,32,32,0.06),0_1px_2px_rgba(32,32,32,0.08)]"
             style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--paper))' }}
           >
-            {/* Below sm: a divided single-column list, matching the real
-                page's own mobile shape - not stats wrapping into a
-                2-column grid where a sub-line makes neighbours misalign. */}
-            <div className="flex flex-col divide-y divide-line-strong sm:flex-row sm:flex-wrap sm:divide-y-0 sm:gap-x-5 sm:gap-y-4">
+            {/* 2-column grid below sm, not the single-column divided list
+                this used to be - the real dashboard's own mobile fix
+                avoided a 2-column wrap specifically because "Next up" can
+                be genuinely empty there ("-", no sub-line at all), which
+                misaligned neighbours. This mockup's four stats are fixed,
+                deterministic content and every one of them always has a
+                sub-line, so that specific misalignment can't happen here -
+                a real grid (not flex-wrap) keeps every row's height equal
+                regardless. sm+ unchanged: still one flex row. */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:flex sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-4">
               {[
                 { label: 'Next up', value: '10:00', sub: 'Amaka · Haircut', color: 'var(--accent)' },
                 { label: 'Today', value: '2', sub: 'appointments' },
                 { label: "Today's revenue", value: formatMoney(58000), sub: 'from 2 appointments' },
                 { label: 'This week', value: '8', sub: formatMoney(184000) },
               ].map((stat) => (
-                <div key={stat.label} className="flex items-center justify-between gap-3 py-2 sm:block sm:py-0 sm:min-w-[64px] sm:flex-1">
-                  <div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint sm:mb-1">{stat.label}</div>
-                  <div className="text-right sm:text-left">
-                    <div className="font-display text-[16px] sm:text-[18px] font-bold" style={{ color: stat.color ?? 'var(--ink)' }}>{stat.value}</div>
-                    <div className="text-[9px] text-ink-faint truncate">{stat.sub}</div>
-                  </div>
+                <div key={stat.label} className="sm:min-w-[64px] sm:flex-1">
+                  <div className="font-mono text-[8px] uppercase tracking-[0.1em] text-ink-faint mb-1">{stat.label}</div>
+                  <div className="font-display text-[16px] sm:text-[18px] font-bold" style={{ color: stat.color ?? 'var(--ink)' }}>{stat.value}</div>
+                  <div className="text-[9px] text-ink-faint truncate">{stat.sub}</div>
                 </div>
               ))}
             </div>
