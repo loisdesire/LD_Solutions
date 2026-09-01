@@ -439,18 +439,85 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Dashboard preview section removed - the page had two separate
-          product demos back to back (this one, then the owner's-side
-          chat demo further down), on top of the how-it-works walkthrough
-          right above this and a features grid below - four consecutive
-          "here's what the app does" sections is a lot of product-tour
-          real estate for one page next to how little of it was actually
-          making the case for the specific business owner reading it.
-          "Booking appears automatically" was also the smaller, less
-          differentiated of the two claims - "an AI actually runs your
-          business by chat" (the owner's-side section) carries more
-          weight on its own. Before/After now follows how-it-works
-          directly, keeping the outcome-focused sections closer together. */}
+      {/* Owner's side moved to sit directly after How it works, not after
+          Before/After - these two are the actual pair (the hero opens on
+          a customer talking to the AI to book; this is the same idea
+          from the owner's side, running the business by chat), and
+          reading them back to back makes that pairing obvious instead of
+          having Before/After's outcome-contrast section awkwardly wedged
+          between two halves of one idea.
+
+          Also dropped the quote-pills for a real capability list - not a
+          chat-log mockup (tried twice this session, kept reading as the
+          same chat-bubble device already used two sections up, reskinned)
+          and not quotes either, which still asked the reader to imagine
+          a conversation. Three plain, concrete statements instead: task,
+          then what actually happens. Nothing staged to disbelieve. */}
+      <section className="border-b border-line">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal className="max-w-md mx-auto text-center">
+            <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
+              The owner&rsquo;s side
+            </div>
+            {/* Sized up (2rem -> 2.25rem on mobile) - this is the section's
+                only visual anchor now that there's no demo mockup to carry
+                some of the visual weight, so the same size that worked
+                paired with one reads as undersized standing alone. */}
+            <h2 className="font-display text-[2.25rem] sm:text-4xl leading-[1.12] text-ink mb-4">
+              You don&rsquo;t fill out the form.
+              <br />
+              You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
+            </h2>
+            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-9 max-w-sm mx-auto">
+              Add a service, change your hours, update your profile, straight from a chat on your dashboard.
+            </p>
+          </Reveal>
+          <div className="max-w-sm mx-auto space-y-5">
+            {[
+              {
+                icon: (
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
+                  </svg>
+                ),
+                title: 'Change your hours',
+                copy: 'Say it once - it updates everywhere customers already see you.',
+              },
+              {
+                icon: (
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="2.5" y="5.5" width="19" height="13" rx="2" /><path d="M2.5 10h19" />
+                  </svg>
+                ),
+                title: 'Turn on payments',
+                copy: 'No settings page to go dig through first.',
+              },
+              {
+                icon: (
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="M21 15.5l-5.5-5.5L5 20" />
+                  </svg>
+                ),
+                title: 'Update your logo or profile',
+                copy: 'Tell it what changed, straight from your phone.',
+              },
+            ].map((item, index) => (
+              <Reveal key={item.title} delay={index * 70} className="flex items-start gap-3.5 text-left">
+                <div
+                  className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center"
+                  style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                >
+                  {item.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14.5px] font-semibold text-ink">{item.title}</p>
+                  <p className="text-[13.5px] text-ink-faint leading-snug mt-0.5">{item.copy}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Before / after */}
       <section className="border-t border-line bg-warm-surface">
@@ -466,52 +533,6 @@ export default function LandingPage() {
         <Reveal delay={80}>
           <BeforeAfterCompare />
         </Reveal>
-        </div>
-      </section>
-
-      {/* The owner's side of the same idea the hero opens with - that one
-          shows a customer talking to the AI to book; this names the
-          business owner talking to the same kind of assistant to run the
-          business itself. Used to pair this copy with its own dedicated
-          chat-log mockup (OwnerChatDemo) on the right - but the "How it
-          works" section above already opens on a customer's own chat
-          bubble, so a second simulated conversation right after it read
-          as the same device reskinned, not a fresh idea, no matter how
-          the script was rewritten (tried twice this session). The three
-          example requests below already prove "these are simple, real,
-          varied asks" concretely, in the owner's own words - a mockup on
-          top of them wasn't adding new proof, just visual repetition.
-          Single centered column now that there's no demo to sit beside. */}
-      <section className="border-b border-line">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-          <Reveal className="max-w-xl mx-auto text-center">
-            <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
-              The owner&rsquo;s side
-            </div>
-            <h2 className="font-display text-[2rem] sm:text-4xl leading-[1.12] text-ink mb-4">
-              You don&rsquo;t fill out the form.
-              <br />
-              You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
-            </h2>
-            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-7 max-w-md mx-auto">
-              Add a service, change your hours, update your profile, straight from a chat on your dashboard.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                '"We\'re open till 8 on Fridays now"',
-                '"Turn on payments for bookings"',
-                '"Update my logo, just uploaded it"',
-              ].map((example) => (
-                <span
-                  key={example}
-                  className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-paper px-3.5 py-2 text-[13px] text-ink-soft"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />
-                  {example}
-                </span>
-              ))}
-            </div>
-          </Reveal>
         </div>
       </section>
 
