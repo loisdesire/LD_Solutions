@@ -129,208 +129,110 @@ export default async function BusinessBookingPage({
         showContact={showContact}
       />
 
-      {/* Hero - the business's own cover photo if they've set one, or a
-          rich accent-colored gradient in its place. Never a stock photo:
-          nothing here is real unless the business actually provided it.
-
-          min-h, not h - a business with a description, a long name that
-          wraps to two lines, and an hours line together can exceed 420px
-          on a phone. A fixed height plus overflow-hidden below used to
-          silently clip whatever didn't fit; min-height lets the section
-          grow to whatever the content actually needs instead.
-
-          Bottom-anchored now, not vertically centered - center-anchored
-          text over a flat uniform scrim is the generic "stock hero
-          template" look; anchoring the text to the bottom over a graduated
-          shadow (the dominant convention on real hospitality/booking
-          sites - Airbnb, Booking.com, Fresha all do this) reads as a
-          considered photo treatment instead. */}
-      <section className="relative min-h-[440px] sm:min-h-[500px] pt-10 sm:pt-16 pb-8 sm:pb-10 flex items-end overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          {business.cover_image_url ? (
-            // alt="" is correct, not an oversight - decorative background
-            // photo, and the one piece of information it could carry
-            // (whose page this is) is already real text two lines down
-            // (the "Book with {business.name}" h1). next/image + priority
-            // because this is very likely the page's LCP element: full-
-            // bleed, above the fold, on the one page type (the public
-            // booking page) that gets real outside traffic.
-            <Image
-              src={business.cover_image_url}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-          ) : (
-            <div
-              className="w-full h-full"
-              style={{
-                background:
-                  'linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, black))',
-              }}
-            />
-          )}
-          {/* First version of this gradient (dark 0.85 -> transparent at
-              78%) was sized as a percentage of the SECTION's own height -
-              on mobile, where the badge/headline/description/hours/
-              button/price stack pushes the section tall, that meant the
-              dark zone's percentage covered nearly the entire banner,
-              leaving almost none of the actual photo visible. Compressed
-              the dark band to a much smaller share of the height instead
-              (transparent by 40% up from the bottom, was 78%) and lowered
-              its peak darkness - the text-shadow on the copy below is
-              still doing real contrast work on its own regardless, the
-              same backstop the original flat-overlay version relied on. */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to top, rgba(0,0,0,0.6), color-mix(in srgb, var(--accent) 30%, black) 16%, transparent 40%)',
-            }}
-          />
-        </div>
-
-        <div className="relative z-10 w-full px-4 sm:px-10 max-w-5xl mx-auto text-white">
-          <div className="max-w-2xl" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.45)' }}>
-            {/* The marketing site's own "see it live" link already says
-                "demo" in its own text, but that disclosure lived only on
-                the page you left - nothing on this page itself told a
-                visitor who landed here directly that it wasn't a real,
-                oddly-named business. */}
-            {slug === DEMO_SLUG && (
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-semibold mb-4"
-                style={{ background: 'rgba(255,255,255,0.9)', color: 'var(--accent)', textShadow: 'none' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>
-                Demo business - try booking, nothing&apos;s real
-              </span>
-            )}
-
-            {/* Logo (business.logo_url - already real data, already used
-                the same way in SiteHeader's nav, not a fabricated field)
-                paired with the name reads as an actual business profile
-                rather than a plain text headline. "Book with" framing
-                dropped from the heading itself now that the name isn't
-                standing alone - the CTA button below already says
-                "Book an appointment", so the page's h1 doesn't also need
-                to carry the verb. */}
-            <div className="flex items-center gap-3.5 sm:gap-4">
-              {business.logo_url ? (
-                <img
-                  src={business.logo_url}
-                  alt=""
-                  className="h-14 w-14 sm:h-[72px] sm:w-[72px] rounded-2xl object-cover shrink-0 border-2 border-white/70"
-                  style={{ boxShadow: '0 10px 24px -8px rgba(0,0,0,0.55)' }}
-                />
+      <section className="relative mx-auto max-w-5xl px-4 sm:px-10 pt-4 sm:pt-6 pb-2 sm:pb-4">
+        <div className="relative overflow-hidden rounded-[30px] bg-surface shadow-card">
+          <div className="relative min-h-[360px] sm:min-h-[440px]">
+            <div className="absolute inset-0 z-0">
+              {business.cover_image_url ? (
+                <>
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        'linear-gradient(90deg, rgba(23,20,18,0.26) 0%, rgba(23,20,18,0.12) 36%, rgba(23,20,18,0.18) 100%)',
+                    }}
+                  />
+                  <Image
+                    src={business.cover_image_url}
+                    alt=""
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="scale-[1.01] object-cover opacity-85 contrast-[1.02] brightness-[0.92] grayscale-[0.08]"
+                  />
+                </>
               ) : (
                 <div
-                  className="h-14 w-14 sm:h-[72px] sm:w-[72px] rounded-2xl flex items-center justify-center font-display text-[22px] sm:text-[28px] font-bold shrink-0 border-2 border-white/70"
-                  style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', boxShadow: '0 10px 24px -8px rgba(0,0,0,0.55)' }}
-                >
-                  {business.name?.[0]?.toUpperCase()}
-                </div>
+                  className="h-full w-full"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, rgba(18,18,18,0.88), rgba(102,76,61,0.74), rgba(18,18,18,0.82))',
+                  }}
+                />
               )}
-              <div className="min-w-0">
-                <h1 className="font-display text-[26px] sm:text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] truncate">
-                  {business.name}
-                </h1>
-                {/* Solid-fill pill, not the old dot+text line - a real
-                    status badge (matching the semantic --success token,
-                    not the business's own accent color, since open/closed
-                    is a status signal and shouldn't compete with brand
-                    color) reads at a glance the way "OPEN NOW" should. */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(17,17,17,0.04) 0%, rgba(17,17,17,0.15) 42%, rgba(17,17,17,0.35) 100%)',
+                }}
+              />
+            </div>
+
+            <div className="relative z-10 flex min-h-[360px] items-end p-4 sm:min-h-[440px] sm:p-6 lg:p-8">
+              <div className="max-w-xl bg-black/10 p-2 sm:p-3">
                 {hoursSummary && (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mt-1.5 text-[11px] font-bold uppercase tracking-[0.04em]"
+                    className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
                     style={
                       isOpenNow
-                        ? { background: 'var(--success)', color: '#fff' }
-                        : { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.85)' }
+                        ? { background: 'rgba(20,184,166,0.9)', color: '#fff' }
+                        : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)' }
                     }
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {isOpenNow ? 'Open now' : 'Closed now'}
                   </span>
                 )}
+
+                {slug === DEMO_SLUG && (
+                  <span
+                    className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/85 px-3 py-1.5 text-[11.5px] font-semibold tracking-[0.02em]"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>
+                    Demo business - try booking, nothing&apos;s real
+                  </span>
+                )}
+
+                <div className="space-y-2.5">
+                  <div className="min-w-0">
+                    <h1 className="font-display text-[32px] font-semibold leading-[0.96] tracking-[-0.04em] text-white sm:text-[48px]">
+                      {business.name}
+                    </h1>
+                  </div>
+
+                  {business.description && (
+                    <p className="max-w-[52ch] text-[15px] leading-relaxed text-white/90 sm:text-[16px]">
+                      {business.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                  <a
+                    href="#book"
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+                    style={{ background: 'var(--accent-contrast)', color: 'var(--accent)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
+                    </svg>
+                    Book an appointment
+                  </a>
+
+                  <a
+                    href="#chat"
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/50 bg-white/10 px-6 py-3.5 text-[14px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 active:scale-[0.98]"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 4h16v12H8l-4 4V4z" />
+                    </svg>
+                    Ask AI
+                  </a>
+                </div>
               </div>
             </div>
-
-            {/* The standalone hours line that used to sit here is gone -
-                the pill above already answers the one question that
-                actually matters at a glance (can I book right now), and
-                keeping both the pill AND a full "Mon-Fri - 9 AM-5 PM"
-                line was exactly the over-stacking problem: this banner
-                kept every line the old version had (badge, description,
-                price) and then had new elements (logo, pill, second CTA)
-                added on top rather than traded off against anything,
-                which is how it ended up considerably busier than the
-                reference it was built from, not more premium. The full
-                schedule is still one tap away once you're choosing a
-                time. */}
-            {business.description && (
-              // line-clamp on mobile only - on a short phone viewport a
-              // long description was pushing the CTAs further down the
-              // stack than a first glance should need to scan. The full
-              // description still shows at sm+.
-              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-2 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
-                {business.description}
-              </p>
-            )}
-
-            {/* Two CTAs now, not one - "Ask AI" used to be dropped
-                because the floating chat bubble already covers the same
-                job, but that bubble is small and easy to miss entirely.
-                The AI receptionist is the actual headline feature of the
-                product; a business's own page should say so as plainly as
-                "Book an appointment" does, not leave it to a corner icon
-                to be discovered by accident. Opens the same widget - same
-                #chat hash it already listens for. */}
-            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-2.5">
-              <a
-                href="#book"
-                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
-                style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
-                </svg>
-                Book an appointment
-              </a>
-              {/* bg-white/15 + a visible border, not a border alone - a
-                  faint outline with no fill all but disappeared against
-                  a photo with any midtone detail in it (confirmed on a
-                  real photo, not just a theory), reading as a broken or
-                  unfinished button rather than a real secondary CTA. A
-                  translucent fill gives it an actual button shape
-                  regardless of what's behind it. */}
-              <a
-                href="#chat"
-                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] border border-white/60 bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/25 active:scale-95"
-                style={{ textShadow: 'none' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M4 4h16v12H8l-4 4V4z" />
-                </svg>
-                Ask AI
-              </a>
-            </div>
-            {(startingPrice != null || requirePayment) && (
-              <p className="text-[13px] text-white/80 mt-2.5">
-                {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
-                {startingPrice != null && requirePayment && ' · '}
-                {requirePayment && (
-                  <>
-                    {rules?.deposit_percentage != null && rules.deposit_percentage < 100
-                      ? `${rules.deposit_percentage}% deposit`
-                      : 'Payment'}{' '}
-                    required to confirm
-                  </>
-                )}
-              </p>
-            )}
           </div>
         </div>
       </section>
@@ -350,7 +252,7 @@ export default async function BusinessBookingPage({
             cancellationWindowHours={rules?.cancellation_window_hours ?? 24}
           />
         ) : (
-          <div className="max-w-lg mx-auto text-center rounded-3xl bg-warm-surface py-14 px-6">
+          <div className="max-w-lg mx-auto text-center rounded-3xl bg-warm-surface py-14 px-6 border border-line">
             <p className="font-display text-[20px] text-ink mb-2">Not currently taking bookings</p>
             <p className="text-ink-soft text-[14px]">
               {business.name} isn&apos;t accepting online bookings right now. Please check back later or

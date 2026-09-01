@@ -536,48 +536,41 @@ export default function BookingForm({
       )}
 
       {step === 'service' && (
-        <div className="animate-rise">
+        <div className="animate-rise rounded-[28px] border border-line bg-surface p-4 shadow-soft sm:p-6">
+          <div className="mx-auto mb-5 flex max-w-xl items-center justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint shadow-soft">
+              <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
+              3 simple steps
+            </span>
+          </div>
           <h2 className="font-display text-[28px] sm:text-[34px] font-semibold text-ink mb-1.5 text-center tracking-[-0.01em]">What would you like?</h2>
           <p className="text-[14.5px] text-ink-faint mb-6 sm:mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
-            <div className="max-w-lg mx-auto text-center py-12">
+            <div className="max-w-lg mx-auto text-center py-12 rounded-3xl border border-line bg-surface shadow-soft">
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
-            // Card grid, not the flat menu this used to be - services can
-            // carry a real photo now, and a photo sitting at 56px in a row
-            // undersold it. A service with no image gets an icon tile
-            // instead of a blank space, so the grid stays even without
-            // forcing a fake photo where a business hasn't added one.
-            // Wider than steps 2/3 (max-w-3xl vs max-w-xl) on purpose now -
-            // two cards in a 576px column read as cramped on an actual
-            // desktop screen with room to spare. This does reintroduce a
-            // width change between steps (the thing max-w-xl was
-            // originally set to avoid), but narrowing from a grid into a
-            // single-column form as you progress reads as normal
-            // convergence, not the jarring "page suddenly got wider"
-            // regression that comment was guarding against.
-            <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => selectService(s)}
-                  className="group text-left rounded-2xl border border-line-strong bg-surface overflow-hidden transition-all hover:border-[var(--accent)] hover:shadow-[0_16px_32px_-16px_var(--accent-soft)] hover:-translate-y-0.5"
+                  className="group overflow-hidden rounded-[18px] border border-line-strong bg-surface text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[0_16px_28px_-22px_var(--accent-soft)]"
                 >
                   {s.image_url ? (
-                    <div className="aspect-[4/3] w-full overflow-hidden bg-warm-surface">
+                    <div className="aspect-[5/3] w-full overflow-hidden bg-warm-surface">
                       <img
                         src={s.image_url}
                         alt=""
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
                     </div>
                   ) : (
                     <div
-                      className="aspect-[4/3] w-full flex items-center justify-center"
-                      style={{ background: 'var(--accent-soft)' }}
+                      className="flex aspect-[5/3] w-full items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, var(--accent-soft), rgba(255,255,255,0.8))' }}
                     >
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <rect x="3" y="5" width="18" height="16" rx="2" />
                         <path d="M3 9.5H21" />
                         <path d="M8 3V6.5M16 3V6.5" strokeLinecap="round" />
@@ -585,25 +578,28 @@ export default function BookingForm({
                     </div>
                   )}
                   <div className="p-4">
-                    <h3 className="font-display text-[17px] font-semibold text-ink leading-tight mb-1">{s.name}</h3>
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <h3 className="font-display text-[17px] font-semibold leading-tight text-ink">{s.name}</h3>
+                      {s.price != null ? (
+                        <span className="shrink-0 rounded-full border border-[var(--accent-soft)] bg-[var(--accent-soft)] px-2 py-1 text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
+                          {formatMoney(s.price)}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-medium text-ink-faint">Ask</span>
+                      )}
+                    </div>
                     {s.description && (
-                      <p className="text-[12.5px] text-ink-faint line-clamp-2 mb-2 leading-snug">{s.description}</p>
+                      <p className="mb-2 text-[12.5px] leading-snug text-ink-faint line-clamp-2">{s.description}</p>
                     )}
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <span className="flex items-center gap-1.5 text-ink-faint shrink-0">
+                    <div className="flex items-center justify-between gap-2 border-t border-line pt-2">
+                      <span className="flex shrink-0 items-center gap-1.5 text-ink-faint">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 6v6l4 2" />
                         </svg>
                         <span className="text-[12px]">{formatDuration(s.duration_minutes)}</span>
                       </span>
-                      {s.price != null ? (
-                        <span className="font-display text-[15px] font-semibold" style={{ color: 'var(--accent)' }}>
-                          {formatMoney(s.price)}
-                        </span>
-                      ) : (
-                        <span className="text-[11.5px] font-medium text-ink-faint">Ask for pricing</span>
-                      )}
+                      <span className="text-[12px] font-semibold text-ink-soft">Book now</span>
                     </div>
                   </div>
                 </button>
@@ -615,11 +611,6 @@ export default function BookingForm({
             <div className="mt-8 text-center">
               <p className="text-[14px] text-ink-faint">
                 Not sure what to pick?{' '}
-                {/* Was a <span> styled to look exactly like a link but
-                    doing nothing - not focusable, not clickable. The chat
-                    widget already opens on the #chat hash (see
-                    WebChatWidget's hashchange listener), which is what the
-                    hero's "Chat with us" button uses too. */}
                 <a
                   href="#chat"
                   className="font-semibold underline underline-offset-4 rounded"
