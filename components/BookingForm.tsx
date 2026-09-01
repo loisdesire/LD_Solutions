@@ -18,7 +18,6 @@ type Service = {
 };
 
 type Step = 'service' | 'datetime' | 'details' | 'confirmed';
-type Period = 'Morning' | 'Afternoon' | 'Evening';
 
 declare global {
   interface Window {
@@ -46,15 +45,35 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-function groupSlots(slots: string[]): [Period, string[]][] {
-  const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
-  const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
+// Real hour/minute picker instead of a flat list of every slot as its
+// own button - a business open 6am-7pm with a short service and a small
+// buffer can produce dozens of individual times, and no one wants to
+// scan/scroll through a wrapped grid of that many buttons. This groups
+// the already-computed, already-availability-checked slots (from
+// /api/availability - the same data the old flat list used, so this is
+// exactly as constrained by real hours/buffer/existing bookings as
+// before) by hour, so the picker only ever has to show "which hours have
+// anything open" and then "which minutes within this hour" - the actual
+// native time-picker shape, not a fixed 24-hour clock with most of it
+// disabled.
+function groupSlotsByHour(slots: string[]): Map<number, string[]> {
+  const map = new Map<number, string[]>();
   for (const s of slots) {
     const h = new Date(s).getHours();
-    const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-    groups[period].push(s);
+    if (!map.has(h)) map.set(h, []);
+    map.get(h)!.push(s);
   }
-  return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
+  return map;
+}
+
+function formatHourLabel(hour: number): string {
+  const period = hour < 12 ? 'AM' : 'PM';
+  const display = hour % 12 === 0 ? 12 : hour % 12;
+  return `${display} ${period}`;
+}
+
+function formatMinuteLabel(iso: string): string {
+  return `:${String(new Date(iso).getMinutes()).padStart(2, '0')}`;
 }
 
 // A thin progress rule + a plain mono label, not three bold circles with
@@ -161,13 +180,12 @@ export default function BookingForm({
   // as "No openings on this day", telling the customer the business was
   // full when it wasn't.
   const [slotsError, setSlotsError] = useState(false);
-  // A business open long hours with a short service and a small buffer
-  // can generate dozens of slots for one day - every one of them dumped
-  // into a wrapped grid of pills at once was genuinely overwhelming, not
-  // just "a lot of buttons". Capped per period by default; one tap
-  // reveals the rest, rather than hiding them behind repeated clicks.
-  const [showAllSlots, setShowAllSlots] = useState(false);
-  const SLOTS_PER_PERIOD_PREVIEW = 6;
+  // Which hour's minutes the picker below is currently showing - null
+  // until a real hour is resolved (first available hour, or the hour of
+  // an already-selected slot when resuming). Not the same thing as
+  // selectedSlot itself: tapping an hour shows its minutes immediately
+  // without necessarily finalizing a specific one yet.
+  const [highlightedHour, setHighlightedHour] = useState<number | null>(null);
 
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
@@ -221,7 +239,18 @@ export default function BookingForm({
     document.body.appendChild(script);
   }, [requirePayment]);
 
-  const slotGroups = useMemo(() => groupSlots(slots), [slots]);
+  const hourGroups = useMemo(() => groupSlotsByHour(slots), [slots]);
+  const availableHours = useMemo(() => [...hourGroups.keys()].sort((a, b) => a - b), [hourGroups]);
+  // The hour actually driving the minute column: the highlighted one if
+  // it's still valid for this date's slots, else the hour of an
+  // already-selected slot (resuming), else just the first open hour.
+  const activeHour =
+    highlightedHour != null && hourGroups.has(highlightedHour)
+      ? highlightedHour
+      : selectedSlot && hourGroups.has(new Date(selectedSlot).getHours())
+        ? new Date(selectedSlot).getHours()
+        : (availableHours[0] ?? null);
+  const minutesForActiveHour = activeHour != null ? (hourGroups.get(activeHour) ?? []) : [];
 
   // `reloadKey` lets other code force a refetch of the same date - used
   // after a 409, where the slot list on screen is known to be stale.
@@ -698,7 +727,7 @@ export default function BookingForm({
               onChange={(d) => {
                 setSelectedDate(toDateStr(d));
                 setSelectedSlot('');
-                setShowAllSlots(false);
+                setHighlightedHour(null);
               }}
               today={today}
               maxDate={maxDate}
@@ -707,29 +736,46 @@ export default function BookingForm({
             />
           </div>
 
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[15px] font-semibold text-ink">
-              {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </h3>
-            {!loadingSlots && !slotsError && (
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
-                {slots.length} available
-              </span>
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[15px] font-semibold text-ink">
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </h3>
+              {!loadingSlots && !slotsError && slots.length > 0 && (
+                <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-ink-faint">
+                  {slots.length} open
+                </span>
+              )}
+            </div>
+            {/* The actual bookable window for the day, not just a count -
+                asked for directly: "the user already sees the time window
+                for the day... if they don't, add it, so they can just
+                select the time they want". First slot to last slot,
+                derived from the same already-availability-checked list
+                the picker below uses, so it's exactly as accurate as what
+                you can actually pick. */}
+            {!loadingSlots && !slotsError && slots.length > 0 && (
+              <p className="text-[12.5px] text-ink-faint mt-0.5">
+                Available {formatTime(slots[0])} &ndash; {formatTime(slots[slots.length - 1])}
+              </p>
             )}
           </div>
 
           {loadingSlots ? (
-            <div className="space-y-5 mb-6">
-              {[0, 1].map((i) => (
-                <div key={i}>
-                  <Skeleton className="h-3 w-20 rounded mb-3" />
-                  <div className="flex flex-wrap gap-2">
-                    {[0, 1, 2].map((j) => (
-                      <Skeleton key={j} className="w-[76px] h-[36px] rounded-lg" delay={j * 0.15} />
+            // Matches the two-column hour/minute shape below, not the old
+            // wrapped-pill rows - a skeleton that doesn't resemble what's
+            // about to load in reads as a glitch for a beat.
+            <div className="mb-6 flex justify-center gap-3">
+              {[0, 1].map((col) => (
+                <div key={col} className="w-[108px]">
+                  <Skeleton className="h-3 w-10 rounded mb-2 mx-auto" />
+                  <div className="h-[216px] rounded-xl border border-line-strong bg-surface p-1.5 space-y-1">
+                    {[0, 1, 2, 3, 4].map((row) => (
+                      <Skeleton key={row} className="w-full h-9 rounded-lg" delay={(col * 5 + row) * 0.08} />
                     ))}
                   </div>
                 </div>
@@ -754,7 +800,7 @@ export default function BookingForm({
                 Try again
               </button>
             </div>
-          ) : slotGroups.length === 0 ? (
+          ) : slots.length === 0 ? (
             <div className="rounded-2xl bg-warm-surface py-10 flex flex-col items-center text-center px-6 mb-6">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-faint mb-3">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -764,66 +810,106 @@ export default function BookingForm({
               <p className="text-ink-faint text-[13px] mt-1">Try selecting a different date</p>
             </div>
           ) : (
-            <div className="space-y-5 mb-6">
-              {slotGroups.map(([period, times]) => {
-                // Selected slot always stays visible, even collapsed - a
-                // customer who already picked 6:40 PM shouldn't see their
-                // own choice vanish behind "+18 more" on re-render.
-                const overflow = !showAllSlots && times.length > SLOTS_PER_PERIOD_PREVIEW;
-                const visible = overflow
-                  ? Array.from(new Set([...times.slice(0, SLOTS_PER_PERIOD_PREVIEW), ...(selectedSlot && times.includes(selectedSlot) ? [selectedSlot] : [])]))
-                  : times;
-                return (
-                <div key={period}>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint">
-                      {period}
-                    </div>
-                    {overflow && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllSlots(true)}
-                        className="text-[12px] font-semibold px-1"
-                        style={{ color: 'var(--accent)' }}
-                      >
-                        +{times.length - visible.length} more
-                      </button>
-                    )}
+            // Real hour/minute picker - was a flat wrapped grid of every
+            // individual slot as its own button, which a business open
+            // long hours with a short service and small buffer could turn
+            // into dozens at once. Pick an hour (only hours with at least
+            // one real opening are shown at all - not a plain 12-hour
+            // clock with most of it disabled), then a minute within it
+            // (same constraint: only minutes /api/availability actually
+            // returned for that hour, so buffer time and existing
+            // bookings are already excluded before you ever see them).
+            // Tapping an hour alone already selects its first open minute,
+            // so one tap is a complete, valid choice; the minute column
+            // lets you refine it.
+            <div className="mb-6">
+              <div className="flex justify-center gap-3">
+                <div className="w-[108px]">
+                  <div className="text-center font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint mb-2">
+                    Hour
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {visible.map((t) => {
-                      const isSel = t === selectedSlot;
-                      return (
-                        <button
-                          key={t}
-                          onClick={() => {
-                            setSelectedSlot(t);
-                            // Clear any carried-over error (e.g. the 409
-                            // that sent them back here) once they've acted.
-                            if (status === 'error') {
-                              setStatus('idle');
-                              setErrorMessage('');
+                  <div className="h-[216px] overflow-y-auto rounded-xl border border-line-strong bg-surface p-1.5 snap-y snap-mandatory scroll-smooth">
+                    <div className="space-y-1">
+                      {availableHours.map((h) => {
+                        const isActive = h === activeHour;
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            ref={(el) => {
+                              if (isActive) el?.scrollIntoView({ block: 'center' });
+                            }}
+                            onClick={() => {
+                              setHighlightedHour(h);
+                              const firstInHour = hourGroups.get(h)?.[0];
+                              if (firstInHour) {
+                                setSelectedSlot(firstInHour);
+                                if (status === 'error') {
+                                  setStatus('idle');
+                                  setErrorMessage('');
+                                }
+                              }
+                            }}
+                            className="w-full py-2.5 rounded-lg text-[14px] font-semibold tabular-nums snap-center transition-colors"
+                            style={
+                              isActive
+                                ? { background: 'var(--accent-soft)', color: 'var(--accent)' }
+                                : { color: 'var(--ink)' }
                             }
-                          }}
-                          style={
-                            isSel
-                              ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
-                              : undefined
-                          }
-                          className={`min-w-[76px] py-3 px-3.5 min-h-[44px] text-[13.5px] font-medium tabular-nums border rounded-xl transition-all duration-150 ${
-                            isSel
-                              ? 'animate-punch border-transparent'
-                              : 'border-line-strong bg-surface text-ink hover:border-[var(--accent)] hover:bg-warm-surface active:scale-95'
-                          }`}
-                        >
-                          {formatTime(t)}
-                        </button>
-                      );
-                    })}
+                          >
+                            {formatHourLabel(h)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-                );
-              })}
+
+                <div className="w-[108px]">
+                  <div className="text-center font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint mb-2">
+                    Minute
+                  </div>
+                  <div className="h-[216px] overflow-y-auto rounded-xl border border-line-strong bg-surface p-1.5 snap-y snap-mandatory scroll-smooth">
+                    <div className="space-y-1">
+                      {minutesForActiveHour.map((t) => {
+                        const isSel = t === selectedSlot;
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            ref={(el) => {
+                              if (isSel) el?.scrollIntoView({ block: 'center' });
+                            }}
+                            onClick={() => {
+                              setSelectedSlot(t);
+                              if (status === 'error') {
+                                setStatus('idle');
+                                setErrorMessage('');
+                              }
+                            }}
+                            className={`w-full py-2.5 rounded-lg text-[14px] font-semibold tabular-nums snap-center transition-all ${
+                              isSel ? 'animate-punch' : ''
+                            }`}
+                            style={
+                              isSel
+                                ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
+                                : { color: 'var(--ink)' }
+                            }
+                          >
+                            {formatMinuteLabel(t)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {selectedSlot && (
+                <p className="text-center text-[13.5px] font-semibold mt-3" style={{ color: 'var(--accent)' }}>
+                  {formatTime(selectedSlot)} selected
+                </p>
+              )}
             </div>
           )}
 
