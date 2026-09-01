@@ -242,17 +242,14 @@ export default function LandingPage() {
           desktop padding). Scoped to lg only, not sm/mobile - see the
           commit message for why mobile is staying content-hugging for
           now rather than getting the same treatment. */}
-      {/* pt-6/pb-8 on mobile, was pt-10/pb-12 - the hero plus the channel
-          strip right after it were meant to close out the first screen on
-          a phone (see that section's own comment), leaving the dark
-          how-it-works section to be scrolled INTO rather than visible on
-          load. On a real device that only had a hair's width of margin -
-          a sliver of the dark section was already peeking in at the
-          bottom of the first view, which read as an accidental crop, not
-          a deliberate "more below" cue. Trimmed padding here and on the
-          channel strip buys back real room instead of a razor-thin fit
-          that only worked on some screen heights. */}
-      <section className="relative z-0 pt-6 sm:pt-20 pb-8 sm:pb-20 lg:py-0 lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center lg:justify-center text-center overflow-hidden">
+      {/* Trying to make the hero+strip fit exactly within one mobile
+          screen (the previous pass here) was the wrong goal - it meant
+          trimming padding until things felt cramped, chasing a fold
+          position that varies by device anyway. A page that runs past
+          one screen and asks for a scroll is completely normal; pt-12/
+          pb-14 here gives the hero real breathing room again instead of
+          being squeezed to fit above a line that was never fixed. */}
+      <section className="relative z-0 pt-12 sm:pt-20 pb-14 sm:pb-20 lg:py-0 lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center lg:justify-center text-center overflow-hidden">
         {/* Full section width, not the inner max-w-2xl column - the point
             is visible around the text's edges on a wide screen, which a
             container as narrow as the copy itself couldn't give it room
@@ -270,7 +267,7 @@ export default function LandingPage() {
             An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
           </h1>
 
-          <p className="text-[16px] sm:text-[17.5px] text-ink-soft leading-relaxed mb-5 sm:mb-8 max-w-lg mx-auto">
+          <p className="text-[16px] sm:text-[17.5px] text-ink-soft leading-relaxed mb-7 sm:mb-8 max-w-lg mx-auto">
             Customers ask for a time on your website or Telegram. Vanova checks your real
             calendar and confirms it, no back-and-forth, 24/7.
           </p>
@@ -305,14 +302,16 @@ export default function LandingPage() {
       {/* Channel strip moved up, right after the hero - was sitting after
           the dark "how it works" section, which meant that (denser, more
           reading-heavy) section landed within the very first mobile
-          scroll. This is short and calm on purpose; it's meant to close
-          out the first screen, not add to it, so the how-it-works section
-          becomes something you scroll INTO rather than something dumped
-          on you immediately. */}
+          scroll. Short and calm on purpose, so the how-it-works section
+          still reads as something you scroll into rather than something
+          dumped on you immediately - not because it's engineered to sit
+          exactly at the fold (chasing that meant cramping the hero above
+          it to fit a boundary that moves with every device anyway; a
+          page that runs past one screen and asks for a scroll is normal). */}
       <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-9">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-9">
           <Reveal className="flex flex-col items-center text-center">
-            <p className="text-[14px] font-medium text-ink-soft mb-3 sm:mb-5">
+            <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
               One receptionist. Every channel your customers already use.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
