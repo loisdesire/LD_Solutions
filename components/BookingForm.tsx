@@ -535,8 +535,14 @@ export default function BookingForm({
         </div>
       )}
 
+      {/* No outer card here (was rounded-[28px] border bg-surface p-4/6) -
+          neither of the other two steps below (datetime, details) are
+          wrapped in one, so this was the one inconsistent step, and a
+          card of cards (this frame around an already-bordered grid of
+          already-bordered service cards) was extra chrome around content
+          that already reads as its own distinct group without it. */}
       {step === 'service' && (
-        <div className="animate-rise rounded-[28px] border border-line bg-surface p-4 shadow-soft sm:p-6">
+        <div className="animate-rise">
           <div className="mx-auto mb-5 flex max-w-xl items-center justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint shadow-soft">
               <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
@@ -550,7 +556,7 @@ export default function BookingForm({
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
               {services.map((s) => (
                 <button
                   key={s.id}

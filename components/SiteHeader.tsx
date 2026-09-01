@@ -84,7 +84,16 @@ export default function SiteHeader({
               {l.label}
             </a>
           ))}
-          <a href="/account" className="font-medium text-[14px] text-ink-soft hover:text-ink transition-colors">
+          {/* Same pb-1 border-b-2 box shape as the tab links (border stays
+              transparent - this one's never "active"), not plain text -
+              mismatched heights among the row's text items meant
+              items-center was centering each on its OWN box, so the tab
+              links' text sat visibly higher than this one once they
+              gained their underline's extra bottom space. */}
+          <a
+            href="/account"
+            className="font-medium text-[14px] pb-1 border-b-2 border-transparent text-ink-soft hover:text-ink transition-colors"
+          >
             My bookings
           </a>
           <a
