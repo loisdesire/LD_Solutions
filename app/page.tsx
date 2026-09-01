@@ -567,26 +567,28 @@ export default function LandingPage() {
             If your customers need to book time with you, this is for you.
           </p>
         </Reveal>
-        {/* Grid on mobile, not flex-wrap - eight pills of very different
-            label lengths wrapping freely meant most rows held exactly one
-            (a long label leaves no room for a neighbour), so the list ran
-            to roughly six full-width rows on a phone. Two even columns
-            fits the same eight in four rows instead. Smaller pills below
-            sm too - they don't need full desktop size to stay legible.
-            The trailing dashed pill (not counted in businessTypes, so it
-            never reads as a real ninth category) is the inclusivity fix:
-            eight named types with nothing signaling "and more" reads as
-            an exhaustive list to a business that isn't one of them. */}
-        <Reveal delay={80} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-3">
+        {/* The two-column grid this briefly was looked fine on paper (four
+            rows instead of six) but broke down on the actual longest
+            labels - "Hair salons & barbershops" and "Therapy & wellness
+            clinics" both wrapped to two lines inside a half-width column,
+            and a CSS grid row stretches every cell in it to match the
+            tallest, so that one row (and only that one) ended up visibly
+            taller than every row after it. Single column on mobile
+            instead - every pill spans the full width, so even the
+            longest label fits on one line, which guarantees every pill
+            is the same height regardless of its text. sm+ goes back to
+            free-flowing flex-wrap, where there's enough width per pill
+            for this same one-line guarantee to hold naturally. */}
+        <Reveal delay={80} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
           {businessTypes.map((biz) => (
             <span
               key={biz}
-              className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-full border border-line bg-surface text-[13px] sm:text-[14px] font-medium text-ink-soft shadow-lift text-center sm:text-left"
+              className="px-4 py-2.5 sm:px-5 rounded-full border border-line bg-surface text-[13px] sm:text-[14px] font-medium text-ink-soft shadow-lift text-center sm:text-left"
             >
               {biz}
             </span>
           ))}
-          <span className="col-span-2 sm:col-auto px-3 py-2 sm:px-5 sm:py-2.5 rounded-full border border-dashed border-line-strong text-[13px] sm:text-[14px] font-medium text-ink-faint text-center">
+          <span className="px-4 py-2.5 sm:px-5 rounded-full border border-dashed border-line-strong text-[13px] sm:text-[14px] font-medium text-ink-faint text-center">
             + whatever yours is
           </span>
         </Reveal>
