@@ -159,15 +159,71 @@ const BI_INCLUDES = [
   "Your AI tells customers what's actually popular, from real bookings",
 ];
 
+// Short labels + a small icon each, not the long compound names this had
+// before ("Hair salons & barbershops", 25 characters) - those were the
+// actual cause of the uneven-pill-height bug fixed earlier: a label that
+// long can't fit on one line in a two-column layout no matter how the
+// columns are built. Trimmed to what's still instantly recognizable at a
+// glance; the page never claimed this was an exhaustive list anyway (see
+// the trailing "+ whatever yours is" pill).
 const businessTypes = [
-  'Hair salons & barbershops',
-  'Therapy & wellness clinics',
-  'Private tutors & coaches',
-  'Consultants & advisors',
-  'Photographers & studios',
-  'Personal trainers',
-  'Massage therapists',
-  'Music teachers',
+  {
+    label: 'Salons & barbers',
+    icon: (
+      <>
+        <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+        <line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+      </>
+    ),
+  },
+  {
+    label: 'Wellness clinics',
+    icon: <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />,
+  },
+  {
+    label: 'Tutors & coaches',
+    icon: <path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />,
+  },
+  {
+    label: 'Consultants',
+    icon: (
+      <>
+        <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+      </>
+    ),
+  },
+  {
+    label: 'Photographers',
+    icon: (
+      <>
+        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
+      </>
+    ),
+  },
+  {
+    label: 'Personal trainers',
+    icon: (
+      <>
+        <line x1="8" y1="12" x2="16" y2="12" /><rect x="4" y="9" width="4" height="6" rx="1" /><rect x="16" y="9" width="4" height="6" rx="1" />
+      </>
+    ),
+  },
+  {
+    label: 'Massage therapists',
+    icon: (
+      <>
+        <circle cx="12" cy="5.5" r="2.2" /><ellipse cx="12" cy="13" rx="5.5" ry="2.6" /><ellipse cx="12" cy="18.5" rx="7.5" ry="2.4" />
+      </>
+    ),
+  },
+  {
+    label: 'Music teachers',
+    icon: (
+      <>
+        <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+      </>
+    ),
+  },
 ];
 
 export default function LandingPage() {
@@ -589,28 +645,35 @@ export default function LandingPage() {
             If your customers need to book time with you, this is for you.
           </p>
         </Reveal>
-        {/* The two-column grid this briefly was looked fine on paper (four
-            rows instead of six) but broke down on the actual longest
-            labels - "Hair salons & barbershops" and "Therapy & wellness
-            clinics" both wrapped to two lines inside a half-width column,
-            and a CSS grid row stretches every cell in it to match the
-            tallest, so that one row (and only that one) ended up visibly
-            taller than every row after it. Single column on mobile
-            instead - every pill spans the full width, so even the
-            longest label fits on one line, which guarantees every pill
-            is the same height regardless of its text. sm+ goes back to
-            free-flowing flex-wrap, where there's enough width per pill
-            for this same one-line guarantee to hold naturally. */}
-        <Reveal delay={80} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+        {/* A single stacked column read as a long, plain list - a lot of
+            scroll for eight short category names, and every pill the same
+            shape start to finish is exactly the "boring" complaint. CSS
+            columns-2 instead of the grid this was trying to be before:
+            unlike grid, columns don't stretch every item in a row to
+            match the tallest, so the earlier uneven-height bug (labels
+            like "Hair salons & barbershops" wrapping to two lines and
+            dragging their neighbour's box taller with them) can't happen
+            here regardless of label length - each column just flows
+            independently. display:flex from sm: naturally overrides
+            multi-column layout on its own, so this doesn't need a
+            separate sm+ variant. Icons added per category (not just
+            trimmed labels) for real visual variety instead of a wall of
+            identically-shaped text pills, and each pill sizes to its own
+            content rather than stretching full width, so it reads as a
+            loose tag cloud, not a form. */}
+        <Reveal delay={80} className="columns-2 gap-3 sm:flex sm:flex-wrap sm:justify-center">
           {businessTypes.map((biz) => (
             <span
-              key={biz}
-              className="px-4 py-2.5 sm:px-5 rounded-full border border-line bg-surface text-[13px] sm:text-[14px] font-medium text-ink-soft shadow-lift text-center sm:text-left"
+              key={biz.label}
+              className="mb-3 sm:mb-0 flex items-center gap-2 break-inside-avoid rounded-full border border-line bg-surface px-3.5 py-2.5 sm:px-5 text-[12.5px] sm:text-[14px] font-medium text-ink-soft shadow-lift"
             >
-              {biz}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+                {biz.icon}
+              </svg>
+              {biz.label}
             </span>
           ))}
-          <span className="px-4 py-2.5 sm:px-5 rounded-full border border-dashed border-line-strong text-[13px] sm:text-[14px] font-medium text-ink-faint text-center">
+          <span className="mb-3 sm:mb-0 flex items-center justify-center break-inside-avoid rounded-full border border-dashed border-line-strong px-3.5 py-2.5 sm:px-5 text-[12.5px] sm:text-[14px] font-medium text-ink-faint">
             + whatever yours is
           </span>
         </Reveal>
