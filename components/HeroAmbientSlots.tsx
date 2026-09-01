@@ -21,13 +21,15 @@ export default function HeroAmbientSlots() {
       // texture.
       className="hidden lg:block absolute inset-0 -z-10 overflow-hidden"
       style={{
-        // A wider gap between the two stops (40%->100%, was 55%->100% on a
-        // smaller ellipse) spreads the fade over more distance instead of
-        // snapping from fully clear to fully visible in a short span -
-        // that tight transition was reading as a glowing ring around the
-        // text rather than a soft edge.
-        maskImage: 'radial-gradient(ellipse 560px 340px at center, transparent 40%, black 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 560px 340px at center, transparent 40%, black 100%)',
+        // Pulled the ellipse in (560x340 -> 420x260) - with the fill gone
+        // there's no orange left to worry about crowding the text, and the
+        // old size was pushing the grid so far out that the whole middle
+        // of the hero read as a big empty gap before the pattern showed up
+        // at all. Kept the same proportional gap between the two stops
+        // (transparent 40% -> black 100%) so the edge still fades in
+        // gradually rather than snapping - just over a smaller radius now.
+        maskImage: 'radial-gradient(ellipse 420px 260px at center, transparent 40%, black 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 420px 260px at center, transparent 40%, black 100%)',
       }}
     >
       <div
@@ -38,7 +40,7 @@ export default function HeroAmbientSlots() {
           <div
             key={i}
             className="m-[3px] rounded-[4px]"
-            style={{ border: '1px solid var(--accent)', opacity: 0.11 }}
+            style={{ border: '1px solid var(--accent)', opacity: 0.17 }}
           />
         ))}
       </div>

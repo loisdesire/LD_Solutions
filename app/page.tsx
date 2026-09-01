@@ -243,13 +243,19 @@ export default function LandingPage() {
             container as narrow as the copy itself couldn't give it room
             to do. */}
         <HeroAmbientSlots />
-        <div className="relative max-w-2xl mx-auto px-4 sm:px-6">
+        {/* Widened from max-w-2xl (both this column and the headline's own
+            clamp cap were sized for the two-column layout this section
+            used to have next to a demo visual - now that it's copy-only
+            with a full-width page around it, that left a lot of dead
+            horizontal space on a real desktop screen and made the text
+            itself feel small/cautious against it, not just under-filled. */}
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
         <Reveal eager>
-          <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 mx-auto text-[clamp(2.2rem,4vw,3.3rem)]">
+          <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 mx-auto text-[clamp(2.2rem,4.6vw,3.8rem)]">
             An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
           </h1>
 
-          <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-md mx-auto">
+          <p className="text-[16px] sm:text-[17.5px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-lg mx-auto">
             Customers ask for a time on your website or Telegram. Vanova checks your real
             calendar and confirms it, no back-and-forth, 24/7.
           </p>
