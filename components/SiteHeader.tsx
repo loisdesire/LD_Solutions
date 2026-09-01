@@ -34,10 +34,19 @@ export default function SiteHeader({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Accent-colored text + a real underline on the active link now, not
+  // plain ink with color as the only signal - color-only active states
+  // are easy to miss at a glance; an underline reads as an actual tab
+  // the way a genuine section nav should, and the accent color (used for
+  // active state specifically, not just any link) makes it read as a
+  // deliberate "you are here" the same way the accent already marks every
+  // other selected/active thing across the product (selected service
+  // pill, selected time, admin sidebar's current page).
   const linkClass = (page: typeof active) =>
-    `font-medium text-[14px] transition-colors ${
-      active === page ? 'text-ink' : 'text-ink-soft hover:text-ink'
+    `font-medium text-[14px] pb-1 border-b-2 transition-colors ${
+      active === page ? 'border-current' : 'text-ink-soft border-transparent hover:text-ink hover:border-line-strong'
     }`;
+  const linkStyle = (page: typeof active) => (active === page ? { color: 'var(--accent)' } : undefined);
 
   const links = [
     { key: 'home' as const, href: `/${slug}#book`, label: 'Services', show: true },
@@ -71,7 +80,7 @@ export default function SiteHeader({
         {/* Desktop nav - unchanged */}
         <div className="hidden sm:flex items-center gap-7">
           {links.map((l) => (
-            <a key={l.key} href={l.href} className={linkClass(l.key)}>
+            <a key={l.key} href={l.href} className={linkClass(l.key)} style={linkStyle(l.key)}>
               {l.label}
             </a>
           ))}
@@ -112,12 +121,20 @@ export default function SiteHeader({
 
       {menuOpen && (
         <div className="sm:hidden border-t border-line bg-paper px-6 py-3 flex flex-col">
+          {/* Own treatment here, not linkClass reused verbatim - this is a
+              stacked list with its own dashed row separators, not a
+              horizontal tab bar, so the underline-as-active-indicator
+              device from the desktop nav doesn't apply; accent color
+              alone is enough "you are here" signal in a vertical list. */}
           {links.map((l) => (
             <a
               key={l.key}
               href={l.href}
               onClick={() => setMenuOpen(false)}
-              className={`py-3 border-b border-dashed border-line last:border-0 ${linkClass(l.key)}`}
+              className={`py-3 font-medium text-[14px] border-b border-dashed border-line last:border-0 transition-colors ${
+                active === l.key ? '' : 'text-ink-soft hover:text-ink'
+              }`}
+              style={linkStyle(l.key)}
             >
               {l.label}
             </a>

@@ -208,70 +208,113 @@ export default async function BusinessBookingPage({
                 Demo business - try booking, nothing&apos;s real
               </span>
             )}
-            {/* Personalized rather than a static "Book your visit" on
-                every business's page - the first thing a visitor should
-                know is whose page this actually is. Sized up and tightened
-                (32/52px -> 36/58px, tracking added) to match the confidence
-                the marketing hero's own headline carries now - this was
-                sized for the old center-anchored layout and read small
-                against a full-bleed photo. */}
-            <h1 className="font-display text-[36px] sm:text-[58px] font-semibold leading-[1.02] tracking-[-0.02em]">
-              Book with {business.name}
-            </h1>
+
+            {/* Logo (business.logo_url - already real data, already used
+                the same way in SiteHeader's nav, not a fabricated field)
+                paired with the name reads as an actual business profile
+                rather than a plain text headline. "Book with" framing
+                dropped from the heading itself now that the name isn't
+                standing alone - the CTA button below already says
+                "Book an appointment", so the page's h1 doesn't also need
+                to carry the verb. */}
+            <div className="flex items-center gap-3.5 sm:gap-4">
+              {business.logo_url ? (
+                <img
+                  src={business.logo_url}
+                  alt=""
+                  className="h-14 w-14 sm:h-[72px] sm:w-[72px] rounded-2xl object-cover shrink-0 border-2 border-white/70"
+                  style={{ boxShadow: '0 10px 24px -8px rgba(0,0,0,0.55)' }}
+                />
+              ) : (
+                <div
+                  className="h-14 w-14 sm:h-[72px] sm:w-[72px] rounded-2xl flex items-center justify-center font-display text-[22px] sm:text-[28px] font-bold shrink-0 border-2 border-white/70"
+                  style={{ background: 'var(--accent)', color: 'var(--accent-contrast)', boxShadow: '0 10px 24px -8px rgba(0,0,0,0.55)' }}
+                >
+                  {business.name?.[0]?.toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <h1 className="font-display text-[26px] sm:text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] truncate">
+                  {business.name}
+                </h1>
+                {/* Solid-fill pill, not the old dot+text line - a real
+                    status badge (matching the semantic --success token,
+                    not the business's own accent color, since open/closed
+                    is a status signal and shouldn't compete with brand
+                    color) reads at a glance the way "OPEN NOW" should. */}
+                {hoursSummary && (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mt-1.5 text-[11px] font-bold uppercase tracking-[0.04em]"
+                    style={
+                      isOpenNow
+                        ? { background: 'var(--success)', color: '#fff' }
+                        : { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.85)' }
+                    }
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {isOpenNow ? 'Open now' : 'Closed now'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {hoursSummary && (
+              <p className="text-[13.5px] text-white/80 mt-3">{hoursSummary}</p>
+            )}
             {business.description && (
               // line-clamp on mobile only - on a short phone viewport a
-              // long description was pushing the hours and CTA further
-              // down the stack than a first glance should need to scan.
-              // The full description still shows at sm+. Moved below the
-              // headline (was above it) now that the headline is the
-              // first thing your eye should hit reading bottom-up from
-              // the CTA, matching the section's new bottom-anchored flow.
-              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-3 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
+              // long description was pushing the CTAs further down the
+              // stack than a first glance should need to scan. The full
+              // description still shows at sm+.
+              <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-2 max-w-[48ch] line-clamp-2 sm:line-clamp-none">
                 {business.description}
               </p>
             )}
-            {/* One compact line instead of an icon+text pair sitting next
-                to a separate status pill - two visually distinct chunks
-                doing one job (telling you the hours) read as more than
-                they needed to. A single dot + line does the same job at
-                half the visual weight. */}
-            {hoursSummary && (
-              <div className="flex items-center gap-2 mt-4 sm:mt-5 text-white/90 text-[13.5px]">
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isOpenNow ? 'bg-current' : 'bg-white/50'}`} style={isOpenNow ? { color: 'var(--accent-contrast)' } : undefined} />
-                <span className="font-semibold">{isOpenNow ? 'Open now' : 'Closed now'}</span>
-                <span aria-hidden="true">·</span>
-                <span>{hoursSummary}</span>
-              </div>
-            )}
 
-            {/* Down to one CTA - a second full-weight button for chat
-                doubled the visual weight of this row for something the
-                floating chat bubble (always present, bottom-right) already
-                covers on its own. Price folded in as a small caption right
-                under the one button that matters, not a separate row. */}
-            <div className="mt-6 sm:mt-8">
+            {/* Two CTAs now, not one - "Ask AI" used to be dropped
+                because the floating chat bubble already covers the same
+                job, but that bubble is small and easy to miss entirely.
+                The AI receptionist is the actual headline feature of the
+                product; a business's own page should say so as plainly as
+                "Book an appointment" does, not leave it to a corner icon
+                to be discovered by accident. Opens the same widget - same
+                #chat hash it already listens for. */}
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-2.5">
               <a
                 href="#book"
-                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
+                </svg>
                 Book an appointment
               </a>
-              {(startingPrice != null || requirePayment) && (
-                <p className="text-[13px] text-white/80 mt-2.5">
-                  {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
-                  {startingPrice != null && requirePayment && ' · '}
-                  {requirePayment && (
-                    <>
-                      {rules?.deposit_percentage != null && rules.deposit_percentage < 100
-                        ? `${rules.deposit_percentage}% deposit`
-                        : 'Payment'}{' '}
-                      required to confirm
-                    </>
-                  )}
-                </p>
-              )}
+              <a
+                href="#chat"
+                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center gap-2 rounded-full font-semibold text-[14px] border-2 border-white/45 text-white transition-colors hover:bg-white/10 active:scale-95"
+                style={{ textShadow: 'none' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 4h16v12H8l-4 4V4z" />
+                </svg>
+                Ask AI
+              </a>
             </div>
+            {(startingPrice != null || requirePayment) && (
+              <p className="text-[13px] text-white/80 mt-2.5">
+                {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
+                {startingPrice != null && requirePayment && ' · '}
+                {requirePayment && (
+                  <>
+                    {rules?.deposit_percentage != null && rules.deposit_percentage < 100
+                      ? `${rules.deposit_percentage}% deposit`
+                      : 'Payment'}{' '}
+                    required to confirm
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
       </section>
