@@ -52,11 +52,11 @@ export default function CustomerLoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="animate-rise space-y-4">
-      <Field
-        label="Email"
-        required
-        hint="The same email you used when booking. We'll send a one-click login link - no password."
-      >
+      {/* Trimmed from two sentences (one of which spelled out "no
+          password" - already obvious from there being no password field
+          on screen) to the one detail actually worth saying up front:
+          which email to use. */}
+      <Field label="Email" required hint="Use the email you booked with - we'll send a login link.">
         {(props) => (
           <input
             {...props}

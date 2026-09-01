@@ -150,7 +150,15 @@ export default function SignupPage() {
         <div className="font-mono text-[11px] text-ink-faint">Free to start</div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-8 sm:p-14">
+      {/* items-start on mobile, not items-center - the left decorative
+          panel is hidden below lg, so this becomes the ONLY grid cell and
+          stretches to the full min-h-screen height by default; centering a
+          short form inside that left a large dead gap above it (and,
+          combined with mobile browsers' 100vh-vs-actual-visible-area
+          mismatch, made the page scroll for no reason). Desktop keeps the
+          centered look, which reads as intentional next to the left
+          panel's own vertically-centered content. */}
+      <div className="flex items-start lg:items-center justify-center px-4 py-8 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
           <div className="lg:hidden mb-5">
             <AuthMark name="Vanova" label="Create your booking page" logoUrl="/logo.png" />

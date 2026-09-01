@@ -32,7 +32,11 @@ export default function PlatformLoginPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-8 sm:p-14">
+      {/* Same fix as signup/page.tsx - items-start on mobile, not
+          items-center, since the left panel is hidden below lg and this
+          becomes the only grid cell, stretched to min-h-screen; centering
+          a short form in that left a dead gap above it. */}
+      <div className="flex items-start lg:items-center justify-center px-4 py-8 sm:p-14">
         <div className="w-full max-w-sm animate-rise">
           <div className="lg:hidden mb-5">
             <AuthMark name="Vanova" label="Business owner login" logoUrl="/logo.png" />
