@@ -4,7 +4,6 @@ import Reveal from '@/components/Reveal';
 import HeroAmbientSlots from '@/components/HeroAmbientSlots';
 import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
-import DashboardPreview from '@/components/DashboardPreview';
 import LandingMobileNav from '@/components/LandingMobileNav';
 import Button from '@/components/Button';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
@@ -441,26 +440,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Dashboard preview follows the channel separation: customers ask,
-          the AI books, and the owner sees the appointment immediately. */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 items-center">
-          <Reveal>
-            <h2 className="font-display text-[2.1rem] sm:text-5xl text-ink mb-4 sm:mb-5 leading-[0.95] tracking-[-0.04em]">
-              Your whole day, <span className="italic" style={{ color: 'var(--accent)' }}>at a glance.</span>
-            </h2>
-            {/* Was three stacked clauses ("what's coming up, who's next, how
-                the day is shaping up") describing exactly what the mockup
-                on the right already shows - the image does that job now. */}
-            <p className="text-[15px] text-ink-soft leading-relaxed mb-0 max-w-md">
-              Once the AI books an appointment, it appears here automatically. Nothing to chase, nothing to check.
-            </p>
-          </Reveal>
-          <Reveal delay={100}>
-            <DashboardPreview />
-          </Reveal>
-        </div>
-      </section>
+      {/* Dashboard preview section removed - the page had two separate
+          product demos back to back (this one, then the owner's-side
+          chat demo further down), on top of the how-it-works walkthrough
+          right above this and a features grid below - four consecutive
+          "here's what the app does" sections is a lot of product-tour
+          real estate for one page next to how little of it was actually
+          making the case for the specific business owner reading it.
+          "Booking appears automatically" was also the smaller, less
+          differentiated of the two claims - "an AI actually runs your
+          business by chat" (the owner's-side section) carries more
+          weight on its own. Before/After now follows how-it-works
+          directly, keeping the outcome-focused sections closer together. */}
 
       {/* Before / after */}
       <section className="border-t border-line bg-warm-surface">
