@@ -195,17 +195,32 @@ export default function SlotTimePicker({
     triggerRef.current?.focus();
   }
 
-  // Escape + a self-contained Tab trap, deliberately not the shared
-  // useDialog hook - this popup can itself sit inside another dialog
-  // (NewAppointmentModal), and useDialog's own body-scroll-lock and
-  // back-button binding both assume there's exactly one dialog open at a
-  // time. Two independent copies racing over the same
-  // document.body.style.overflow is the exact bug already fixed once in
-  // NewAppointmentModal's history; this avoids repeating it by not
-  // touching scroll lock or history state at all. Escape is bound on this
-  // popup's own element (not document), so it's caught during the bubble
-  // phase before it ever reaches an ancestor dialog's own document-level
-  // Escape listener - closing just this popup, never the modal behind it.
+  // Locks the page behind from scrolling while this is open. NOT the
+  // shared useDialog hook here - this popup can itself sit inside another
+  // dialog (NewAppointmentModal), and useDialog also binds Escape and the
+  // back button, both of which assume exactly one dialog is open at a
+  // time. A plain capture-and-restore lock is safe to duplicate, though,
+  // unlike NewAppointmentModal's old bug: that bug was two locks racing
+  // in the SAME render pass of the SAME component (one hook capturing the
+  // value the other had *just* set, moments earlier, in the same commit).
+  // This effect only ever runs well after any ancestor dialog has already
+  // settled - by the time someone taps this trigger, an outer lock (if
+  // any) has long since captured the true original value, so this one
+  // just captures 'hidden' and correctly restores to 'hidden' on close,
+  // leaving the outer lock's own restore untouched.
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  // Escape + a self-contained Tab trap - Escape is bound on this popup's
+  // own element (not document), so it's caught during the bubble phase
+  // before it ever reaches an ancestor dialog's own document-level
+  // Escape listener, closing just this popup, never the modal behind it.
   useEffect(() => {
     if (!open) return;
     const node = popupRef.current;
@@ -263,23 +278,24 @@ export default function SlotTimePicker({
       </button>
 
       {open && (
-        // Same real-overlay shape as every other dialog in this app
-        // (NewAppointmentModal etc.) - a full-screen sheet below sm, no
-        // backdrop gap, no corner radius fighting the viewport edge, so
-        // it reads as a genuine takeover rather than a small card
-        // floating in the middle of the screen. A darker, blurred
-        // backdrop covers the entire viewport underneath it and closes
-        // the picker on tap - nothing behind it is reachable while open.
-        <div className="fixed inset-0 z-[70] flex items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label="Select a time">
+        // A bottom sheet on mobile - anchored to the bottom edge and sized
+        // to its own content, not stretched to fill the whole screen. The
+        // full-height version before this had the same amount of actual
+        // content sitting in a mostly-empty white page, which read as
+        // thin/unconvincing rather than like a real takeover. Anchoring it
+        // and darkening the backdrop further (55% -> 68% ink) gives it the
+        // weight a genuine overlay should have. Desktop (sm+) keeps the
+        // centered card - there's real room there for that shape instead.
+        <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="Select a time">
           <div
             className="absolute inset-0 backdrop-blur-sm animate-fade"
-            style={{ background: 'color-mix(in srgb, var(--ink) 55%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--ink) 68%, transparent)' }}
             onClick={close}
           />
           <div
             ref={popupRef}
             onKeyDown={handlePopupKeyDown}
-            className="relative w-full h-full sm:h-auto sm:max-w-sm rounded-none sm:rounded-3xl bg-surface border-line sm:border-2 shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise flex flex-col"
+            className="relative w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl bg-surface border-line border-t-2 sm:border-2 shadow-[0_-20px_60px_-15px_rgba(36,28,24,0.5)] sm:shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise flex flex-col pb-[env(safe-area-inset-bottom)]"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
               <h2 className="font-display text-[17px] font-semibold text-ink">Select a time</h2>
@@ -293,7 +309,7 @@ export default function SlotTimePicker({
               </button>
             </div>
 
-            <div className="flex-1 flex items-center justify-center px-5 py-12 sm:py-10">
+            <div className="flex-1 flex items-center justify-center px-5 py-8">
               <div className="flex items-center justify-center gap-1.5">
                 <Wheel
                   items={availableHours.map((h) => ({ key: String(h), label: formatHourLabel(h) }))}
