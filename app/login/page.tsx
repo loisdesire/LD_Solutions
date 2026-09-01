@@ -15,7 +15,9 @@ export const metadata: Metadata = {
 // just the other door in.
 export default function PlatformLoginPage() {
   return (
-    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-paper">
+    // min-h-[100dvh], not min-h-screen - see app/signup/page.tsx for why:
+    // 100vh ignores the keyboard, dvh tracks the real visible height.
+    <main className="min-h-[100dvh] grid grid-cols-1 lg:grid-cols-2 bg-paper">
       <div
         className="hidden lg:flex flex-col justify-center gap-6 p-14 border-r border-line"
         style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 65%)' }}

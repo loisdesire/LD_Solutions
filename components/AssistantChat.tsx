@@ -191,14 +191,10 @@ export default function AssistantChat({
   async function send(text: string) {
     if (!text.trim() || loading) return;
     const imageUrl = pendingImage?.url ?? null;
+    const sentImage = pendingImage;
     const nextMessages: Message[] = [...messages, { role: 'user', content: text }];
     setMessages(nextMessages);
     setInput('');
-    // Cleared immediately, not after the request resolves - once it's on
-    // its way to this specific message, holding it in the composer would
-    // just mean the next message accidentally reattaches the same photo.
-    if (pendingImage) URL.revokeObjectURL(pendingImage.previewUrl);
-    setPendingImage(null);
     setLoading(true);
     setError('');
 
@@ -217,6 +213,17 @@ export default function AssistantChat({
         setError(data.error ?? 'Something went wrong. Please try again.');
         return;
       }
+      // Only cleared on confirmed success - this used to clear
+      // unconditionally BEFORE the request even resolved, so a failed
+      // send (dropped connection, server error) silently dropped the
+      // attached photo with no way to retry it: the message failed, but
+      // the photo was already gone, and the error shown never mentioned
+      // it. On success there's nothing left to hold onto; on failure the
+      // photo (and its already-uploaded real URL - only the local blob
+      // preview was ever at risk) stays attached so retrying the same
+      // send actually retries the same photo.
+      if (sentImage) URL.revokeObjectURL(sentImage.previewUrl);
+      setPendingImage(null);
       setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
       onReplyData?.(data);
     } catch {
@@ -229,7 +236,15 @@ export default function AssistantChat({
     <div>
       {banner}
 
-      <div className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70vh]'}>
+      {/* max-h-[70dvh], not 70vh - vh is pinned to the LAYOUT viewport and
+          ignores the keyboard entirely, so on a phone this card kept
+          claiming the same height after the keyboard opened, pushing its
+          own input row (and the "Send" button) down past the now-shrunk
+          visible area - reads as "the input keeps moving" as the browser
+          repeatedly tries to scroll it back into view against a viewport
+          that's already accounted for elsewhere. dvh tracks the real
+          visible height as the keyboard opens/closes, no JS needed. */}
+      <div className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}>
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3.5">
           {messages.length === 0 && (
             <div className="my-auto text-center">

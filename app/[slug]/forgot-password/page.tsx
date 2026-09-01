@@ -20,7 +20,8 @@ export default async function ForgotPasswordPage({
   const { business } = data;
 
   return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-16">
+    // min-h-[100dvh], not min-h-screen - see app/signup/page.tsx for why.
+    <main className="min-h-[100dvh] bg-paper flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm animate-rise">
         <AuthMark name={business.name} label="Business owner login" logoUrl={business.logo_url} />
         <h1 className="font-display text-[28px] mb-2">

@@ -22,7 +22,8 @@ export default async function LoginPage({
   const { business } = data;
 
   return (
-    <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-paper">
+    // min-h-[100dvh], not min-h-screen - see app/signup/page.tsx for why.
+    <main className="min-h-[100dvh] grid grid-cols-1 lg:grid-cols-2 bg-paper">
       <div
         className="hidden lg:flex flex-col justify-between p-14 border-r border-line"
         style={{ backgroundImage: 'linear-gradient(150deg, var(--accent-soft), var(--paper) 65%)' }}

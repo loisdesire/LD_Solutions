@@ -16,7 +16,8 @@ export default function CustomerLoginPage() {
   // min-h-screen box left a dead gap above it, and made the page scroll
   // on mobile browsers where 100vh doesn't match the actual visible area.
   return (
-    <main className="min-h-screen flex items-start sm:items-center justify-center px-6 pt-14 sm:pt-6 bg-paper">
+    // min-h-[100dvh], not min-h-screen - see app/signup/page.tsx for why.
+    <main className="min-h-[100dvh] flex items-start sm:items-center justify-center px-6 pt-14 sm:pt-6 bg-paper">
       <div className="w-full max-w-sm">
         {/* Left-aligned now, matching login/signup's own AuthMark +
             heading + footer-link pattern - this page had them all
