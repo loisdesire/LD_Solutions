@@ -503,12 +503,16 @@ export default function LandingPage() {
           having Before/After's outcome-contrast section awkwardly wedged
           between two halves of one idea.
 
-          Also dropped the quote-pills for a real capability list - not a
-          chat-log mockup (tried twice this session, kept reading as the
-          same chat-bubble device already used two sections up, reskinned)
-          and not quotes either, which still asked the reader to imagine
-          a conversation. Three plain, concrete statements instead: task,
-          then what actually happens. Nothing staged to disbelieve. */}
+          Also replaced the chat-log mockup (tried twice this session,
+          kept reading as the same chat-bubble device already used two
+          sections up, reskinned) - but a first pass at removing it went
+          too far the other way, down to a bare title + a description
+          SENTENCE per item, which was an assertion asking to be believed
+          rather than something explanatory. Each item now pairs its task
+          with the actual literal phrase you'd type and what happens -
+          the one thing that's genuinely explanatory - without any of the
+          demo's own chrome (avatar, "online" badge, browser shell,
+          typing animation) that made it feel like it was doing too much. */}
       <section className="border-b border-line">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
           {/* Side by side from lg up (was one stacked, centered column) -
@@ -543,7 +547,8 @@ export default function LandingPage() {
                   </svg>
                 ),
                 title: 'Change your hours',
-                copy: 'Say it once - it updates everywhere customers already see you.',
+                example: 'We’re open till 8 on Fridays now',
+                result: 'Updated',
               },
               {
                 icon: (
@@ -552,7 +557,8 @@ export default function LandingPage() {
                   </svg>
                 ),
                 title: 'Turn on payments',
-                copy: 'No settings page to go dig through first.',
+                example: 'Turn on payments for bookings',
+                result: 'Turned on',
               },
               {
                 icon: (
@@ -561,19 +567,35 @@ export default function LandingPage() {
                   </svg>
                 ),
                 title: 'Update your logo or profile',
-                copy: 'Tell it what changed, straight from your phone.',
+                example: 'Just uploaded my new logo',
+                result: 'Updated',
               },
             ].map((item, index) => (
+              // Was a title + a description SENTENCE ("say it once, it
+              // updates everywhere") - that's an assertion, not a
+              // demonstration; it reads as marketing copy asking to be
+              // believed rather than something explanatory. This shows
+              // the actual mechanism instead: the literal phrase you'd
+              // type, then what happens - no chat bubble, no avatar, no
+              // typing animation, none of the chrome that made the
+              // original demo feel like it was doing too much. Just the
+              // one thing that's actually explanatory: input, then result.
               <Reveal key={item.title} delay={index * 70} className="flex items-start gap-3.5 text-left">
                 <div
-                  className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center"
+                  className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center mt-0.5"
                   style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                 >
                   {item.icon}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[14.5px] font-semibold text-ink">{item.title}</p>
-                  <p className="text-[13.5px] text-ink-faint leading-snug mt-0.5">{item.copy}</p>
+                  <p className="text-[14.5px] font-semibold text-ink mb-1.5">{item.title}</p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-warm-surface px-2.5 py-1.5">
+                    <span className="text-[12px] text-ink-soft italic">&ldquo;{item.example}&rdquo;</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-ink-faint shrink-0" aria-hidden="true">
+                      <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                    <span className="text-[12px] font-semibold shrink-0" style={{ color: 'var(--accent)' }}>{item.result}</span>
+                  </div>
                 </div>
               </Reveal>
             ))}
