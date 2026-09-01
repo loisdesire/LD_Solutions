@@ -242,7 +242,17 @@ export default function LandingPage() {
           desktop padding). Scoped to lg only, not sm/mobile - see the
           commit message for why mobile is staying content-hugging for
           now rather than getting the same treatment. */}
-      <section className="relative z-0 pt-10 sm:pt-20 pb-12 sm:pb-20 lg:py-0 lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center lg:justify-center text-center overflow-hidden">
+      {/* pt-6/pb-8 on mobile, was pt-10/pb-12 - the hero plus the channel
+          strip right after it were meant to close out the first screen on
+          a phone (see that section's own comment), leaving the dark
+          how-it-works section to be scrolled INTO rather than visible on
+          load. On a real device that only had a hair's width of margin -
+          a sliver of the dark section was already peeking in at the
+          bottom of the first view, which read as an accidental crop, not
+          a deliberate "more below" cue. Trimmed padding here and on the
+          channel strip buys back real room instead of a razor-thin fit
+          that only worked on some screen heights. */}
+      <section className="relative z-0 pt-6 sm:pt-20 pb-8 sm:pb-20 lg:py-0 lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center lg:justify-center text-center overflow-hidden">
         {/* Full section width, not the inner max-w-2xl column - the point
             is visible around the text's edges on a wide screen, which a
             container as narrow as the copy itself couldn't give it room
@@ -260,7 +270,7 @@ export default function LandingPage() {
             An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
           </h1>
 
-          <p className="text-[16px] sm:text-[17.5px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-lg mx-auto">
+          <p className="text-[16px] sm:text-[17.5px] text-ink-soft leading-relaxed mb-5 sm:mb-8 max-w-lg mx-auto">
             Customers ask for a time on your website or Telegram. Vanova checks your real
             calendar and confirms it, no back-and-forth, 24/7.
           </p>
@@ -300,9 +310,9 @@ export default function LandingPage() {
           becomes something you scroll INTO rather than something dumped
           on you immediately. */}
       <section className="border-y border-line bg-warm-surface">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-9">
           <Reveal className="flex flex-col items-center text-center">
-            <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
+            <p className="text-[14px] font-medium text-ink-soft mb-3 sm:mb-5">
               One receptionist. Every channel your customers already use.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
