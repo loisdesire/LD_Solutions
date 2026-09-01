@@ -1,32 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CalendarPicker from './CalendarPicker';
 import Skeleton from './Skeleton';
-
-type Period = 'Morning' | 'Afternoon' | 'Evening';
+import SlotTimePicker from './SlotTimePicker';
 
 function toDateStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-}
-
-function groupSlots(slots: string[]): [Period, string[]][] {
-  const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
-  const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
-  for (const s of slots) {
-    const h = new Date(s).getHours();
-    const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-    groups[period].push(s);
-  }
-  return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
 }
 
 export default function ManageBooking({
@@ -66,8 +50,6 @@ export default function ManageBooking({
 
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
-
-  const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
   useEffect(() => {
     if (!date) {
@@ -234,17 +216,8 @@ export default function ManageBooking({
               )}
             </div>
             {loadingSlots ? (
-              <div className="space-y-4 mb-4">
-                {[0, 1].map((i) => (
-                  <div key={i}>
-                    <Skeleton className="h-2.5 w-16 rounded mb-2" />
-                    <div className="flex flex-wrap gap-2">
-                      {[0, 1, 2].map((j) => (
-                        <Skeleton key={j} className="w-[72px] h-[34px] rounded-lg" delay={j * 0.15} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="mb-4">
+                <Skeleton className="w-full h-[50px] rounded-xl" />
               </div>
             ) : slotsError ? (
               <div className="border-2 border-dashed border-line-strong rounded-xl py-6 flex flex-col items-center text-center px-4">
@@ -262,42 +235,13 @@ export default function ManageBooking({
                 <p className="text-ink-soft text-[13px]">No openings this day. Try another date.</p>
               </div>
             ) : (
-              <div className="space-y-4 mb-4">
-                {slotGroups.map(([period, times]) => (
-                  <div key={period}>
-                    <div className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint mb-2">
-                      {period}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {times.map((t) => {
-                        const isSel = t === selectedSlot;
-                        return (
-                          <button
-                            type="button"
-                            key={t}
-                            onClick={() => setSelectedSlot(t)}
-                            style={
-                              isSel
-                                ? {
-                                    background: 'var(--accent)',
-                                    borderColor: 'var(--accent)',
-                                    color: 'var(--accent-contrast)',
-                                  }
-                                : undefined
-                            }
-                            className={`min-w-[80px] py-2 px-3 text-[13px] font-mono font-semibold tabular-nums border-2 rounded-full transition-all active:scale-95 ${
-                              isSel
-                                ? 'animate-punch shadow-[0_4px_12px_-2px_var(--accent)]'
-                                : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
-                            }`}
-                          >
-                            {formatTime(t)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+              // Same collapsed-trigger/scroll-strip picker as the public
+              // booking page and the admin quick-add modal - was the same
+              // flat Morning/Afternoon/Evening slot dump both of those
+              // used to have. `key={date}` remounts on date change so it
+              // resets closed.
+              <div className="mb-4">
+                <SlotTimePicker key={date} slots={slots} selectedSlot={selectedSlot} onSelect={setSelectedSlot} />
               </div>
             )}
           </div>

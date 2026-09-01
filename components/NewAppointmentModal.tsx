@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CalendarPicker from './CalendarPicker';
 import { useDialog } from './useDialog';
 import Field from './Field';
+import Skeleton from './Skeleton';
+import SlotTimePicker from './SlotTimePicker';
 import { inputClass, labelClass } from './formStyles';
 
 type Service = {
@@ -13,8 +15,6 @@ type Service = {
   duration_minutes: number;
   price: number | null;
 };
-
-type Period = 'Morning' | 'Afternoon' | 'Evening';
 
 function toDateStr(d: Date): string {
   const y = d.getFullYear();
@@ -25,17 +25,6 @@ function toDateStr(d: Date): string {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-}
-
-function groupSlots(slots: string[]): [Period, string[]][] {
-  const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
-  const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
-  for (const s of slots) {
-    const h = new Date(s).getHours();
-    const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-    groups[period].push(s);
-  }
-  return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
 }
 
 // A quick-add flow for staff booking a walk-in or phone customer straight
@@ -69,7 +58,6 @@ export default function NewAppointmentModal({
   const selectedService = services.find((s) => s.id === serviceId) ?? null;
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
-  const slotGroups = useMemo(() => groupSlots(slots), [slots]);
 
   useEffect(() => {
     if (!serviceId || !date) return;
@@ -227,41 +215,19 @@ export default function NewAppointmentModal({
                 {!loadingSlots && <span className="font-mono text-[12px] text-ink-faint">{slots.length} open</span>}
               </div>
               {loadingSlots ? (
-                <p className="text-ink-faint text-[13px]">Checking availability…</p>
-              ) : slotGroups.length === 0 ? (
+                <Skeleton className="w-full h-[50px] rounded-xl" />
+              ) : slots.length === 0 ? (
                 <div className="border-2 border-dashed border-line-strong rounded-xl py-6 text-center px-4">
                   <p className="text-ink-soft text-[13px]">No openings this day. Try another date.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {slotGroups.map(([period, times]) => (
-                    <div key={period}>
-                      <div className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint mb-2">{period}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {times.map((t) => {
-                          const isSel = t === selectedSlot;
-                          return (
-                            <button
-                              type="button"
-                              key={t}
-                              onClick={() => setSelectedSlot(t)}
-                              style={isSel ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
-                              // Same reasoning as the service pill above -
-                              // fill+border+text already carries "selected",
-                              // animate-punch is the real feedback moment;
-                              // the glow shadow was a redundant fourth signal.
-                              className={`min-w-[76px] py-2 px-3 text-[13px] font-mono font-semibold tabular-nums border-2 rounded-full transition-all active:scale-95 ${
-                                isSel ? 'animate-punch' : 'border-line-strong bg-surface hover:border-[var(--accent)] hover:-translate-y-0.5'
-                              }`}
-                            >
-                              {formatTime(t)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                // Same collapsed-trigger/scroll-strip picker the public
+                // booking page uses - was a flat wrapped grid of every
+                // individual slot (Morning/Afternoon/Evening sections, one
+                // pill per minute), the exact "dumping" this modal kept
+                // after the public page had already moved off it.
+                // `key={date}` remounts on date change so it resets closed.
+                <SlotTimePicker key={date} slots={slots} selectedSlot={selectedSlot} onSelect={setSelectedSlot} />
               )}
             </div>
 
