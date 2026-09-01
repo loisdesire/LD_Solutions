@@ -1,53 +1,33 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-
-// Desktop-only ambient texture behind the (now text-only, centered) hero -
-// not a repeat of the three failed attempts at a competing content card
-// (chat replay, stat card, calendar), all of which were asking to be READ.
-// This asks nothing: a faint grid of time slots, a few filling in with the
-// accent color over a couple of seconds, the same idea the deleted
-// SlotGrid component used ("the page's signature device, grounded in what
-// the product actually is... the exact mechanic a calendar goes through
-// over a real day"). A radial mask keeps it visible only around the
-// text's edges, never behind the actual words, so there's no legibility
-// risk to weigh against - it can only ever read as atmosphere.
+// Desktop-only ambient texture behind the (text-only, centered) hero - a
+// faint static grid of time-slot-shaped outlines, nothing filled in. The
+// earlier version animated a handful of cells to a solid accent fill over
+// a couple of seconds ("slots getting booked") - once the stacking-context
+// bug that made this invisible was fixed and the fill was actually
+// visible, it read as too much orange competing with the CTA buttons
+// rather than as atmosphere. Outlines alone still carry the idea (a
+// calendar grid, the product's own signature device) without asking for
+// any attention. Static now, so this doesn't need 'use client', state, or
+// a prefers-reduced-motion check at all - nothing here ever moves.
 const COLS = 14;
 const ROWS = 7;
-const BOOKED = new Set([2, 8, 13, 19, 26, 31, 38, 44, 51, 57, 63, 70, 77, 83, 90]);
 
 export default function HeroAmbientSlots() {
-  const [filled, setFilled] = useState<Set<number>>(new Set());
-
-  useEffect(() => {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) {
-      setFilled(BOOKED);
-      return;
-    }
-    const order = [...BOOKED];
-    const timers = order.map((cell, i) =>
-      setTimeout(() => setFilled((prev) => new Set(prev).add(cell)), 300 + i * 90)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, []);
-
   return (
     <div
       aria-hidden="true"
-      // Turned back down after actually being visible for the first time -
-      // now that the stacking-context bug is fixed (see git history) it
-      // was reading as genuinely bright, glow included, competing with the
-      // buttons for attention instead of sitting behind them as texture.
-      // Opacity roughly halved from that pass, the glow dropped entirely
-      // (that was the biggest single source of "too much orange" - it
-      // bled accent-colored light beyond each cell's own edges), and the
-      // mask's clear zone widened so the grid stays further from the
-      // headline/button column instead of crowding right up to it.
+      // A radial mask keeps this visible only around the text's edges,
+      // never behind the actual words or crowding the buttons, so there's
+      // no legibility risk to weigh against - it can only ever read as
+      // texture.
       className="hidden lg:block absolute inset-0 -z-10 overflow-hidden"
       style={{
-        maskImage: 'radial-gradient(ellipse 620px 380px at center, transparent 55%, black 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 620px 380px at center, transparent 55%, black 100%)',
+        // A wider gap between the two stops (40%->100%, was 55%->100% on a
+        // smaller ellipse) spreads the fade over more distance instead of
+        // snapping from fully clear to fully visible in a short span -
+        // that tight transition was reading as a glowing ring around the
+        // text rather than a soft edge.
+        maskImage: 'radial-gradient(ellipse 560px 340px at center, transparent 40%, black 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 560px 340px at center, transparent 40%, black 100%)',
       }}
     >
       <div
@@ -57,12 +37,8 @@ export default function HeroAmbientSlots() {
         {Array.from({ length: COLS * ROWS }, (_, i) => (
           <div
             key={i}
-            className="m-[3px] rounded-[4px] transition-all duration-700"
-            style={{
-              background: filled.has(i) ? 'var(--accent)' : 'transparent',
-              border: filled.has(i) ? 'none' : '1px solid var(--accent)',
-              opacity: filled.has(i) ? 0.28 : 0.11,
-            }}
+            className="m-[3px] rounded-[4px]"
+            style={{ border: '1px solid var(--accent)', opacity: 0.11 }}
           />
         ))}
       </div>
