@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
 import HeroAmbientSlots from '@/components/HeroAmbientSlots';
-import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import LandingMobileNav from '@/components/LandingMobileNav';
 import Button from '@/components/Button';
@@ -122,9 +121,9 @@ const features = [
   {
     // Was "Team management" - a real feature, but the most generic of the
     // six and the least tied to what actually sets Vanova apart. The
-    // owner-side chat (OwnerChatDemo, right above this section) had a full
-    // dedicated demo but wasn't in this summary anywhere - swapped in here
-    // so the grid actually accounts for its own hero moment.
+    // owner-side chat is the page's own "run your business by chat"
+    // section further up - swapped in here so the grid actually accounts
+    // for its own dedicated section.
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 018.5-8.5h.5a8.48 8.48 0 018 8v.5z" />
@@ -357,9 +356,9 @@ export default function LandingPage() {
 
           {/* Each card now shows the actual moment, not just a description of
               it - a real chat bubble, a real checklist, a real "held" chip, a
-              real confirmed-booking chip, styled off the same product these
-              represent (WebChatWidget's bubbles, OwnerChatDemo's booked
-              chip) rather than four identical paragraph blocks. Numbered
+              real confirmed-booking chip, styled off the actual product
+              (WebChatWidget's own bubble shapes and colors) rather than four
+              identical paragraph blocks. Numbered
               because this genuinely is a sequence, not decoration - no
               connecting arrows between them, the moments read as a sequence
               on their own. */}
@@ -471,53 +470,48 @@ export default function LandingPage() {
       </section>
 
       {/* The owner's side of the same idea the hero opens with - that one
-          shows a customer talking to the AI to book; this shows the
+          shows a customer talking to the AI to book; this names the
           business owner talking to the same kind of assistant to run the
-          business itself. No explicit background (so it inherits the
-          page's own paper tone), giving it a beat of its own after the
-          warm-surface Before/After section above, rather than reading as
-          a continuation of it. */}
+          business itself. Used to pair this copy with its own dedicated
+          chat-log mockup (OwnerChatDemo) on the right - but the "How it
+          works" section above already opens on a customer's own chat
+          bubble, so a second simulated conversation right after it read
+          as the same device reskinned, not a fresh idea, no matter how
+          the script was rewritten (tried twice this session). The three
+          example requests below already prove "these are simple, real,
+          varied asks" concretely, in the owner's own words - a mockup on
+          top of them wasn't adding new proof, just visual repetition.
+          Single centered column now that there's no demo to sit beside. */}
       <section className="border-b border-line">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-            <Reveal>
-              <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
-                The owner&rsquo;s side
-              </div>
-              <h2 className="font-display text-[2rem] sm:text-4xl leading-[1.12] text-ink mb-4">
-                You don&rsquo;t fill out the form.
-                <br />
-                You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
-              </h2>
-              {/* Was three sentences re-explaining what the chat demo right
-                  next to it already shows in action - "no settings page to
-                  hunt through" and "shows you what's about to change" are
-                  both just narrated versions of what's happening in the
-                  demo. One line is enough; the demo does the rest. */}
-              <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-7 max-w-md">
-                Add a service, change your hours, update your profile, straight from a chat on your dashboard.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  '"We\'re open till 8 on Fridays now"',
-                  '"Turn on payments for bookings"',
-                  '"Update my logo, just uploaded it"',
-                ].map((example) => (
-                  <span
-                    key={example}
-                    className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-paper px-3.5 py-2 text-[13px] text-ink-soft"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />
-                    {example}
-                  </span>
-                ))}
-              </div>
-            </Reveal>
-
-            <Reveal delay={120}>
-              <OwnerChatDemo />
-            </Reveal>
-          </div>
+          <Reveal className="max-w-xl mx-auto text-center">
+            <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
+              The owner&rsquo;s side
+            </div>
+            <h2 className="font-display text-[2rem] sm:text-4xl leading-[1.12] text-ink mb-4">
+              You don&rsquo;t fill out the form.
+              <br />
+              You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
+            </h2>
+            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-7 max-w-md mx-auto">
+              Add a service, change your hours, update your profile, straight from a chat on your dashboard.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {[
+                '"We\'re open till 8 on Fridays now"',
+                '"Turn on payments for bookings"',
+                '"Update my logo, just uploaded it"',
+              ].map((example) => (
+                <span
+                  key={example}
+                  className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-paper px-3.5 py-2 text-[13px] text-ink-soft"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--accent)' }} />
+                  {example}
+                </span>
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
