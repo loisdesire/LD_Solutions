@@ -4,6 +4,7 @@ import ManageBooking from '@/components/ManageBooking';
 import { AccentScope } from '@/components/AccentScope';
 import { formatMoney } from '@/lib/formatMoney';
 import { STATUS_LABELS } from '@/lib/bookingStatus';
+import { logError } from '@/lib/logger';
 import type { Metadata } from 'next';
 
 const supabaseAdmin = createClient(
@@ -46,6 +47,32 @@ export default async function ManageBookingPage({
       .eq('id', bookingId)
       .maybeSingle();
     booking = fallback.data ? { ...fallback.data, payment_status: null, amount_paid: null } : null;
+    bookingError = fallback.error;
+  }
+
+  // This used to only ever check for the one 42703 case above, then fall
+  // straight to notFound() for literally any other outcome - including a
+  // genuine query error (a different missing column, a transient DB
+  // issue, anything). That meant a real booking, on a real error, showed
+  // a 404 - indistinguishable from "this booking doesn't exist" to the
+  // customer AND to us, since nothing was ever logged either. Confirmed
+  // live: a customer with a real booking got exactly this 404 from their
+  // confirmation email. Now: an actual error is logged and shown as an
+  // error, not silently treated as "not found" - notFound() is reserved
+  // for the one case that's actually true, no row and no error.
+  if (bookingError) {
+    logError('manage-booking:load', bookingError, { slug, bookingId });
+    return (
+      <main className="flex items-center justify-center px-6 py-16 min-h-screen bg-paper">
+        <div className="w-full max-w-md text-center">
+          <p className="font-display text-[20px] text-ink mb-2">We couldn&rsquo;t load this booking</p>
+          <p className="text-ink-soft text-[14px]">
+            This is us, not you - please try again in a moment, or contact the business directly using your booking
+            confirmation.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   if (!booking) notFound();
