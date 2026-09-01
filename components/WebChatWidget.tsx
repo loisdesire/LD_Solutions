@@ -271,7 +271,16 @@ export default function WebChatWidget({
           });
         }}
         aria-label={open ? 'Close chat' : 'Open chat'}
-        className={`fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${open ? 'hidden sm:flex' : 'flex'}`}
+        // Was `hidden` below sm while open, relying on a separate small X
+        // inside the panel's header to close instead - on a phone, tapping
+        // the exact spot this button normally lives had nothing there at
+        // all, which reads as "the close button doesn't work" even though
+        // a different one technically existed elsewhere. One button now,
+        // always visible, z-[60] (above the panel's z-50) so it stays
+        // reachable floating over the full-screen mobile panel too - the
+        // panel reserves clearance at its own bottom edge (see its
+        // padding below) so this never sits on top of the message input.
+        className="fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
@@ -306,10 +315,12 @@ export default function WebChatWidget({
               icon), the name up front, and a real status pill instead of
               a static "usually replies instantly" line - this widget is
               genuinely always on, so it says so plainly rather than
-              hedging. A real close button now too - the FAB that opens/
-              closes this hides itself on mobile while open (see its own
-              className), so without this there was genuinely no way to
-              exit except the back button, which had its own bug. */}
+              hedging. No separate close button in here anymore - the
+              floating FAB (now always visible, see its own className) is
+              the one close control everywhere, rather than this header
+              carrying a second one that behaved slightly differently
+              (it never cleared the #chat hash the FAB's own close logic
+              does) and lived somewhere a habit-driven tap wouldn't land. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
               {businessName?.[0]?.toUpperCase() ?? '?'}
@@ -325,13 +336,6 @@ export default function WebChatWidget({
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               Online
             </span>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-              className="sm:hidden h-8 w-8 flex items-center justify-center rounded-full text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -379,7 +383,13 @@ export default function WebChatWidget({
             )}
           </div>
 
-          <div className="shrink-0 border-t border-line p-3">
+          {/* pb-20 on mobile only (was a flat p-3) - the floating FAB now
+              stays visible over this full-screen panel instead of hiding,
+              so this reserves clearance below the send button for it
+              (FAB sits ~20-76px off the true bottom edge) rather than the
+              two overlapping. Not needed at sm+, where the panel already
+              sits well above the FAB with its own gap. */}
+          <div className="shrink-0 border-t border-line p-3 pb-20 sm:pb-3">
             <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 focus-within:border-[var(--accent)] transition-colors">
               <input
                 ref={inputRef}

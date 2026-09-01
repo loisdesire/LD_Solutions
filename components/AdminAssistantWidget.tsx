@@ -76,16 +76,18 @@ export default function AdminAssistantWidget({
 
   return (
     <>
-      {/* Hidden rather than left floating once the panel is open on
-          mobile - it used to sit at bottom-5 right-5 regardless, which
-          the mobile panel's own inset margins didn't fully cover,
-          leaving this button visibly overlapping the panel's corner.
-          Full-screen inset-0 below makes that moot (nothing to overlap),
-          but hiding it here is what actually fixes it, not the sizing. */}
+      {/* Was `hidden` below sm once open, relying on the header's own X to
+          close instead - on a phone, tapping the exact spot this button
+          normally lives had nothing there at all (same bug reported and
+          fixed on WebChatWidget's identical FAB). z-[60], above the
+          panel's z-50, keeps it reachable floating over the full-screen
+          mobile panel; the panel's own input bar reserves clearance at
+          its bottom edge (see AssistantChat's bare-mode padding) so
+          nothing sits underneath it. */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
-        className={`fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${open ? 'hidden sm:flex' : 'flex'}`}
+        className="fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'var(--accent)' }}
       >
         {open ? (

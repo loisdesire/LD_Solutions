@@ -322,7 +322,13 @@ export default function AssistantChat({
             e.preventDefault();
             send(input);
           }}
-          className="border-t border-line p-3 flex gap-2"
+          // bare mode is exactly "embedded in AdminAssistantWidget's
+          // floating panel" - its FAB now stays visible over the panel
+          // even on mobile (see that component), so this reserves
+          // clearance below the send button for it rather than the two
+          // overlapping. The standalone full-page use (bare=false) has
+          // no floating FAB to clear.
+          className={`border-t border-line p-3 flex gap-2 ${bare ? 'pb-20 sm:pb-3' : ''}`}
         >
           <input
             ref={fileInputRef}
