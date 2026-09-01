@@ -37,7 +37,11 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
         showGallery={showGallery}
         showContact={showContact}
       />
-      <main className="pt-16">
+      {/* No pt-16 here - SiteHeader is `sticky`, not `fixed`, so it already
+          reserves its own space in the layout. This was stacking with the
+          inner div's own pt-16/pt-20 below, doubling to ~128-144px of dead
+          space between the nav and the actual heading. */}
+      <main>
         {/* pb-28 below: guards the trailing CTA the same way about/page.tsx
             guards its hours line - real, but a separate issue from the one
             below (that one's about content sitting AFTER this padding;

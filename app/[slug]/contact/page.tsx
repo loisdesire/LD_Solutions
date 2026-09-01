@@ -109,7 +109,11 @@ export default async function ContactPage({ params }: { params: Promise<{ slug: 
         showGallery={showGallery}
         showContact={showContact}
       />
-      <main className="pt-16">
+      {/* No pt-16 here - SiteHeader is `sticky`, not `fixed`, so it already
+          reserves its own space in the layout. This was stacking with the
+          inner div's own pt-16/pt-20 below, doubling to ~128-144px of dead
+          space between the nav and the actual heading. */}
+      <main>
         {/* Same defensive pb- as about/page.tsx and gallery/page.tsx - this
             page's own CTA sits clear of the chat button today, but its
             length depends entirely on how many contact methods a business

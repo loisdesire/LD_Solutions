@@ -36,7 +36,11 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
         showGallery={showGallery}
         showContact={showContact}
       />
-      <main className="pt-16">
+      {/* No pt-16 here - SiteHeader is `sticky`, not `fixed`, so it already
+          reserves its own space in the layout. This was stacking with the
+          inner div's own pt-16/pt-20 below, doubling to ~128-144px of dead
+          space between the nav and the actual heading. */}
+      <main>
         {/* pb- extended beyond py-16/20's matching top value - confirmed live
             (real mobile screenshot, not a guess) that on a short About page
             the hours line landed exactly under WebChatWidget's fixed
