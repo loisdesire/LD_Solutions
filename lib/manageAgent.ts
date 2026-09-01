@@ -8,6 +8,8 @@ import {
   applyToggleSetting,
   proposeUpdateProfile,
   applyUpdateProfile,
+  proposeUpdateBookingRules,
+  applyUpdateBookingRules,
   proposeUpdateHours,
   applyUpdateHours,
 } from './manageTools';
@@ -182,6 +184,40 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
+      name: 'propose_update_booking_rules',
+      description:
+        'Work out what changing the buffer time between appointments, or the deposit percentage required to confirm a booking, would look like. Read-only, changes nothing yet. Only include the field actually changing.',
+      parameters: {
+        type: 'object',
+        properties: {
+          buffer_minutes: { type: 'number', description: 'Minutes of gap kept free after each appointment, 0-180.' },
+          deposit_percentage: {
+            type: 'number',
+            description:
+              '1-100. 100 means the customer pays the full price to confirm; anything less is a partial deposit. Only meaningful once payment is turned on (see propose_toggle_setting, setting: "payment").',
+          },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_update_booking_rules',
+      description:
+        'Actually applies the buffer time or deposit percentage change. Only call this after the owner has explicitly confirmed the exact plan propose_update_booking_rules just showed them.',
+      parameters: {
+        type: 'object',
+        properties: {
+          buffer_minutes: { type: 'number' },
+          deposit_percentage: { type: 'number' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'propose_update_hours',
       description:
         "Work out what changing one day's opening hours would look like, INCLUDING checking for upcoming bookings that would fall outside the new hours - always call this before apply_update_hours, never skip straight to applying. Read-only, changes nothing yet.",
@@ -266,6 +302,16 @@ export async function executeManageTool(name: string, args: Record<string, unkno
         logoUrl: args.logo_url,
         coverImageUrl: args.cover_image_url,
         accentColor: args.accent_color,
+      });
+    case 'propose_update_booking_rules':
+      return proposeUpdateBookingRules(businessId, {
+        bufferMinutes: args.buffer_minutes,
+        depositPercentage: args.deposit_percentage,
+      });
+    case 'apply_update_booking_rules':
+      return applyUpdateBookingRules(businessId, {
+        bufferMinutes: args.buffer_minutes,
+        depositPercentage: args.deposit_percentage,
       });
     case 'propose_update_hours':
       return proposeUpdateHours(businessId, {

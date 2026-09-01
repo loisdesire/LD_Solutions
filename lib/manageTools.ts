@@ -478,6 +478,90 @@ export async function applyUpdateProfile(businessId: string, changes: ProfileCha
   return { updated: true };
 }
 
+// --- Booking rules (buffer time between appointments, deposit %) -------
+// Added for the onboarding flow specifically - it could tell an owner
+// their booking page was "ready" without ever having a way to ask about
+// buffer time or a deposit percentage at all, since neither had a tool
+// here yet. Both were previously form-only (BookingRulesManager /
+// PaymentsManager); this is the same booking_rules row, just reachable
+// from chat now too - so the regular ongoing assistant picks this up
+// automatically as well, not just onboarding.
+
+type BookingRuleChanges = { bufferMinutes?: unknown; depositPercentage?: unknown };
+
+function cleanBufferMinutes(value: unknown): number | null | undefined {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return undefined;
+  const rounded = Math.round(n);
+  return rounded >= 0 && rounded <= 180 ? rounded : undefined;
+}
+
+// 100 means "pay in full" (matches PaymentsManager.tsx's own convention -
+// see its isDeposit ? depositPercentage : 100), not "invalid".
+function cleanDepositPercentage(value: unknown): number | undefined {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return undefined;
+  const rounded = Math.round(n);
+  return rounded >= 1 && rounded <= 100 ? rounded : undefined;
+}
+
+export async function proposeUpdateBookingRules(businessId: string, changes: BookingRuleChanges) {
+  const { data: current } = await supabaseAdmin
+    .from('booking_rules')
+    .select('buffer_minutes, deposit_percentage, require_payment')
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  const proposed: Record<string, { from: string; to: string }> = {};
+
+  if (changes.bufferMinutes !== undefined) {
+    const v = cleanBufferMinutes(changes.bufferMinutes);
+    if (v === undefined) return { error: 'Buffer time needs to be a number of minutes between 0 and 180.' };
+    proposed.buffer_minutes = { from: `${current?.buffer_minutes ?? 0} min`, to: `${v} min` };
+  }
+  if (changes.depositPercentage !== undefined) {
+    const v = cleanDepositPercentage(changes.depositPercentage);
+    if (v === undefined) return { error: 'Deposit needs to be a percentage between 1 and 100 (100 means paid in full).' };
+    // Setting a deposit percentage means nothing if payment isn't even
+    // required yet - steer to the real prerequisite instead of silently
+    // saving a percentage that has no effect on anything.
+    if (!current?.require_payment) {
+      return {
+        error:
+          "Payment isn't turned on for this business yet, so a deposit percentage wouldn't do anything. Turn payment on first (propose_toggle_setting with setting: \"payment\"), then set the deposit.",
+      };
+    }
+    proposed.deposit_percentage = {
+      from: current?.deposit_percentage ? `${current.deposit_percentage}%` : 'not set (full payment)',
+      to: v === 100 ? 'full payment' : `${v}% deposit`,
+    };
+  }
+
+  if (Object.keys(proposed).length === 0) return { error: 'No real changes given.' };
+  return { changes: proposed };
+}
+
+export async function applyUpdateBookingRules(businessId: string, changes: BookingRuleChanges) {
+  const update: Record<string, unknown> = {};
+
+  if (changes.bufferMinutes !== undefined) {
+    const v = cleanBufferMinutes(changes.bufferMinutes);
+    if (v === undefined) return { error: 'Invalid buffer time.' };
+    update.buffer_minutes = v;
+  }
+  if (changes.depositPercentage !== undefined) {
+    const v = cleanDepositPercentage(changes.depositPercentage);
+    if (v === undefined) return { error: 'Invalid deposit percentage.' };
+    update.deposit_percentage = v;
+  }
+
+  if (Object.keys(update).length === 0) return { error: 'Nothing to update.' };
+
+  const { error } = await supabaseAdmin.from('booking_rules').update(update).eq('business_id', businessId);
+  if (error) return { error: "That didn't save - please try again." };
+  return { updated: true };
+}
+
 // --- Hours -------------------------------------------------------------
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
