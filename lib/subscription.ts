@@ -1,7 +1,7 @@
 // Client-safe only - no Supabase client, no service-role key. BillingManager
-// (a client component) imports MONTHLY_PRICE_NGN from here; anything with a
-// module-scope `createClient(..., SUPABASE_SERVICE_ROLE_KEY)` call belongs in
-// subscription-server.ts instead; SUPABASE_SERVICE_ROLE_KEY isn't
+// (a client component) imports PLAN_PRICE_NGN/PLAN_LABEL from here; anything
+// with a module-scope `createClient(..., SUPABASE_SERVICE_ROLE_KEY)` call
+// belongs in subscription-server.ts instead; SUPABASE_SERVICE_ROLE_KEY isn't
 // NEXT_PUBLIC_-prefixed, so it's undefined in a client bundle and crashes
 // the whole module at evaluation time - "supabaseKey is required" - the
 // instant anything client-side imports even one unrelated export from a
@@ -26,10 +26,6 @@ export const PLAN_LABEL: Record<Plan, string> = {
   core: 'Core',
   business_intelligence: 'Business Intelligence',
 };
-
-// Kept for existing call sites that only ever meant "the price" before
-// plans existed - equivalent to PLAN_PRICE_NGN.core.
-export const MONTHLY_PRICE_NGN = PLAN_PRICE_NGN.core;
 
 export type Subscription = {
   status: string;

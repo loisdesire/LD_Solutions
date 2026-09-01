@@ -23,11 +23,6 @@ export const labelClass = 'block text-[14px] font-medium text-ink-soft mb-1.5';
 export const iconBtnClass =
   'h-8 w-8 flex items-center justify-center rounded-lg border border-line-strong text-ink-soft hover:border-accent hover:text-accent transition-colors';
 
-export const pillClass = (active: boolean) =>
-  `px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
-    active ? 'bg-accent text-white' : 'text-ink-soft hover:text-ink bg-warm-surface'
-  }`;
-
 // The small "● Connected" badge next to a channel/integration name -
 // was the same literal class string retyped at 5 call sites
 // (BotIntegrationsSettings.tsx's WhatsApp/Telegram/Messenger sections,

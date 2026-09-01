@@ -1,7 +1,4 @@
 import OpenAI from 'openai';
-import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
-import { getBusinessTimezone } from './getBusinessTimezone';
-import { todayInTimezone } from './timezone';
 import {
   getRevenue,
   getTopCustomers,
@@ -16,15 +13,22 @@ import {
   getBillingStatus,
 } from './insightsTools';
 
-// Owner-facing counterpart to whatsappAgent.ts - same tool-calling loop
-// (shared via lib/agentLoop.ts), deliberately kept as a separate agent
-// rather than one that handles both customer and staff chat. Mixing them
-// would mean one system prompt and one set of reachable tools has to
-// simultaneously promise a customer "I'll never share other people's
-// information" and give a business owner exactly that; keeping them
+// Read-only owner/staff data tools, consumed by the one unified owner-
+// facing loop in assistantAgent.ts (runAssistantAgent), never by
+// whatsappAgent.ts's customer-facing loop. Deliberately kept on a
+// separate tool set rather than one shared with customer chat - mixing
+// them would mean one system prompt and one set of reachable tools has
+// to simultaneously promise a customer "I'll never share other people's
+// information" and give a business owner exactly that; keeping the two
 // structurally apart removes an entire class of prompt-injection/
 // scope-confusion risk rather than relying on the model to always pick
 // the right hat.
+//
+// This file used to run its own standalone agent loop (runInsightsAgent)
+// before assistantAgent.ts consolidated insights/reschedule/manage tools
+// into one owner-facing loop - removed as dead code (confirmed via
+// ts-prune and a full-codebase grep: nothing imported it) rather than
+// left as an unused second entry point into the same tools.
 export const INSIGHTS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
@@ -189,49 +193,4 @@ export async function executeInsightsTool(name: string, args: Record<string, unk
     default:
       return { error: `Unknown tool: ${name}` };
   }
-}
-
-export async function runInsightsAgent(params: {
-  businessId: string;
-  businessName: string;
-  history: AgentMessage[];
-  message: string;
-}): Promise<string> {
-  const { businessId, businessName, history, message } = params;
-
-  // Without this, "how much did I make this week" or "last month" gave
-  // the model nothing to compute those ranges from - it had no idea what
-  // today even was, so get_revenue's from/to args were pure guesswork.
-  const timeZone = await getBusinessTimezone(businessId);
-  const today = todayInTimezone(timeZone);
-
-  const systemPrompt = `You are the business-insights assistant for ${businessName}, talking directly to the
-business owner or staff - not a customer. Today's date is ${today} (business timezone: ${timeZone}) - use this
-to work out actual date ranges for relative questions like "this week," "last month," or "yesterday" before
-calling a tool; the tools only ever take explicit dates, never relative phrases. You have read-only access to
-this business's own booking and billing data via tools covering: revenue (including period-over-period
-comparison), top customers, one specific customer by name/phone, customers who haven't come back in a while,
-top services, cancellations/no-shows, busiest day/time, the next appointment, a quick snapshot, and this
-business's own subscription/billing status.
-
-Answer using the tools whenever the question needs real numbers - never estimate or make up figures. If a
-tool returns no data (e.g. no bookings yet), say so plainly rather than inventing an answer.
-
-Stay strictly in scope: only answer questions about this business's own bookings, customers, services, and
-revenue. You have no access to and must never speculate about other businesses, general business advice
-unrelated to this data, or anything outside what the tools return.
-
-Formatting: plain conversational text, no markdown asterisks or headers. Currency figures are in Naira - write
-them as ₦12,000 style. Keep answers concise and direct; this is a working dashboard chat, not a report.`;
-
-  return runToolAgent({
-    systemPrompt,
-    history,
-    message,
-    tools: INSIGHTS_TOOLS,
-    executeTool: (name, args) => executeInsightsTool(name, args, businessId),
-    // Deterministic backstop - the prompt already says "no markdown", but
-    // that isn't reliably followed on its own (see agentLoop.ts).
-    postProcess: stripMarkdown,
-  });
 }

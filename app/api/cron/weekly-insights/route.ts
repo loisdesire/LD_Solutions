@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email';
 import { renderEmail } from '@/lib/emailTemplate';
 import { buildWeeklyDigestRows, getWeeklyDigestRecipients } from '@/lib/weeklyInsightsDigest';
 import { SITE_URL } from '@/lib/site';
+import { verifyCronSecret } from '@/lib/verifyCronSecret';
 
 const BATCH_SIZE = 5; // concurrent sends - bounded so a large recipient list doesn't all hit Resend at once
 
@@ -13,8 +14,7 @@ const BATCH_SIZE = 5; // concurrent sends - bounded so a large recipient list do
 // their week - see lib/weeklyInsightsDigest.ts for what's in it and why
 // it's computed rather than AI-generated per send.
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!(await verifyCronSecret(req, 'weekly-insights'))) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 

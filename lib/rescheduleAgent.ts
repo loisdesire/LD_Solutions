@@ -1,17 +1,22 @@
 import OpenAI from 'openai';
-import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
-import { getBusinessTimezone } from './getBusinessTimezone';
-import { todayInTimezone } from './timezone';
 import { proposeReschedule, proposeBookingMove, applyReschedule } from './rescheduleTools';
 
-// Third owner-facing agent alongside lib/insightsAgent.ts (read-only
-// analytics) and lib/whatsappAgent.ts (customer-facing booking) - all
-// three share the same tool-calling loop (lib/agentLoop.ts) but stay
-// separate agents on purpose: insights promises "look but don't touch",
-// customer chat promises "never see another customer's data", and this
-// one is the one place that's allowed to move real bookings and message
-// real customers. Mixing that into either of the others would blur
-// exactly the guarantee each one is built to hold.
+// Tool set for moving real bookings and messaging real customers -
+// consumed by the one unified owner-facing loop in assistantAgent.ts
+// (runAssistantAgent) alongside lib/insightsAgent.ts's read-only
+// analytics tools and lib/manageAgent.ts's settings tools, never by
+// lib/whatsappAgent.ts's customer-facing loop. Kept on its own tool set
+// rather than merged into customer chat's tools for the same reason
+// insights is: mixing "this can move a real booking and message a real
+// customer" into the loop that promises a customer "I'll never see
+// another customer's data" would blur exactly the guarantee each side
+// is built to hold.
+//
+// This file used to run its own standalone agent loop (runRescheduleAgent)
+// before assistantAgent.ts consolidated insights/reschedule/manage tools
+// into one owner-facing loop - removed as dead code (confirmed via
+// ts-prune and a full-codebase grep: nothing imported it) rather than
+// left as an unused second entry point into the same tools.
 export const RESCHEDULE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
@@ -86,67 +91,4 @@ export async function executeRescheduleTool(name: string, args: Record<string, u
     default:
       return { error: `Unknown tool: ${name}` };
   }
-}
-
-export async function runRescheduleAgent(params: {
-  businessId: string;
-  businessName: string;
-  history: AgentMessage[];
-  message: string;
-}): Promise<string> {
-  const { businessId, businessName, history, message } = params;
-
-  // propose_reschedule only takes an explicit YYYY-MM-DD - without today's
-  // date anchored here, the model has no way to correctly turn "tomorrow"
-  // or "next Tuesday" into that explicit date before calling it.
-  const timeZone = await getBusinessTimezone(businessId);
-  const today = todayInTimezone(timeZone);
-
-  const systemPrompt = `You are the scheduling assistant for ${businessName}, talking directly to the business owner or staff.
-Today's date is ${today} (business timezone: ${timeZone}) - work out the actual date before calling
-propose_reschedule if the owner says something relative like "tomorrow" or "next Tuesday"; the tool only ever
-takes an explicit YYYY-MM-DD, never a relative phrase.
-
-You handle two kinds of change, and the same confirm-before-acting rule covers both:
-
-A. Blocking off a stretch of time (out sick, closing early, a public holiday) - use propose_reschedule with the
-   date and start/end of the window.
-B. Moving ONE named person's appointment ("move Ada to Monday") - use propose_booking_move with their name. If it
-   comes back needing disambiguation, show the owner the matches and ask which one; never pick for them.
-
-For A: when they need to block off time (they're out sick, closing early, a public holiday, etc.),
-you find every booking that falls inside that window, work out a new time for each one, and - only once they've
-explicitly approved the plan - move those bookings and message the affected customers.
-
-Strict two-step process, no exceptions:
-1. Call propose_reschedule to see the affected bookings and proposed new times. This never touches anything.
-2. Show the owner the plan in plain, clear language: who's affected, their old time, their new time (or "no slot
-   found" if one couldn't be found - say plainly that one needs manual handling). Ask them to confirm.
-3. Once the owner clearly says yes - whether that's in the very next message or a later one in this same
-   conversation - actually call apply_reschedule right then. Include plan_id only if you still have the exact
-   value from this conversation; otherwise call it with no arguments at all, which is expected, not an error to
-   route around - it resolves to the plan you just showed them. Do NOT just re-describe the same plan again
-   instead of calling the tool; a clear "yes" means call apply_reschedule immediately, not repeat yourself.
-   If they say no, or ask for changes, do NOT call apply_reschedule - propose a new/adjusted plan instead if asked.
-Never call apply_reschedule speculatively, "to save time," or before the owner has actually confirmed anything in
-this conversation. Moving a real customer's appointment and messaging them is not reversible in any friendly way -
-treat every apply_reschedule call as something you only do once the owner has clearly said yes to a plan you
-already showed them, but don't hesitate once they have.
-
-If the owner asks something unrelated to blocking off time / rescheduling, say this isn't what you're for - you
-don't have access to revenue or customer analytics (that's a separate part of the dashboard) and you don't handle
-general questions.
-
-Formatting: plain conversational text, no markdown asterisks or headers. Keep it concise and direct.`;
-
-  return runToolAgent({
-    systemPrompt,
-    history,
-    message,
-    tools: RESCHEDULE_TOOLS,
-    executeTool: (name, args) => executeRescheduleTool(name, args, businessId),
-    // Deterministic backstop - the prompt already says "no markdown", but
-    // that isn't reliably followed on its own (see agentLoop.ts).
-    postProcess: stripMarkdown,
-  });
 }

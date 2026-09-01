@@ -5,6 +5,7 @@ import { runWhatsappAgent } from '@/lib/whatsappAgent';
 import { sendWhatsappMessage } from '@/lib/channelSend';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { timingSafeEqualStrings } from '@/lib/timingSafeEqual';
 
 type MetaWebhookPayload = {
   entry?: Array<{
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('hub.verify_token');
   const challenge = req.nextUrl.searchParams.get('hub.challenge');
 
-  if (mode === 'subscribe' && token === process.env.META_WEBHOOK_VERIFY_TOKEN && challenge) {
+  if (mode === 'subscribe' && timingSafeEqualStrings(token, process.env.META_WEBHOOK_VERIFY_TOKEN) && challenge) {
     return new NextResponse(challenge, { status: 200 });
   }
   return new NextResponse('Forbidden', { status: 403 });

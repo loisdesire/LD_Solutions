@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { logError } from '@/lib/logger';
 import { notifyCustomer } from '@/lib/notifyCustomer';
 import { parseContact } from '@/lib/contact';
+import { verifyCronSecret } from '@/lib/verifyCronSecret';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,8 +21,7 @@ const BATCH_SIZE = 10; // concurrent sends - bounded so a large backlog doesn't 
 // with no email on file. reminder_sent_at still makes every booking
 // eligible exactly once, regardless of which channel actually sent it.
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!(await verifyCronSecret(req, 'send-reminders'))) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
