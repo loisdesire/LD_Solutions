@@ -297,24 +297,18 @@ export default function HoursManager({
                   give someone" otherwise. Example only (real duration
                   comes from whichever service a customer picks), labelled
                   as such. */}
+              {/* Was a wall of up to 12 individual chips - a real "what
+                  does this look like" sanity check, but a dump, not a
+                  glance. One line does the same job: how many, and the
+                  actual range, without laying out every single time. */}
               {(() => {
                 const preview = previewSlots(day.intervals);
                 return preview.length > 0 ? (
-                  <div className="mt-4 pt-4 border-t border-dashed border-line">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint mb-2">
-                      Example 30-min slots customers would see
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {preview.slice(0, 12).map((s) => (
-                        <span key={s} className="font-mono text-[11px] text-ink-soft bg-warm-surface rounded-full px-2.5 py-1">
-                          {s}
-                        </span>
-                      ))}
-                      {preview.length > 12 && (
-                        <span className="font-mono text-[11px] text-ink-faint px-1 py-1">+{preview.length - 12} more</span>
-                      )}
-                    </div>
-                  </div>
+                  <p className="mt-4 pt-4 border-t border-dashed border-line font-mono text-[11px] text-ink-faint">
+                    Customers would see about {preview.length} slot{preview.length === 1 ? '' : 's'}, from{' '}
+                    <span className="text-ink-soft">{preview[0]}</span> to{' '}
+                    <span className="text-ink-soft">{preview[preview.length - 1]}</span>.
+                  </p>
                 ) : null;
               })()}
             </div>

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import AssistantChat from './AssistantChat';
 import { ASSISTANT_SUGGESTIONS_CORE, ASSISTANT_SUGGESTIONS_FULL } from '@/lib/assistantSuggestions';
+import { useCloseOnBackButton } from '@/lib/useCloseOnBackButton';
+import { useKeyboardSafeInsets } from '@/lib/useKeyboardSafeInsets';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -31,6 +33,15 @@ export default function AdminAssistantWidget({
   initialMessages?: Message[];
 }) {
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -40,6 +51,14 @@ export default function AdminAssistantWidget({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+  // Same fix as WebChatWidget: the phone's back button used to fall
+  // through to real navigation instead of closing this.
+  useCloseOnBackButton(open, () => setOpen(false));
+
+  // Same fix as WebChatWidget: fixed inset-0 doesn't reliably resize for
+  // the on-screen keyboard on every mobile browser.
+  const keyboardInsets = useKeyboardSafeInsets(open && isMobile);
 
   // Same reasoning as WebChatWidget: below sm the panel takes over most
   // of the screen instead of sitting as a small corner card, so
@@ -92,6 +111,7 @@ export default function AdminAssistantWidget({
           role="dialog"
           aria-label={`Assistant for ${businessName}`}
           className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[560px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col"
+          style={isMobile && keyboardInsets ? { top: keyboardInsets.top, height: keyboardInsets.height } : undefined}
         >
           {/* Same header shape as WebChatWidget's own panel - a business
               mark + name up front, so it's unambiguous this is a different

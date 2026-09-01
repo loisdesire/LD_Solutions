@@ -161,6 +161,13 @@ export default function BookingForm({
   // as "No openings on this day", telling the customer the business was
   // full when it wasn't.
   const [slotsError, setSlotsError] = useState(false);
+  // A business open long hours with a short service and a small buffer
+  // can generate dozens of slots for one day - every one of them dumped
+  // into a wrapped grid of pills at once was genuinely overwhelming, not
+  // just "a lot of buttons". Capped per period by default; one tap
+  // reveals the rest, rather than hiding them behind repeated clicks.
+  const [showAllSlots, setShowAllSlots] = useState(false);
+  const SLOTS_PER_PERIOD_PREVIEW = 6;
 
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
@@ -568,72 +575,74 @@ export default function BookingForm({
 
       {step === 'service' && (
         <div className="animate-rise">
-          <h2 className="font-display text-[24px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">What would you like?</h2>
+          <h2 className="font-display text-[28px] sm:text-[34px] font-semibold text-ink mb-1.5 text-center tracking-[-0.01em]">What would you like?</h2>
           <p className="text-[14.5px] text-ink-faint mb-6 sm:mb-8 text-center">Choose what you&apos;d like to book for your visit</p>
           {services.length === 0 ? (
             <div className="max-w-lg mx-auto text-center py-12">
               <p className="text-ink-soft text-[14px]">No services are listed yet. If you know what you need, ask in the chat. We can still help.</p>
             </div>
           ) : (
-            // max-w-xl, matching steps 2 and 3 - was max-w-2xl here only, a
-            // visible column-width jump the instant you picked a service
-            // and the page moved on to the next step.
-            <div className="max-w-xl mx-auto border-y border-line">
+            // Card grid, not the flat menu this used to be - services can
+            // carry a real photo now, and a photo sitting at 56px in a row
+            // undersold it. A service with no image gets an icon tile
+            // instead of a blank space, so the grid stays even without
+            // forcing a fake photo where a business hasn't added one.
+            // Wider than steps 2/3 (max-w-3xl vs max-w-xl) on purpose now -
+            // two cards in a 576px column read as cramped on an actual
+            // desktop screen with room to spare. This does reintroduce a
+            // width change between steps (the thing max-w-xl was
+            // originally set to avoid), but narrowing from a grid into a
+            // single-column form as you progress reads as normal
+            // convergence, not the jarring "page suddenly got wider"
+            // regression that comment was guarding against.
+            <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {services.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => selectService(s)}
-                  className="group w-full flex items-center justify-between gap-4 py-5 px-1 text-left border-b border-line last:border-0 transition-colors hover:bg-warm-surface"
+                  className="group text-left rounded-2xl border border-line-strong bg-surface overflow-hidden transition-all hover:border-[var(--accent)] hover:shadow-[0_16px_32px_-16px_var(--accent-soft)] hover:-translate-y-0.5"
                 >
-                  <div className="flex items-center gap-4 min-w-0">
-                    {/* Optional - most services won't have one, and the row
-                        already reads fine without it (this is the flat-menu
-                        treatment the design brief specifically calls for).
-                        Shown when a business has actually added a photo, so
-                        a customer can see what they're booking rather than
-                        guessing from a name alone. */}
-                    {s.image_url && (
+                  {s.image_url ? (
+                    <div className="aspect-[4/3] w-full overflow-hidden bg-warm-surface">
                       <img
                         src={s.image_url}
                         alt=""
-                        className="hidden sm:block h-14 w-14 rounded-xl object-cover shrink-0 border border-line"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
+                    </div>
+                  ) : (
+                    <div
+                      className="aspect-[4/3] w-full flex items-center justify-center"
+                      style={{ background: 'var(--accent-soft)' }}
+                    >
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="16" rx="2" />
+                        <path d="M3 9.5H21" />
+                        <path d="M8 3V6.5M16 3V6.5" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-display text-[17px] font-semibold text-ink leading-tight mb-1">{s.name}</h3>
+                    {s.description && (
+                      <p className="text-[12.5px] text-ink-faint line-clamp-2 mb-2 leading-snug">{s.description}</p>
                     )}
-                    <div className="min-w-0">
-                      <h3 className="font-display text-[18px] font-semibold text-ink leading-tight">{s.name}</h3>
-                      <div className="flex items-center gap-1.5 text-ink-faint mt-1.5">
+                    <div className="flex items-center justify-between gap-2 mt-2">
+                      <span className="flex items-center gap-1.5 text-ink-faint shrink-0">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
                           <circle cx="12" cy="12" r="10" />
                           <path d="M12 6v6l4 2" />
                         </svg>
-                        <span className="text-[12.5px]">{formatDuration(s.duration_minutes)}</span>
-                      </div>
-                      {s.description && (
-                        <p className="text-[13px] text-ink-faint mt-1 line-clamp-1 max-w-xs">{s.description}</p>
+                        <span className="text-[12px]">{formatDuration(s.duration_minutes)}</span>
+                      </span>
+                      {s.price != null ? (
+                        <span className="font-display text-[15px] font-semibold" style={{ color: 'var(--accent)' }}>
+                          {formatMoney(s.price)}
+                        </span>
+                      ) : (
+                        <span className="text-[11.5px] font-medium text-ink-faint">Ask for pricing</span>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    {s.price != null ? (
-                      <span className="font-display text-[17px] font-semibold" style={{ color: 'var(--accent)' }}>
-                        {formatMoney(s.price)}
-                      </span>
-                    ) : (
-                      <span className="text-[12.5px] font-medium text-ink-faint">Ask for pricing</span>
-                    )}
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-ink-faint group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
-                    >
-                      <path d="M9 6l6 6-6 6" />
-                    </svg>
                   </div>
                 </button>
               ))}
@@ -664,7 +673,7 @@ export default function BookingForm({
 
       {step === 'datetime' && selectedService && (
         <div className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">When works for you?</h2>
+          <h2 className="font-display text-[28px] sm:text-[34px] font-semibold text-ink mb-1.5 text-center tracking-[-0.01em]">When works for you?</h2>
           <p className={`text-[14px] text-ink-faint text-center ${tzLabel ? 'mb-1' : 'mb-6'}`}>Select a date and an available slot</p>
           {tzLabel && (
             <p className="text-[13px] text-ink-faint mb-6 text-center">Times shown in {businessName}&rsquo;s timezone ({tzLabel})</p>
@@ -680,12 +689,13 @@ export default function BookingForm({
             </div>
           )}
 
-          <div className="rounded-2xl bg-surface border border-line p-4 mb-6">
+          <div className="rounded-2xl bg-surface border border-line shadow-soft p-4 sm:p-5 mb-6">
             <CalendarPicker
               selectedDate={selectedDate}
               onChange={(d) => {
                 setSelectedDate(toDateStr(d));
                 setSelectedSlot('');
+                setShowAllSlots(false);
               }}
               today={today}
               maxDate={maxDate}
@@ -752,13 +762,33 @@ export default function BookingForm({
             </div>
           ) : (
             <div className="space-y-5 mb-6">
-              {slotGroups.map(([period, times]) => (
+              {slotGroups.map(([period, times]) => {
+                // Selected slot always stays visible, even collapsed - a
+                // customer who already picked 6:40 PM shouldn't see their
+                // own choice vanish behind "+18 more" on re-render.
+                const overflow = !showAllSlots && times.length > SLOTS_PER_PERIOD_PREVIEW;
+                const visible = overflow
+                  ? Array.from(new Set([...times.slice(0, SLOTS_PER_PERIOD_PREVIEW), ...(selectedSlot && times.includes(selectedSlot) ? [selectedSlot] : [])]))
+                  : times;
+                return (
                 <div key={period}>
-                  <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint mb-2.5">
-                    {period}
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint">
+                      {period}
+                    </div>
+                    {overflow && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSlots(true)}
+                        className="text-[12px] font-semibold px-1"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        +{times.length - visible.length} more
+                      </button>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {times.map((t) => {
+                    {visible.map((t) => {
                       const isSel = t === selectedSlot;
                       return (
                         <button
@@ -777,7 +807,7 @@ export default function BookingForm({
                               ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
                               : undefined
                           }
-                          className={`min-w-[76px] py-3 px-3.5 min-h-[44px] text-[13.5px] font-medium tabular-nums border rounded-lg transition-all duration-150 ${
+                          className={`min-w-[76px] py-3 px-3.5 min-h-[44px] text-[13.5px] font-medium tabular-nums border rounded-xl transition-all duration-150 ${
                             isSel
                               ? 'animate-punch border-transparent'
                               : 'border-line-strong bg-surface text-ink hover:border-[var(--accent)] hover:bg-warm-surface active:scale-95'
@@ -789,7 +819,8 @@ export default function BookingForm({
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -817,7 +848,7 @@ export default function BookingForm({
 
       {step === 'details' && selectedService && selectedSlot && (
         <form onSubmit={handleSubmit} className="animate-rise max-w-xl mx-auto">
-          <h2 className="font-display text-[26px] sm:text-[30px] font-semibold text-ink mb-1.5 text-center">Almost there</h2>
+          <h2 className="font-display text-[28px] sm:text-[34px] font-semibold text-ink mb-1.5 text-center tracking-[-0.01em]">Almost there</h2>
           <p className="text-[14px] text-ink-faint mb-6 text-center">We&apos;ll send your confirmation here</p>
 
           <div className="space-y-4 mb-6">

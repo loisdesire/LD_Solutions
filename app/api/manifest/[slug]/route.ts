@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   const accent = data?.business.accent_color || '#C74A1E';
 
   const manifest = {
-    name: `${name} — Vanova`,
+    name: `${name} · Vanova`,
     short_name: name.length > 12 ? `${name.slice(0, 11)}…` : name,
     description: `Manage bookings, services and customers for ${name}.`,
     start_url: `/${slug}/admin`,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useCloseOnBackButton } from '@/lib/useCloseOnBackButton';
 
 // Every overlay in this app - the new-appointment modal, the conversation
 // drawer, the gallery lightbox, the chat panel, the mobile menus - was
@@ -27,6 +28,15 @@ export function useDialog(open: boolean, onClose: () => void) {
   const restoreTo = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+
+  // Every one of this hook's callers is exactly the kind of overlay
+  // where a phone's back button/gesture should close it, not navigate
+  // the browser away from the page underneath - one fix here covers all
+  // of them (the appointment modal, the conversation drawer, the gallery
+  // lightbox, every ConfirmDialog use, etc.) instead of eight separate
+  // ones. See lib/useCloseOnBackButton.ts for how this avoids a real
+  // navigation.
+  useCloseOnBackButton(open, () => onCloseRef.current());
 
   useEffect(() => {
     if (!open) return;

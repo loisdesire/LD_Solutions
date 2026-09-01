@@ -362,6 +362,14 @@ export default function AssistantChat({
             enterKeyHint="send"
             aria-label="Ask your assistant"
             placeholder={inputPlaceholder}
+            // Same fix as WebChatWidget's input - an unnamed text input
+            // with no autocomplete hint was getting swept into
+            // password-manager heuristics on some mobile browsers.
+            name="assistant-message"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore=""
+            data-form-type="other"
             className="flex-1 min-w-0 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[14px] outline-none focus:border-accent transition-colors"
           />
           <button

@@ -2,12 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// The owner-side echo of SelfBookingDemo - that one shows a customer
-// talking to the AI to book; this shows the business owner talking to the
-// SAME kind of assistant to run their business. Deliberately built the
-// same way (same bubble shapes, same outcome-card pattern, same reveal
-// timing) so the two read as one continuous idea told from both sides,
-// not two unrelated demos.
+// Shows the business owner talking to the same kind of assistant a
+// customer talks to elsewhere on the site to book (WebChatWidget), but
+// here to run their business instead - same bubble shapes, same outcome-
+// card pattern, so it reads as one continuous idea told from both sides.
 //
 // The script matters more than the mechanics here - a first draft that
 // just echoed the owner's exact words back ("Add X, 60 min, ₦15,000" ->
@@ -23,7 +21,7 @@ type Step =
 
 const SCRIPT: Step[] = [
   { kind: 'user', text: 'Add gel manicures, 45 mins, 8k' },
-  { kind: 'assistant', text: 'Got it — Gel Manicure, 45 min, ₦8,000. Want a quick description too, or just save it?' },
+  { kind: 'assistant', text: 'Got it: Gel Manicure, 45 min, ₦8,000. Want a quick description too, or just save it?' },
   { kind: 'user', text: 'Just save it' },
   { kind: 'assistant', text: "Done! It's live on your booking page 🎉" },
   { kind: 'saved' },
@@ -125,10 +123,10 @@ export default function OwnerChatDemo() {
 
       <div className="px-5 pt-3 border-t border-line">
         <p className="font-mono text-[10px] text-ink-faint mb-3">
-          {saved ? 'No form. No settings page. Just told it what to do.' : 'Example conversation — see how it works.'}
+          {saved ? 'No form. No settings page. Just told it what to do.' : 'Example conversation, see how it works.'}
         </p>
-        {/* Decorative, not a real input - matches SelfBookingDemo's own
-            fake input bar exactly, same rounded pill, same send button. */}
+        {/* Decorative, not a real input - same rounded pill and send
+            button as WebChatWidget's real one. */}
         <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 mb-4">
           <span className="flex-1 text-[13px] text-ink-faint">Type a message…</span>
           <span

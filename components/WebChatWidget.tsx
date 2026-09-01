@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useCloseOnBackButton } from '@/lib/useCloseOnBackButton';
+import { useKeyboardSafeInsets } from '@/lib/useKeyboardSafeInsets';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -85,6 +87,30 @@ export default function WebChatWidget({
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tracked reactively (not just read once) since rotating the phone or
+  // resizing a browser window can cross the breakpoint while the chat is
+  // still open.
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // The phone's back button/gesture used to fall through to real browser
+  // navigation - closing the chat had no handler for it at all, so it
+  // took someone straight off the page they were trying to book on.
+  useCloseOnBackButton(open, () => setOpen(false));
+
+  // On mobile the panel is a full-viewport takeover (see className below);
+  // `fixed inset-0` doesn't reliably resize when the keyboard opens on
+  // every mobile browser, so the header/close button could end up pushed
+  // out of the visible area with no way back to it. Only active on mobile
+  // while open - desktop's small corner card never needs this.
+  const keyboardInsets = useKeyboardSafeInsets(open && isMobile);
 
   useEffect(() => {
     setSessionId(getSessionId(businessId));
@@ -273,14 +299,17 @@ export default function WebChatWidget({
           role="dialog"
           aria-label={`Chat with ${businessName ?? 'us'}`}
           className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[520px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border border-line shadow-card flex flex-col overflow-hidden animate-rise"
+          style={isMobile && keyboardInsets ? { top: keyboardInsets.top, height: keyboardInsets.height } : undefined}
         >
-          {/* Matches SelfBookingDemo's header exactly, on purpose - that's
-              the "new chatbot" look: a solid accent avatar carrying the
+          {/* The "new chatbot" look: a solid accent avatar carrying the
               business's own initial (a brand mark, not a generic chat
               icon), the name up front, and a real status pill instead of
               a static "usually replies instantly" line - this widget is
               genuinely always on, so it says so plainly rather than
-              hedging. */}
+              hedging. A real close button now too - the FAB that opens/
+              closes this hides itself on mobile while open (see its own
+              className), so without this there was genuinely no way to
+              exit except the back button, which had its own bug. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
               {businessName?.[0]?.toUpperCase() ?? '?'}
@@ -290,12 +319,19 @@ export default function WebChatWidget({
               <p className="text-[10.5px] text-ink-faint">Chat on the booking page</p>
             </div>
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold shrink-0"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               Online
             </span>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Close chat"
+              className="sm:hidden h-8 w-8 flex items-center justify-center rounded-full text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -354,6 +390,17 @@ export default function WebChatWidget({
                 }}
                 aria-label="Type a message"
                 placeholder="Type a message…"
+                // A lone, auto-focused text input with no name/autocomplete
+                // hint was getting swept into password-manager heuristics
+                // on some mobile browsers - the "looks like it wants a
+                // password" report. name + autoComplete="off" plus the
+                // ignore hints the major password managers actually
+                // respect (LastPass/1Password/Dashlane) rule this out.
+                name="chat-message"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore=""
+                data-form-type="other"
                 className="flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-[14px] text-ink placeholder-ink-faint"
               />
               <button

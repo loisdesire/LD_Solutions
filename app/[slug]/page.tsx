@@ -206,77 +206,48 @@ export default async function BusinessBookingPage({
             <h1 className="font-display text-[32px] sm:text-[52px] font-semibold leading-[1.05]">
               Book with {business.name}
             </h1>
+            {/* One compact line instead of an icon+text pair sitting next
+                to a separate status pill - two visually distinct chunks
+                doing one job (telling you the hours) read as more than
+                they needed to. A single dot + line does the same job at
+                half the visual weight. */}
             {hoursSummary && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-5 sm:mt-6 text-white/90">
-                <div className="flex items-center gap-2.5">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                  <span className="text-[14px]">{hoursSummary}</span>
-                </div>
-                {/* Computed from today's actual hours in the business's own
-                    timezone, not just the static weekly summary - a
-                    visitor landing outside hours could see "Mon-Fri ·
-                    9 AM-6 PM" and still not know at a glance whether now
-                    counts. */}
-                <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
-                  style={
-                    isOpenNow
-                      ? { background: 'rgba(255,255,255,0.9)', color: 'var(--accent)' }
-                      : { background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.5)' }
-                  }
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${isOpenNow ? 'bg-current' : 'bg-white/70'}`} />
-                  {isOpenNow ? 'Open now' : 'Closed now'}
-                </span>
+              <div className="flex items-center gap-2 mt-4 sm:mt-5 text-white/90 text-[13.5px]">
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isOpenNow ? 'bg-current' : 'bg-white/50'}`} style={isOpenNow ? { color: 'var(--accent-contrast)' } : undefined} />
+                <span className="font-semibold">{isOpenNow ? 'Open now' : 'Closed now'}</span>
+                <span aria-hidden="true">·</span>
+                <span>{hoursSummary}</span>
               </div>
             )}
 
-            {/* The deterministic form is the primary conversion path. Chat
-                remains easy to discover for customers who prefer it, but
-                no longer competes at equal visual weight with two other
-                booking entry points (the form CTA and floating widget). */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 sm:mt-8">
+            {/* Down to one CTA - a second full-weight button for chat
+                doubled the visual weight of this row for something the
+                floating chat bubble (always present, bottom-right) already
+                covers on its own. Price folded in as a small caption right
+                under the one button that matters, not a separate row. */}
+            <div className="mt-6 sm:mt-8">
               <a
                 href="#book"
-                className="w-full sm:w-auto px-6 py-3 min-h-[48px] flex items-center justify-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
+                className="w-full sm:w-auto px-7 py-3.5 min-h-[48px] flex items-center justify-center rounded-full font-semibold text-[14px] transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: 'var(--accent-contrast)', color: 'var(--accent)', textShadow: 'none' }}
               >
                 Book an appointment
               </a>
-              <a
-                href="#chat"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 min-h-[48px] rounded-full font-medium text-[14px] transition-colors hover:bg-white/10 active:scale-95"
-                style={{ color: '#fff', textShadow: 'none' }}
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M4 4h16v12H8l-4 4V4z" />
-                  <path d="M8 9h8M8 12h5" />
-                </svg>
-                Prefer to chat? Ask our AI
-              </a>
+              {(startingPrice != null || requirePayment) && (
+                <p className="text-[13px] text-white/80 mt-2.5">
+                  {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
+                  {startingPrice != null && requirePayment && ' · '}
+                  {requirePayment && (
+                    <>
+                      {rules?.deposit_percentage != null && rules.deposit_percentage < 100
+                        ? `${rules.deposit_percentage}% deposit`
+                        : 'Payment'}{' '}
+                      required to confirm
+                    </>
+                  )}
+                </p>
+              )}
             </div>
-
-            {/* Price and payment expectations before commitment, not just
-                after picking a service three steps into the form below -
-                the two questions a first-time visitor actually has before
-                they'll click "Book". */}
-            {(startingPrice != null || requirePayment) && (
-              <p className="text-[14px] text-white/85 mt-4">
-                {startingPrice != null && <>From {formatMoney(startingPrice)}</>}
-                {startingPrice != null && requirePayment && ' · '}
-                {requirePayment && (
-                  <>
-                    {rules?.deposit_percentage != null && rules.deposit_percentage < 100
-                      ? `${rules.deposit_percentage}% deposit`
-                      : 'Payment'}{' '}
-                    required to confirm
-                  </>
-                )}
-              </p>
-            )}
           </div>
         </div>
       </section>

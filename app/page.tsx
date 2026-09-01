@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
-import SlotGrid from '@/components/SlotGrid';
-import SelfBookingDemo from '@/components/SelfBookingDemo';
 import OwnerChatDemo from '@/components/OwnerChatDemo';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import DashboardPreview from '@/components/DashboardPreview';
@@ -75,7 +73,7 @@ const features = [
       </svg>
     ),
     title: 'Customers just ask',
-    description: 'No forms, no menus. They type what they want, the AI checks real availability and books it.',
+    description: 'No forms, no menus. They ask, it checks, it books.',
   },
   {
     icon: (
@@ -84,8 +82,8 @@ const features = [
         <path d="M3 9h18M8 2v4M16 2v4" />
       </svg>
     ),
-    title: 'Real-time availability',
-    description: 'Respects your hours, buffer times, and existing bookings. No double-bookings, ever.',
+    title: 'Never double-books',
+    description: 'Checks your hours, buffers, and existing bookings before confirming anything.',
   },
   {
     icon: (
@@ -94,8 +92,8 @@ const features = [
         <path d="M3 7l9 6 9-6" />
       </svg>
     ),
-    title: 'Automatic confirmations',
-    description: 'The moment someone books, they get an email confirming it. You never have to follow up.',
+    title: 'Confirms itself',
+    description: 'They get an email the moment they book. You never follow up.',
   },
   {
     icon: (
@@ -106,8 +104,8 @@ const features = [
         <rect x="14" y="13" width="7" height="7" rx="1.5" />
       </svg>
     ),
-    title: 'Every booking, one dashboard',
-    description: 'Website or Telegram - wherever the message came from, it lands in the same place.',
+    title: 'Lands in one dashboard',
+    description: 'Website or Telegram, it all lands in the same place.',
   },
   {
     icon: (
@@ -118,19 +116,22 @@ const features = [
         <circle cx="15.5" cy="13" r="1.2" fill="currentColor" stroke="none" />
       </svg>
     ),
-    title: 'Styled for your business',
-    description: 'Use your logo, accent color, cover image, content, and URL on a booking page that keeps your business front and centre.',
+    title: 'Looks like your business',
+    description: 'Your logo, colors, and content, all yours.',
   },
   {
+    // Was "Team management" - a real feature, but the most generic of the
+    // six and the least tied to what actually sets Vanova apart. The
+    // owner-side chat (OwnerChatDemo, right above this section) had a full
+    // dedicated demo but wasn't in this summary anywhere - swapped in here
+    // so the grid actually accounts for its own hero moment.
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="11" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M17 3.13A4 4 0 0117 11" />
+        <path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 018.5-8.5h.5a8.48 8.48 0 018 8v.5z" />
       </svg>
     ),
-    title: 'Team management',
-    description: 'Invite staff by email, manage roles, and let your whole team work off one shared calendar.',
+    title: 'Run your business by chat',
+    description: 'Add a service, change your hours. Just tell your assistant.',
   },
 ];
 
@@ -216,61 +217,46 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero - went through an asymmetric/offset composition first
-          (headline spanning full width on top, demo card offset below-
-          right) to prove genuine compositional change rather than a
-          recolored version of the old flush grid. In practice, from an
-          actual screenshot, that read as two disconnected pieces with a
-          big gap between them and made the page shape ungainly - a huge
-          headline block, then a lopsided section under it. Back to a
-          side-by-side layout, but not the SAME one: the distinctiveness
-          now lives in the demo card itself (rotated, a floating proof
-          chip breaking its corner, the SlotGrid signature behind it),
-          not in fighting the two-column-ness of a hero, which is a
-          legible, well-established pattern for a reason. */}
-      <section className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-10 sm:pt-20 pb-12 sm:pb-20 overflow-hidden">
-        <div className="hidden lg:block absolute -right-[6%] top-0 w-[52%] h-full -z-10">
-          <SlotGrid className="h-full" />
-        </div>
+      {/* Hero - third structural pass. A two-column layout with a demo
+          visual on the right (chat replay, then a stat card, then a
+          calendar) never landed after three genuinely different attempts -
+          each one either repeated a beat another section already covers or
+          just didn't read as attractive/legible on its own. Rather than a
+          fourth guess, this drops the visual entirely: centered headline,
+          subhead, and CTAs, nothing competing for attention before the
+          visitor has even decided to care. Plenty of strong SaaS pages
+          carry a hero on copy and a clear CTA alone. */}
+      <section className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-10 sm:pt-20 pb-12 sm:pb-20 text-center">
+        <Reveal eager>
+          <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 mx-auto text-[clamp(2.2rem,4vw,3.3rem)]">
+            An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
+          </h1>
 
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1fr] lg:gap-14 items-center">
-          <Reveal eager>
-            <h1 className="font-display leading-[1.05] tracking-[-0.03em] font-semibold text-ink mb-4 sm:mb-5 max-w-[560px] text-[clamp(2.2rem,4vw,3.3rem)]">
-              An AI receptionist that <span style={{ color: 'var(--accent)' }}>actually books</span> the appointment.
-            </h1>
+          <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-md mx-auto">
+            Customers ask for a time on your website or Telegram. Vanova checks your real
+            calendar and confirms it, no back-and-forth, 24/7.
+          </p>
 
-            <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-6 sm:mb-8 max-w-md">
-              Customers ask for a time on your website or Telegram. Vanova checks your real
-              calendar and confirms it, no back-and-forth, 24/7.
-            </p>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-center sm:gap-3.5">
-              <Button href="/signup" size="lg" className="justify-center w-full">
-                Start free<span className="hidden sm:inline">&nbsp;for 14 days</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </Button>
-              <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center w-full">
-                Try live demo
-              </Button>
-            </div>
-
-            <a
-              href="/api/demo-login"
-              className="inline-flex items-center gap-1.5 mt-4 text-[14px] font-medium text-ink-faint hover:text-ink transition-colors text-left"
-            >
-              Or explore the dashboard - no signup needed
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-            </a>
-          </Reveal>
-
-          <div className="relative">
-            <Reveal eager delay={120} className="relative">
-              <SelfBookingDemo />
-            </Reveal>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3.5">
+            <Button href="/signup" size="lg" className="justify-center w-full sm:w-auto">
+              Start free<span className="hidden sm:inline">&nbsp;for 14 days</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </Button>
+            <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center w-full sm:w-auto">
+              Try live demo
+            </Button>
           </div>
-        </div>
+
+          <a
+            href="/api/demo-login"
+            className="inline-flex items-center gap-1.5 mt-4 text-[14px] font-medium text-ink-faint hover:text-ink transition-colors"
+          >
+            Or explore the dashboard, no signup needed
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
+          </a>
+        </Reveal>
       </section>
 
       {/* Product proof through the actual system loop—not invented customer
@@ -302,7 +288,7 @@ export default function LandingPage() {
           {/* Each card now shows the actual moment, not just a description of
               it - a real chat bubble, a real checklist, a real "held" chip, a
               real confirmed-booking chip, styled off the same product these
-              represent (WebChatWidget's bubbles, SelfBookingDemo's booked
+              represent (WebChatWidget's bubbles, OwnerChatDemo's booked
               chip) rather than four identical paragraph blocks. Numbered
               because this genuinely is a sequence, not decoration - no
               connecting arrows between them, the moments read as a sequence
@@ -416,10 +402,11 @@ export default function LandingPage() {
             <h2 className="font-display text-[2.1rem] sm:text-5xl text-ink mb-4 sm:mb-5 leading-[0.95] tracking-[-0.04em]">
               Your whole day, <span className="italic" style={{ color: 'var(--accent)' }}>at a glance.</span>
             </h2>
+            {/* Was three stacked clauses ("what's coming up, who's next, how
+                the day is shaping up") describing exactly what the mockup
+                on the right already shows - the image does that job now. */}
             <p className="text-[15px] text-ink-soft leading-relaxed mb-0 max-w-md">
-              Once the AI books an appointment, it appears here automatically. See what&rsquo;s
-              coming up, who&rsquo;s next, and how the day is shaping up without chasing messages
-              or checking calendars.
+              Once the AI books an appointment, it appears here automatically. Nothing to chase, nothing to check.
             </p>
           </Reveal>
           <Reveal delay={100}>
@@ -436,8 +423,7 @@ export default function LandingPage() {
             Same question. <span style={{ color: 'var(--accent)' }}>Very different wait.</span>
           </h2>
           <p className="text-[15px] text-ink-soft leading-relaxed">
-            This is the actual difference an AI receptionist makes, not a feature list, just
-            the same customer asking the same thing.
+            The same customer, asking the same question, with and without Vanova.
           </p>
         </Reveal>
         <Reveal delay={80}>
@@ -465,16 +451,19 @@ export default function LandingPage() {
                 <br />
                 You just <span className="italic" style={{ color: 'var(--accent)' }}>say what you need.</span>
               </h2>
+              {/* Was three sentences re-explaining what the chat demo right
+                  next to it already shows in action - "no settings page to
+                  hunt through" and "shows you what's about to change" are
+                  both just narrated versions of what's happening in the
+                  demo. One line is enough; the demo does the rest. */}
               <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed mb-7 max-w-md">
-                Add a service, change your hours, update your profile - straight from a chat, right on your
-                dashboard. No settings page to hunt through. Tell it what you want, it shows you exactly what&rsquo;s
-                about to change, and only saves once you say yes.
+                Add a service, change your hours, update your profile, straight from a chat on your dashboard.
               </p>
               <div className="flex flex-wrap gap-2">
                 {[
                   '"We\'re open till 8 on Fridays now"',
                   '"Turn on payments for bookings"',
-                  '"Change my logo" - just attach the photo',
+                  '"Update my logo, just uploaded it"',
                 ].map((example) => (
                   <span
                     key={example}
@@ -532,9 +521,12 @@ export default function LandingPage() {
           <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-3 leading-snug lg:whitespace-nowrap">
             Built for businesses that <span className="italic">take appointments.</span>
           </h2>
+          {/* Examples dropped - the pill row right below already names eight
+              business types; naming four more here just before it was the
+              exact "text re-explains what the visual already shows" pattern
+              trimmed elsewhere on this page. */}
           <p className="text-[15px] text-ink-soft leading-relaxed">
-            Whether you run a salon, clinic, tutoring service, or consulting practice,
-            if your customers need to book time with you, this is for you.
+            If your customers need to book time with you, this is for you.
           </p>
         </Reveal>
         <Reveal delay={80} className="flex flex-wrap justify-center gap-3">
