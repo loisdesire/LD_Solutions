@@ -154,14 +154,15 @@ export default async function BusinessBookingPage({
           photo being boxed in to match it. */}
       <section className="relative">
         <div className="relative overflow-hidden bg-surface shadow-card">
-          {/* min-h-[70vh], not the full calc(100dvh-64px) this briefly was -
-              filling the entire screen below the nav made a real cover
-              photo (not an abstract pattern - actual chairs/pillars/floor)
-              stretch into a tall, repetitive, oddly-proportioned strip
-              once seen live on a wide desktop screen. Still a big,
-              confident hero (70% of the viewport), just not stretched
-              past what the photo's own composition can carry. */}
-          <div className="relative min-h-[70vh]">
+          {/* min-h-[54vh] on mobile, min-h-[70vh] from sm up - a flat 70vh
+              on a phone pushed the very next section (the "3 simple
+              steps" eyebrow starting step 1) to land half-cut-off at the
+              bottom edge of the screen, which read as broken/cropped
+              rather than "scroll for more". Shorter on the smallest
+              screens, where there's also the least room to spare;
+              unchanged on a wide desktop screen where the photo has real
+              composition to fill. */}
+          <div className="relative min-h-[54vh] sm:min-h-[70vh]">
             <div className="absolute inset-0 z-0">
               {business.cover_image_url ? (
                 <>
@@ -199,7 +200,7 @@ export default async function BusinessBookingPage({
               />
             </div>
 
-            <div className="relative z-10 flex min-h-[70vh] items-center p-4 sm:p-6 lg:p-8">
+            <div className="relative z-10 flex min-h-[54vh] sm:min-h-[70vh] items-center p-4 sm:p-6 lg:p-8">
               <div className="w-full max-w-6xl mx-auto">
               {/* Centered now, not left/bottom-anchored - with the section
                   actually filling real vertical space (70vh) on a wide
