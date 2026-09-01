@@ -263,43 +263,64 @@ export default function SlotTimePicker({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Select a time">
+        // Same real-overlay shape as every other dialog in this app
+        // (NewAppointmentModal etc.) - a full-screen sheet below sm, no
+        // backdrop gap, no corner radius fighting the viewport edge, so
+        // it reads as a genuine takeover rather than a small card
+        // floating in the middle of the screen. A darker, blurred
+        // backdrop covers the entire viewport underneath it and closes
+        // the picker on tap - nothing behind it is reachable while open.
+        <div className="fixed inset-0 z-[70] flex items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label="Select a time">
           <div
             className="absolute inset-0 backdrop-blur-sm animate-fade"
-            style={{ background: 'color-mix(in srgb, var(--ink) 45%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--ink) 55%, transparent)' }}
             onClick={close}
           />
           <div
             ref={popupRef}
             onKeyDown={handlePopupKeyDown}
-            className="relative w-full max-w-[300px] rounded-3xl bg-surface border-2 border-line-strong shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise p-5"
+            className="relative w-full h-full sm:h-auto sm:max-w-sm rounded-none sm:rounded-3xl bg-surface border-line sm:border-2 shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise flex flex-col"
           >
-            <p className="text-center font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-4">
-              Scroll to a time
-            </p>
-            <div className="flex items-center justify-center gap-1.5">
-              <Wheel
-                items={availableHours.map((h) => ({ key: String(h), label: formatHourLabel(h) }))}
-                index={hourIdx}
-                onSettle={setHourIdx}
-                ariaLabel="Hour"
-              />
-              <span className="font-display text-[20px] font-bold text-ink-faint pb-0.5" aria-hidden="true">:</span>
-              <Wheel
-                items={minutesForHour.map((t) => ({ key: t, label: formatMinuteLabel(t) }))}
-                index={minuteIdx}
-                onSettle={setMinuteIdx}
-                ariaLabel="Minute"
-              />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
+              <h2 className="font-display text-[17px] font-semibold text-ink">Select a time</h2>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close"
+                className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={close}
-              className="w-full mt-5 py-3 text-[14px] font-semibold text-accent-contrast rounded-full transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ background: 'var(--accent)' }}
-            >
-              Done
-            </button>
+
+            <div className="flex-1 flex items-center justify-center px-5 py-12 sm:py-10">
+              <div className="flex items-center justify-center gap-1.5">
+                <Wheel
+                  items={availableHours.map((h) => ({ key: String(h), label: formatHourLabel(h) }))}
+                  index={hourIdx}
+                  onSettle={setHourIdx}
+                  ariaLabel="Hour"
+                />
+                <span className="font-display text-[20px] font-bold text-ink-faint pb-0.5" aria-hidden="true">:</span>
+                <Wheel
+                  items={minutesForHour.map((t) => ({ key: t, label: formatMinuteLabel(t) }))}
+                  index={minuteIdx}
+                  onSettle={setMinuteIdx}
+                  ariaLabel="Minute"
+                />
+              </div>
+            </div>
+
+            <div className="px-5 pb-6 pt-3 sm:pb-5 border-t border-line shrink-0">
+              <button
+                type="button"
+                onClick={close}
+                className="w-full py-3.5 text-[14px] font-semibold text-accent-contrast rounded-full transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ background: 'var(--accent)' }}
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
