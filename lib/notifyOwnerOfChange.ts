@@ -135,6 +135,18 @@ export function describeManageToolChange(name: string, args: Record<string, unkn
           { label: 'When', value: String(args.remind_at) },
         ],
       };
+    case 'apply_email_customer':
+      // Same oversight reasoning as every other entry here - relevant
+      // even more so on this one, since a staff member emailing a
+      // customer directly is exactly the kind of thing an owner who
+      // wasn't the one chatting would want visibility into.
+      return {
+        intro: 'An email was sent to a customer.',
+        rows: [
+          { label: 'To', value: String(args.customer_name) },
+          { label: 'Subject', value: String(args.subject) },
+        ],
+      };
     default:
       return null;
   }

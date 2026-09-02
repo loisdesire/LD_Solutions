@@ -14,6 +14,8 @@ import {
   applyUpdateHours,
   proposeCreateReminder,
   applyCreateReminder,
+  proposeEmailCustomer,
+  applyEmailCustomer,
 } from './manageTools';
 
 // Tool schemas + dispatcher for "manage your business by chat" - the third
@@ -313,6 +315,40 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'propose_email_customer',
+      description:
+        "Work out what an email to one specific customer would look like - who it's actually going to (resolved from their name), the subject, and the message. Read-only, sends nothing yet. Only for ONE named customer - there is no tool for emailing a group or everyone at once.",
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string', description: "The customer's name, or enough of it to search for." },
+          subject: { type: 'string', description: 'A real subject line, 1-150 characters.' },
+          message: { type: 'string', description: "The email body, in the owner's own words - write it as they dictated it, don't invent content they didn't ask for." },
+        },
+        required: ['customer_name', 'subject', 'message'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_email_customer',
+      description:
+        'Actually sends the email. Only call this after they have explicitly confirmed the exact plan propose_email_customer just showed them - pass the same values.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string' },
+          subject: { type: 'string' },
+          message: { type: 'string' },
+        },
+        required: ['customer_name', 'subject', 'message'],
+      },
+    },
+  },
 ];
 
 export async function executeManageTool(name: string, args: Record<string, unknown>, businessId: string) {
@@ -393,6 +429,10 @@ export async function executeManageTool(name: string, args: Record<string, unkno
       return proposeCreateReminder(businessId, { message: args.message, remindAt: args.remind_at });
     case 'apply_create_reminder':
       return applyCreateReminder(businessId, { message: args.message, remindAt: args.remind_at });
+    case 'propose_email_customer':
+      return proposeEmailCustomer(businessId, { customerName: args.customer_name, subject: args.subject, message: args.message });
+    case 'apply_email_customer':
+      return applyEmailCustomer(businessId, { customerName: args.customer_name, subject: args.subject, message: args.message });
     default:
       return { error: `Unknown tool: ${name}` };
   }

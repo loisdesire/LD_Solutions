@@ -3,6 +3,8 @@ import { formatMoney } from './formatMoney';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { to24Hour, formatLocalDateTime } from './formatDateTime';
 import { verifyBusinessMediaUrl } from './verifyBusinessMediaUrl';
+import { sendEmail } from './email';
+import { renderEmail } from './emailTemplate';
 
 // Owner-facing, write-capable - "manage your business by chat" instead of
 // the Services form and the Settings toggles. Same two-step shape as
@@ -753,4 +755,112 @@ export async function applyCreateReminder(businessId: string, args: { message: u
 
   const timeZone = await getBusinessTimezone(businessId);
   return { applied: true, message, remind_at: formatLocalDateTime(remindAt, timeZone) };
+}
+
+// There's no separate `customers` table - identity only ever lives on the
+// bookings a person actually made, so "find a customer by name" means
+// "find the most recent booking(s) with a matching name and read their
+// contact info off it." Deduped by email (not by name - two different
+// "Chioma"s are two different people, one "Chioma" who once mistyped her
+// email is still one person, best represented by whichever email she used
+// most recently).
+async function findCustomerByName(businessId: string, name: string): Promise<{ name: string; email: string | null }[]> {
+  const { data } = await supabaseAdmin
+    .from('bookings')
+    .select('customer_name, customer_email, start_time')
+    .eq('business_id', businessId)
+    .ilike('customer_name', `%${name}%`)
+    .order('start_time', { ascending: false })
+    .limit(30);
+
+  const seen = new Map<string, { name: string; email: string | null }>();
+  for (const row of data ?? []) {
+    const key = row.customer_email ?? `no-email:${row.customer_name.toLowerCase()}`;
+    if (!seen.has(key)) seen.set(key, { name: row.customer_name, email: row.customer_email });
+  }
+  return [...seen.values()];
+}
+
+function cleanEmailSubject(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  return cleaned.length > 0 && cleaned.length <= 150 ? cleaned : null;
+}
+
+function cleanEmailMessage(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  return cleaned.length > 0 && cleaned.length <= 3000 ? cleaned : null;
+}
+
+// One customer, one message - direct, low-risk (they already have a real
+// relationship with this business, not a cold broadcast), so this is
+// deliberately NOT a "email everyone who booked this month" tool. That's
+// real added scope of its own (unsubscribe links, consent tracking,
+// spam safeguards) and a deliberate decision to leave for later, not an
+// oversight here.
+export async function proposeEmailCustomer(businessId: string, args: { customerName: unknown; subject: unknown; message: unknown }) {
+  const name = cleanName(args.customerName);
+  const subject = cleanEmailSubject(args.subject);
+  const message = cleanEmailMessage(args.message);
+  if (!name) return { error: 'Which customer? Give a real name to search for.' };
+  if (!subject) return { error: 'Give a real subject line (1-150 characters).' };
+  if (!message) return { error: 'Give a real message (1-3000 characters).' };
+
+  const matches = await findCustomerByName(businessId, name);
+  if (matches.length === 0) return { error: `No customer found matching "${name}".` };
+  if (matches.length > 1) {
+    return {
+      needs_disambiguation: true,
+      matches: matches.map((m) => ({ name: m.name, email: m.email ?? 'no email on file' })),
+    };
+  }
+  const customer = matches[0];
+  if (!customer.email) return { error: `${customer.name} has no email on file - try WhatsApp or a phone call instead.` };
+
+  return { proposed: { customer_name: customer.name, customer_email: customer.email, subject, message } };
+}
+
+export async function applyEmailCustomer(businessId: string, args: { customerName: unknown; subject: unknown; message: unknown }) {
+  const name = cleanName(args.customerName);
+  const subject = cleanEmailSubject(args.subject);
+  const message = cleanEmailMessage(args.message);
+  if (!name || !subject || !message) {
+    return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
+  }
+
+  // Re-resolved rather than trusting the propose step's result - the same
+  // reasoning every other apply_* here already follows (a value could have
+  // changed in the gap between propose and the user's actual confirmation).
+  const matches = await findCustomerByName(businessId, name);
+  if (matches.length !== 1 || !matches[0].email) {
+    return { error: 'That customer could not be re-confirmed - propose this again.' };
+  }
+  const customer = matches[0] as { name: string; email: string };
+
+  const { data: business } = await supabaseAdmin
+    .from('businesses')
+    .select('name, accent_color, logo_url')
+    .eq('id', businessId)
+    .maybeSingle();
+
+  const sent = await sendEmail(
+    {
+      to: customer.email,
+      subject,
+      html: renderEmail({
+        businessName: business?.name ?? 'Your business',
+        accentColor: business?.accent_color,
+        logoUrl: business?.logo_url,
+        preheader: message.slice(0, 140),
+        heading: subject,
+        intro: message,
+      }),
+    },
+    'manageTools:applyEmailCustomer',
+    { businessId }
+  );
+
+  if (!sent) return { error: "That didn't send - please try again." };
+  return { applied: true, customer_name: customer.name, customer_email: customer.email, subject };
 }

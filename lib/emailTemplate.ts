@@ -116,7 +116,7 @@ export function renderEmail(opts: EmailOptions): string {
         <tr>
           <td style="padding:28px 32px 0;">
             <h1 style="margin:0;font:700 24px/1.25 ${FONT_STACK};color:#202020;">${escapeHtml(heading)}</h1>
-            <p style="margin:10px 0 0;font:400 15px/22px ${FONT_STACK};color:#6b6b6b;">${escapeHtml(intro)}</p>
+            <p style="margin:10px 0 0;font:400 15px/22px ${FONT_STACK};color:#6b6b6b;white-space:pre-line;">${escapeHtml(intro)}</p>
             ${rowsBlock}
             ${ctaBlock}
           </td>
