@@ -15,6 +15,8 @@ import Field from './Field';
 // own fixed palette.
 const PRESETS = ['#C4512D', '#F3E8BC', '#8E6A4A', '#2F5D42', '#171717', '#6B3450', '#1769AA', '#1A1917'];
 
+const MAX_AI_CONTEXT = 2000;
+
 export default function BusinessProfileManager({
   slug,
   businessId,
@@ -23,6 +25,7 @@ export default function BusinessProfileManager({
   initialAccentColor,
   initialCoverImageUrl,
   initialDescription,
+  initialAiContext,
 }: {
   slug: string;
   businessId: string;
@@ -31,11 +34,13 @@ export default function BusinessProfileManager({
   initialAccentColor: string;
   initialCoverImageUrl: string | null;
   initialDescription: string | null;
+  initialAiContext: string | null;
 }) {
   const [name, setName] = useState(initialName);
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   const [coverImageUrl, setCoverImageUrl] = useState(initialCoverImageUrl);
   const [description, setDescription] = useState(initialDescription ?? '');
+  const [aiContext, setAiContext] = useState(initialAiContext ?? '');
   const [accentColor, setAccentColor] = useState(initialAccentColor);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -56,6 +61,7 @@ export default function BusinessProfileManager({
         logo_url: logoUrl,
         cover_image_url: coverImageUrl,
         description: description.trim() || null,
+        ai_context: aiContext.trim() || null,
         accent_color: accentColor,
       })
       .eq('id', businessId);
@@ -193,6 +199,37 @@ export default function BusinessProfileManager({
               Flows through your whole booking page - buttons, selected dates, times.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Its own section, not folded into "Booking page appearance" -
+          Description shows publicly on the booking page; this never does.
+          It only ever reaches the AI receptionist's own system prompt
+          (see lib/whatsappAgent.ts, shared by WhatsApp/Telegram and the
+          website chat widget), so it needed a clearly separate home
+          rather than living next to a field with the opposite visibility. */}
+      <div className="border-t border-line pt-6">
+        <h3 className={sectionHeadingClass}>AI receptionist</h3>
+        <div className="space-y-5">
+          <Field
+            label="Extra context for your AI"
+            hint={`Never shown on your booking page - only your AI receptionist sees this, to answer customer questions better. ${MAX_AI_CONTEXT - aiContext.length} left.`}
+          >
+            {(props) => (
+              <textarea
+                {...props}
+                value={aiContext}
+                onChange={(e) => {
+                  setAiContext(e.target.value);
+                  setSaved(false);
+                }}
+                maxLength={MAX_AI_CONTEXT}
+                rows={5}
+                placeholder="Anything that helps it answer real questions better - your specialties, house rules, what makes you different, how you like things phrased. E.g. &quot;We&rsquo;ve been family-run since 2015 and specialize in natural hair. We don&rsquo;t take walk-ins on weekends, appointments only.&quot;"
+                className={inputClass}
+              />
+            )}
+          </Field>
         </div>
       </div>
 

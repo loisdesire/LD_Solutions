@@ -36,7 +36,14 @@ export default async function SettingsPage({
     supabase
       .from('businesses')
       .select(
-        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, paystack_public_key, paystack_secret_key, custom_domain'
+        // ai_context deliberately isn't in getBusinessBySlug's shared
+        // BASE_COLUMNS - that loader also backs the PUBLIC booking page via
+        // the anon client, and this text is private, staff-only context for
+        // the AI receptionist's own prompt (see lib/whatsappAgent.ts),
+        // never meant to be readable by anyone loading a business's page.
+        // Same reasoning custom_domain/paystack_secret_key already follow
+        // here rather than living in that shared loader.
+        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, paystack_public_key, paystack_secret_key, custom_domain, ai_context'
       )
       .eq('id', business.id)
       .single(),
@@ -63,7 +70,7 @@ export default async function SettingsPage({
       .select('about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact')
       .eq('id', business.id)
       .single();
-    if (fallback.data) bizRow = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null, custom_domain: null };
+    if (fallback.data) bizRow = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null, custom_domain: null, ai_context: null };
   }
 
   // If even the fallback came back empty, the forms below will render
@@ -106,6 +113,7 @@ export default async function SettingsPage({
                 initialAccentColor={business.accent_color}
                 initialCoverImageUrl={business.cover_image_url}
                 initialDescription={business.description}
+                initialAiContext={bizRow?.ai_context ?? null}
               />
             ),
           },

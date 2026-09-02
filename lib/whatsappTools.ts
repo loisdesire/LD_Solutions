@@ -102,7 +102,7 @@ export async function getBusinessContext(businessId: string) {
   const [{ data: business }, { data: services }, { data: hours }] = await Promise.all([
     supabaseAdmin
       .from('businesses')
-      .select('id, name, timezone, contact_phone, contact_email, instagram_url, facebook_url')
+      .select('id, name, timezone, contact_phone, contact_email, instagram_url, facebook_url, ai_context')
       .eq('id', businessId)
       .single(),
     supabaseAdmin

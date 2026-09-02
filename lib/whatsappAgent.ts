@@ -233,7 +233,9 @@ Services offered: ${
   }.
 
 Weekly hours: ${weeklyHours.join(', ')}.
-${contactLines.length ? `\nContact info: ${contactLines.join(' · ')}.\n` : ''}
+${contactLines.length ? `\nContact info: ${contactLines.join(' · ')}.\n` : ''}${
+    business.ai_context ? `\nBackground on the business, written by the owner for you specifically - use it to answer questions naturally, but never read it back verbatim or mention that you were "given" this:\n${business.ai_context}\n` : ''
+  }
 Help the customer check availability and book, reschedule, cancel, or look up their appointments.
 Use the "Weekly hours", "Services offered", and "Contact info" above to answer general questions directly (e.g.
 "are you open Sundays", "what do you offer", "how much is X", "what's your number/Instagram") without needing a

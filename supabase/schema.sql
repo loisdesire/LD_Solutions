@@ -866,3 +866,14 @@ create policy "staff can manage own assistant messages"
 drop trigger if exists reject_demo_writes on assistant_messages;
 create trigger reject_demo_writes before insert or update or delete on assistant_messages
   for each row execute function reject_demo_viewer_writes();
+
+-- ============================================
+-- Business context for the customer-facing AI - free text the owner
+-- writes in Settings (backstory, specialties, house rules, anything that
+-- helps the AI answer real customer questions better than the short
+-- public "description" alone). Private: fed only to the AI's own system
+-- prompt (see lib/whatsappAgent.ts, shared by WhatsApp/Telegram AND the
+-- website chat widget), never rendered anywhere on the public booking
+-- page the way `description` is.
+-- ============================================
+alter table businesses add column if not exists ai_context text;
