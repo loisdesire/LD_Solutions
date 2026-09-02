@@ -84,6 +84,7 @@ export async function notifyCustomer(
           intro: text,
           rows,
         }),
+        fromName: business.name,
       },
       logContext,
       meta

@@ -94,10 +94,21 @@ export default function AdminAssistantWidget({
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
-        ) : logoUrl ? (
-          <img src={logoUrl} alt="" className="h-[26px] w-[26px] object-contain" />
         ) : (
-          <span className="font-display text-[18px] font-bold">{businessName?.[0]?.toUpperCase()}</span>
+          // A fixed sparkle glyph, not the business's own uploaded logo -
+          // was rendering an arbitrary logo at 26px on this button, and a
+          // logo that reads fine at real size (a detailed illustration, a
+          // wide wordmark, colors that don't sit well on a flat accent
+          // circle) can look genuinely messy squeezed into an icon this
+          // small. No business's logo is under this app's control, so
+          // nothing here can guarantee it'll still look clean at icon
+          // scale - a fixed mark can. Same sparkle already used for
+          // "Assistant" in the sidebar nav (components/AdminSidebar.tsx),
+          // so it reads as the same thing in both places rather than two
+          // different icons for one feature.
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
+          </svg>
         )}
       </button>
 

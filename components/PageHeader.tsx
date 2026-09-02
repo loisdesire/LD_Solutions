@@ -19,7 +19,12 @@ export default function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-7 flex items-start justify-between gap-4 flex-wrap">
+    // items-center, not items-start - the action button was pinned flush
+    // to the very top of the block (level with the eyebrow line), well
+    // above the description text underneath it. Centering it against the
+    // whole eyebrow+title+description stack reads as belonging to the
+    // header as a unit, not bolted to its top edge.
+    <div className="mb-7 flex items-center justify-between gap-4 flex-wrap">
       <div className="min-w-0">
         {/* Colored kicker, sentence case - not the tiny-mono-uppercase
             treatment every label in the previous system used regardless

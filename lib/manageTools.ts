@@ -856,6 +856,7 @@ export async function applyEmailCustomer(businessId: string, args: { customerNam
         heading: subject,
         intro: message,
       }),
+      fromName: business?.name,
     },
     'manageTools:applyEmailCustomer',
     { businessId }

@@ -192,6 +192,7 @@ export async function notifyOwnerByEmail(
           cta: business?.slug ? { label: 'Open your dashboard', url: `${SITE_URL}/${business.slug}/admin` } : null,
           footerNote: opts.footerNote,
         }),
+        fromName: business?.name,
       },
       opts.logContext,
       { businessId }

@@ -303,6 +303,7 @@ export async function POST(req: NextRequest) {
             : null,
           footerNote: 'Need to reschedule or cancel? Use the link above.',
         }),
+        fromName: bizName,
       },
       'api/bookings:confirmation-email',
       { businessId }

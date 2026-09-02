@@ -4,6 +4,7 @@ import { todayInTimezone, daysBetween, zonedTimeToUtc } from './timezone';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { formatLocalDateTime, formatLocalTime, to24Hour } from './formatDateTime';
 import { sendEmail } from './email';
+import { renderEmail } from './emailTemplate';
 import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
 import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
@@ -187,7 +188,11 @@ export async function createBooking(
   if (!service) return { error: `No service matching "${args.serviceName}" found.` };
 
   let [{ data: business }, { data: rules }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('slug, timezone, paystack_public_key, paystack_secret_key').eq('id', ctx.businessId).single(),
+    supabaseAdmin
+      .from('businesses')
+      .select('name, slug, timezone, accent_color, logo_url, paystack_public_key, paystack_secret_key')
+      .eq('id', ctx.businessId)
+      .single(),
     supabaseAdmin.from('booking_rules').select('require_payment, deposit_percentage').eq('business_id', ctx.businessId).maybeSingle(),
   ]);
 
@@ -199,7 +204,7 @@ export async function createBooking(
   // because require_payment doesn't exist as a column, `rules?.require_payment`
   // reads as falsy either way - exactly the safe "not required" default.
   if (business === null) {
-    const fallback = await supabaseAdmin.from('businesses').select('slug, timezone').eq('id', ctx.businessId).single();
+    const fallback = await supabaseAdmin.from('businesses').select('name, slug, timezone, accent_color, logo_url').eq('id', ctx.businessId).single();
     if (fallback.data) business = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null };
   }
 
@@ -328,14 +333,31 @@ export async function createBooking(
     };
   }
 
-  // Same fire-and-forget confirmation email as the web booking flow
-  // (app/api/bookings/route.ts) - failure here never blocks the booking.
+  // Same event as the web booking flow (app/api/bookings/route.ts), but
+  // this used to send a bare, unbranded <p> tag instead of the same
+  // branded, structured template that path already uses - a customer
+  // booking through chat got a visibly worse confirmation email than one
+  // booking through the website, for no reason tied to the channel itself.
   if (args.customerEmail) {
+    const whenLabel = formatLocalDateTime(booking.start_time, timeZone);
     await sendEmail(
       {
         to: args.customerEmail,
-        subject: 'Your appointment is confirmed',
-        html: `<p>Hi ${args.customerName}, your ${service.name} appointment is confirmed for ${formatLocalDateTime(booking.start_time, timeZone)}.</p>`,
+        subject: `Your ${business?.name ?? 'appointment'} appointment is confirmed`,
+        html: renderEmail({
+          businessName: business?.name ?? 'Your appointment',
+          accentColor: business?.accent_color,
+          logoUrl: business?.logo_url,
+          preheader: `${service.name} - ${whenLabel}`,
+          heading: "You're booked",
+          intro: `Hi ${args.customerName}, your appointment is confirmed. Here are the details.`,
+          rows: [
+            { label: 'Service', value: service.name },
+            { label: 'When', value: whenLabel },
+          ],
+          cta: business?.slug ? { label: 'Manage your booking', url: `${SITE_URL}/${business.slug}/manage/${booking.id}` } : null,
+        }),
+        fromName: business?.name,
       },
       'whatsappTools:createBooking:confirmation-email',
       { businessId: ctx.businessId }

@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
                 cta: { label: 'Open your dashboard', url: `${SITE_URL}/${r.slug}/admin` },
                 footerNote: 'Sent weekly as part of your Business Intelligence plan.',
               }),
+              fromName: r.businessName,
             },
             'cron/weekly-insights',
             { businessId: r.businessId }

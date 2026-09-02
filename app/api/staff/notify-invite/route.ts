@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         cta: { label: 'Accept your invite', url: inviteUrl },
         footerNote: 'If you were not expecting this, you can safely ignore it.',
       }),
+      fromName: business.name,
     },
     'api/staff/notify-invite',
     { businessId: business.id }
