@@ -5,6 +5,7 @@ import { INSIGHTS_TOOLS, executeInsightsTool } from './insightsAgent';
 import { RESCHEDULE_TOOLS, executeRescheduleTool } from './rescheduleAgent';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
 import { describeManageToolChange, notifyOwnerOfManageChange } from './notifyOwnerOfChange';
+import { getBusinessContext } from './whatsappTools';
 
 // One assistant for the business owner, replacing what used to be two
 // separate tabs (Insights and Schedule assistant). Splitting them was an
@@ -49,6 +50,20 @@ export async function runAssistantAgent(params: {
   const timeZone = await getBusinessTimezone(businessId);
   const today = todayInTimezone(timeZone);
 
+  // Reused from the customer-facing bot (lib/whatsappTools.ts) rather than
+  // a second copy of the same query - this agent had NO read access to its
+  // own basic facts at all before this: every hours-related tool here
+  // (propose/apply_update_hours) only ever WRITES a change, so "what days
+  // am I open" had no tool that could answer it and no context that
+  // mentioned it either. Confirmed live: the owner's own assistant telling
+  // the owner it doesn't have access to their own hours. Services and
+  // weekly hours are cheap, always-relevant facts worth having up front
+  // rather than a tool round-trip for something this basic - ai_context
+  // deliberately left out of this prompt, that field exists specifically
+  // for the CUSTOMER-facing bot to draw on, not for the owner to be told
+  // their own backstory back.
+  const { business, services, weeklyHours } = await getBusinessContext(businessId);
+
   const tools = analyticsEnabled
     ? [...RESCHEDULE_TOOLS, ...MANAGE_TOOLS, ...INSIGHTS_TOOLS]
     : [...RESCHEDULE_TOOLS, ...MANAGE_TOOLS];
@@ -56,6 +71,25 @@ export async function runAssistantAgent(params: {
   const systemPrompt = `You are the assistant for ${businessName}, talking to the business owner or their staff.
 Today is ${today} (business timezone: ${timeZone}). Work out real dates from relative phrases like "tomorrow" or
 "last month" before calling any tool, since the tools only accept explicit dates.
+
+Current weekly hours: ${weeklyHours.join(', ')}.
+Active services: ${
+    services.length ? services.map((s) => `${s.name} (${s.duration_minutes} min${s.price ? `, ${s.price}` : ''})`).join(', ') : 'none configured yet'
+  }.
+Answer direct questions about either of these ("what days am I open", "what do I charge for X") straight from
+the lists above - no tool call needed, and never say you don't have access to this. Only use the change-hours or
+change-a-service tools when they actually want something changed, not just to look something up.${
+    business?.contact_phone || business?.contact_email || business?.instagram_url || business?.facebook_url
+      ? `\nContact info on file: ${[
+          business.contact_phone && `Phone ${business.contact_phone}`,
+          business.contact_email && `Email ${business.contact_email}`,
+          business.instagram_url && `Instagram ${business.instagram_url}`,
+          business.facebook_url && `Facebook ${business.facebook_url}`,
+        ]
+          .filter(Boolean)
+          .join(' · ')}.`
+      : ''
+  }
 
 You do three kinds of work:
 
