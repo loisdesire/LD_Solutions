@@ -3,7 +3,11 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 
-type Message = { role: 'user' | 'assistant'; content: string };
+// imageUrl is optional and only ever set on freshly-sent messages within
+// this session - restored history (initialMessages, from the database)
+// never carries one, since past attachments aren't persisted anywhere
+// keyed to a specific message. Both are valid Message values either way.
+type Message = { role: 'user' | 'assistant'; content: string; imageUrl?: string };
 type PendingImage = { url: string; previewUrl: string };
 
 // The model naturally reaches for markdown when it summarizes a set of
@@ -192,7 +196,16 @@ export default function AssistantChat({
     if (!text.trim() || loading) return;
     const imageUrl = pendingImage?.url ?? null;
     const sentImage = pendingImage;
-    const nextMessages: Message[] = [...messages, { role: 'user', content: text }];
+    // The sent photo used to just vanish the moment the message went out -
+    // pendingImage (the only thing rendering it) gets cleared on send, and
+    // the pushed message itself never carried the URL at all, so there was
+    // nothing left anywhere to show it had been attached. Carrying the same
+    // already-uploaded url onto the message itself is enough to render it
+    // inline, same idea as any real chat UI showing what you actually sent.
+    const nextMessages: Message[] = [
+      ...messages,
+      { role: 'user', content: text, ...(imageUrl ? { imageUrl } : {}) },
+    ];
     setMessages(nextMessages);
     setInput('');
     setLoading(true);
@@ -279,6 +292,15 @@ export default function AssistantChat({
                   m.role === 'user' ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink'
                 }`}
               >
+                {/* The photo used to just disappear the moment a message
+                    sent - the bubble only ever rendered m.content, and
+                    pendingImage (the only other thing that showed it) had
+                    already been cleared by then. Same already-uploaded
+                    url, now carried on the message itself. */}
+                {m.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a Supabase Storage URL, not a domain next/image is configured for
+                  <img src={m.imageUrl} alt="" className="rounded-lg mb-2 max-h-48 w-auto" />
+                )}
                 {m.role === 'assistant' ? formatAssistantContent(m.content) : m.content}
               </div>
             </div>
@@ -297,9 +319,12 @@ export default function AssistantChat({
         {/* A photo, once picked, sits here until it's actually sent - so
             it's obvious what "Create the haircut service with this photo"
             is about to attach, and there's a clear way to back out of it
-            before it goes anywhere. */}
+            before it goes anywhere. pb-3 added (was pt-3 only) - the
+            content had no bottom breathing room at all, so it sat right on
+            top of the form's own border-t immediately below it, cramped
+            against the one line that was supposed to separate them. */}
         {(pendingImage || uploadingImage) && (
-          <div className="border-t border-line px-3 pt-3 flex items-center gap-2">
+          <div className="border-t border-line px-3 py-3 flex items-center gap-2">
             <div className="relative h-12 w-12 rounded-lg overflow-hidden border border-line-strong shrink-0 bg-warm-surface">
               {pendingImage && (
                 // eslint-disable-next-line @next/next/no-img-element -- a local blob: preview, next/image can't load those
@@ -343,7 +368,12 @@ export default function AssistantChat({
           // clearance below the send button for it rather than the two
           // overlapping. The standalone full-page use (bare=false) has
           // no floating FAB to clear.
-          className={`border-t border-line p-3 flex gap-2 ${bare ? 'pb-20 sm:pb-3' : ''}`}
+          //
+          // border-t dropped when the pending-image bar is showing - that
+          // bar already draws its own border-t right above this, so both
+          // together were two parallel lines stacked with almost no gap
+          // between them.
+          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3 flex gap-2 ${bare ? 'pb-20 sm:pb-3' : ''}`}
         >
           <input
             ref={fileInputRef}
