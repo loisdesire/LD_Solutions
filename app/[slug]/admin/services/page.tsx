@@ -1,8 +1,15 @@
+import { createClient } from '@supabase/supabase-js';
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import ServicesManager from '@/components/ServicesManager';
+import { logError } from '@/lib/logger';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Services' };
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function ServicesPage({
   params,
@@ -12,20 +19,27 @@ export default async function ServicesPage({
   const { slug } = await params;
   const { business, supabase } = await requireStaffSession(slug);
 
-  const [servicesResult, { data: bookings }] = await Promise.all([
+  const [servicesResult, bookingsResult] = await Promise.all([
     supabase
       .from('services')
       .select('id, name, duration_minutes, price, active, category, description, image_url')
       .eq('business_id', business.id)
       .order('name'),
-    // Feeds the real "most booked" / "highest revenue" stats below -
-    // computed from actual bookings, not the fixed numbers a mockup uses.
-    supabase
+    // Service role, not the session client - same real bug found on the
+    // Calendar/Customers pages (see their own comments for the full
+    // story): embedding services(price) as a join under the session
+    // client made real, confirmed bookings silently invisible, which
+    // quietly zeroed out the "most booked"/"highest revenue" stats below
+    // rather than erroring. Authorization for this read is already fully
+    // handled by requireStaffSession above.
+    supabaseAdmin
       .from('bookings')
       .select('service_id, services(price)')
       .eq('business_id', business.id)
       .neq('status', 'cancelled'),
   ]);
+  const { data: bookings, error: bookingsError } = bookingsResult;
+  if (bookingsError) logError('admin/services:bookings-query', bookingsError, { businessId: business.id });
 
   // 42703 = the services.description/image_url migration hasn't been run
   // against this database yet - a combined select fails as one unit on

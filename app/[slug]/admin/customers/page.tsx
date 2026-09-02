@@ -1,8 +1,15 @@
+import { createClient } from '@supabase/supabase-js';
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import CustomersManager from '@/components/CustomersManager';
+import { logError } from '@/lib/logger';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Customers' };
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // There's no separate customers table - every booking just carries its
 // own customer_name/phone/email/telegram_username, since a customer
@@ -16,15 +23,23 @@ export default async function CustomersPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { business, supabase } = await requireStaffSession(slug);
+  const { business } = await requireStaffSession(slug);
 
-  const { data: bookings } = await supabase
+  // Service role, not the session client - same real bug as the Calendar
+  // page (see its own comment for the full story): real, confirmed
+  // bookings with valid foreign keys went completely invisible here,
+  // traced to embedding services(name, price) as a join under the
+  // session client. Authorization for this read is already fully handled
+  // by requireStaffSession above.
+  const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
     .select(
       'customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price)'
     )
     .eq('business_id', business.id)
     .order('start_time', { ascending: true });
+
+  if (error) logError('admin/customers:bookings-query', error, { businessId: business.id });
 
   return (
     <div>
