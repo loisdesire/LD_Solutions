@@ -11,8 +11,15 @@ import { notifyCustomer, getNotifyCreds } from './notifyCustomer';
 // only ever executes a plan that's already been shown to and approved by the
 // owner. A model calling proposeReschedule twice in a row is harmless; a
 // model calling applyReschedule on its own initiative without ever showing
-// the plan is the failure mode this split exists to prevent - see the
-// system prompt in lib/rescheduleAgent.ts for the actual enforcement.
+// the plan is the failure mode this split exists to prevent - this comment
+// used to point at the system prompt in lib/rescheduleAgent.ts as "the
+// actual enforcement," which was true right up until it wasn't: that's
+// exactly the mechanism that let apply_create_service fire in the same
+// turn as its own propose_create_service, with no real confirmation ever
+// shown (see lib/agentLoop.ts's own comment on the fix). The prompt still
+// asks nicely; the real guarantee now lives in agentLoop.ts's
+// runToolAgent, which refuses an apply_* call in the same turn as its
+// matching propose_*, regardless of what the model decides on its own.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
