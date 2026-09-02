@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { formatMoney } from './formatMoney';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { to24Hour, formatLocalDateTime } from './formatDateTime';
+import { verifyBusinessMediaUrl } from './verifyBusinessMediaUrl';
 
 // Owner-facing, write-capable - "manage your business by chat" instead of
 // the Services form and the Settings toggles. Same two-step shape as
@@ -34,19 +35,22 @@ function cleanDescription(value: unknown): string | null | undefined {
   return cleaned.length <= MAX_DESCRIPTION_LENGTH ? cleaned : undefined;
 }
 
-// Only ever accepts a URL this same app's own upload endpoint handed back
-// (Supabase Storage's public bucket) - never an arbitrary string the model
-// might otherwise be talked into inventing or pulling from somewhere else.
-function cleanImageUrl(value: unknown): string | null | undefined {
+// Only ever accepts a URL this same business's own upload just produced
+// (Supabase Storage's public bucket, under this business's own folder) -
+// never an arbitrary string the model might otherwise be talked into
+// inventing or pulling from somewhere else. Was an inline exact-host-
+// string-equality check against process.env.NEXT_PUBLIC_SUPABASE_URL,
+// duplicated three times across this file and both chat routes - fragile
+// by construction, and confirmed live as the actual cause of "there was
+// an issue with the logo file"/"I don't see an attachment" errors on
+// genuinely-uploaded photos (see lib/verifyBusinessMediaUrl.ts for the
+// full story). null/undefined here keep this function's existing
+// three-state contract (null = no image given, undefined = given but
+// invalid) - only the validation itself moved.
+function cleanImageUrl(value: unknown, businessId: string): string | null | undefined {
   if (value == null || value === '') return null;
   if (typeof value !== 'string') return undefined;
-  try {
-    const url = new URL(value);
-    const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).host;
-    return url.host === supabaseHost && url.pathname.includes('/business-media/') ? value : undefined;
-  } catch {
-    return undefined;
-  }
+  return verifyBusinessMediaUrl(value, businessId) ?? undefined;
 }
 
 function cleanDuration(value: unknown): number | null {
@@ -112,7 +116,7 @@ export async function proposeCreateService(
   const durationMinutes = cleanDuration(args.durationMinutes);
   const price = cleanPrice(args.price);
   const description = cleanDescription(args.description);
-  const imageUrl = cleanImageUrl(args.imageUrl);
+  const imageUrl = cleanImageUrl(args.imageUrl, businessId);
 
   if (!name) return { error: 'Give this service a real name (1-100 characters).' };
   if (!durationMinutes) return { error: 'Duration needs to be a real number of minutes, between 5 and 480.' };
@@ -151,7 +155,7 @@ export async function applyCreateService(
   const durationMinutes = cleanDuration(args.durationMinutes);
   const price = cleanPrice(args.price);
   const description = cleanDescription(args.description);
-  const imageUrl = cleanImageUrl(args.imageUrl);
+  const imageUrl = cleanImageUrl(args.imageUrl, businessId);
 
   if (!name || !durationMinutes || price === undefined || description === undefined || imageUrl === undefined) {
     return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
@@ -239,7 +243,7 @@ export async function proposeUpdateService(
     proposed.description = { from: current.description ?? 'none', to: v ?? 'none' };
   }
   if (changes.imageUrl !== undefined) {
-    const v = cleanImageUrl(changes.imageUrl);
+    const v = cleanImageUrl(changes.imageUrl, businessId);
     if (v === undefined) return { error: "That image doesn't look like one uploaded through this chat." };
     proposed.image = { from: current.image_url ? 'has a photo' : 'no photo', to: v ? 'new photo attached' : 'no photo' };
   }
@@ -289,7 +293,7 @@ export async function applyUpdateService(
     update.description = v;
   }
   if (changes.imageUrl !== undefined) {
-    const v = cleanImageUrl(changes.imageUrl);
+    const v = cleanImageUrl(changes.imageUrl, businessId);
     if (v === undefined) return { error: 'Invalid image.' };
     update.image_url = v;
   }
@@ -423,12 +427,12 @@ export async function proposeUpdateProfile(businessId: string, changes: ProfileC
     proposed.description = { from: current.description ?? 'none', to: v ?? 'none' };
   }
   if (changes.logoUrl !== undefined) {
-    const v = cleanImageUrl(changes.logoUrl);
+    const v = cleanImageUrl(changes.logoUrl, businessId);
     if (v === undefined) return { error: "That doesn't look like a photo uploaded through this chat." };
     proposed.logo = { from: current.logo_url ? 'has a logo' : 'no logo', to: 'new logo attached' };
   }
   if (changes.coverImageUrl !== undefined) {
-    const v = cleanImageUrl(changes.coverImageUrl);
+    const v = cleanImageUrl(changes.coverImageUrl, businessId);
     if (v === undefined) return { error: "That doesn't look like a photo uploaded through this chat." };
     proposed.cover_photo = { from: current.cover_image_url ? 'has a cover photo' : 'no cover photo', to: 'new cover photo attached' };
   }
@@ -456,12 +460,12 @@ export async function applyUpdateProfile(businessId: string, changes: ProfileCha
     update.description = v;
   }
   if (changes.logoUrl !== undefined) {
-    const v = cleanImageUrl(changes.logoUrl);
+    const v = cleanImageUrl(changes.logoUrl, businessId);
     if (v === undefined) return { error: 'Invalid logo image.' };
     update.logo_url = v;
   }
   if (changes.coverImageUrl !== undefined) {
-    const v = cleanImageUrl(changes.coverImageUrl);
+    const v = cleanImageUrl(changes.coverImageUrl, businessId);
     if (v === undefined) return { error: 'Invalid cover image.' };
     update.cover_image_url = v;
   }

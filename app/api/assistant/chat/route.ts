@@ -5,6 +5,7 @@ import { hasBusinessIntelligence } from '@/lib/subscription-server';
 import type { AgentMessage } from '@/lib/agentLoop';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { appendAssistantMessages } from '@/lib/assistantHistory';
+import { verifyBusinessMediaUrl } from '@/lib/verifyBusinessMediaUrl';
 import { logError } from '@/lib/logger';
 
 // POST /api/assistant/chat - the single staff-only assistant, replacing the
@@ -28,20 +29,12 @@ export async function POST(req: NextRequest) {
   const { business, staff } = auth;
 
   // Verified here, not just trusted from the client - only ever pass the
-  // model a URL that's actually this app's own Storage bucket, the exact
-  // same check lib/manageTools.ts repeats before it will let a create/update
-  // service call use one. Belt and braces: a bad value gets dropped silently
-  // here rather than reaching the model as if it were a real photo.
-  let safeImageUrl: string | null = null;
-  if (typeof imageUrl === 'string' && imageUrl) {
-    try {
-      const url = new URL(imageUrl);
-      const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).host;
-      if (url.host === supabaseHost && url.pathname.includes('/business-media/')) safeImageUrl = imageUrl;
-    } catch {
-      // leave safeImageUrl null
-    }
-  }
+  // model a URL that's actually this business's own upload, the same
+  // check lib/manageTools.ts's cleanImageUrl repeats before it will let a
+  // create/update service call use one. Belt and braces: a bad value gets
+  // dropped silently here rather than reaching the model as if it were a
+  // real photo. See lib/verifyBusinessMediaUrl.ts.
+  const safeImageUrl = verifyBusinessMediaUrl(imageUrl, business.id);
 
   const cleanMessage = String(message).slice(0, 2000);
 

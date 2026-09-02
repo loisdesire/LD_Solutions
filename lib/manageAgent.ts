@@ -19,6 +19,30 @@ import {
 // and analytics (insightsAgent.ts). Split the same way those are: this file
 // is what OpenAI sees and how a tool name gets routed, lib/manageTools.ts is
 // what actually touches the database.
+
+// Was just "Between 5 and 480." - no conversion help, no unit guidance.
+// Confirmed live twice in one onboarding conversation: "a week" got passed
+// as 1,008 minutes (should be 10,080 - a full order of magnitude off, i.e.
+// the model silently computing 7*24*6 somewhere instead of 7*24*60) and "2
+// days" as 288 (should be 2,880). Multi-step mental arithmetic is exactly
+// the kind of thing a model gets wrong with no scaffolding; a ready
+// reference table removes the arithmetic entirely rather than trusting it
+// to redo 24*60 correctly every time. Also names the actual constraint
+// (an appointment SLOT, not total turnaround) - the underlying case that
+// prompted this was a made-to-order product ("takes a week" to finish),
+// which isn't a duration problem to convert at all, it's a different kind
+// of service the field was never meant to represent; naming that
+// explicitly lets the model explain the real reason instead of quietly
+// forcing a fake number.
+const DURATION_MINUTES_DESCRIPTION =
+  'Whole minutes, between 5 and 480 (480 = a full 8-hour day, the max a single appointment slot can be). ' +
+  'This is how long the CUSTOMER\'S APPOINTMENT takes - the time they are actually present or the slot that ' +
+  'occupies the calendar - not how long the whole job takes to finish. Reference: 30 min = 30, 1 hour = 60, ' +
+  '2 hours = 120, half a day = 240, a full day = 480. If what they describe is longer than 480 (a multi-day ' +
+  'turnaround, "a week", a made-to-order item), it is not a single-appointment duration at all - do not convert ' +
+  'days/weeks into minutes. Instead ask what the actual appointment itself involves (e.g. a fitting, a drop-off, ' +
+  'a consultation) and use that shorter time, explaining that the longer completion time isn\'t something this ' +
+  'field can represent yet.';
 export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
@@ -30,7 +54,7 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         type: 'object',
         properties: {
           name: { type: 'string' },
-          duration_minutes: { type: 'number', description: 'Between 5 and 480.' },
+          duration_minutes: { type: 'number', description: DURATION_MINUTES_DESCRIPTION },
           price: { type: 'number', description: 'Omit entirely for "ask for pricing" - do not pass 0 to mean unpriced.' },
           description: { type: 'string', description: 'Optional, one or two sentences.' },
           image_url: { type: 'string', description: 'Only pass this if the owner\'s message included an attached image URL - never invent one.' },
@@ -75,7 +99,7 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
             description: 'Only include the fields actually changing.',
             properties: {
               name: { type: 'string' },
-              duration_minutes: { type: 'number' },
+              duration_minutes: { type: 'number', description: DURATION_MINUTES_DESCRIPTION },
               price: { type: 'number' },
               description: { type: 'string' },
               image_url: { type: 'string', description: 'Only if the owner attached a new image to this message.' },

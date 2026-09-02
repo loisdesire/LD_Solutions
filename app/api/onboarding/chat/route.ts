@@ -5,6 +5,7 @@ import { getOnboardingProgress } from '@/lib/onboardingProgress';
 import type { AgentMessage } from '@/lib/agentLoop';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { appendAssistantMessages } from '@/lib/assistantHistory';
+import { verifyBusinessMediaUrl } from '@/lib/verifyBusinessMediaUrl';
 import { logError } from '@/lib/logger';
 
 // POST /api/onboarding/chat - the first-time setup conversation
@@ -29,17 +30,9 @@ export async function POST(req: NextRequest) {
   const { business, staff } = auth;
 
   // Same verification as app/api/assistant/chat/route.ts - only ever pass
-  // the model a URL that's actually this app's own Storage bucket.
-  let safeImageUrl: string | null = null;
-  if (typeof imageUrl === 'string' && imageUrl) {
-    try {
-      const url = new URL(imageUrl);
-      const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).host;
-      if (url.host === supabaseHost && url.pathname.includes('/business-media/')) safeImageUrl = imageUrl;
-    } catch {
-      // leave safeImageUrl null
-    }
-  }
+  // the model a URL that's actually this business's own upload, not
+  // anything a request body claims. See lib/verifyBusinessMediaUrl.ts.
+  const safeImageUrl = verifyBusinessMediaUrl(imageUrl, business.id);
 
   const cleanMessage = String(message).slice(0, 2000);
 
