@@ -72,6 +72,25 @@ export async function runToolAgent(params: {
 
   let finalText = 'Sorry, something went wrong on our end. Please try again in a moment.';
 
+  // Every propose_*/apply_* pair in this codebase (manageAgent.ts,
+  // rescheduleAgent.ts) exists specifically so a real write only ever
+  // happens once the user has seen the exact plan and said yes - every
+  // one of those system prompts says so explicitly. That guarantee was
+  // resting entirely on the model choosing to follow it, with nothing
+  // here actually enforcing it - confirmed live: the owner's own
+  // assistant called propose_create_service and apply_create_service
+  // back to back inside ONE turn, creating a real service before any text
+  // ever reached the owner to approve or decline. This tracks which
+  // propose_* actions this SAME execution has already called; if the
+  // model then tries the matching apply_* before returning to the user,
+  // that call is refused rather than run - the model computing a plan is
+  // not the user saying yes to it, no matter how confident the model is.
+  // Scoped fresh per call (per incoming user message), so a LEGITIMATE
+  // apply_* in the user's own next turn - a new runToolAgent call, a new
+  // empty Set - is completely unaffected; only same-turn chaining is
+  // blocked.
+  const proposedThisTurn = new Set<string>();
+
   for (let i = 0; i < maxIterations; i++) {
     const completion = await openai.chat.completions.create({
       model,
@@ -90,23 +109,40 @@ export async function runToolAgent(params: {
 
     for (const toolCall of choice.tool_calls) {
       if (toolCall.type !== 'function') continue;
+      const toolName = toolCall.function.name;
       let args: Record<string, unknown> = {};
       try {
         args = JSON.parse(toolCall.function.arguments || '{}');
       } catch {
         args = {};
       }
-      // A tool that throws used to take the entire request down with it -
-      // executeTool was awaited unguarded, so one bad date string became a
-      // 500 for the user instead of a sentence from the assistant. Hand the
-      // failure back to the model as a tool result: it can apologise or try
-      // a different call, which is always better than the whole turn dying.
+
       let result: unknown;
-      try {
-        result = await executeTool(toolCall.function.name, args);
-      } catch (err) {
-        logError('agentLoop:executeTool', err, { tool: toolCall.function.name });
-        result = { error: 'That lookup failed. Tell the user you could not retrieve it right now, and do not retry the same call.' };
+      if (toolName.startsWith('propose_')) {
+        proposedThisTurn.add(toolName.slice('propose_'.length));
+      }
+      const action = toolName.startsWith('apply_') ? toolName.slice('apply_'.length) : null;
+      if (action && proposedThisTurn.has(action)) {
+        // The real guarantee: this exact plan was proposed only moments
+        // ago in this SAME turn, with no chance yet for the user to see
+        // it and reply - refused rather than executed, regardless of how
+        // certain the model sounds that this is what was wanted.
+        result = {
+          error:
+            'Cannot apply this in the same turn it was proposed. Stop here, show the user exactly what would happen in plain language, and end your reply - do not call apply_* again until their OWN next message actually confirms it.',
+        };
+      } else {
+        // A tool that throws used to take the entire request down with it -
+        // executeTool was awaited unguarded, so one bad date string became a
+        // 500 for the user instead of a sentence from the assistant. Hand the
+        // failure back to the model as a tool result: it can apologise or try
+        // a different call, which is always better than the whole turn dying.
+        try {
+          result = await executeTool(toolName, args);
+        } catch (err) {
+          logError('agentLoop:executeTool', err, { tool: toolName });
+          result = { error: 'That lookup failed. Tell the user you could not retrieve it right now, and do not retry the same call.' };
+        }
       }
       conversation.push({
         role: 'tool',
