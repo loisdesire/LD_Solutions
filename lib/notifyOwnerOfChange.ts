@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from './email';
-import { renderEmail } from './emailTemplate';
+import { renderEmail, type EmailRow } from './emailTemplate';
 import { formatMoney } from './formatMoney';
 import { SITE_URL } from './site';
 import { logError } from './logger';
@@ -49,36 +49,83 @@ const SERVICE_FIELD_LABELS: Record<string, string> = {
   active: 'visibility',
 };
 
-function listChangedFields(args: Record<string, unknown>, labels: Record<string, string>): string {
-  const changed = Object.keys(args)
-    .filter((k) => k in labels && args[k] !== undefined)
-    .map((k) => labels[k]);
-  return changed.length > 0 ? changed.join(', ') : 'details';
+// Image fields are real URLs, not worth putting in the email itself (long,
+// not meaningful to read, and the owner can just open the dashboard to see
+// the actual photo) - shown as a plain "New photo" row instead.
+const IMAGE_FIELDS = new Set(['logo_url', 'cover_image_url', 'image_url']);
+
+function formatFieldValue(key: string, value: unknown): string {
+  if (IMAGE_FIELDS.has(key)) return 'New photo';
+  if (key === 'price') return value == null ? 'Ask for pricing' : formatMoney(Number(value));
+  if (key === 'duration_minutes') return `${value} min`;
+  if (key === 'active') return value ? 'Visible' : 'Hidden';
+  if (key === 'accent_color') return String(value).toUpperCase();
+  return String(value);
 }
 
-// Turns a successful apply_* tool call into a plain-language summary for
-// the email below. Returns null for a propose_* call (nothing changed
-// yet), or for any apply_* whose result carries an error (the write
-// itself failed, so there's nothing to report).
-export function describeManageToolChange(name: string, args: Record<string, unknown>, result: unknown): string | null {
+// One row per field the model actually changed, labeled and formatted for
+// reading rather than a flattened "changed: price, description" sentence -
+// the email's own template (lib/emailTemplate.ts) already has a proper
+// `rows` table for exactly this shape, this just needed to actually use it.
+function changedFieldRows(args: Record<string, unknown>, labels: Record<string, string>): EmailRow[] {
+  return Object.keys(args)
+    .filter((k) => k in labels && args[k] !== undefined)
+    .map((k) => ({ label: labels[k], value: formatFieldValue(k, args[k]) }));
+}
+
+export type ChangeSummary = { intro: string; rows: EmailRow[] };
+
+// Turns a successful apply_* tool call into a structured summary for the
+// email below - a short intro line plus labeled rows (Service/Price/
+// Duration, Setting/Status, etc.), not one flattened sentence trying to
+// carry every detail at once. Returns null for a propose_* call (nothing
+// changed yet), or for any apply_* whose result carries an error (the
+// write itself failed, so there's nothing to report).
+export function describeManageToolChange(name: string, args: Record<string, unknown>, result: unknown): ChangeSummary | null {
   if (!name.startsWith('apply_')) return null;
   const r = result as Record<string, unknown> | null;
   if (!r || typeof r !== 'object' || 'error' in r) return null;
 
   switch (name) {
     case 'apply_create_service':
-      return `Created a new service: "${String(args.name)}"${args.price != null ? ` at ${formatMoney(Number(args.price))}` : ''}.`;
+      return {
+        intro: 'A new service was created.',
+        rows: [
+          { label: 'Service', value: String(args.name) },
+          ...(args.duration_minutes != null ? [{ label: 'Duration', value: formatFieldValue('duration_minutes', args.duration_minutes) }] : []),
+          { label: 'Price', value: formatFieldValue('price', args.price) },
+          ...(args.category ? [{ label: 'Category', value: String(args.category) }] : []),
+        ],
+      };
     case 'apply_update_service': {
       const changes = (args.changes as Record<string, unknown>) ?? {};
-      return `Updated "${String(args.service_name)}" - changed: ${listChangedFields(changes, SERVICE_FIELD_LABELS)}.`;
+      return {
+        intro: `"${String(args.service_name)}" was updated.`,
+        rows: changedFieldRows(changes, SERVICE_FIELD_LABELS),
+      };
     }
     case 'apply_toggle_setting':
-      return `Turned ${SETTING_LABELS[String(args.setting)] ?? String(args.setting)} ${args.enabled ? 'on' : 'off'}.`;
+      return {
+        intro: 'A setting was changed.',
+        rows: [
+          { label: 'Setting', value: SETTING_LABELS[String(args.setting)] ?? String(args.setting) },
+          { label: 'Status', value: args.enabled ? 'On' : 'Off' },
+        ],
+      };
     case 'apply_update_profile':
-      return `Updated your business profile - changed: ${listChangedFields(args, PROFILE_FIELD_LABELS)}.`;
+      return {
+        intro: 'Your business profile was updated.',
+        rows: changedFieldRows(args, PROFILE_FIELD_LABELS),
+      };
     case 'apply_update_hours': {
-      const day = DAY_NAMES[Number(args.day_of_week)] ?? 'a day';
-      return args.closed ? `Set ${day} to closed.` : `Set ${day}'s hours to ${args.start_time}-${args.end_time}.`;
+      const day = DAY_NAMES[Number(args.day_of_week)] ?? 'A day';
+      return {
+        intro: 'Your hours were updated.',
+        rows: [
+          { label: 'Day', value: day },
+          { label: 'Hours', value: args.closed ? 'Closed' : `${args.start_time}-${args.end_time}` },
+        ],
+      };
     }
     default:
       return null;
@@ -89,7 +136,7 @@ export function describeManageToolChange(name: string, args: Record<string, unkn
 // point is oversight (an owner who wasn't the one chatting still finds
 // out), not a receipt for the actor, who already saw it happen in the
 // conversation itself.
-export async function notifyOwnerOfManageChange(businessId: string, summary: string): Promise<void> {
+export async function notifyOwnerOfManageChange(businessId: string, summary: ChangeSummary): Promise<void> {
   const [{ data: business }, { data: owner }] = await Promise.all([
     supabaseAdmin.from('businesses').select('name, accent_color, logo_url, slug').eq('id', businessId).maybeSingle(),
     supabaseAdmin.from('staff').select('email').eq('business_id', businessId).eq('role', 'owner').maybeSingle(),
@@ -106,9 +153,10 @@ export async function notifyOwnerOfManageChange(businessId: string, summary: str
           businessName: business?.name ?? 'Your business',
           accentColor: business?.accent_color,
           logoUrl: business?.logo_url,
-          preheader: summary,
+          preheader: summary.intro,
           heading: 'Your assistant made a change',
-          intro: summary,
+          intro: summary.intro,
+          rows: summary.rows,
           cta: business?.slug ? { label: 'Open your dashboard', url: `${SITE_URL}/${business.slug}/admin` } : null,
           footerNote: "Wasn't you? Check who has access to your assistant and reach out to us if something looks wrong.",
         }),
