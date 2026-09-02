@@ -217,6 +217,12 @@ export default function ServicesManager({
   bookingStats: BookingStats;
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
+  // Derived from this component's own live `services` state, not a count
+  // computed once server-side and handed down as a prop - that version
+  // went stale the moment you added or hid a service, only catching up on
+  // the next full page load. This updates the instant the list does.
+  const activeCount = useMemo(() => services.filter((s) => s.active).length, [services]);
+  const hiddenCount = services.length - activeCount;
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -456,19 +462,48 @@ export default function ServicesManager({
 
   return (
     <div className="print:[&_.no-print]:hidden">
-      <div className="flex justify-end mb-4 no-print">
-        <button
-          onClick={() => {
-            setError('');
-            setShowAdd(true);
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add service
-        </button>
+      {/* Title/subtitle and "Add service" used to live in two different
+          places (this page's own server component, and this component's
+          own separate button row below it) - on screen that put the
+          button on its own line under the heading instead of sharing it,
+          the same "title and its one primary action share a row" pattern
+          the dashboard already uses. One header now, owned here since the
+          button's click handler (setShowAdd) already lives in this
+          component's state - title/subtitle stay visible when printing,
+          the live counts and the button don't (no-print). */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[28px] text-ink mb-1.5">Service catalog</h1>
+          <p className="text-ink-soft text-[14px]">What customers can book, and what it costs.</p>
+        </div>
+        <div className="flex items-center gap-2.5 no-print">
+          {services.length > 0 && (
+            <>
+              <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
+                <span className="text-[12px] text-ink-faint">Active</span>
+                <span className="text-[13.5px] font-semibold text-accent">{activeCount}</span>
+              </div>
+              {hiddenCount > 0 && (
+                <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
+                  <span className="text-[12px] text-ink-faint">Hidden</span>
+                  <span className="text-[13.5px] font-semibold text-ink">{hiddenCount}</span>
+                </div>
+              )}
+            </>
+          )}
+          <button
+            onClick={() => {
+              setError('');
+              setShowAdd(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add service
+          </button>
+        </div>
       </div>
 
       {/* A modal, not an inline-expanding form - it used to push every row

@@ -51,32 +51,12 @@ export default async function ServicesPage({
     bookingStats.set(b.service_id, entry);
   }
 
-  const activeCount = (services ?? []).filter((s) => s.active).length;
-  const hiddenCount = (services ?? []).length - activeCount;
-
   return (
     <div>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-[28px] text-ink mb-1.5">Service catalog</h1>
-          <p className="text-ink-soft text-[14px]">What customers can book, and what it costs.</p>
-        </div>
-        {(services ?? []).length > 0 && (
-          <div className="flex items-center gap-2.5">
-            <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
-              <span className="text-[12px] text-ink-faint">Active</span>
-              <span className="text-[13.5px] font-semibold text-accent">{activeCount}</span>
-            </div>
-            {hiddenCount > 0 && (
-              <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
-                <span className="text-[12px] text-ink-faint">Hidden</span>
-                <span className="text-[13.5px] font-semibold text-ink">{hiddenCount}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
+      {/* Title, live stat pills, and "Add service" now all render inside
+          ServicesManager itself, sharing one row - moved from here so the
+          button (whose state already lives in that component) could sit
+          on the same line as the heading instead of its own row below it. */}
       <ServicesManager
         slug={slug}
         businessId={business.id}
