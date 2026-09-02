@@ -12,12 +12,22 @@ const supabaseAdmin = createClient(
 const BATCH_SIZE = 10; // concurrent sends - bounded so a large backlog doesn't all hit the push provider at once
 
 // GET /api/cron/send-owner-reminders - triggered by Vercel Cron (see
-// vercel.json), every 15 minutes. Delivers "remind me to call the
-// supplier tomorrow at 2pm"-style reminders the assistant created (see
+// vercel.json), once daily. Delivers "remind me to call the supplier
+// tomorrow at 2pm"-style reminders the assistant created (see
 // lib/manageTools.ts's apply_create_reminder) as a push notification once
 // their remind_at has passed, then marks them sent so a reminder never
 // fires twice - the same reminder_sent_at-gates-eligibility shape
 // send-reminders already uses for booking reminders, just on this table.
+//
+// Daily, not every 15 minutes as first built - Vercel's free Hobby tier
+// only allows daily cron schedules; the two crons already proven working
+// in this file (send-reminders, weekly-insights) are both daily too. A
+// real cost of this: a reminder set for a specific time can land up to
+// ~24h later than asked (whenever this run next happens to catch it,
+// since it just checks "is remind_at in the past yet", not "did it just
+// pass"), not at the exact moment requested. That's an honest, known
+// tradeoff for running on the free tier - tighten this once upgrading to
+// Pro (which allows per-minute schedules) is actually affordable.
 //
 // Push-only for now, no email fallback - unlike a booking reminder there's
 // no customer contact info to fall back to here, and this whole feature

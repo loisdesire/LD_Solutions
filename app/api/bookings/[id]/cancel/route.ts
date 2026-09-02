@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { isUuid } from '@/lib/apiValidation';
+import { notifyStaffOfCancellation } from '@/lib/pushNotify';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +29,7 @@ export async function POST(
 
   const { data: existing } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, start_time, status')
+    .select('id, business_id, start_time, status, customer_name, services(name), businesses(timezone)')
     .eq('id', id)
     .maybeSingle();
 
@@ -68,6 +69,26 @@ export async function POST(
       { error: "We couldn't cancel that booking. Please try again, or contact the business directly." },
       { status: 400 }
     );
+  }
+
+  // Never blocks the cancellation itself if it fails - this used to be a
+  // real gap: a customer cancelling had no way to tell the business at
+  // all except them noticing it missing from the calendar eventually.
+  try {
+    const service = (Array.isArray(existing.services) ? existing.services[0] : existing.services) as { name: string } | null;
+    const biz = (Array.isArray(existing.businesses) ? existing.businesses[0] : existing.businesses) as { timezone: string } | null;
+    await notifyStaffOfCancellation(existing.business_id, {
+      customerName: existing.customer_name,
+      serviceName: service?.name ?? 'Appointment',
+      whenLabel: new Date(existing.start_time).toLocaleString('en-US', {
+        timeZone: biz?.timezone || 'UTC',
+        dateStyle: 'full',
+        timeStyle: 'short',
+      }),
+      cancelledBy: 'customer',
+    });
+  } catch (err) {
+    logError('api/bookings/cancel:notify', err, { bookingId: id });
   }
 
   return NextResponse.json({ booking });

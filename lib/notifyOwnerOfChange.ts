@@ -140,11 +140,19 @@ export function describeManageToolChange(name: string, args: Record<string, unkn
   }
 }
 
-// Always to the owner specifically, not whoever made the change - the
-// point is oversight (an owner who wasn't the one chatting still finds
-// out), not a receipt for the actor, who already saw it happen in the
-// conversation itself.
-export async function notifyOwnerOfManageChange(businessId: string, summary: ChangeSummary): Promise<void> {
+// The actual "look up the owner, brand it as their business, send it"
+// logic - was written once inline inside notifyOwnerOfManageChange below;
+// pulled out so a new-booking email fallback and a cancellation notice
+// (both genuinely different events, not "a change") don't each duplicate
+// the same owner-lookup-plus-renderEmail boilerplate a third and fourth
+// time. Always to the OWNER specifically, not whoever caused the event -
+// the point is oversight, not a receipt for someone who already knows
+// (they were the one chatting, or the one who just cancelled their own
+// booking).
+export async function notifyOwnerByEmail(
+  businessId: string,
+  opts: { subject?: string; heading: string; intro: string; rows?: EmailRow[]; footerNote?: string; logContext: string }
+): Promise<void> {
   const [{ data: business }, { data: owner }] = await Promise.all([
     supabaseAdmin.from('businesses').select('name, accent_color, logo_url, slug').eq('id', businessId).maybeSingle(),
     supabaseAdmin.from('staff').select('email').eq('business_id', businessId).eq('role', 'owner').maybeSingle(),
@@ -156,25 +164,40 @@ export async function notifyOwnerOfManageChange(businessId: string, summary: Cha
     await sendEmail(
       {
         to: owner.email,
-        subject: `A change was made to ${business?.name ?? 'your business'}`,
+        // The subject often wants the business name for inbox scanning
+        // ("A change was made to Beads by Tilly"), which reads oddly
+        // repeated as the in-email heading right below it - defaults to
+        // the heading only when a caller doesn't need that distinction.
+        subject: opts.subject ?? opts.heading,
         html: renderEmail({
           businessName: business?.name ?? 'Your business',
           accentColor: business?.accent_color,
           logoUrl: business?.logo_url,
-          preheader: summary.intro,
-          heading: 'Your assistant made a change',
-          intro: summary.intro,
-          rows: summary.rows,
+          preheader: opts.intro,
+          heading: opts.heading,
+          intro: opts.intro,
+          rows: opts.rows,
           cta: business?.slug ? { label: 'Open your dashboard', url: `${SITE_URL}/${business.slug}/admin` } : null,
-          footerNote: "Wasn't you? Check who has access to your assistant and reach out to us if something looks wrong.",
+          footerNote: opts.footerNote,
         }),
       },
-      'notifyOwnerOfManageChange',
+      opts.logContext,
       { businessId }
     );
   } catch (err) {
-    // Never let a notification failure surface as if the actual change
-    // (already made and already confirmed to whoever asked for it) failed.
-    logError('notifyOwnerOfManageChange', err, { businessId });
+    // Never let a notification failure surface as if the actual event
+    // (already real, already happened) failed.
+    logError(opts.logContext, err, { businessId });
   }
+}
+
+export async function notifyOwnerOfManageChange(businessId: string, summary: ChangeSummary, businessName?: string | null): Promise<void> {
+  await notifyOwnerByEmail(businessId, {
+    subject: `A change was made to ${businessName ?? 'your business'}`,
+    heading: 'Your assistant made a change',
+    intro: summary.intro,
+    rows: summary.rows,
+    footerNote: "Wasn't you? Check who has access to your assistant and reach out to us if something looks wrong.",
+    logContext: 'notifyOwnerOfManageChange',
+  });
 }

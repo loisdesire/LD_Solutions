@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { isAcceptablePassword, isUuid } from '@/lib/apiValidation';
+import { notifyOwnerByEmail } from '@/lib/notifyOwnerOfChange';
+import { logError } from '@/lib/logger';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -65,6 +67,24 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('staff').delete().eq('auth_id', authUser.user.id);
     await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
     return NextResponse.json({ error: 'Could not finish accepting this invite' }, { status: 500 });
+  }
+
+  // Sending the invite already emails the owner; accepting it never told
+  // them the person actually joined - they'd only find out by checking
+  // the Staff page themselves. Never blocks the response either way.
+  try {
+    await notifyOwnerByEmail(invite.business_id, {
+      subject: `${invite.email} joined your team`,
+      heading: 'A new team member joined',
+      intro: `${invite.email} accepted their invite and can now sign in.`,
+      rows: [
+        { label: 'Email', value: invite.email },
+        { label: 'Role', value: invite.role === 'owner' ? 'Owner' : 'Staff' },
+      ],
+      logContext: 'accept-invite:notify-owner',
+    });
+  } catch (err) {
+    logError('accept-invite:notify-owner', err, { businessId: invite.business_id });
   }
 
   return NextResponse.json({

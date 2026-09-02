@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
 import { logError } from '@/lib/logger';
+import { notifyCustomer, getNotifyCreds } from '@/lib/notifyCustomer';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,9 +35,25 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
-  const auth = await requireStaffApiSession(req, slug);
+  const auth = await requireStaffApiSession(req, slug, 'id, name');
   if (auth.error) return auth.error;
   const { business } = auth;
+
+  // Fetched before the update, not after - the customer needs their own
+  // contact info and what's actually changing (old status vs new), none
+  // of which the plain `id, status` select this used to do could answer.
+  // Also lets a cancel-on-an-already-cancelled-booking be told apart from
+  // a genuine new cancellation, so it isn't double-notified.
+  const { data: before } = await supabaseAdmin
+    .from('bookings')
+    .select('id, status, customer_name, customer_email, customer_phone, customer_telegram_username, start_time, services(name)')
+    .eq('id', id)
+    .eq('business_id', business.id)
+    .maybeSingle();
+
+  if (!before) {
+    return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+  }
 
   // Scoped to this business's own id, not just the booking id - without
   // this a staff member logged into one business could change the status
@@ -55,6 +72,34 @@ export async function POST(
   }
   if (!booking) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+  }
+
+  // Only a genuine new cancellation, not a status change that happened to
+  // already be cancelled - this used to notify nobody at all, so a
+  // customer whose appointment the business cancelled found out only by
+  // showing up (or not being reminded, since the reminders cron only
+  // targets `confirmed` bookings).
+  if (status === 'cancelled' && before.status !== 'cancelled') {
+    try {
+      const service = (Array.isArray(before.services) ? before.services[0] : before.services) as { name: string } | null;
+      const creds = await getNotifyCreds(business.id);
+      const whenLabel = new Date(before.start_time).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
+      const text = `Hi ${before.customer_name}, your ${service?.name ?? 'appointment'} at ${creds.name ?? business.name} on ${whenLabel} has been cancelled. Contact us if you have questions.`;
+      await notifyCustomer(
+        creds,
+        before,
+        text,
+        `Your appointment at ${creds.name ?? business.name} was cancelled`,
+        'api/bookings/status:notify-customer',
+        { bookingId: id, businessId: business.id },
+        [
+          { label: 'Service', value: service?.name ?? 'Appointment' },
+          { label: 'Was scheduled for', value: whenLabel },
+        ]
+      );
+    } catch (err) {
+      logError('api/bookings/status:notify-customer', err, { bookingId: id, businessId: business.id });
+    }
   }
 
   return NextResponse.json({ booking });

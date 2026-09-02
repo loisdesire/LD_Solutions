@@ -1,6 +1,7 @@
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 import { logError } from './logger';
+import { notifyOwnerByEmail } from './notifyOwnerOfChange';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,19 +67,73 @@ async function sendPushToBusiness(
 // Fired from every place a booking becomes CONFIRMED (web checkout,
 // chat-channel booking, chat-channel payment webhook) - never on a
 // pending_payment hold, since nothing is actually booked yet at that point.
-// Sends to every device any staff member at this business has enabled
-// notifications on (components/NotificationBell.tsx), not just the owner.
+// Push reaches every device any staff member has notifications enabled on
+// (components/NotificationBell.tsx); the email is a real fallback for the
+// case that made push alone a genuine gap - notifications are opt-in per
+// device, so a business that never enabled them heard about a new booking
+// only by checking the dashboard themselves. Both fire unconditionally
+// (email is cheap, and there's no way to know from here whether push
+// actually reached anyone) rather than emailing only when push fails.
 export async function notifyStaffOfNewBooking(
   businessId: string,
   payload: { customerName: string; serviceName: string; whenLabel: string }
 ) {
   const { data: business } = await supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle();
-  await sendPushToBusiness(businessId, {
-    title: `New booking: ${payload.customerName}`,
-    body: `${payload.serviceName} · ${payload.whenLabel}`,
-    url: business?.slug ? `/${business.slug}/admin` : '/',
-    tag: 'vanova-new-booking',
-  });
+  await Promise.all([
+    sendPushToBusiness(businessId, {
+      title: `New booking: ${payload.customerName}`,
+      body: `${payload.serviceName} · ${payload.whenLabel}`,
+      url: business?.slug ? `/${business.slug}/admin` : '/',
+      tag: 'vanova-new-booking',
+    }),
+    notifyOwnerByEmail(businessId, {
+      subject: `New booking: ${payload.customerName}`,
+      heading: 'You have a new booking',
+      intro: `${payload.customerName} booked ${payload.serviceName}.`,
+      rows: [
+        { label: 'Customer', value: payload.customerName },
+        { label: 'Service', value: payload.serviceName },
+        { label: 'When', value: payload.whenLabel },
+      ],
+      logContext: 'notifyStaffOfNewBooking:email',
+    }),
+  ]);
+}
+
+// Fired when a booking is cancelled from either side - the customer's own
+// self-serve cancel (app/api/bookings/[id]/cancel) or staff cancelling on
+// the customer's behalf (app/api/bookings/[id]/status). `cancelledBy`
+// exists so the email reads honestly either way, rather than a generic
+// "a booking was cancelled" that leaves the owner wondering if it was
+// their own staff or the customer who did it.
+export async function notifyStaffOfCancellation(
+  businessId: string,
+  payload: { customerName: string; serviceName: string; whenLabel: string; cancelledBy: 'customer' | 'staff' }
+) {
+  const { data: business } = await supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle();
+  const intro =
+    payload.cancelledBy === 'customer'
+      ? `${payload.customerName} cancelled their own booking.`
+      : `${payload.customerName}'s booking was cancelled.`;
+  await Promise.all([
+    sendPushToBusiness(businessId, {
+      title: `Booking cancelled: ${payload.customerName}`,
+      body: `${payload.serviceName} · ${payload.whenLabel}`,
+      url: business?.slug ? `/${business.slug}/admin` : '/',
+      tag: 'vanova-cancellation',
+    }),
+    notifyOwnerByEmail(businessId, {
+      subject: `Booking cancelled: ${payload.customerName}`,
+      heading: 'A booking was cancelled',
+      intro,
+      rows: [
+        { label: 'Customer', value: payload.customerName },
+        { label: 'Service', value: payload.serviceName },
+        { label: 'Was scheduled for', value: payload.whenLabel },
+      ],
+      logContext: 'notifyStaffOfCancellation:email',
+    }),
+  ]);
 }
 
 // Fired by the owner-reminders cron (app/api/cron/send-owner-reminders)

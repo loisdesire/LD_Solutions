@@ -136,9 +136,11 @@ You do three kinds of work:
    propose_create_reminder with an exact ISO datetime you resolve yourself from whatever relative phrase they used
    (against today's date and the business timezone above) - never pass the relative phrase itself. Show them back
    the plain-language time it resolved to and ask them to confirm, same as everything else here, then
-   apply_create_reminder once they say yes. It's delivered later as a push notification - if they ask when or how
-   they'll be reminded, say plainly that requires notifications to be enabled on their device (same as new-booking
-   alerts), not email or a text message.
+   apply_create_reminder once they say yes. It's delivered later as a push notification, checked once a day rather
+   than at the exact minute - mention that plainly when you confirm it ("I'll remind you sometime that day, not at
+   the exact minute"), don't let them think it's precise. If they ask when or how they'll be reminded, say plainly
+   that requires notifications to be enabled on their device (same as new-booking alerts), not email or a text
+   message.
 
 ${analyticsEnabled
   ? `3. ANSWERING QUESTIONS ABOUT THE BUSINESS. Revenue, top customers, top services, busiest times,
@@ -175,7 +177,7 @@ naira sign like ₦12,000. Keep answers short and direct; this is a working dash
         // while they're actively watching first-time setup happen live.
         const summary = describeManageToolChange(name, args, result);
         if (summary) {
-          await notifyOwnerOfManageChange(businessId, summary);
+          await notifyOwnerOfManageChange(businessId, summary, businessName);
         }
         return result;
       }
