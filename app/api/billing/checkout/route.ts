@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
 import { PLAN_PRICE_NGN, PLAN_LABEL, type Plan } from '@/lib/subscription';
 import { SITE_URL } from '@/lib/site';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
 const supabaseAdmin = createClient(
@@ -24,6 +25,10 @@ const PLAN_ENV_KEY: Record<Plan, string> = {
 // POST /api/billing/checkout - starts a Flutterwave subscription checkout
 // for this business, for whichever plan they picked.
 export async function POST(req: NextRequest) {
+  if (!(await rateLimit(`billing-checkout:${getClientIp(req)}`, 10, 60_000))) {
+    return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
+  }
+
   const { slug, plan: rawPlan } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 

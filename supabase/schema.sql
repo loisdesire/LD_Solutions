@@ -559,6 +559,16 @@ create policy "staff can view own payment history"
 -- features unlock once access is already granted.
 alter table subscriptions add column if not exists plan text not null default 'core';
 
+-- Tracks whether the trial-ending / payment-failed warning email (see
+-- app/api/cron/billing-warnings) has already gone out - without these,
+-- a daily cron re-checking "trial ends within 3 days" would re-send the
+-- same warning on each of those 3 days. past_due_warning_sent_at is reset
+-- to null whenever a payment succeeds again (see both payment webhooks'
+-- own status: 'active' update), so a FUTURE payment failure gets warned
+-- about too, not just the first one this subscription ever has.
+alter table subscriptions add column if not exists trial_warning_sent_at timestamptz;
+alter table subscriptions add column if not exists past_due_warning_sent_at timestamptz;
+
 -- A business's own domain, pointed at this deployment via CNAME. Unique so
 -- middleware.ts's hostname lookup is always unambiguous. Actually serving
 -- traffic on it also requires the domain be added to the Vercel project by

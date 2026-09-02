@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { notifyCustomer, getNotifyCreds } from '@/lib/notifyCustomer';
 
@@ -25,6 +26,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Generous limit, not the tight 10/60s the rare billing actions use -
+  // this is a routine admin action (confirm/complete/cancel) that gets
+  // clicked repeatedly in normal use, e.g. processing several bookings
+  // in a row.
+  if (!(await rateLimit(`bookings-status:${getClientIp(req)}`, 30, 60_000))) {
+    return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
+  }
+
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const status = body?.status as string | undefined;

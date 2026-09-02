@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
 const supabaseAdmin = createClient(
@@ -13,6 +14,10 @@ const supabaseAdmin = createClient(
 // as-is); the access gate should honor that rather than cutting them off
 // mid-period they already paid for.
 export async function POST(req: NextRequest) {
+  if (!(await rateLimit(`billing-cancel:${getClientIp(req)}`, 10, 60_000))) {
+    return NextResponse.json({ error: 'Too many requests, please try again shortly' }, { status: 429 });
+  }
+
   const { slug } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 

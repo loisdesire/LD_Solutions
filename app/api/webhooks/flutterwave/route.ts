@@ -99,6 +99,11 @@ export async function POST(req: NextRequest) {
         current_period_end: periodEnd.toISOString(),
         flw_subscription_id: flwSubId ?? null,
         updated_at: new Date().toISOString(),
+        // Reset, not left set - a business that recovers from one failed
+        // payment and then fails a LATER one should still get warned about
+        // that new failure, not silently skipped because the tracking
+        // column was already set from the first time.
+        past_due_warning_sent_at: null,
       })
       .eq('id', sub.id);
   } else if (data.status === 'failed') {
