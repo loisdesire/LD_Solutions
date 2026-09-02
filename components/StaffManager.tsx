@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import CheckIcon from './CheckIcon';
 import { useToast } from './Toast';
 import { friendlyError } from '@/lib/friendlyError';
-import { inputClass, smallInputClass, iconBtnClass } from './formStyles';
+import { inputClass, labelClass, iconBtnClass } from './formStyles';
+import { useDialog } from './useDialog';
 import PageHeader from './PageHeader';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
@@ -13,6 +14,77 @@ import Field from './Field';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
+
+// The row itself used to expand into this on "Edit" - pushing every row
+// below it down the page for a change to one field. Same overlay pattern
+// as ServicesManager/ProductsManager's add/edit modals, just smaller
+// (name is the only thing this is allowed to change - see saveEdit's own
+// comment on why role isn't here).
+function EditStaffNameModal({
+  name,
+  setName,
+  saving,
+  onSubmit,
+  onClose,
+}: {
+  name: string;
+  setName: (v: string) => void;
+  saving: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+}) {
+  const dialogRef = useDialog(true, onClose);
+  const nameId = useId();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit team member"
+      ref={dialogRef}
+    >
+      <div
+        className="absolute inset-0 backdrop-blur-sm animate-fade"
+        style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-sm rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
+          <h2 className="font-display text-[19px] font-semibold text-ink">Edit team member</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="p-6 space-y-4">
+          <div>
+            <label htmlFor={nameId} className={labelClass}>Name</label>
+            <input
+              id={nameId}
+              required
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={saving || !name.trim()}
+            className="w-full rounded-xl bg-accent px-5 py-3 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function StaffManager({
   businessId,
@@ -252,34 +324,7 @@ export default function StaffManager({
         </div>
       ) : (
       <div className="border-2 border-line rounded-2xl bg-surface overflow-hidden mb-8">
-        {staff.map((s) =>
-          editingId === s.id ? (
-            <div key={s.id} className="flex flex-col gap-3 p-4 border-b border-line last:border-0">
-              <input
-                aria-label={`${s.name}'s name`}
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className={smallInputClass}
-                placeholder="Name"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => saveEdit(s.id)}
-                  disabled={editSaving || !editName.trim()}
-                  className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-accent-contrast disabled:opacity-50"
-                >
-                  {editSaving ? 'Saving…' : 'Save'}
-                </button>
-                <button
-                  onClick={() => setEditingId('')}
-                  className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-caption font-medium text-ink-soft hover:text-ink transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
+        {staff.map((s) => (
             <div
               key={s.id}
               className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3.5 px-4 py-3.5 border-b border-line last:border-0"
@@ -376,6 +421,19 @@ export default function StaffManager({
             ))}
           </div>
         </div>
+      )}
+
+      {editingId && (
+        <EditStaffNameModal
+          name={editName}
+          setName={setEditName}
+          saving={editSaving}
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveEdit(editingId);
+          }}
+          onClose={() => setEditingId('')}
+        />
       )}
 
       <ConfirmDialog

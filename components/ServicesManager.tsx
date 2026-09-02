@@ -7,7 +7,7 @@ import { friendlyError } from '@/lib/friendlyError';
 import { formatMoney } from '@/lib/formatMoney';
 import PillTabs from './PillTabs';
 import { useDialog } from './useDialog';
-import { inputClass, smallInputClass, labelClass, iconBtnClass } from './formStyles';
+import { inputClass, labelClass, iconBtnClass } from './formStyles';
 import ConfirmDialog from './ConfirmDialog';
 import ImageUploadField from './ImageUploadField';
 
@@ -61,6 +61,8 @@ function AddServiceModal({
   error,
   onSubmit,
   onClose,
+  title = 'Add service',
+  submitLabel = 'Save service',
 }: {
   slug: string;
   name: string;
@@ -80,6 +82,9 @@ function AddServiceModal({
   error: string;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
+  /** Reused for editing too (see the editingId-gated render below) - only the title/button copy and the submit handler actually differ. */
+  title?: string;
+  submitLabel?: string;
 }) {
   const dialogRef = useDialog(true, onClose);
   const nameId = useId();
@@ -93,7 +98,7 @@ function AddServiceModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
-      aria-label="Add service"
+      aria-label={title}
       ref={dialogRef}
     >
       <div
@@ -103,7 +108,7 @@ function AddServiceModal({
       />
       <div className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
-          <h2 className="font-display text-[19px] font-semibold text-ink">Add service</h2>
+          <h2 className="font-display text-[19px] font-semibold text-ink">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -197,7 +202,7 @@ function AddServiceModal({
             disabled={saving}
             className="w-full rounded-xl bg-accent px-5 py-3 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Save service'}
+            {saving ? 'Saving…' : submitLabel}
           </button>
         </form>
       </div>
@@ -533,6 +538,44 @@ export default function ServicesManager({
         />
       )}
 
+      {/* Editing used to expand the row itself into a big inline form,
+          pushing every row below it down the page - the exact thing the
+          comment above already explains AddServiceModal exists to avoid
+          for adding a service, just never applied to editing one too.
+          Same modal, reused: only the title, button copy, and which
+          handler runs on submit differ. editDraft's field names
+          (duration_minutes, image_url) don't match the modal's own prop
+          names (duration, imageUrl) since that draft is one grouped
+          object with a single setter - these are just thin adapters over
+          setEditDraft, not a second copy of the state itself. */}
+      {editingId && (
+        <AddServiceModal
+          slug={slug}
+          name={editDraft.name}
+          setName={(v) => setEditDraft((d) => ({ ...d, name: v }))}
+          category={editDraft.category}
+          setCategory={(v) => setEditDraft((d) => ({ ...d, category: v }))}
+          duration={editDraft.duration_minutes}
+          setDuration={(v) => setEditDraft((d) => ({ ...d, duration_minutes: v }))}
+          price={editDraft.price}
+          setPrice={(v) => setEditDraft((d) => ({ ...d, price: v }))}
+          description={editDraft.description}
+          setDescription={(v) => setEditDraft((d) => ({ ...d, description: v }))}
+          imageUrl={editDraft.image_url}
+          setImageUrl={(v) => setEditDraft((d) => ({ ...d, image_url: v }))}
+          categories={categories}
+          saving={editSaving}
+          error=""
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveEdit(editingId);
+          }}
+          onClose={() => setEditingId('')}
+          title="Edit service"
+          submitLabel="Save changes"
+        />
+      )}
+
       {services.length === 0 ? (
         <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
           <div className="mx-auto mb-5 h-12 w-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
@@ -610,89 +653,7 @@ export default function ServicesManager({
               No services match {search ? 'that search' : 'this category'}.
             </div>
           ) : (
-            paged.map((s, i) =>
-            editingId === s.id ? (
-              <div
-                key={s.id}
-                className={`flex flex-col gap-3 p-4 ${
-                  i !== paged.length - 1 ? 'border-b border-line' : ''
-                }`}
-                style={{ background: 'color-mix(in srgb, var(--accent) 4%, var(--surface))' }}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-                  <input
-                    aria-label="Service name"
-                    value={editDraft.name}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
-                    className={`${smallInputClass} flex-1`}
-                  />
-                  <input
-                    aria-label="Category"
-                    value={editDraft.category}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
-                    placeholder="Category"
-                    className={`${smallInputClass} w-28`}
-                  />
-                  <input
-                    type="number"
-                    min={5}
-                    step={5}
-                    aria-label="Duration in minutes"
-                    value={editDraft.duration_minutes}
-                    onChange={(e) =>
-                      setEditDraft((d) => ({ ...d, duration_minutes: Number(e.target.value) }))
-                    }
-                    className={`${smallInputClass} w-24`}
-                  />
-                  <div className="relative w-28">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint text-[12.5px] pointer-events-none">
-                      ₦
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      aria-label="Price"
-                      value={editDraft.price}
-                      onChange={(e) => setEditDraft((d) => ({ ...d, price: e.target.value }))}
-                      placeholder="Price"
-                      className={`${smallInputClass} w-full pl-6`}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <textarea
-                    aria-label="Description"
-                    value={editDraft.description}
-                    onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))}
-                    placeholder="Description (optional)"
-                    rows={2}
-                    className={`${smallInputClass} flex-1`}
-                  />
-                  <ImageUploadField
-                    slug={slug}
-                    value={editDraft.image_url}
-                    onChange={(url) => setEditDraft((d) => ({ ...d, image_url: url }))}
-                    shape="avatar"
-                    label="Photo"
-                  />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => saveEdit(s.id)}
-                    disabled={editSaving}
-                    className="rounded-xl bg-accent px-4 py-1.5 text-caption font-semibold text-accent-contrast disabled:opacity-50"
-                  >
-                    {editSaving ? 'Saving…' : 'Save'}
-                  </button>
-                  <button
-                    onClick={() => setEditingId('')}
-                    className="rounded-xl border-2 border-line-strong px-4 py-1.5 text-caption font-medium text-ink-soft hover:text-ink transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
+            paged.map((s, i) => (
               <div
                 key={s.id}
                 className={`flex flex-col gap-2.5 sm:grid sm:grid-cols-[1.6fr_1fr_1fr_1fr_100px] sm:gap-4 sm:items-center px-5 py-4 ${
@@ -791,8 +752,7 @@ export default function ServicesManager({
                   </button>
                 </div>
               </div>
-            )
-            )
+            ))
           )}
 
           {filtered.length > PAGE_SIZE && (

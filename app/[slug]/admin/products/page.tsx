@@ -15,23 +15,13 @@ export default async function ProductsPage({
     .eq('business_id', business.id)
     .order('name');
 
-  const activeCount = (products ?? []).filter((p) => p.active).length;
-  const hiddenCount = (products ?? []).length - activeCount;
-
   return (
     <div>
-      <div className="mb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Manage · Products
-        </div>
-        <h1 className="font-display text-[26px] text-ink">Products</h1>
-        {(products ?? []).length > 0 && (
-          <p className="font-mono text-[11px] text-ink-faint mt-1.5">
-            {activeCount} active{hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ''}
-          </p>
-        )}
-      </div>
-
+      {/* Title, live active/hidden counts, and "Add product" now all
+          render inside ProductsManager itself, sharing one row - moved
+          from here so the button (whose state already lives in that
+          component) could sit on the same line as the heading instead of
+          its own row below it. Same fix as the Services page. */}
       <ProductsManager businessId={business.id} initialProducts={products ?? []} />
     </div>
   );
