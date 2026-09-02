@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendTelegramMessage, sendWhatsappMessage, sendMessengerMessage } from './channelSend';
 import { sendEmail } from './email';
-import { renderEmail } from './emailTemplate';
+import { renderEmail, type EmailRow } from './emailTemplate';
 import { parseContact } from './contact';
 
 const supabaseAdmin = createClient(
@@ -43,7 +43,13 @@ export async function notifyCustomer(
   text: string,
   emailSubject: string,
   logContext: string,
-  meta?: Record<string, unknown>
+  meta?: Record<string, unknown>,
+  // Bot channels only ever get `text` (they're a chat message, not a
+  // document), but email has a real labeled-rows table sitting unused in
+  // the shared template (lib/emailTemplate.ts) - same fix as
+  // notifyOwnerOfManageChange, applied here so reminder and reschedule
+  // emails get Service/When rows instead of one run-on sentence too.
+  rows?: EmailRow[]
 ): Promise<boolean> {
   const { channel } = customer.customer_phone
     ? parseContact(customer.customer_phone, customer.customer_telegram_username ?? undefined)
@@ -76,6 +82,7 @@ export async function notifyCustomer(
           preheader: text.slice(0, 140),
           heading: emailSubject,
           intro: text,
+          rows,
         }),
       },
       logContext,

@@ -123,7 +123,11 @@ export async function GET(req: NextRequest) {
       text,
       `Reminder: your appointment at ${business?.name ?? 'the business'}`,
       'cron/send-reminders:send',
-      { bookingId: booking.id }
+      { bookingId: booking.id },
+      [
+        { label: 'Service', value: service?.name ?? 'Appointment' },
+        { label: 'When', value: startLabel },
+      ]
     );
 
     if (ok) {

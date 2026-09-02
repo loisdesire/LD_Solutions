@@ -18,30 +18,28 @@ if (configured) {
   webpush.setVapidDetails('mailto:support@vanovahub.com', VAPID_PUBLIC_KEY!, VAPID_PRIVATE_KEY!);
 }
 
-// Fired from every place a booking becomes CONFIRMED (web checkout,
-// chat-channel booking, chat-channel payment webhook) - never on a
-// pending_payment hold, since nothing is actually booked yet at that point.
-// Sends to every device any staff member at this business has enabled
-// notifications on (components/NotificationBell.tsx), not just the owner.
-export async function notifyStaffOfNewBooking(
+// The actual "send to every device this business has notifications
+// enabled on" loop - extracted so a second caller (owner reminders, see
+// below) doesn't duplicate the same subscription-fetch, per-device
+// send-with-cleanup logic notifyStaffOfNewBooking already had. Returns
+// true if it reached at least one device, so a caller with its own
+// "did this actually go anywhere" bookkeeping (the reminders cron marks
+// each reminder sent regardless, but logs when nothing was reachable) can
+// tell the difference from "silently did nothing."
+async function sendPushToBusiness(
   businessId: string,
-  payload: { customerName: string; serviceName: string; whenLabel: string }
-) {
-  if (!configured) return;
+  payload: { title: string; body: string; url: string; tag: string }
+): Promise<boolean> {
+  if (!configured) return false;
 
-  const [{ data: subs }, { data: business }] = await Promise.all([
-    supabaseAdmin.from('push_subscriptions').select('id, endpoint, p256dh, auth').eq('business_id', businessId),
-    supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle(),
-  ]);
+  const { data: subs } = await supabaseAdmin
+    .from('push_subscriptions')
+    .select('id, endpoint, p256dh, auth')
+    .eq('business_id', businessId);
 
-  if (!subs || subs.length === 0) return;
+  if (!subs || subs.length === 0) return false;
 
-  const body = JSON.stringify({
-    title: `New booking: ${payload.customerName}`,
-    body: `${payload.serviceName} · ${payload.whenLabel}`,
-    url: business?.slug ? `/${business.slug}/admin` : '/',
-    tag: 'vanova-new-booking',
-  });
+  const body = JSON.stringify(payload);
 
   await Promise.all(
     subs.map(async (sub) => {
@@ -51,8 +49,8 @@ export async function notifyStaffOfNewBooking(
         const statusCode = (err as { statusCode?: number })?.statusCode;
         // 404/410 = the browser or OS has permanently invalidated this
         // subscription (uninstalled, permission revoked, storage wiped) -
-        // clean it up so future bookings don't keep paying the round trip
-        // to an endpoint that will never succeed again.
+        // clean it up so future notifications don't keep paying the round
+        // trip to an endpoint that will never succeed again.
         if (statusCode === 404 || statusCode === 410) {
           await supabaseAdmin.from('push_subscriptions').delete().eq('id', sub.id);
         } else {
@@ -61,4 +59,39 @@ export async function notifyStaffOfNewBooking(
       }
     })
   );
+
+  return true;
+}
+
+// Fired from every place a booking becomes CONFIRMED (web checkout,
+// chat-channel booking, chat-channel payment webhook) - never on a
+// pending_payment hold, since nothing is actually booked yet at that point.
+// Sends to every device any staff member at this business has enabled
+// notifications on (components/NotificationBell.tsx), not just the owner.
+export async function notifyStaffOfNewBooking(
+  businessId: string,
+  payload: { customerName: string; serviceName: string; whenLabel: string }
+) {
+  const { data: business } = await supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle();
+  await sendPushToBusiness(businessId, {
+    title: `New booking: ${payload.customerName}`,
+    body: `${payload.serviceName} · ${payload.whenLabel}`,
+    url: business?.slug ? `/${business.slug}/admin` : '/',
+    tag: 'vanova-new-booking',
+  });
+}
+
+// Fired by the owner-reminders cron (app/api/cron/send-owner-reminders)
+// once a reminder's remind_at has passed. Same reach as a new-booking
+// alert - every device any staff member has notifications enabled on, not
+// just whoever originally asked for the reminder (staff_id isn't even
+// threaded through yet - see lib/manageTools.ts's applyCreateReminder).
+export async function notifyStaffOfReminder(businessId: string, message: string): Promise<boolean> {
+  const { data: business } = await supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle();
+  return sendPushToBusiness(businessId, {
+    title: 'Reminder',
+    body: message,
+    url: business?.slug ? `/${business.slug}/admin` : '/',
+    tag: 'vanova-owner-reminder',
+  });
 }

@@ -702,3 +702,55 @@ export async function applyUpdateHours(
 
   return { applied: true, day: DAY_NAMES[dayOfWeek], now: closed ? 'closed' : `${startTime}-${endTime}` };
 }
+
+function cleanReminderMessage(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  return cleaned.length > 0 && cleaned.length <= 500 ? cleaned : null;
+}
+
+// The model resolves "tomorrow at 2pm" into an exact ISO datetime itself
+// (see the propose_create_reminder tool description) - this only checks
+// what comes back is a real, parseable moment that's actually still ahead
+// of now. A time already in the past would just fire on the cron's very
+// next tick, which is never what was actually meant if the model got the
+// date wrong.
+function cleanRemindAt(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime()) || d.getTime() <= Date.now()) return null;
+  return d.toISOString();
+}
+
+export async function proposeCreateReminder(businessId: string, args: { message: unknown; remindAt: unknown }) {
+  const message = cleanReminderMessage(args.message);
+  const remindAt = cleanRemindAt(args.remindAt);
+  if (!message) return { error: 'Give a real reminder message (1-500 characters).' };
+  if (!remindAt) return { error: "That time doesn't look right - it needs to be a real moment still ahead of now." };
+
+  const timeZone = await getBusinessTimezone(businessId);
+  return { proposed: { message, remind_at: formatLocalDateTime(remindAt, timeZone) } };
+}
+
+export async function applyCreateReminder(businessId: string, args: { message: unknown; remindAt: unknown }) {
+  const message = cleanReminderMessage(args.message);
+  const remindAt = cleanRemindAt(args.remindAt);
+  if (!message || !remindAt) {
+    return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
+  }
+
+  // staff_id deliberately left unset - who specifically asked isn't
+  // threaded down through the agent call chain yet, and delivery below
+  // goes to the whole business's notification-enabled devices regardless
+  // (same reach notifyStaffOfNewBooking already uses), not one specific
+  // person, so it isn't blocking anything to leave it null for now.
+  const { error } = await supabaseAdmin.from('owner_reminders').insert({
+    business_id: businessId,
+    message,
+    remind_at: remindAt,
+  });
+  if (error) return { error: "That didn't save - please try again." };
+
+  const timeZone = await getBusinessTimezone(businessId);
+  return { applied: true, message, remind_at: formatLocalDateTime(remindAt, timeZone) };
+}

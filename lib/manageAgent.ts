@@ -12,6 +12,8 @@ import {
   applyUpdateBookingRules,
   proposeUpdateHours,
   applyUpdateHours,
+  proposeCreateReminder,
+  applyCreateReminder,
 } from './manageTools';
 
 // Tool schemas + dispatcher for "manage your business by chat" - the third
@@ -275,6 +277,42 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'propose_create_reminder',
+      description:
+        'Work out what a reminder for the owner/staff would look like from what they described ("remind me to call the supplier tomorrow at 2pm"). Read-only, creates nothing yet.',
+      parameters: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'What to remind them about - their own words, cleaned up if needed.' },
+          remind_at: {
+            type: 'string',
+            description:
+              'An exact ISO 8601 datetime (with timezone offset), resolved from whatever relative phrase they used ("tomorrow at 2pm", "next Monday morning") against today\'s date and the business timezone given above. Never pass a relative phrase itself - resolve it first.',
+          },
+        },
+        required: ['message', 'remind_at'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_create_reminder',
+      description:
+        'Actually creates the reminder. Only call this after they have explicitly confirmed the exact plan propose_create_reminder just showed them - pass the same values.',
+      parameters: {
+        type: 'object',
+        properties: {
+          message: { type: 'string' },
+          remind_at: { type: 'string' },
+        },
+        required: ['message', 'remind_at'],
+      },
+    },
+  },
 ];
 
 export async function executeManageTool(name: string, args: Record<string, unknown>, businessId: string) {
@@ -351,6 +389,10 @@ export async function executeManageTool(name: string, args: Record<string, unkno
         endTime: args.end_time,
         closed: args.closed,
       });
+    case 'propose_create_reminder':
+      return proposeCreateReminder(businessId, { message: args.message, remindAt: args.remind_at });
+    case 'apply_create_reminder':
+      return applyCreateReminder(businessId, { message: args.message, remindAt: args.remind_at });
     default:
       return { error: `Unknown tool: ${name}` };
   }

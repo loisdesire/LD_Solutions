@@ -373,7 +373,12 @@ export async function applyReschedule(businessId: string, args: { planId?: strin
       text,
       `Your appointment has been rescheduled`,
       'rescheduleTools:applyReschedule',
-      { businessId, bookingId: move.booking_id }
+      { businessId, bookingId: move.booking_id },
+      [
+        { label: 'Service', value: move.service_name },
+        { label: 'Previous time', value: move.old_when },
+        { label: 'New time', value: move.new_when ?? 'Not yet set' },
+      ]
     );
 
     results.push({ customer: move.customer_name, service: move.service_name, applied: true, notified, detail: notified ? 'Moved and customer notified.' : 'Moved, but the customer could not be notified automatically - let them know directly.' });

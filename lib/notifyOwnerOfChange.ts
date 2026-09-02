@@ -127,6 +127,14 @@ export function describeManageToolChange(name: string, args: Record<string, unkn
         ],
       };
     }
+    case 'apply_create_reminder':
+      return {
+        intro: 'A reminder was set.',
+        rows: [
+          { label: 'Reminder', value: String(args.message) },
+          { label: 'When', value: String(args.remind_at) },
+        ],
+      };
     default:
       return null;
   }

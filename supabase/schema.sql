@@ -877,3 +877,41 @@ create trigger reject_demo_writes before insert or update or delete on assistant
 -- page the way `description` is.
 -- ============================================
 alter table businesses add column if not exists ai_context text;
+
+-- ============================================
+-- Owner reminders - "remind me to call the supplier tomorrow at 2pm",
+-- asked of the assistant in plain language (lib/manageAgent.ts's
+-- propose/apply_create_reminder). A cron job (app/api/cron/send-owner-
+-- reminders, every 15 minutes - see vercel.json) delivers each one as a
+-- push notification once remind_at has passed, then marks it sent so it
+-- never fires twice. staff_id is who ASKED for it, not necessarily who
+-- gets notified - delivery goes to the whole business (same "every
+-- device any staff member has notifications on" reach
+-- notifyStaffOfNewBooking already uses), since a reminder set by one
+-- person is often meant for whoever's actually around to act on it.
+-- ============================================
+create table if not exists owner_reminders (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  staff_id uuid references staff(id) on delete set null,
+  message text not null,
+  remind_at timestamptz not null,
+  sent_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists owner_reminders_due_idx on owner_reminders (remind_at) where sent_at is null;
+
+alter table owner_reminders enable row level security;
+
+create policy "staff can manage own business reminders"
+  on owner_reminders for all
+  using (
+    business_id in (
+      select business_id from staff where auth_id = auth.uid()
+    )
+  );
+
+drop trigger if exists reject_demo_writes on owner_reminders;
+create trigger reject_demo_writes before insert or update or delete on owner_reminders
+  for each row execute function reject_demo_viewer_writes();
