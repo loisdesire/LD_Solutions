@@ -298,7 +298,7 @@ export default function AdminSidebar({
         persistent nav, just not the full 256px sidebar's worth. Same
         destinations, same active/badge state, no group labels or business
         name (no room for either at 72px wide). */}
-    <aside className="hidden md:flex min-[900px]:hidden w-[72px] shrink-0 bg-surface border-r border-line flex-col items-center py-5 gap-1.5 sticky top-0 h-screen overflow-y-auto">
+    <aside className="hidden md:flex min-[900px]:hidden w-[72px] shrink-0 bg-surface border-r border-line-strong flex-col items-center py-5 gap-1.5 sticky top-0 h-screen overflow-y-auto">
       <div title={businessName} className="mb-4">
         <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-9 w-9 rounded-xl text-[14px]" />
       </div>
@@ -320,7 +320,7 @@ export default function AdminSidebar({
       </div>
     </aside>
 
-    <aside className="hidden min-[900px]:flex md:w-[256px] shrink-0 bg-surface border-r border-line flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
+    <aside className="hidden min-[900px]:flex md:w-[256px] shrink-0 bg-surface border-r border-line-strong flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
       {/* Was "Salon · /glow-salon" underneath the name, permanently - a
           url slug an owner already knows (it's their own business) and
           has no reason to be reminded of on every single glance at their

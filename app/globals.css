@@ -22,6 +22,15 @@
   --surface: #ffffff;
   --warm-surface: #f1eee8;
   --cream-surface: #f4e6c5;
+  /* One step deeper than --warm-surface, for exactly one job: the admin
+     content canvas sitting next to the (--surface, pure white) sidebar.
+     --warm-surface alone was only ~7% darker than white - reads as two
+     panels in a mockup but nearly flat in a real screenshot, especially
+     next to --surface cards floating on top of it, which are the *same*
+     white as the sidebar. This is deliberately its own token rather than
+     just redefining --warm-surface, which 26 other files also use for
+     hover/active states where that original, lighter value is correct. */
+  --admin-canvas: #e9e3d8;
 
   --ink: #211f1b;
   --ink-soft: #6e6a63;

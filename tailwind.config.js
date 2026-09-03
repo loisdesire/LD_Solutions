@@ -32,6 +32,7 @@ module.exports = {
         surface: 'var(--surface)',
         'warm-surface': 'var(--warm-surface)',
         'cream-surface': 'var(--cream-surface)',
+        'admin-canvas': 'var(--admin-canvas)',
         ink: 'var(--ink)',
         'ink-soft': 'var(--ink-soft)',
         'ink-faint': 'var(--ink-faint)',
