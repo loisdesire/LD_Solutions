@@ -54,7 +54,18 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body: data.body || '',
       icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      // `badge` is a DIFFERENT role from `icon`, not a smaller copy of it -
+      // Android derives the status-bar/notification-shade glyph from this
+      // image's alpha channel alone and renders it as a flat silhouette,
+      // discarding all color. icon-192.png is full-color and detailed
+      // (fine for the large `icon` slot), so as a badge it doesn't come
+      // out as a clean mark - reported live as a big blank white block,
+      // sitting right next to the same logo rendered properly as the
+      // large icon, reading as two different, inconsistent logos on one
+      // notification. No purpose-built small monochrome asset (a simple
+      // white shape on full transparency, ~96x96) exists in /public yet -
+      // until one does, omitting `badge` lets Chrome fall back to its own
+      // default treatment instead of a broken-looking custom one.
       tag: data.tag || 'vanova-notification',
       data: { url: data.url || '/' },
     })
