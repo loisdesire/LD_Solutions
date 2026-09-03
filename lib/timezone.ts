@@ -82,6 +82,19 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+// Confirmed live as its own distinct bug, separate from the day-name
+// resolution upcomingDatesTable below already fixes: the customer-facing
+// agent stated "Today is a Monday" on an actual Thursday, for an hours
+// lookup that never goes through check_availability (and so never even
+// reaches the date table) - it's driven by a plain weekly-hours list
+// indexed by weekday, so the model has to independently work out which
+// weekday today's bare date string falls on. Same root cause (calendar
+// arithmetic with no scaffolding), different code path, so it needed its
+// own explicit fix rather than assuming the table alone would cover it.
+export function weekdayName(dateISO: string): string {
+  return WEEKDAY_NAMES[dayOfWeekForDate(dateISO)];
+}
+
 // A ready weekday->date lookup table for the chat agents' system prompts,
 // computed here in code rather than left for the model to work out for
 // itself turn by turn. Confirmed live: with only a bare "today's date is

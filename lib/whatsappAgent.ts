@@ -15,7 +15,8 @@ import {
   type ChatMessage,
   checkPayment,
 } from './whatsappTools';
-import { todayInTimezone, upcomingDatesTable } from './timezone';
+import { todayInTimezone, upcomingDatesTable, weekdayName } from './timezone';
+import { formatMoney } from './formatMoney';
 import { hasBusinessIntelligence } from './subscription-server';
 
 // Everything OpenAI-specific lives in this one file (plus the shared loop
@@ -220,23 +221,30 @@ export async function runWhatsappAgent(params: {
     business.facebook_url && `Facebook: ${business.facebook_url}`,
   ].filter(Boolean);
 
+  // formatMoney, not a bare s.price - confirmed live, the model
+  // inconsistently decided on its own whether to add a currency symbol
+  // (the exact same underlying prompt read as "₦2,000" in one conversation
+  // and bare "2000" in another), since nothing here ever told it Naira
+  // values need one. The prompt now already contains the correctly
+  // formatted string, removing that judgment call entirely.
+  const servicesLine = services.length
+    ? services.map((s) => `${s.name} (${s.duration_minutes} min${s.price ? `, ${formatMoney(s.price)}` : ''})`).join(', ')
+    : 'none configured yet';
+
   const systemPrompt = `You are the booking assistant for ${business.name}.
 Speak as the business, using "we" and "our", never as a third party describing them. There was no instruction
 about this before, so identity was improvised: if someone asks whether they are talking to a person, say plainly
 that you are an automated assistant for ${business.name} and offer their contact details if you have them. Never
 claim to be a human, and never volunteer that you are software when nobody asked.
-Today's date is ${today} (business timezone: ${timeZone}).
+Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}) - state this exact weekday when asked
+what day it is or what today's hours are, never work it out yourself.
 When the customer names a day ("Wednesday", "next Friday", "tomorrow"), find it in this table rather than
 calculating a date yourself - do not add or subtract days by hand, this table is already correct:
 ${datesTable}
 If what they mean is genuinely ambiguous (e.g. "Wednesday" when today already is one - the nearer one or a week
 out), ask which one rather than guessing.
 
-Services offered: ${
-    services.length
-      ? services.map((s) => `${s.name} (${s.duration_minutes} min${s.price ? `, ${s.price}` : ''})`).join(', ')
-      : 'none configured yet'
-  }.
+Services offered: ${servicesLine}.
 
 Weekly hours: ${weeklyHours.join(', ')}.
 ${contactLines.length ? `\nContact info: ${contactLines.join(' · ')}.\n` : ''}${
@@ -247,6 +255,13 @@ Use the "Weekly hours", "Services offered", and "Contact info" above to answer g
 "are you open Sundays", "what do you offer", "how much is X", "what's your number/Instagram") without needing a
 tool call. Only share contact details that are actually listed above - if something isn't listed (e.g. no
 Instagram given), say you don't have that rather than guessing or inventing one.
+This applies to ANY question about the business, not just contact details - walk-in policy, parking, cancellation
+fees, age requirements, anything at all. Confirmed live: asked whether walk-ins were accepted (never configured
+anywhere), the model answered with a plausible-sounding generic hedge ("we recommend booking ahead...") instead of
+admitting it doesn't actually know - every other unconfigured-info question it handled correctly by saying so
+plainly. If it isn't in what you've actually been told above (services, hours, contact, or the background notes),
+say plainly you don't have that on file and suggest they contact the business directly - never produce an answer
+that merely sounds reasonable for a business like this one.
 Always call check_availability before confirming any *specific* open time slot - never guess or invent one.
 Before calling create_booking, you must have, from the customer's own words in this conversation: the service,
 date, time, AND their name. If you don't have their name yet, ask for it - do not proceed without it, and never

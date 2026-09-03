@@ -1,11 +1,12 @@
 import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
-import { todayInTimezone, upcomingDatesTable } from './timezone';
+import { todayInTimezone, upcomingDatesTable, weekdayName } from './timezone';
 import { INSIGHTS_TOOLS, executeInsightsTool } from './insightsAgent';
 import { RESCHEDULE_TOOLS, executeRescheduleTool } from './rescheduleAgent';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
 import { describeManageToolChange, notifyOwnerOfManageChange } from './notifyOwnerOfChange';
 import { getBusinessContext } from './whatsappTools';
+import { formatMoney } from './formatMoney';
 
 // One assistant for the business owner, replacing what used to be two
 // separate tabs (Insights and Schedule assistant). Splitting them was an
@@ -69,17 +70,24 @@ export async function runAssistantAgent(params: {
     ? [...RESCHEDULE_TOOLS, ...MANAGE_TOOLS, ...INSIGHTS_TOOLS]
     : [...RESCHEDULE_TOOLS, ...MANAGE_TOOLS];
 
+  // formatMoney, not a bare s.price - the exact same underlying prompt
+  // read as "₦2,000" in one conversation and bare "2000" in another
+  // (confirmed live, same root cause on the customer-facing side), since
+  // nothing here ever told the model Naira values need a currency symbol.
+  const servicesLine = services.length
+    ? services.map((s) => `${s.name} (${s.duration_minutes} min${s.price ? `, ${formatMoney(s.price)}` : ''})`).join(', ')
+    : 'none configured yet';
+
   const systemPrompt = `You are the assistant for ${businessName}, talking to the business owner or their staff.
-Today is ${today} (business timezone: ${timeZone}). Work out real dates from relative phrases like "tomorrow" or
+Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}) - state this exact weekday when asked,
+never work it out yourself. Work out real dates from relative phrases like "tomorrow" or
 "last month" before calling any tool, since the tools only accept explicit dates. For a named weekday ("Tuesday",
 "next Monday"), look it up here rather than calculating it by hand - this is already correct, and multi-step date
 arithmetic is exactly the kind of thing that goes wrong without it:
 ${datesTable}
 
 Current weekly hours: ${weeklyHours.join(', ')}.
-Active services: ${
-    services.length ? services.map((s) => `${s.name} (${s.duration_minutes} min${s.price ? `, ${s.price}` : ''})`).join(', ') : 'none configured yet'
-  }.
+Active services: ${servicesLine}.
 Answer direct questions about either of these ("what days am I open", "what do I charge for X") straight from
 the lists above - no tool call needed, and never say you don't have access to this. Only use the change-hours or
 change-a-service tools when they actually want something changed, not just to look something up.${

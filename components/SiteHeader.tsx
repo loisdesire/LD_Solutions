@@ -77,8 +77,15 @@ export default function SiteHeader({
           <span className="font-display text-[14.5px] sm:text-[16px] font-semibold text-ink truncate">{business.name}</span>
         </a>
 
-        {/* Desktop nav - unchanged */}
-        <div className="hidden sm:flex items-center gap-7">
+        {/* md:flex, was sm:flex - confirmed live, the full nav (logo+name,
+            Services/About/Gallery/Contact, My bookings, Book now) genuinely
+            overflowed at ~670px (business name truncated, "My bookings"
+            wrapped to two lines) - past the sm breakpoint (640px) but well
+            short of comfortable. Bumped to md (768px) so that range falls
+            back to the mobile hamburger treatment, which already exists and
+            already works, instead of squeezing a full row into a width it
+            doesn't fit. */}
+        <div className="hidden md:flex items-center gap-7">
           {links.map((l) => (
             <a key={l.key} href={l.href} className={linkClass(l.key)} style={linkStyle(l.key)}>
               {l.label}
@@ -105,8 +112,9 @@ export default function SiteHeader({
           </a>
         </div>
 
-        {/* Mobile: book button always visible, everything else behind a menu */}
-        <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+        {/* Mobile: book button always visible, everything else behind a menu.
+            md:hidden, matching the nav's own breakpoint above. */}
+        <div className="flex md:hidden items-center gap-1.5 shrink-0">
           <a
             href={`/${slug}#book`}
             className="min-h-11 px-3.5 py-2 rounded-xl inline-flex items-center font-semibold text-[14px] text-accent-contrast whitespace-nowrap"
@@ -129,7 +137,7 @@ export default function SiteHeader({
       </nav>
 
       {menuOpen && (
-        <div className="sm:hidden border-t border-line bg-paper px-6 py-3 flex flex-col">
+        <div className="md:hidden border-t border-line bg-paper px-6 py-3 flex flex-col">
           {/* Own treatment here, not linkClass reused verbatim - this is a
               stacked list with its own dashed row separators, not a
               horizontal tab bar, so the underline-as-active-indicator

@@ -49,10 +49,16 @@ export default function TermsPage() {
 
           <h2>What Vanova is</h2>
           <p>
+            {/* "where enabled" was technically true but read as "pick one, it
+                just works" - the Channels page itself labels WhatsApp/
+                Messenger "Coming soon" (pending Meta's own review, not
+                something a business can turn on today), so this said more
+                than was actually available, the same gap the marketing
+                homepage's own hero deliberately avoids for the same reason. */}
             Vanova is a booking platform for appointment-based businesses. It gives a business a public booking
-            page, an AI receptionist that can answer questions and take bookings on that page and on connected
-            chat channels (Telegram, and WhatsApp/Messenger where enabled), and a dashboard to manage appointments,
-            customers, staff, and payments.
+            page, an AI receptionist that can answer questions and take bookings on that page and via Telegram
+            (WhatsApp and Facebook Messenger are coming soon), and a dashboard to manage appointments, customers,
+            staff, and payments.
           </p>
 
           <h2>Business accounts</h2>
