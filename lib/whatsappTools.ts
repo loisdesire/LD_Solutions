@@ -451,15 +451,53 @@ export async function getBusyTimes(businessId: string) {
 // Shares confirmPaidBooking with the webhook so both routes apply the
 // identical amount check and idempotency rule.
 export async function checkPayment(ctx: ToolContext) {
-  const { data: booking } = await supabaseAdmin
-    .from('bookings')
-    .select('id, status, payment_reference, payment_status, start_time, services(name)')
-    .eq('business_id', ctx.businessId)
-    .eq('customer_phone', ctx.customerPhone)
-    .in('status', ['pending_payment', 'confirmed'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Was `.in('status', ['pending_payment', 'confirmed'])` only - the
+  // 15-minute hold sweep (expireStalePaymentHolds, in getAvailableSlots,
+  // which check_availability calls constantly mid-conversation) flips a
+  // stale hold straight to 'cancelled' the moment it lapses, regardless
+  // of whether the customer is mid-payment at that exact moment. Once
+  // that happened, this query could never find the booking again - a
+  // customer who genuinely paid, just a little late, got "no recent
+  // booking found" forever, with confirmPaidBooking's own real handling
+  // for exactly this case (mark paid_slot_lost, offer alternatives, never
+  // ask them to pay twice) never even reached. Confirmed live: a real
+  // Paystack payment went completely unreconciled and the model, with no
+  // real tool result to work from, started improvising - telling the
+  // customer their payment "was for a test transaction" and to pay again.
+  // Cancelled rows are now included too, but only ones with a
+  // payment_reference (an actual payment attempt, not just an abandoned
+  // unpaid hold) from within the last 2 hours - wide enough to catch a
+  // customer coming back a few minutes late, not so wide it tries to
+  // reconcile something from days ago.
+  // Two plain queries merged in JS rather than one hand-built PostgREST
+  // OR-filter string - this is payment-reconciliation code, not worth the
+  // risk of a subtly wrong filter-string operator going unnoticed.
+  const twoHoursAgo = new Date(Date.now() - 2 * 3600_000).toISOString();
+  const selectCols = 'id, status, payment_reference, payment_status, start_time, created_at, services(name)';
+  const [{ data: active }, { data: recentlyLapsed }] = await Promise.all([
+    supabaseAdmin
+      .from('bookings')
+      .select(selectCols)
+      .eq('business_id', ctx.businessId)
+      .eq('customer_phone', ctx.customerPhone)
+      .in('status', ['pending_payment', 'confirmed'])
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabaseAdmin
+      .from('bookings')
+      .select(selectCols)
+      .eq('business_id', ctx.businessId)
+      .eq('customer_phone', ctx.customerPhone)
+      .eq('status', 'cancelled')
+      .not('payment_reference', 'is', null)
+      .gte('created_at', twoHoursAgo)
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ]);
+
+  const booking = [...(active ?? []), ...(recentlyLapsed ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )[0];
 
   if (!booking) return { error: 'No recent booking found for this customer to check payment against.' };
   if (booking.status === 'confirmed') {
@@ -532,18 +570,37 @@ export async function confirmPaidBooking(
 
   const amountPaid = Math.round(verified.amount / 100);
 
-  const { error } = await supabaseAdmin
+  // .select() added - was update().eq('status','pending_payment') with no
+  // select, so 0 rows matching that WHERE clause came back as `error: null`
+  // (Postgres/PostgREST don't treat "matched nothing" as an error), and
+  // the code fell straight through to the confirmed:true return below
+  // WITHOUT actually updating anything. That's exactly what happens once
+  // the 15-minute hold sweep (expireStalePaymentHolds) has already flipped
+  // this row to 'cancelled' by the time a real, successful payment gets
+  // reconciled - the one scenario this whole function exists to handle
+  // correctly, silently reporting fake success instead. Confirmed live:
+  // a genuine Paystack payment appeared to confirm with no error, but the
+  // booking stayed cancelled in the database. Checking rowsUpdated now
+  // routes that case through the exact same paid_slot_lost handling the
+  // 23P01 (exclusion-conflict) branch below already has - the two are the
+  // same underlying situation (paid after the hold lapsed), just reached
+  // via a sweep instead of a race with another booking.
+  const { data: updated, error } = await supabaseAdmin
     .from('bookings')
     .update({ status: 'confirmed', payment_status: 'paid', amount_paid: amountPaid, payment_expires_at: null })
     .eq('id', booking.id)
-    .eq('status', 'pending_payment');
+    .eq('status', 'pending_payment')
+    .select('id');
+  const rowsUpdated = updated?.length ?? 0;
 
-  if (error) {
-    // 23P01 here means the hold lapsed, the sweep cancelled it, and
-    // somebody else has since taken the slot - so this booking can't be
-    // revived. The customer HAS paid, so this must never fail silently:
-    // it stays cancelled-but-paid for the business to see and settle.
-    if ((error as { code?: string }).code === '23P01') {
+  if (error || rowsUpdated === 0) {
+    // 23P01 (an actual exclusion-constraint conflict) or zero rows matched
+    // (the sweep got there first) both mean the same thing here: the hold
+    // lapsed and this booking can't be revived as-is. The customer HAS
+    // paid, so this must never fail silently - it stays cancelled-but-paid
+    // for the business to see and settle, never left orphaned.
+    const isConflict = error ? (error as { code?: string }).code === '23P01' : true;
+    if (isConflict) {
       await supabaseAdmin
         .from('bookings')
         .update({ payment_status: 'paid_slot_lost', amount_paid: amountPaid })

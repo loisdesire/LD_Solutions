@@ -1,6 +1,6 @@
 import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { getBusinessTimezone } from './getBusinessTimezone';
-import { todayInTimezone } from './timezone';
+import { todayInTimezone, upcomingDatesTable } from './timezone';
 import { INSIGHTS_TOOLS, executeInsightsTool } from './insightsAgent';
 import { RESCHEDULE_TOOLS, executeRescheduleTool } from './rescheduleAgent';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
@@ -49,6 +49,7 @@ export async function runAssistantAgent(params: {
   // into something their tools accept.
   const timeZone = await getBusinessTimezone(businessId);
   const today = todayInTimezone(timeZone);
+  const datesTable = upcomingDatesTable(timeZone);
 
   // Reused from the customer-facing bot (lib/whatsappTools.ts) rather than
   // a second copy of the same query - this agent had NO read access to its
@@ -70,7 +71,10 @@ export async function runAssistantAgent(params: {
 
   const systemPrompt = `You are the assistant for ${businessName}, talking to the business owner or their staff.
 Today is ${today} (business timezone: ${timeZone}). Work out real dates from relative phrases like "tomorrow" or
-"last month" before calling any tool, since the tools only accept explicit dates.
+"last month" before calling any tool, since the tools only accept explicit dates. For a named weekday ("Tuesday",
+"next Monday"), look it up here rather than calculating it by hand - this is already correct, and multi-step date
+arithmetic is exactly the kind of thing that goes wrong without it:
+${datesTable}
 
 Current weekly hours: ${weeklyHours.join(', ')}.
 Active services: ${

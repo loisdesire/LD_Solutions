@@ -75,3 +75,35 @@ export function daysBetween(fromISO: string, toISO: string): number {
   const to = Date.UTC(ty, tm - 1, td);
   return Math.round((to - from) / 86400000);
 }
+
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+// A ready weekday->date lookup table for the chat agents' system prompts,
+// computed here in code rather than left for the model to work out for
+// itself turn by turn. Confirmed live: with only a bare "today's date is
+// X" string to go on, resolving something like "next Wednesday" is exact
+// multi-step calendar arithmetic the model got wrong from its very first
+// answer in a real conversation, then drifted differently again on every
+// later turn (offering "Wednesday, September 7" in one message and
+// "Wednesday, September 6" in the next) - the same class of problem as
+// the duration_minutes day/week-to-minutes bug, and the same fix: remove
+// the arithmetic from the model's own head entirely by handing it the
+// already-correct answer instead of trusting it to recompute one.
+export function upcomingDatesTable(timeZone: string, days: number = 14): string {
+  const [y, m, d] = todayInTimezone(timeZone).split('-').map(Number);
+  const startUtc = Date.UTC(y, m - 1, d);
+
+  const lines: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const dayUtc = new Date(startUtc + i * 86400000);
+    const weekday = WEEKDAY_NAMES[dayUtc.getUTCDay()];
+    const dateISO = `${dayUtc.getUTCFullYear()}-${String(dayUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(dayUtc.getUTCDate()).padStart(2, '0')}`;
+    const label = `${weekday}, ${MONTH_NAMES[dayUtc.getUTCMonth()]} ${dayUtc.getUTCDate()}`;
+    lines.push(`${label} = ${dateISO}${i === 0 ? ' (today)' : i === 1 ? ' (tomorrow)' : ''}`);
+  }
+  return lines.join('\n');
+}

@@ -15,7 +15,7 @@ import {
   type ChatMessage,
   checkPayment,
 } from './whatsappTools';
-import { todayInTimezone } from './timezone';
+import { todayInTimezone, upcomingDatesTable } from './timezone';
 import { hasBusinessIntelligence } from './subscription-server';
 
 // Everything OpenAI-specific lives in this one file (plus the shared loop
@@ -207,6 +207,7 @@ export async function runWhatsappAgent(params: {
 
   const timeZone = business.timezone || 'UTC';
   const today = todayInTimezone(timeZone);
+  const datesTable = upcomingDatesTable(timeZone);
 
   // Only lines for whatever the business actually filled in - previously
   // this was entirely absent from the prompt, so even a business that had
@@ -225,6 +226,11 @@ about this before, so identity was improvised: if someone asks whether they are 
 that you are an automated assistant for ${business.name} and offer their contact details if you have them. Never
 claim to be a human, and never volunteer that you are software when nobody asked.
 Today's date is ${today} (business timezone: ${timeZone}).
+When the customer names a day ("Wednesday", "next Friday", "tomorrow"), find it in this table rather than
+calculating a date yourself - do not add or subtract days by hand, this table is already correct:
+${datesTable}
+If what they mean is genuinely ambiguous (e.g. "Wednesday" when today already is one - the nearer one or a week
+out), ask which one rather than guessing.
 
 Services offered: ${
     services.length
