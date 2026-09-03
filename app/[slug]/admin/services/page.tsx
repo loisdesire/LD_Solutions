@@ -32,9 +32,20 @@ export default async function ServicesPage({
     // quietly zeroed out the "most booked"/"highest revenue" stats below
     // rather than erroring. Authorization for this read is already fully
     // handled by requireStaffSession above.
+    //
+    // services!bookings_service_business_fk, not bare services() - a
+    // second FK (bookings_service_business_fk, the pair-level constraint
+    // added for tenant-consistency) means Postgres now has two valid
+    // paths from bookings to services and refuses to guess which one an
+    // unqualified embed means (PGRST201). Confirmed live: this was firing
+    // on every single one of these queries, silently discarded before the
+    // fix above started actually reading `error` - so the "fix" for the
+    // invisible-bookings bug made the real failure loud without yet
+    // curing it. Every bookings->services embed in the codebase has the
+    // same two constraints and needs the same disambiguation.
     supabaseAdmin
       .from('bookings')
-      .select('service_id, services(price)')
+      .select('service_id, services!bookings_service_business_fk(price)')
       .eq('business_id', business.id)
       .neq('status', 'cancelled'),
   ]);

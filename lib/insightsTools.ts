@@ -3,6 +3,7 @@ import { todayInTimezone } from './timezone';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { formatLocalDateTime } from './formatDateTime';
 import { getSubscriptionState, PLAN_LABEL, PLAN_PRICE_NGN } from './subscription';
+import { logError } from './logger';
 
 // Server-side only, staff-facing counterpart to whatsappTools.ts. That file
 // is customer-facing and deliberately exposes nothing about revenue, other
@@ -34,16 +35,22 @@ function serviceOf(row: BookingRow): { name: string; price: number | null } | nu
 // "who are our top customers" is concerned, same convention as the rest of
 // the codebase (see findCustomerBookings, findOwnedBooking in whatsappTools.ts).
 async function fetchBookings(businessId: string, fromISO?: string, toISO?: string) {
+  // services!bookings_service_business_fk, not bare services() - a
+  // second FK on (service_id, business_id) makes an unqualified embed
+  // ambiguous (PGRST201); see app/[slug]/admin/calendar/page.tsx for the
+  // full story. This is the shared read every insight in this file goes
+  // through, so a PGRST201 here silently zeroed out every stat at once.
   let query = supabaseAdmin
     .from('bookings')
-    .select('customer_name, customer_phone, start_time, status, services(name, price)')
+    .select('customer_name, customer_phone, start_time, status, services!bookings_service_business_fk(name, price)')
     .eq('business_id', businessId)
     .neq('status', 'cancelled');
 
   if (fromISO) query = query.gte('start_time', fromISO);
   if (toISO) query = query.lte('start_time', toISO);
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) logError('insightsTools:fetchBookings', error, { businessId });
   return (data ?? []) as unknown as BookingRow[];
 }
 
@@ -130,15 +137,17 @@ export async function getTopServices(businessId: string, args: { limit?: number 
 
 export async function getNextAppointment(businessId: string) {
   const timeZone = await getBusinessTimezone(businessId);
-  const { data } = await supabaseAdmin
+  // services!bookings_service_business_fk - see fetchBookings above.
+  const { data, error } = await supabaseAdmin
     .from('bookings')
-    .select('customer_name, start_time, services(name)')
+    .select('customer_name, start_time, services!bookings_service_business_fk(name)')
     .eq('business_id', businessId)
     .neq('status', 'cancelled')
     .gte('start_time', new Date().toISOString())
     .order('start_time')
     .limit(1)
     .maybeSingle();
+  if (error) logError('insightsTools:getNextAppointment', error, { businessId });
 
   if (!data) return { next_appointment: null };
 

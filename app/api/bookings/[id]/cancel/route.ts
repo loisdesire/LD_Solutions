@@ -29,7 +29,7 @@ export async function POST(
 
   const { data: existing } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, start_time, status, customer_name, services(name), businesses(timezone)')
+    .select('id, business_id, start_time, status, customer_name, services!bookings_service_business_fk(name), businesses(timezone)')
     .eq('id', id)
     .maybeSingle();
 

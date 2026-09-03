@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import AdminDashboardBody from '@/components/AdminDashboardBody';
 import { todayInTimezone, zonedTimeToUtc } from '@/lib/timezone';
+import { logError } from '@/lib/logger';
 
 // Server-side only: bookings contain customer PII, so this uses the service
 // role key rather than opening a public RLS policy on the table.
@@ -36,14 +37,30 @@ export default async function AdminDashboard({
   // cover last week, which is the earliest data any stat on this page
   // needs, and everything upcoming comes along with it. The past list is
   // its own range, defaulting to the last 7 days.
+  // services!bookings_service_business_fk, not bare services() - a second
+  // FK (bookings_service_business_fk, the pair-level constraint added
+  // later for tenant-consistency) means Postgres has two valid paths from
+  // bookings to services and refuses to guess which one an unqualified
+  // embed means (PGRST201, confirmed live via real Vercel logs - this was
+  // firing on every request to this page, same as Calendar/Customers/
+  // Services). Both queries below also destructured only `data`, same as
+  // Calendar's own pre-fix bug - discarding a real query failure entirely
+  // rather than letting it be seen, which on THIS page meant a genuine
+  // error rendered as a false "nothing booked today" empty state.
   const BOOKING_COLUMNS =
-    'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price, duration_minutes), staff(name)';
+    'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services!bookings_service_business_fk(name, price, duration_minutes), staff(name)';
 
   const nowMs = Date.now();
   const pastFrom = from ? new Date(`${from}T00:00:00`) : new Date(nowMs - 7 * 86400000);
   const pastTo = to ? new Date(`${to}T23:59:59`) : new Date(nowMs);
 
-  const [{ data: recent }, { data: pastRows }, { data: bookableServices }, { data: rules }, { count: hoursCount }] =
+  const [
+    { data: recent, error: recentError },
+    { data: pastRows, error: pastError },
+    { data: bookableServices },
+    { data: rules },
+    { count: hoursCount },
+  ] =
     await Promise.all([
       supabaseAdmin
         .from('bookings')
@@ -80,6 +97,9 @@ export default async function AdminDashboard({
         .eq('business_id', business.id)
         .is('staff_id', null),
     ]);
+
+  if (recentError) logError('admin/dashboard:recent-bookings-query', recentError, { businessId: business.id });
+  if (pastError) logError('admin/dashboard:past-bookings-query', pastError, { businessId: business.id });
 
   // One list for the table, deduped: the two windows overlap by design, so
   // a booking from the last few days appears in both.

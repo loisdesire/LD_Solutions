@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
   const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
-    .select('customer_name, customer_email, customer_phone, customer_telegram_username, start_time, status, services(name)')
+    .select('customer_name, customer_email, customer_phone, customer_telegram_username, start_time, status, services!bookings_service_business_fk(name)')
     .eq('business_id', auth.business.id)
     .order('start_time', { ascending: true });
 

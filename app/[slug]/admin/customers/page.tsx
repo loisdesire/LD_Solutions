@@ -34,7 +34,7 @@ export default async function CustomersPage({
   const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
     .select(
-      'customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services(name, price)'
+      'customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services!bookings_service_business_fk(name, price)'
     )
     .eq('business_id', business.id)
     .order('start_time', { ascending: true });

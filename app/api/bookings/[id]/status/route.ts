@@ -55,7 +55,7 @@ export async function POST(
   // a genuine new cancellation, so it isn't double-notified.
   const { data: before } = await supabaseAdmin
     .from('bookings')
-    .select('id, status, customer_name, customer_email, customer_phone, customer_telegram_username, start_time, services(name)')
+    .select('id, status, customer_name, customer_email, customer_phone, customer_telegram_username, start_time, services!bookings_service_business_fk(name)')
     .eq('id', id)
     .eq('business_id', business.id)
     .maybeSingle();

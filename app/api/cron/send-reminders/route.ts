@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
     .select(
-      'id, customer_name, customer_email, customer_phone, customer_telegram_username, start_time, services(name), businesses(id, name, timezone, telegram_bot_token, whatsapp_phone_number_id, messenger_access_token)'
+      'id, customer_name, customer_email, customer_phone, customer_telegram_username, start_time, services!bookings_service_business_fk(name), businesses(id, name, timezone, telegram_bot_token, whatsapp_phone_number_id, messenger_access_token)'
     )
     .eq('status', 'confirmed')
     .is('reminder_sent_at', null)

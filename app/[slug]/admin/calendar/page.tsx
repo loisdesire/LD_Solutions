@@ -36,10 +36,20 @@ export default async function CalendarPage({
   // silently discarded before (`const { data } = await ...`), so a real
   // query failure rendered as a false, clean "nothing booked" empty state
   // with no trace anywhere that anything had gone wrong.
+  //
+  // That logging then surfaced the REAL, still-live cause: PGRST201,
+  // "more than one relationship was found for 'bookings' and 'services'".
+  // A second FK (bookings_service_business_fk, the pair-level constraint
+  // added later for tenant-consistency) means an unqualified services(...)
+  // embed is ambiguous - Postgres won't guess which of the two paths to
+  // use. Confirmed live via real Vercel logs: this was firing on every
+  // request to this page (and Customers, Services, manage-booking, and
+  // more - see the sibling fix in each). services!bookings_service_
+  // business_fk(...) names the relationship explicitly.
   const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
     .select(
-      'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, services(name), staff(name)'
+      'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, services!bookings_service_business_fk(name), staff(name)'
     )
     .eq('business_id', business.id)
     .order('start_time', { ascending: true });

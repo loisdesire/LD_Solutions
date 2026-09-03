@@ -4,6 +4,7 @@ import { getBusinessTimezone } from './getBusinessTimezone';
 import { formatLocalDateTime } from './formatDateTime';
 import { getAvailableSlots } from './getAvailableSlots';
 import { notifyCustomer, getNotifyCreds } from './notifyCustomer';
+import { logError } from './logger';
 
 // Owner-facing, write-capable - the counterpart to insightsTools.ts (which
 // is deliberately read-only). Two-step by design: proposeReschedule never
@@ -77,16 +78,21 @@ export async function proposeReschedule(
     return { error: 'End time must be after start time.' };
   }
 
-  const { data: bookings } = await supabaseAdmin
+  // services!bookings_service_business_fk, not bare services() - a
+  // second FK on (service_id, business_id) makes an unqualified embed
+  // ambiguous (PGRST201); see app/[slug]/admin/calendar/page.tsx for the
+  // full story.
+  const { data: bookings, error: bookingsError } = await supabaseAdmin
     .from('bookings')
     .select(
-      'id, customer_name, customer_phone, customer_telegram_username, customer_email, start_time, service_id, services(name, duration_minutes)'
+      'id, customer_name, customer_phone, customer_telegram_username, customer_email, start_time, service_id, services!bookings_service_business_fk(name, duration_minutes)'
     )
     .eq('business_id', businessId)
     .neq('status', 'cancelled')
     .lt('start_time', windowEnd.toISOString())
     .gt('end_time', windowStart.toISOString())
     .order('start_time');
+  if (bookingsError) logError('rescheduleTools:proposeReschedule', bookingsError, { businessId });
 
   const affected = bookings ?? [];
   if (affected.length === 0) {
@@ -183,16 +189,18 @@ export async function proposeBookingMove(
 ) {
   const timeZone = await getBusinessTimezone(businessId);
 
-  const { data: matches } = await supabaseAdmin
+  // services!bookings_service_business_fk - see proposeReschedule above.
+  const { data: matches, error: matchesError } = await supabaseAdmin
     .from('bookings')
     .select(
-      'id, customer_name, customer_phone, customer_telegram_username, customer_email, start_time, end_time, service_id, services(name, duration_minutes)'
+      'id, customer_name, customer_phone, customer_telegram_username, customer_email, start_time, end_time, service_id, services!bookings_service_business_fk(name, duration_minutes)'
     )
     .eq('business_id', businessId)
     .neq('status', 'cancelled')
     .gte('start_time', new Date().toISOString())
     .ilike('customer_name', `%${args.customerName}%`)
     .order('start_time');
+  if (matchesError) logError('rescheduleTools:proposeBookingMove', matchesError, { businessId });
 
   const found = matches ?? [];
 

@@ -40,7 +40,7 @@ export async function POST(
 
   const { data: booking } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, service_id, status, start_time, services(duration_minutes)')
+    .select('id, business_id, service_id, status, start_time, services!bookings_service_business_fk(duration_minutes)')
     .eq('id', id)
     .maybeSingle();
 

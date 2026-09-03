@@ -390,11 +390,17 @@ export async function createBooking(
 // staff session. Only wired into the tool list when the business is on the
 // business_intelligence plan (see whatsappAgent.ts).
 export async function getPopularServices(businessId: string, args: { limit?: number }) {
-  const { data } = await supabaseAdmin
+  // services!bookings_service_business_fk, not bare services() - a
+  // second FK on (service_id, business_id) makes an unqualified embed
+  // ambiguous (PGRST201). Same fix as every other bookings->services
+  // embed in the codebase; see app/[slug]/admin/calendar/page.tsx for
+  // the full story.
+  const { data, error } = await supabaseAdmin
     .from('bookings')
-    .select('services(name)')
+    .select('services!bookings_service_business_fk(name)')
     .eq('business_id', businessId)
     .neq('status', 'cancelled');
+  if (error) logError('whatsappTools:getPopularServices', error, { businessId });
 
   const counts = new Map<string, number>();
   for (const row of data ?? []) {
@@ -473,8 +479,13 @@ export async function checkPayment(ctx: ToolContext) {
   // OR-filter string - this is payment-reconciliation code, not worth the
   // risk of a subtly wrong filter-string operator going unnoticed.
   const twoHoursAgo = new Date(Date.now() - 2 * 3600_000).toISOString();
-  const selectCols = 'id, status, payment_reference, payment_status, start_time, created_at, services(name)';
-  const [{ data: active }, { data: recentlyLapsed }] = await Promise.all([
+  // services!bookings_service_business_fk - see getPopularServices above
+  // for why the bare embed is ambiguous. Worth calling out specifically
+  // here: this is the payment-reconciliation path, so a PGRST201 on this
+  // exact query is what silently starved the model of a real result and
+  // led it to improvise "pay again" to a customer who'd already paid.
+  const selectCols = 'id, status, payment_reference, payment_status, start_time, created_at, services!bookings_service_business_fk(name)';
+  const [{ data: active, error: activeError }, { data: recentlyLapsed, error: lapsedError }] = await Promise.all([
     supabaseAdmin
       .from('bookings')
       .select(selectCols)
@@ -494,6 +505,12 @@ export async function checkPayment(ctx: ToolContext) {
       .order('created_at', { ascending: false })
       .limit(1),
   ]);
+  // This is exactly the query that was silently coming back empty on
+  // PGRST201 before the embed above was disambiguated - logged now so a
+  // future failure here (payment-reconciliation code) is never silent
+  // again.
+  if (activeError) logError('whatsappTools:checkPayment:active', activeError, { businessId: ctx.businessId });
+  if (lapsedError) logError('whatsappTools:checkPayment:lapsed', lapsedError, { businessId: ctx.businessId });
 
   const booking = [...(active ?? []), ...(recentlyLapsed ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -639,9 +656,11 @@ export async function findCustomerBookings(ctx: ToolContext) {
   // this whole query (and with it, cancel/reschedule, which both call
   // this same tool's underlying lookup pattern) rather than just not
   // having payment info to show.
+  // services!bookings_service_business_fk on both queries below - see
+  // getPopularServices above for why the bare embed is ambiguous.
   let { data, error } = await supabaseAdmin
     .from('bookings')
-    .select('id, start_time, status, payment_status, amount_paid, services(name)')
+    .select('id, start_time, status, payment_status, amount_paid, services!bookings_service_business_fk(name)')
     .eq('business_id', ctx.businessId)
     .eq('customer_phone', ctx.customerPhone)
     .neq('status', 'cancelled')
@@ -651,13 +670,19 @@ export async function findCustomerBookings(ctx: ToolContext) {
   if (error?.code === '42703') {
     const fallback = await supabaseAdmin
       .from('bookings')
-      .select('id, start_time, status, services(name)')
+      .select('id, start_time, status, services!bookings_service_business_fk(name)')
       .eq('business_id', ctx.businessId)
       .eq('customer_phone', ctx.customerPhone)
       .neq('status', 'cancelled')
       .gte('start_time', new Date().toISOString())
       .order('start_time');
     data = (fallback.data ?? []).map((b) => ({ ...b, payment_status: null, amount_paid: null }));
+  } else if (error) {
+    // Any other error (this query's own PGRST201 was silently swallowed
+    // here before the embed fix above) used to just fall through to an
+    // empty `bookings: []` below, indistinguishable from "you genuinely
+    // have no upcoming bookings."
+    logError('whatsappTools:getCustomerBookings', error, { businessId: ctx.businessId });
   }
 
   return {
@@ -692,9 +717,11 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
 
   const target = zonedTimeToUtc(args.date, args.time, timeZone);
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('bookings')
-    .select('id, business_id, customer_phone, status, start_time, service_id, staff_id, services(duration_minutes)')
+    // services!bookings_service_business_fk - see getPopularServices
+    // above for why the bare embed is ambiguous.
+    .select('id, business_id, customer_phone, status, start_time, service_id, staff_id, services!bookings_service_business_fk(duration_minutes)')
     .eq('business_id', ctx.businessId)
     .eq('customer_phone', ctx.customerPhone)
     .eq('service_id', service.id)
@@ -702,6 +729,7 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
     .gte('start_time', new Date(target.getTime() - 60_000).toISOString())
     .lte('start_time', new Date(target.getTime() + 60_000).toISOString())
     .maybeSingle();
+  if (error) logError('whatsappTools:findOwnedBooking', error, { businessId: ctx.businessId });
 
   return data;
 }

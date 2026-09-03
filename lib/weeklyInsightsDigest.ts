@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { compareRevenuePeriods, getCancellationsAndNoShows } from './insightsTools';
 import { formatMoney } from './formatMoney';
+import { logError } from './logger';
 import type { EmailRow } from './emailTemplate';
 
 const supabaseAdmin = createClient(
@@ -31,14 +32,18 @@ export async function buildWeeklyDigestRows(businessId: string): Promise<EmailRo
     // Not reusing insightsTools.ts's getTopServices - it's all-time only
     // (no from/to param), which doesn't fit a weekly digest. Same shape
     // of query as that function, just scoped to this week specifically.
+    // services!bookings_service_business_fk, not bare services() - a
+    // second FK on (service_id, business_id) makes an unqualified embed
+    // ambiguous (PGRST201); see app/[slug]/admin/calendar/page.tsx.
     supabaseAdmin
       .from('bookings')
-      .select('services(name)')
+      .select('services!bookings_service_business_fk(name)')
       .eq('business_id', businessId)
       .neq('status', 'cancelled')
       .gte('start_time', fromISO)
       .lte('start_time', toISO),
   ]);
+  if (topServiceRows.error) logError('weeklyInsightsDigest:topServices', topServiceRows.error, { businessId });
 
   const rows: EmailRow[] = [];
 

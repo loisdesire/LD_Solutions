@@ -27,8 +27,14 @@ export default async function ManageBookingPage({
 }) {
   const { slug, bookingId } = await params;
 
+  // services!bookings_service_business_fk, not bare services() - a second
+  // FK on (service_id, business_id) means an unqualified embed is
+  // ambiguous (PGRST201). Confirmed live: this was the actual cause of
+  // "We couldn't load this booking" - a real Vercel log showed exactly
+  // this code on a genuine booking, on both this query and its 42703
+  // fallback below.
   const BOOKING_COLUMNS =
-    'id, customer_name, start_time, status, business_id, service_id, payment_status, amount_paid, services(name, duration_minutes, price), businesses(name, slug, accent_color)';
+    'id, customer_name, start_time, status, business_id, service_id, payment_status, amount_paid, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color)';
 
   let { data: booking, error: bookingError } = await supabaseAdmin
     .from('bookings')
@@ -43,7 +49,7 @@ export default async function ManageBookingPage({
   if (bookingError?.code === '42703') {
     const fallback = await supabaseAdmin
       .from('bookings')
-      .select('id, customer_name, start_time, status, business_id, service_id, services(name, duration_minutes, price), businesses(name, slug, accent_color)')
+      .select('id, customer_name, start_time, status, business_id, service_id, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color)')
       .eq('id', bookingId)
       .maybeSingle();
     booking = fallback.data ? { ...fallback.data, payment_status: null, amount_paid: null } : null;
