@@ -325,14 +325,24 @@ export default function CalendarView({
       </div>
 
       {mode === 'week' ? (
-        // Horizontal scroll below `sm` instead of stacking to one column -
-        // a vertically-stacked "week" on mobile was just Day view repeated
-        // seven times, which loses the actual point of a week view (seeing
-        // the whole week at a glance) rather than serving it worse. The
-        // partial last column already peeks in as a hint, but it wasn't
-        // a strong enough cue on its own - the fade edge below makes "more
-        // days exist, keep scrolling" visible without relying on someone
-        // noticing a sliver of a column.
+        <>
+        {/* A genuinely empty week rendered as "Free" in all seven columns
+            reads as broken/placeholder, not "open" - the same information
+            Day view already gives as one line ("Nothing booked this day...")
+            below. Only shown for a fully empty week; a week with some
+            bookings keeps the per-day "Free" cells as-is, where they're
+            useful signal about which specific days are open. */}
+        {rangeCount === 0 && (
+          <p className="text-body-sm text-ink-faint mb-3">Nothing booked this week - wide open, or worth filling.</p>
+        )}
+        {/* Horizontal scroll below `sm` instead of stacking to one column -
+            a vertically-stacked "week" on mobile was just Day view repeated
+            seven times, which loses the actual point of a week view (seeing
+            the whole week at a glance) rather than serving it worse. The
+            partial last column already peeks in as a hint, but it wasn't
+            a strong enough cue on its own - the fade edge below makes "more
+            days exist, keep scrolling" visible without relying on someone
+            noticing a sliver of a column. */}
         <div className="relative">
         <div className="flex sm:grid sm:grid-cols-7 gap-3 overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible">
           {weekDays.map((day, i) => {
@@ -389,6 +399,7 @@ export default function CalendarView({
           aria-hidden="true"
         />
         </div>
+        </>
       ) : (
         <div>
           {dayBookings.length === 0 && (

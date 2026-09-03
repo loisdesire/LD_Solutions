@@ -57,14 +57,41 @@ export default function CalendarPicker({
   const [weekStart, setWeekStart] = useState<Date>(initialDate);
   const [monthCursor, setMonthCursor] = useState<Date>(initialDate);
 
+  // Every day cell was a bare number with no aria-label - a screen reader
+  // just announced "15", with no month, weekday, or availability context.
+  // Arrow-key movement between cells didn't exist either: the only way to
+  // reach day 28 was to Tab through every disabled and enabled cell ahead
+  // of it. focusedDate drives a roving tabindex (one cell in the tab
+  // order at a time, matching the standard date-grid keyboard pattern)
+  // and is where arrow-key navigation below moves the "current" cell.
+  const [focusedDate, setFocusedDate] = useState<string>(selectedDate || today);
+  const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  // Only true right after an arrow key changed focusedDate - clicking a
+  // date, or selectedDate changing because a service/step changed
+  // upstream, must NOT steal focus into the calendar.
+  const pendingFocusRef = useRef(false);
+
   useEffect(() => {
     if (selectedDate) {
       const [y, m, d] = selectedDate.split('-').map(Number);
       const newD = new Date(y, m - 1, d);
       setWeekStart(newD);
       setMonthCursor(newD);
+      setFocusedDate(selectedDate);
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (!pendingFocusRef.current) return;
+    const btn = btnRefs.current[focusedDate];
+    if (btn) {
+      btn.focus();
+      pendingFocusRef.current = false;
+    }
+    // If the button isn't mounted yet (a view shift is still catching up
+    // to a focus move that landed outside the previously visible range),
+    // the flag stays set and the next render's pass picks it up.
+  });
 
   const weekDays = useMemo(() => {
     const start = new Date(weekStart);
@@ -88,6 +115,101 @@ export default function CalendarPicker({
     onChange(d);
   }
 
+  // Prev/Next never disabled at the edges of the bookable range - paging
+  // past it landed on a week/month with zero selectable days and no
+  // signal why. Same day/month-index comparison the rest of this file
+  // already uses (toDateStr, getMonth/getFullYear), just applied to the
+  // nav buttons instead of individual cells.
+  const [todayY, todayM, todayD] = today.split('-').map(Number);
+  const todayDate = new Date(todayY, todayM - 1, todayD);
+  const [maxY, maxM, maxD] = maxDate.split('-').map(Number);
+  const maxDateObj = new Date(maxY, maxM - 1, maxD);
+  const monthIndex = (d: Date) => d.getFullYear() * 12 + d.getMonth();
+
+  const prevDisabled =
+    viewMode === 'week'
+      ? toDateStr(weekDays[0]) <= toDateStr(addDays(todayDate, -todayDate.getDay()))
+      : monthIndex(monthCursor) <= monthIndex(todayDate);
+  const nextDisabled =
+    viewMode === 'week'
+      ? toDateStr(weekDays[0]) >= toDateStr(addDays(maxDateObj, -maxDateObj.getDay()))
+      : monthIndex(monthCursor) >= monthIndex(maxDateObj);
+
+  // Arrow keys move the roving-tabindex cell by day/week; Home/End jump
+  // to the start/end of the focused date's week. A move that lands
+  // before `today` or after `maxDate` is a no-op - those dates are
+  // unreachable (rendered `disabled`, which native buttons can't accept
+  // focus on anyway), so this reads as the navigation simply stopping at
+  // the edge of the bookable range rather than doing nothing visibly.
+  function moveFocus(from: string, deltaDays: number) {
+    const [y, m, d] = from.split('-').map(Number);
+    const next = addDays(new Date(y, m - 1, d), deltaDays);
+    const ds = toDateStr(next);
+    if (ds < today || ds > maxDate) return;
+
+    // Bring the target date's week/month into view if arrowing past the
+    // edge of what's currently rendered - otherwise the ref the focus
+    // effect looks for wouldn't exist yet.
+    if (viewMode === 'week') {
+      const currentWeekStart = toDateStr(weekDays[0]);
+      const currentWeekEnd = toDateStr(weekDays[6]);
+      if (ds < currentWeekStart || ds > currentWeekEnd) setWeekStart(next);
+    } else {
+      if (next.getMonth() !== monthCursor.getMonth() || next.getFullYear() !== monthCursor.getFullYear()) {
+        // Only actually jump the month cursor if the target isn't one of
+        // the leading/trailing days of an adjacent month already shown
+        // in this 6-week grid.
+        const stillVisible = monthDays.some((day) => toDateStr(day) === ds);
+        if (!stillVisible) setMonthCursor(next);
+      }
+    }
+    pendingFocusRef.current = true;
+    setFocusedDate(ds);
+  }
+
+  function handleGridKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, ds: string) {
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        moveFocus(ds, -1);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        moveFocus(ds, 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        moveFocus(ds, -7);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        moveFocus(ds, 7);
+        break;
+      case 'Home': {
+        e.preventDefault();
+        const [y, m, d] = ds.split('-').map(Number);
+        const dow = new Date(y, m - 1, d).getDay();
+        moveFocus(ds, -dow);
+        break;
+      }
+      case 'End': {
+        e.preventDefault();
+        const [y, m, d] = ds.split('-').map(Number);
+        const dow = new Date(y, m - 1, d).getDay();
+        moveFocus(ds, 6 - dow);
+        break;
+      }
+    }
+  }
+
+  function dateAriaLabel(d: Date, ds: string, opts: { isSelected: boolean; isToday: boolean; isFull: boolean }): string {
+    let label = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    if (opts.isToday) label += ', today';
+    if (opts.isFull) label += ', no openings';
+    if (opts.isSelected) label += ', selected';
+    return label;
+  }
+
   // Whichever grid is actually on screen right now - fetches once per
   // range (view toggle, prev/next) rather than once per day, via
   // /api/availability/range's single bulk answer.
@@ -95,6 +217,23 @@ export default function CalendarPicker({
   const rangeStart = toDateStr(visibleDays[0]);
   const rangeEnd = toDateStr(visibleDays[visibleDays.length - 1]);
   const fetchSeq = useRef(0);
+
+  // Paging the view with the Prev/Next mouse buttons (or toggling
+  // week/month) doesn't move focusedDate - so without this, a page-away
+  // could leave focusedDate pointing at a date no longer rendered, which
+  // means literally no cell in the new grid carries tabIndex 0 and
+  // Tab skips the whole calendar. Falls back to the first bookable date
+  // in the newly visible range whenever that happens; a no-op otherwise.
+  useEffect(() => {
+    const stillVisible = visibleDays.some((day) => toDateStr(day) === focusedDate);
+    if (stillVisible) return;
+    const fallback = visibleDays.find((day) => {
+      const ds = toDateStr(day);
+      return ds >= today && ds <= maxDate;
+    });
+    if (fallback) setFocusedDate(toDateStr(fallback));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeStart, rangeEnd]);
 
   useEffect(() => {
     if (!businessId || !serviceId) return;
@@ -125,11 +264,12 @@ export default function CalendarPicker({
         <div className="flex items-center gap-1">
           <button
             type="button"
+            disabled={prevDisabled}
             onClick={() => {
               if (viewMode === 'week') setWeekStart(addDays(weekStart, -7));
               else setMonthCursor(addMonths(monthCursor, -1));
             }}
-            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
+            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink-faint disabled:active:scale-100"
             aria-label="Previous month"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -145,11 +285,12 @@ export default function CalendarPicker({
 
           <button
             type="button"
+            disabled={nextDisabled}
             onClick={() => {
               if (viewMode === 'week') setWeekStart(addDays(weekStart, 7));
               else setMonthCursor(addMonths(monthCursor, 1));
             }}
-            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90"
+            className="flex items-center justify-center h-11 w-11 rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink-faint disabled:active:scale-100"
             aria-label="Next month"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -179,7 +320,7 @@ export default function CalendarPicker({
 
       {/* Week View */}
       {viewMode === 'week' && (
-        <div className="grid grid-cols-7 gap-1.5 animate-rise">
+        <div className="grid grid-cols-7 gap-1.5 animate-rise" aria-label="Choose a date">
           {weekDays.map((d) => {
             const ds = toDateStr(d);
             const disabled = ds < today || ds > maxDate;
@@ -193,8 +334,14 @@ export default function CalendarPicker({
               <button
                 type="button"
                 key={ds}
+                ref={(el) => { btnRefs.current[ds] = el; }}
                 disabled={disabled}
                 onClick={() => pickDate(d)}
+                onKeyDown={(e) => handleGridKeyDown(e, ds)}
+                tabIndex={ds === focusedDate ? 0 : -1}
+                aria-label={dateAriaLabel(d, ds, { isSelected, isToday, isFull })}
+                aria-current={isToday ? 'date' : undefined}
+                aria-pressed={isSelected}
                 style={isSelected ? { background: 'var(--accent)', color: 'var(--accent-contrast)' } : undefined}
                 className={`relative flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all duration-200 ${
                   disabled
@@ -236,7 +383,7 @@ export default function CalendarPicker({
               </span>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1" aria-label="Choose a date">
             {monthDays.map((d) => {
               const ds = toDateStr(d);
               const isCurrentMonth = d.getMonth() === monthCursor.getMonth();
@@ -248,8 +395,30 @@ export default function CalendarPicker({
                 <button
                   type="button"
                   key={ds}
+                  ref={(el) => { btnRefs.current[ds] = el; }}
                   disabled={disabled}
-                  onClick={() => pickDate(d)}
+                  onClick={() => {
+                    if (!isCurrentMonth) {
+                      // A peeking adjacent-month day used to select AND
+                      // silently jump the whole grid to a different month
+                      // in one click - genuinely easy to hit by accident
+                      // reaching for the first/last row. One click now
+                      // just brings that month into view (same as the
+                      // Prev/Next arrows do); the day itself is left
+                      // focused, so a second click - now clearly on an
+                      // in-month day - actually picks it.
+                      setMonthCursor(d);
+                      pendingFocusRef.current = true;
+                      setFocusedDate(ds);
+                      return;
+                    }
+                    pickDate(d);
+                  }}
+                  onKeyDown={(e) => handleGridKeyDown(e, ds)}
+                  tabIndex={ds === focusedDate ? 0 : -1}
+                  aria-label={dateAriaLabel(d, ds, { isSelected, isToday, isFull })}
+                  aria-current={isToday ? 'date' : undefined}
+                  aria-pressed={isSelected}
                   style={
                     isSelected
                       ? { background: 'var(--accent)', color: 'var(--accent-contrast)' }
