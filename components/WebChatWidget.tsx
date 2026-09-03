@@ -255,21 +255,28 @@ export default function WebChatWidget({
     }, perWord);
   }
 
+  // Extracted so the header's own back button (mobile, added below) fires
+  // the exact same close - the old header X was removed specifically
+  // because it "behaved slightly differently" (never cleared the #chat
+  // hash), which the FAB alone didn't repeat, but re-adding a second
+  // control the wrong way would.
+  function toggleOpen() {
+    setOpen((v) => {
+      // Closing clears the #chat hash. Without this, a second click on
+      // a "Chat with us" link pointing at the same hash fires no
+      // hashchange, so the chat never reopens: it works once, then
+      // appears broken.
+      if (v && window.location.hash === '#chat') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      return !v;
+    });
+  }
+
   return (
     <>
       <button
-        onClick={() => {
-          setOpen((v) => {
-            // Closing clears the #chat hash. Without this, a second click on
-            // a "Chat with us" link pointing at the same hash fires no
-            // hashchange, so the chat never reopens: it works once, then
-            // appears broken.
-            if (v && window.location.hash === '#chat') {
-              history.replaceState(null, '', window.location.pathname + window.location.search);
-            }
-            return !v;
-          });
-        }}
+        onClick={toggleOpen}
         aria-label={open ? 'Close chat' : 'Open chat'}
         // Was `hidden` below sm while open, relying on a separate small X
         // inside the panel's header to close instead - on a phone, tapping
@@ -315,13 +322,31 @@ export default function WebChatWidget({
               icon), the name up front, and a real status pill instead of
               a static "usually replies instantly" line - this widget is
               genuinely always on, so it says so plainly rather than
-              hedging. No separate close button in here anymore - the
-              floating FAB (now always visible, see its own className) is
-              the one close control everywhere, rather than this header
-              carrying a second one that behaved slightly differently
-              (it never cleared the #chat hash the FAB's own close logic
-              does) and lived somewhere a habit-driven tap wouldn't land. */}
+              hedging.
+
+              A back-style button is here again on mobile only, at the
+              top-left where a phone's own back control ordinarily sits -
+              asked for directly. The floating FAB (bottom-right) had
+              replaced this entirely because the ORIGINAL header X used to
+              behave differently (never cleared the #chat hash) and could
+              get pushed off-screen by the keyboard before
+              useKeyboardSafeInsets existed to keep the panel's own bounds
+              correct. Both are fixed now (this calls the exact same
+              toggleOpen the FAB does; the panel's bounds already resize
+              correctly for the keyboard), so it's safe to bring back
+              without reintroducing either original problem. The FAB stays
+              too, unchanged, for anyone who reaches for the same spot
+              they tapped to open it. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
+            <button
+              onClick={toggleOpen}
+              aria-label="Close chat"
+              className="sm:hidden -ml-1.5 h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
               {businessName?.[0]?.toUpperCase() ?? '?'}
             </div>

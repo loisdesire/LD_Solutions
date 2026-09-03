@@ -74,6 +74,13 @@ export default function AdminAssistantWidget({
     };
   }, [open]);
 
+  // Shared so the header's own back button (mobile, added below) fires
+  // the exact same close as the FAB - same reasoning as WebChatWidget's
+  // identical toggleOpen.
+  function toggleOpen() {
+    setOpen((v) => !v);
+  }
+
   return (
     <>
       {/* Was `hidden` below sm once open, relying on the header's own X to
@@ -85,7 +92,7 @@ export default function AdminAssistantWidget({
           its bottom edge (see AssistantChat's bare-mode padding) so
           nothing sits underneath it. */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
         className="fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'var(--accent)' }}
@@ -129,13 +136,22 @@ export default function AdminAssistantWidget({
           {/* Same header shape as WebChatWidget's own panel - a business
               mark + name up front, so it's unambiguous this is a different
               conversation from the customer-facing widget, even though
-              nobody ever sees both at once. No close button in here
-              anymore either, same fix as WebChatWidget: the floating FAB
-              is always visible now (z-[60], reachable over this panel on
-              mobile too), so a second, smaller, differently-sized close
-              control in the header was redundant rather than a real
-              backup. */}
+              nobody ever sees both at once. A back-style button is back
+              here on mobile only, top-left, matching the same fix and the
+              same reasoning as WebChatWidget's own - asked for directly,
+              and safe to bring back now that useKeyboardSafeInsets keeps
+              the header itself correctly positioned. The floating FAB
+              stays too, unchanged. */}
           <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
+            <button
+              onClick={toggleOpen}
+              aria-label="Close assistant"
+              className="sm:hidden -ml-1.5 h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0 border border-line" />
             ) : (
