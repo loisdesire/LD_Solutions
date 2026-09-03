@@ -373,14 +373,24 @@ export default function AssistantChat({
           // bar already draws its own border-t right above this, so both
           // together were two parallel lines stacked with almost no gap
           // between them.
-          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3 ${bare ? 'pb-20 sm:pb-3' : ''}`}
+          //
+          // pb-20 dropped in bare mode - it reserved clearance for the
+          // floating FAB, which AdminAssistantWidget (bare mode's one
+          // caller) no longer floats over this panel while open on
+          // mobile. Left in, that padding was dead space reserved for a
+          // button that wasn't there, worst exactly when the keyboard was
+          // open and every bit of vertical room actually mattered.
+          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3`}
         >
           {/* One unified composer now, not three separate bordered boxes
               (attach / input / "Send") sitting side by side - that read as
               fragmented, a form rather than a chat composer. Everything
               lives inside one rounded-2xl container instead, matching the
-              same shape WebChatWidget's own input now uses. */}
-          <div className="flex items-end gap-2 rounded-2xl bg-paper border border-line pl-2 pr-2 py-2 focus-within:border-[var(--accent)] transition-colors">
+              same shape WebChatWidget's own input now uses.
+              items-center, not items-end - a single-line input has no
+              reason to bottom-align, and doing so left the placeholder
+              text sitting visibly above center. */}
+          <div className="flex items-center gap-2 rounded-2xl bg-paper border border-line pl-2 pr-2 py-2 focus-within:border-[var(--accent)] transition-colors">
             <input
               ref={fileInputRef}
               type="file"

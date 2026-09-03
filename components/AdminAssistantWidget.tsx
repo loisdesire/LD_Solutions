@@ -83,18 +83,20 @@ export default function AdminAssistantWidget({
 
   return (
     <>
-      {/* Was `hidden` below sm once open, relying on the header's own X to
-          close instead - on a phone, tapping the exact spot this button
-          normally lives had nothing there at all (same bug reported and
-          fixed on WebChatWidget's identical FAB). z-[60], above the
-          panel's z-50, keeps it reachable floating over the full-screen
-          mobile panel; the panel's own input bar reserves clearance at
-          its bottom edge (see AssistantChat's bare-mode padding) so
-          nothing sits underneath it. */}
+      {/* Hidden on mobile while open now, not "always visible, z-[60]" -
+          same fix and same reasoning as WebChatWidget's identical FAB:
+          bottom-5 is plain CSS with no idea where the keyboard actually
+          is, only the panel itself (useKeyboardSafeInsets) was ever made
+          keyboard-aware, so this either rendered past the true visible
+          area or left a dead gap reserved for it once the keyboard was
+          open. The header's own back button is the sole close control on
+          mobile now; unchanged on desktop. */}
       <button
         onClick={toggleOpen}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
-        className="fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
+        className={`fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${
+          open && isMobile ? 'hidden' : 'flex'
+        }`}
         style={{ background: 'var(--accent)' }}
       >
         {open ? (

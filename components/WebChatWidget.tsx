@@ -278,16 +278,23 @@ export default function WebChatWidget({
       <button
         onClick={toggleOpen}
         aria-label={open ? 'Close chat' : 'Open chat'}
-        // Was `hidden` below sm while open, relying on a separate small X
-        // inside the panel's header to close instead - on a phone, tapping
-        // the exact spot this button normally lives had nothing there at
-        // all, which reads as "the close button doesn't work" even though
-        // a different one technically existed elsewhere. One button now,
-        // always visible, z-[60] (above the panel's z-50) so it stays
-        // reachable floating over the full-screen mobile panel too - the
-        // panel reserves clearance at its own bottom edge (see its
-        // padding below) so this never sits on top of the message input.
-        className="fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full flex items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95"
+        // Hidden on mobile while open now, not "always visible, z-[60]" -
+        // that earlier fix assumed this fixed-position button would stay
+        // pinned to the true visible bottom edge, but bottom-5 is plain
+        // CSS with no idea where the keyboard actually is; only the panel
+        // itself (via useKeyboardSafeInsets) was ever made keyboard-aware.
+        // Confirmed live: with the keyboard open, this either rendered off
+        // past the real visible area or left a large dead gap reserved
+        // for it above the keyboard - "the close button doesn't work"
+        // again, the exact complaint this was first built to fix, just
+        // from a different cause. The header's own back button (added
+        // since, see the panel below) lives inside the panel's own
+        // correctly-sized bounds and is the sole close control on mobile
+        // now; this stays exactly as before on desktop, where there's no
+        // keyboard-safe-area problem to begin with.
+        className={`fixed bottom-5 right-5 z-[60] h-14 w-14 rounded-full items-center justify-center text-accent-contrast shadow-[0_12px_28px_-8px_var(--accent)] transition-transform hover:scale-105 active:scale-95 ${
+          open && isMobile ? 'hidden' : 'flex'
+        }`}
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
@@ -408,21 +415,20 @@ export default function WebChatWidget({
             )}
           </div>
 
-          {/* pb-20 on mobile only (was a flat p-3) - the floating FAB now
-              stays visible over this full-screen panel instead of hiding,
-              so this reserves clearance below the send button for it
-              (FAB sits ~20-76px off the true bottom edge) rather than the
-              two overlapping. Not needed at sm+, where the panel already
-              sits well above the FAB with its own gap. */}
-          {/* rounded-2xl, not the full pill this used to be, with real
-              vertical room (py-2.5, was py-1.5) and a proper gap before the
-              send button instead of it sitting crammed into the pill's own
-              edge - a fuller-height, softer-rectangle input with its
-              button as a clearly separate element reads as considered
-              rather than a cramped afterthought, closer to how a real
-              chat app's own composer looks. */}
-          <div className="shrink-0 border-t border-line p-3 pb-20 sm:pb-3">
-            <div className="flex items-end gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
+          {/* pb-20 dropped - it existed to reserve clearance for the
+              floating FAB, which no longer floats over this panel while
+              open on mobile (see the FAB's own comment above). Keeping
+              that padding after removing the thing it was reserved for
+              left a large dead gap sitting just above the input, worst
+              exactly when the keyboard was open and every bit of vertical
+              room actually mattered. Flat p-3 now, same as sm+.
+
+              items-center, not items-end - this row has one single-line
+              input, not a growing textarea, so there was never a reason
+              to bottom-align it; it was leaving the placeholder text
+              sitting visibly above center in the taller box below. */}
+          <div className="shrink-0 border-t border-line p-3">
+            <div className="flex items-center gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
               <input
                 ref={inputRef}
                 value={value}
