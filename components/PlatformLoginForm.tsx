@@ -39,8 +39,17 @@ export default function PlatformLoginForm() {
       // even for accounts that genuinely have a staff row (see route comment
       // for why). Reading the session from cookies server-side, the same way
       // requireStaffSession already does successfully everywhere else, avoids
-      // that race entirely.
-      const res = await fetch('/api/my-business', { cache: 'no-store' });
+      // that race entirely... except this fetch itself fires the instant
+      // signInWithPassword's promise resolves, and confirmed live: the
+      // browser client's cookie write can still be a beat behind that -
+      // this landed as a real "Not authenticated" on a genuine account with
+      // the right password. One retry after a brief pause covers exactly
+      // that gap without adding a real delay to the normal, non-racing case.
+      let res = await fetch('/api/my-business', { cache: 'no-store' });
+      if (res.status === 401) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        res = await fetch('/api/my-business', { cache: 'no-store' });
+      }
       const data = await res.json();
 
       if (!res.ok) {
