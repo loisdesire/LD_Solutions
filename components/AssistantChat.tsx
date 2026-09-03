@@ -373,63 +373,74 @@ export default function AssistantChat({
           // bar already draws its own border-t right above this, so both
           // together were two parallel lines stacked with almost no gap
           // between them.
-          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3 flex gap-2 ${bare ? 'pb-20 sm:pb-3' : ''}`}
+          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3 ${bare ? 'pb-20 sm:pb-3' : ''}`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (file) handleAttach(file);
-            }}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingImage}
-            aria-label="Attach a photo"
-            title="Attach a photo"
-            className="rounded-xl border border-line px-3 text-ink-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-50 shrink-0"
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
-          </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              // Belt and braces alongside the form's onSubmit below - some
-              // mobile browsers don't reliably turn a soft keyboard's
-              // return/go key into a real submit event. isComposing guards
-              // against IME input, where Enter confirms a character rather
-              // than sending the message.
-              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                send(input);
-              }
-            }}
-            enterKeyHint="send"
-            aria-label="Ask your assistant"
-            placeholder={inputPlaceholder}
-            // Same fix as WebChatWidget's input - an unnamed text input
-            // with no autocomplete hint was getting swept into
-            // password-manager heuristics on some mobile browsers.
-            name="assistant-message"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore=""
-            data-form-type="other"
-            className="flex-1 min-w-0 rounded-xl border border-line bg-paper px-3.5 py-2.5 text-[14px] outline-none focus:border-accent transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={loading || uploadingImage || !input.trim()}
-            className="rounded-xl bg-accent px-4 py-2.5 text-[14px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 shrink-0"
-          >
-            Send
-          </button>
+          {/* One unified composer now, not three separate bordered boxes
+              (attach / input / "Send") sitting side by side - that read as
+              fragmented, a form rather than a chat composer. Everything
+              lives inside one rounded-2xl container instead, matching the
+              same shape WebChatWidget's own input now uses. */}
+          <div className="flex items-end gap-2 rounded-2xl bg-paper border border-line pl-2 pr-2 py-2 focus-within:border-[var(--accent)] transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) handleAttach(file);
+              }}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              aria-label="Attach a photo"
+              title="Attach a photo"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-ink-faint hover:bg-warm-surface hover:text-accent transition-colors disabled:opacity-50 shrink-0"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+            </button>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                // Belt and braces alongside the form's onSubmit below - some
+                // mobile browsers don't reliably turn a soft keyboard's
+                // return/go key into a real submit event. isComposing guards
+                // against IME input, where Enter confirms a character rather
+                // than sending the message.
+                if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  send(input);
+                }
+              }}
+              enterKeyHint="send"
+              aria-label="Ask your assistant"
+              placeholder={inputPlaceholder}
+              // Same fix as WebChatWidget's input - an unnamed text input
+              // with no autocomplete hint was getting swept into
+              // password-manager heuristics on some mobile browsers.
+              name="assistant-message"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore=""
+              data-form-type="other"
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-[14px] text-ink placeholder-ink-faint py-1.5"
+            />
+            <button
+              type="submit"
+              disabled={loading || uploadingImage || !input.trim()}
+              aria-label="Send"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
+              style={{ background: 'var(--accent)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
         </form>
       </div>
     </div>

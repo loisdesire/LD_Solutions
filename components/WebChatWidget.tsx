@@ -414,8 +414,15 @@ export default function WebChatWidget({
               (FAB sits ~20-76px off the true bottom edge) rather than the
               two overlapping. Not needed at sm+, where the panel already
               sits well above the FAB with its own gap. */}
+          {/* rounded-2xl, not the full pill this used to be, with real
+              vertical room (py-2.5, was py-1.5) and a proper gap before the
+              send button instead of it sitting crammed into the pill's own
+              edge - a fuller-height, softer-rectangle input with its
+              button as a clearly separate element reads as considered
+              rather than a cramped afterthought, closer to how a real
+              chat app's own composer looks. */}
           <div className="shrink-0 border-t border-line p-3 pb-20 sm:pb-3">
-            <div className="flex items-center gap-2 rounded-full bg-paper border border-line pl-4 pr-1.5 py-1.5 focus-within:border-[var(--accent)] transition-colors">
+            <div className="flex items-end gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
               <input
                 ref={inputRef}
                 value={value}
@@ -436,17 +443,17 @@ export default function WebChatWidget({
                 data-lpignore="true"
                 data-1p-ignore=""
                 data-form-type="other"
-                className="flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-[14px] text-ink placeholder-ink-faint"
+                className="flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 py-1 text-[14px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}
                 disabled={!value.trim() || thinking || revealing}
                 aria-label="Send"
-                className="h-8 w-8 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
+                className="h-9 w-9 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
                 style={{ background: 'var(--accent)' }}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7" />
                 </svg>
               </button>
             </div>
