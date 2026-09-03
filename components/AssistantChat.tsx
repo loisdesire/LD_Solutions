@@ -432,8 +432,14 @@ export default function AssistantChat({
               // Same fix as WebChatWidget's input - an unnamed text input
               // with no autocomplete hint was getting swept into
               // password-manager heuristics on some mobile browsers.
+              // autoComplete is a made-up token, not the literal string
+              // "off" - see WebChatWidget's own comment on this exact
+              // input for why: Chrome has a documented history of
+              // deliberately weakening "off" specifically, which is
+              // almost certainly why its key/card/location autofill strip
+              // still showed despite autoComplete="off" already being set.
               name="assistant-message"
-              autoComplete="off"
+              autoComplete="assistant-message-no-suggestions"
               data-lpignore="true"
               data-1p-ignore=""
               data-form-type="other"

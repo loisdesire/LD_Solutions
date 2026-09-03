@@ -444,8 +444,19 @@ export default function WebChatWidget({
                 // password" report. name + autoComplete="off" plus the
                 // ignore hints the major password managers actually
                 // respect (LastPass/1Password/Dashlane) rule this out.
+                //
+                // autoComplete is a made-up token now, not the literal
+                // string "off" - Chrome has a well-documented history of
+                // deliberately weakening/ignoring "off" specifically
+                // (enough sites misused it to fight user preference that
+                // Chrome stopped fully honoring it), which is almost
+                // certainly why its own key/card/location autofill strip
+                // still showed above this field despite autoComplete="off"
+                // already being set. An unrecognized value gives Chrome no
+                // known autofill category to match against at all, rather
+                // than a hint it's specifically inclined to override.
                 name="chat-message"
-                autoComplete="off"
+                autoComplete="chat-message-no-suggestions"
                 data-lpignore="true"
                 data-1p-ignore=""
                 data-form-type="other"
