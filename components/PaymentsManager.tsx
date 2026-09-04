@@ -156,6 +156,23 @@ export default function PaymentsManager({
         Customers pay through Paystack (card or bank transfer) to confirm a booking, instead of paying you separately after.
       </p>
 
+      {!requirePayment && (
+        // Was: nothing shown at all when this toggle is off - read as "you
+        // haven't set this up yet" rather than a real choice, and no
+        // Paystack account is required to use Vanova at all. Said
+        // plainly, since a meaningful share of real customers here are
+        // solo operators without the CAC registration Paystack's higher
+        // transaction limits expect - "pay at appointment" isn't a
+        // fallback, it's a genuinely fine, fully supported way to run
+        // bookings.
+        <div className="rounded-2xl border border-line bg-warm-surface px-4 py-3.5 mb-5">
+          <p className="text-[13px] text-ink-soft">
+            Customers book without paying online - you collect payment however you normally do, in person or
+            however works for you. No Paystack account needed. You can turn payment collection on any time later.
+          </p>
+        </div>
+      )}
+
       {requirePayment && (
         <div className="space-y-5 mb-5">
           <div>
