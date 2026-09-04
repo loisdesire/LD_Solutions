@@ -98,7 +98,8 @@ export default function ConversationPanel({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        {/* overscroll-contain - same fix as the standalone chat panels. */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-4">
           {loading ? (
             <p className="text-[13px] text-ink-faint">Loading…</p>
           ) : messages.length === 0 ? (

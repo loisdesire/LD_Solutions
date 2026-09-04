@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     [
       csvCell(b.customer_name),
       csvCell(b.customer_email),
-      csvCell(formatContactForExport(b.customer_phone, b.customer_telegram_username)),
+      csvCell(formatContactForExport(b.customer_phone, b.customer_telegram_username, b.customer_email)),
       csvCell(b.start_time),
       csvCell(statusLabel(b.status)),
       csvCell(b.services?.name ?? null),

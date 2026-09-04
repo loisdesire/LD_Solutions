@@ -237,10 +237,27 @@ export async function createBooking(
   if (paymentRequired && !business?.paystack_secret_key) {
     return { error: "This business hasn't finished setting up payments, so this service can't be booked here yet. Tell the customer to contact them directly." };
   }
-  if (paymentRequired && !args.customerEmail) {
+
+  // WhatsApp/Telegram's ctx.customerPhone IS a real, reachable contact (a
+  // real number, a real chat id) even when the customer never mentions it -
+  // that's the whole channel. Web chat is the one exception: with no
+  // verified customer session, resolveIdentity() (app/api/web-chat/
+  // route.ts) falls back to `web:<sessionId>`, an opaque id that's only
+  // ever useful for threading THIS browser session's own conversation
+  // server-side - not something the business can ever contact the customer
+  // through. Confirmed live: bookings made this way showed
+  // "web:9beabfdd-..." as the customer's contact in the dashboard, which
+  // is worse than no contact at all since it doesn't even read as missing.
+  // Reusing the exact needs_email mechanism payment already uses below,
+  // rather than a separate new signal - the model already knows how to
+  // handle needs_email (see the system prompt in whatsappAgent.ts).
+  const hasNoRealChannelContact = ctx.customerPhone.startsWith('web:');
+  if ((paymentRequired || hasNoRealChannelContact) && !args.customerEmail) {
     return {
       needs_email: true,
-      instructions: 'This service needs paying for before it can be booked, and Paystack requires an email address to send the receipt to. Ask the customer for their email, then call this tool again with it.',
+      instructions: paymentRequired
+        ? 'This service needs paying for before it can be booked, and Paystack requires an email address to send the receipt to. Ask the customer for their email, then call this tool again with it.'
+        : "This conversation has no real way to reach this customer back - not a phone number, not a verified account. Ask for their email address so the business can actually contact them about this booking, then call this tool again with it.",
     };
   }
 

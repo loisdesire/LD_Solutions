@@ -49,7 +49,7 @@ export default function CustomerDetailModal({
   onClose: () => void;
 }) {
   const dialogRef = useDialog(true, onClose);
-  const { isBotContact, label: contactLabel } = parseContact(customer.phone ?? customer.email ?? '', customer.telegramUsername);
+  const { isBotContact, label: contactLabel } = parseContact(customer.phone ?? customer.email ?? '', customer.telegramUsername, customer.email);
 
   return (
     <div
@@ -64,7 +64,11 @@ export default function CustomerDetailModal({
         style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-y-auto rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
+      {/* overscroll-contain - same fix as the chat panels: without it,
+          scrolling this modal to its own top/bottom hands the rest of the
+          scroll to the page underneath instead of just stopping at the
+          modal's edge. */}
+      <div className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-y-auto overscroll-contain rounded-3xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] animate-rise">
         <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-4 border-b border-line bg-surface">
           <div className="min-w-0">
             <h2 className="font-display text-[19px] font-semibold text-ink truncate">{customer.name}</h2>

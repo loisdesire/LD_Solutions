@@ -42,13 +42,15 @@ function relativeDay(date: Date, today: Date): string {
 function ContactCell({
   phone,
   telegramUsername,
+  email,
   onOpen,
 }: {
   phone: string;
   telegramUsername: string | null;
+  email: string | null;
   onOpen: () => void;
 }) {
-  const { isBotContact, label } = parseContact(phone, telegramUsername);
+  const { isBotContact, label } = parseContact(phone, telegramUsername, email);
 
   // Stops the click from also bubbling up to the row's own onClick (which
   // opens the full detail modal) - this has its own, more specific action.
@@ -392,6 +394,7 @@ export default function BookingsList({
                       <ContactCell
                         phone={b.customer_phone}
                         telegramUsername={b.customer_telegram_username}
+                        email={b.customer_email}
                         onOpen={() => setOpenConversation(b)}
                       />
                     </span>

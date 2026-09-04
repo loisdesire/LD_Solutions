@@ -179,7 +179,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
           <div className="px-2 py-10 text-center text-body-sm text-ink-faint">No customers match that search.</div>
         ) : (
           filtered.map((c, i) => {
-            const { isBotContact, label } = parseContact(c.phone ?? c.email ?? '', c.telegramUsername);
+            const { isBotContact, label } = parseContact(c.phone ?? c.email ?? '', c.telegramUsername, c.email);
             return (
               <div
                 key={c.key}

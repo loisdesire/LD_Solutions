@@ -45,7 +45,8 @@ export default function BookingDetail({
 
   const { isBotContact, label: contactLabel } = parseContact(
     booking.customer_phone,
-    booking.customer_telegram_username
+    booking.customer_telegram_username,
+    booking.customer_email
   );
 
   const start = new Date(booking.start_time);
