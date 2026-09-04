@@ -176,6 +176,20 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Chrome/Android's own default tap-highlight - a translucent grey/blue
+     overlay that briefly boxes whatever you tap - was never suppressed
+     anywhere in this codebase, so every tap on a real phone got it for
+     free: reported live as "a weird border around the text" the moment
+     you tap into a chat input to type. Distinct from, and unrelated to,
+     the :focus-visible outline below - that's deliberate, accent-
+     coloured, and already correctly scoped to keyboard focus only (it
+     won't fire on a touch tap at all in a modern browser). This is the
+     browser's own undesigned default sitting on top of an app that
+     already has its own :active states (active:scale-95 etc.)
+     everywhere - transparent here, not a colour choice, just removing
+     noise nothing in this app ever asked for.
+   */
+  -webkit-tap-highlight-color: transparent;
 }
 
 button,
