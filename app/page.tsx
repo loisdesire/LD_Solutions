@@ -10,7 +10,7 @@ import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import { formatMoney } from '@/lib/formatMoney';
 import { safeJsonLdString } from '@/lib/jsonLd';
-import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
+import { businessTypes } from '@/lib/businessTypes';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -165,81 +165,7 @@ const BI_INCLUDES = [
   "Your AI tells customers what's actually popular, from real bookings",
 ];
 
-// Short labels + a small icon each, not the long compound names this had
-// before ("Hair salons & barbershops", 25 characters) - those were the
-// actual cause of the uneven-pill-height bug fixed earlier: a label that
-// long can't fit on one line in a two-column layout no matter how the
-// columns are built. Trimmed to what's still instantly recognizable at a
-// glance; the page never claimed this was an exhaustive list anyway (see
-// the trailing "+ whatever yours is" pill).
-const businessTypes = [
-  {
-    label: 'Salons & barbers',
-    icon: (
-      <>
-        <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
-        <line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
-      </>
-    ),
-  },
-  {
-    label: 'Wellness clinics',
-    icon: <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />,
-  },
-  {
-    label: 'Tutors & coaches',
-    icon: <path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />,
-  },
-  {
-    label: 'Consultants',
-    icon: (
-      <>
-        <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
-      </>
-    ),
-  },
-  {
-    label: 'Photographers',
-    icon: (
-      <>
-        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
-      </>
-    ),
-  },
-  {
-    label: 'Personal trainers',
-    icon: (
-      <>
-        <line x1="8" y1="12" x2="16" y2="12" /><rect x="4" y="9" width="4" height="6" rx="1" /><rect x="16" y="9" width="4" height="6" rx="1" />
-      </>
-    ),
-  },
-  {
-    label: 'Massage therapists',
-    icon: (
-      <>
-        <circle cx="12" cy="5.5" r="2.2" /><ellipse cx="12" cy="13" rx="5.5" ry="2.6" /><ellipse cx="12" cy="18.5" rx="7.5" ry="2.4" />
-      </>
-    ),
-  },
-  {
-    label: 'Music teachers',
-    icon: (
-      <>
-        <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
-      </>
-    ),
-  },
-];
-
-export default async function LandingPage() {
-  // Real data for the embedded demo below - the exact same live Glow
-  // Salon business every /glow-salon visitor already books through, not
-  // a separate demo record. Falls back to nothing (the section below
-  // just doesn't render) rather than 500ing the whole homepage if this
-  // ever comes back empty - a missing demo section is a much smaller
-  // problem than a broken landing page.
-  const demoData = await getBusinessBySlug(DEMO_SLUG);
+export default function LandingPage() {
 
   return (
     <div className="landing min-h-screen bg-paper">
@@ -377,40 +303,28 @@ export default async function LandingPage() {
       {/* The one thing the whole homepage was asking people to take on
           trust without ever showing it: "Try live demo" sent visitors
           straight off the page to a separate business, no embedded
-          proof anywhere on the page that actually makes the claim. This
-          is the real thing, not a mockup or a scripted replay - the
-          exact same live Glow Salon widget every /glow-salon visitor
-          already uses (see LandingChatDemo.tsx), just surfaced here
-          instead of hidden behind a click. demoData is only absent if
-          the query itself failed - not rendering the section in that
-          case is a much smaller problem than breaking the homepage
-          over it. */}
-      {demoData && (
-        <section id="demo" className="bg-paper">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-            <Reveal className="flex flex-col items-center text-center">
-              <h2 className="font-display text-[26px] sm:text-[32px] font-semibold text-ink mb-3">
-                This is real. Try it yourself.
-              </h2>
-              <p className="text-[15px] sm:text-[16px] text-ink-soft max-w-md mb-8">
-                No mockup, no script - a genuine conversation with {demoData.business.name}&rsquo;s actual AI
-                receptionist, live right now.
-              </p>
-              <LandingChatDemo
-                businessId={demoData.business.id}
-                businessName={demoData.business.name}
-                serviceNames={demoData.services.map((s) => s.name)}
-              />
-              <Link
-                href={`/${DEMO_SLUG}`}
-                className="mt-6 text-[14px] font-medium text-ink-soft hover:text-ink transition-colors underline underline-offset-2"
-              >
-                See {demoData.business.name}&rsquo;s full booking page →
-              </Link>
-            </Reveal>
-          </div>
-        </section>
-      )}
+          proof anywhere on the page that actually makes the claim.
+          First built as the real, live chat itself embedded here - a
+          real visitor found it would accept typed input and never
+          respond, so this is a scripted, animated replay instead
+          (components/LandingChatDemo.tsx): genuine example
+          conversations, not the live agent, which removes that failure
+          mode entirely rather than debugging a live-AI issue on the
+          single highest-traffic page in the product. Content is real,
+          just not a live call - see lib/landingDemoScripts.ts. */}
+      <section id="demo" className="bg-paper">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal className="flex flex-col items-center text-center">
+            <h2 className="font-display text-[26px] sm:text-[32px] font-semibold text-ink mb-3">
+              See it for a business like yours.
+            </h2>
+            <p className="text-[15px] sm:text-[16px] text-ink-soft max-w-md mb-8">
+              A real kind of conversation, both sides - no forms, no dashboards.
+            </p>
+            <LandingChatDemo />
+          </Reveal>
+        </div>
+      </section>
 
       {/* Channel strip moved up, right after the hero - was sitting after
           the dark "how it works" section, which meant that (denser, more

@@ -1,265 +1,270 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { businessTypes } from '@/lib/businessTypes';
+import { landingDemoScripts, type ReplayTurn } from '@/lib/landingDemoScripts';
 
-type ChatMessage = { role: 'user' | 'assistant'; content: string };
+// Scripted, animated replay - deliberately NOT the real, live chat this
+// used to be. A genuine visitor found the real widget would accept
+// typed input and never respond; rather than debug a live-AI failure
+// mode on the single highest-traffic page in the product, this removes
+// the failure mode entirely by never calling the real agent here at
+// all. Content is real (see lib/landingDemoScripts.ts) - actual example
+// conversations for six of the eight verticals already listed further
+// down the homepage (lib/businessTypes.tsx) - Massage therapists and
+// Music teachers don't have scripts yet, so they're left out of this
+// picker rather than shown with nothing to play.
+const DELAY_AFTER_MESSAGE_MS = 2200;
+const TYPING_MS = 1300;
+const LABEL_DELAY_MS = 900;
 
-// Same reveal/thinking mechanics as WebChatWidget.tsx (the same widget
-// this actually calls into) - kept in sync deliberately rather than
-// imported, since this component drops everything WebChatWidget carries
-// for being a floating, open/closable overlay (the FAB, useKeyboardSafeInsets,
-// the #chat hash, mobile full-viewport takeover) that a demo sitting
-// inline in normal page flow, always visible, has no use for.
-const REVEAL_MS_PER_WORD = 35;
-const REVEAL_MAX_MS = 1400;
-const REVEAL_MIN_MS = 300;
-const THINKING_LINES = ['Thinking…', 'One moment…', 'Almost there…'];
+const scriptedLabels = new Set(landingDemoScripts.map((s) => s.label));
+const pickerTypes = businessTypes.filter((b) => scriptedLabels.has(b.label));
 
-function getSessionId(businessId: string): string {
-  const key = `web-chat-session:${businessId}`;
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(key, id);
-  }
-  return id;
+type Pill = 'customer' | 'owner';
+
+function TypingBubble() {
+  return (
+    <div className="flex justify-start animate-rise">
+      <div
+        className="rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1"
+        style={{ background: 'var(--accent)' }}
+        aria-label="Typing"
+      >
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full bg-white/80 animate-bounce"
+            style={{ animationDelay: `${i * 120}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-// The homepage's "Try live demo" used to send visitors straight off the
-// page to a whole separate business - no embedded proof anywhere that
-// the AI receptionist claim was real, just a link asking people to trust
-// it first. This is the real thing: the exact same live Glow Salon
-// widget (same /api/web-chat endpoint, same rate limiting, same
-// businessId), just embedded inline instead of hidden behind a click and
-// a floating panel. Deliberately NOT a new demo business or a scripted
-// replay - Glow Salon's chat is already public and already live (that's
-// what "Try live demo" already linked to), so this adds no new AI-cost
-// or abuse surface, only visibility for one that already existed.
-export default function LandingChatDemo({
-  businessId,
-  businessName,
-  serviceNames = [],
-}: {
-  businessId: string;
-  businessName: string;
-  serviceNames?: string[];
-}) {
-  const openers = [
-    'What times are free tomorrow?',
-    serviceNames[0] ? `How much is ${serviceNames[0]}?` : 'What do you charge?',
-    'Are you open at the weekend?',
-  ];
-
-  const [sessionId, setSessionId] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [value, setValue] = useState('');
-  const [inputEditable, setInputEditable] = useState(false);
-  const [thinking, setThinking] = useState(false);
-  const [revealing, setRevealing] = useState(false);
-  const [thinkingLineIndex, setThinkingLineIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const revealTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+export default function LandingChatDemo() {
+  const [selected, setSelected] = useState<number | null>(null);
+  const [pill, setPill] = useState<Pill>('customer');
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [showLabel, setShowLabel] = useState(false);
+  const [done, setDone] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setSessionId(getSessionId(businessId));
-  }, [businessId]);
+  const script = selected !== null ? landingDemoScripts[selected] : null;
+  const side = script ? script[pill] : null;
 
-  // Restores a real returning visitor's own thread (same session-id
-  // mechanism WebChatWidget uses) rather than starting fresh every
-  // reload - genuinely the same conversation if someone comes back to
-  // try it again, or later visits Glow Salon's own page directly.
-  useEffect(() => {
-    if (!sessionId || loaded) return;
-    fetch(`/api/web-chat?${new URLSearchParams({ businessId, sessionId })}`)
-      .then((r) => r.json())
-      .then((data) => setMessages(data.messages ?? []))
-      .finally(() => setLoaded(true));
-  }, [sessionId, businessId, loaded]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, thinking]);
-
-  useEffect(() => {
-    if (!thinking) {
-      setThinkingLineIndex(0);
-      return;
-    }
-    const id = setInterval(() => setThinkingLineIndex((i) => (i + 1) % THINKING_LINES.length), 2200);
-    return () => clearInterval(id);
-  }, [thinking]);
-
-  useEffect(() => {
-    return () => {
-      if (revealTimer.current) clearInterval(revealTimer.current);
-    };
-  }, []);
-
-  // Same fix as AssistantChat.tsx's standalone-card mode: this card sits
-  // in normal page flow with real marketing content above it (the hero),
-  // tall enough on a phone that the browser's own default "scroll the
-  // focused input into view" can overshoot past the whole thing. Bringing
-  // the card's own top edge to the top of the keyboard-shrunk viewport on
-  // focus keeps the conversation and the input visible together.
-  function handleInputFocus() {
-    if (typeof window === 'undefined' || !window.visualViewport) return;
-    setTimeout(() => {
-      cardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }, 300);
+  function clearTimers() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
   }
 
-  async function send(preset?: string) {
-    const text = (preset ?? value).trim();
-    if (!text || thinking || revealing || !sessionId) return;
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setValue('');
-    setThinking(true);
-
-    const res = await fetch('/api/web-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessId, sessionId, message: text }),
-    });
-    const data = await res.json().catch(() => null);
-    setThinking(false);
-    const fullReply: string = data?.reply ?? 'Sorry, something went wrong. Please try again.';
+  // The one place the actual timing sequence is built - both the
+  // picker/pill effect below and the "Replay" button call this, rather
+  // than keeping two copies of the same timeout chain that could
+  // quietly drift apart from each other.
+  function play(turns: ReplayTurn[], label: string | undefined) {
+    clearTimers();
+    setVisibleCount(0);
+    setTyping(false);
+    setShowLabel(false);
+    setDone(false);
 
     const reduceMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: fullReply }]);
+      setVisibleCount(turns.length);
+      setShowLabel(Boolean(label));
+      setDone(true);
       return;
     }
 
-    setRevealing(true);
-    const words = fullReply.split(' ');
-    setMessages((prev) => [...prev, { role: 'assistant', content: words[0] ?? '' }]);
-    const totalMs = Math.min(REVEAL_MAX_MS, Math.max(REVEAL_MIN_MS, words.length * REVEAL_MS_PER_WORD));
-    const perWord = totalMs / words.length;
-    let shown = 1;
-    if (shown >= words.length) {
-      setRevealing(false);
+    let elapsed = 0;
+    turns.forEach((turn, i) => {
+      if (turn.from === 'ai') {
+        timers.current.push(
+          setTimeout(() => setTyping(true), elapsed),
+          setTimeout(() => {
+            setTyping(false);
+            setVisibleCount(i + 1);
+          }, elapsed + TYPING_MS)
+        );
+        elapsed += TYPING_MS + DELAY_AFTER_MESSAGE_MS;
+      } else {
+        timers.current.push(setTimeout(() => setVisibleCount(i + 1), elapsed));
+        elapsed += DELAY_AFTER_MESSAGE_MS;
+      }
+    });
+    if (label) {
+      timers.current.push(setTimeout(() => setShowLabel(true), elapsed + LABEL_DELAY_MS));
+      elapsed += LABEL_DELAY_MS;
+    }
+    timers.current.push(setTimeout(() => setDone(true), elapsed + 200));
+  }
+
+  // (Re)starts the replay from scratch whenever the picked vertical or
+  // the customer/owner pill changes - a deliberate choice already
+  // brought the section into view and into focus, so there's no
+  // separate "wait for it to scroll into view" gate the way a passive
+  // autoplaying video might need; picking IS the trigger.
+  useEffect(() => {
+    if (!side) {
+      clearTimers();
+      setVisibleCount(0);
+      setTyping(false);
+      setShowLabel(false);
+      setDone(false);
       return;
     }
-    revealTimer.current = setInterval(() => {
-      shown += 1;
-      setMessages((prev) => {
-        const next = [...prev];
-        next[next.length - 1] = { role: 'assistant', content: words.slice(0, shown).join(' ') };
-        return next;
-      });
-      if (shown >= words.length) {
-        if (revealTimer.current) clearInterval(revealTimer.current);
-        revealTimer.current = null;
-        setRevealing(false);
-      }
-    }, perWord);
+    play(side.turns, side.label);
+    return clearTimers;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, pill]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [visibleCount, typing, showLabel]);
+
+  useEffect(() => clearTimers, []);
+
+  function replay() {
+    if (side) play(side.turns, side.label);
   }
 
   return (
-    <div
-      ref={cardRef}
-      className="w-full max-w-md mx-auto rounded-3xl bg-surface border-2 border-line shadow-card flex flex-col h-[460px] overflow-hidden"
-    >
-      <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
-        <div
-          className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast"
-          style={{ background: 'var(--accent)' }}
-        >
-          {businessName[0]?.toUpperCase()}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold text-ink truncate">{businessName}</p>
-          <p className="text-[10.5px] text-ink-faint">This is real - try it</p>
-        </div>
-        <span
-          className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold shrink-0"
-          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          Online
-        </span>
-      </div>
-
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.length === 0 && !thinking && (
-          <div className="px-1 py-4">
-            <p className="text-[14px] text-ink-soft text-center mb-3.5">Ask anything, or start here</p>
-            <div className="flex flex-col gap-2">
-              {openers.map((o) => (
-                <button
-                  key={o}
-                  type="button"
-                  onClick={() => send(o)}
-                  className="text-left rounded-xl border border-line px-3.5 py-2.5 text-[14px] text-ink-soft hover:border-accent hover:text-accent transition-colors"
-                >
-                  {o}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap ${
-                m.role === 'user' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
+    <div className="w-full max-w-2xl mx-auto">
+      {/* The picker - reuses lib/businessTypes.tsx, the exact same data
+          (and so the exact same icons/labels) the "Built for businesses
+          that take appointments" section further down the page already
+          renders, rather than a second, quietly-driftable copy. */}
+      <p className="text-[13px] font-medium text-ink-faint uppercase tracking-[0.08em] mb-3">
+        See it for a business like yours
+      </p>
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
+        {pickerTypes.map((biz) => {
+          const index = landingDemoScripts.findIndex((s) => s.label === biz.label);
+          const active = selected === index;
+          return (
+            <button
+              key={biz.label}
+              type="button"
+              onClick={() => {
+                setSelected(index);
+                setPill('customer');
+              }}
+              className={`flex items-center gap-2 rounded-full border px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
+                active
+                  ? 'border-transparent text-accent-contrast'
+                  : 'border-line bg-surface text-ink-soft hover:border-accent hover:text-accent'
               }`}
-              style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}
+              style={active ? { background: 'var(--accent)' } : undefined}
             >
-              {m.content}
-            </div>
-          </div>
-        ))}
-        {thinking && (
-          <div className="flex justify-start animate-rise">
-            <div className="text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[14px] opacity-80" style={{ background: 'var(--accent)' }}>
-              {THINKING_LINES[thinkingLineIndex]}
-            </div>
-          </div>
-        )}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={active ? 'currentColor' : 'var(--accent)'}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0"
+                aria-hidden="true"
+              >
+                {biz.icon}
+              </svg>
+              {biz.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="shrink-0 border-t border-line p-3">
-        <div className="flex items-center gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
-          <input
-            value={value}
-            readOnly={!inputEditable}
-            onChange={(e) => setValue(e.target.value)}
-            onFocus={(e) => {
-              if (!inputEditable) {
-                setInputEditable(true);
-                requestAnimationFrame(() => e.currentTarget.focus());
-              }
-              handleInputFocus();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') send();
-            }}
-            aria-label="Type a message"
-            placeholder="Type a message…"
-            name="landing-demo-message"
-            autoComplete="landing-demo-message-no-suggestions"
-            data-lpignore="true"
-            data-1p-ignore=""
-            data-form-type="other"
-            className="chat-composer-input flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 py-1 text-[14px] text-ink placeholder-ink-faint"
-          />
-          <button
-            onClick={() => send()}
-            disabled={!value.trim() || thinking || revealing}
-            aria-label="Send"
-            className="h-9 w-9 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
-            style={{ background: 'var(--accent)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
-          </button>
+      {!script ? (
+        <div className="rounded-3xl border-2 border-dashed border-line bg-warm-surface flex items-center justify-center h-[220px]">
+          <p className="text-[14px] text-ink-faint">Pick your business above to see it in action</p>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* The customer/owner pill toggle - a fresh pick above always
+              lands back on "customer" first (see onClick), matching the
+              order a first-time visitor would actually want to see:
+              what their OWN customers experience, before how they'd run
+              it themselves. */}
+          <div className="flex justify-center gap-2 mb-4">
+            {(['customer', 'owner'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPill(p)}
+                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
+                  pill === p ? 'text-accent-contrast' : 'bg-warm-surface text-ink-soft hover:text-ink'
+                }`}
+                style={pill === p ? { background: 'var(--accent)' } : undefined}
+              >
+                {p === 'customer' ? 'As the customer' : 'As the business owner'}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full max-w-md mx-auto rounded-3xl bg-surface border-2 border-line shadow-card flex flex-col h-[460px] overflow-hidden">
+            <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
+              <div
+                className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast"
+                style={{ background: 'var(--accent)' }}
+              >
+                {script.businessName[0]}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-ink truncate">{script.businessName}</p>
+                <p className="text-[10.5px] text-ink-faint">
+                  {pill === 'customer' ? 'What your customers experience' : 'How you run things'}
+                </p>
+              </div>
+            </div>
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {side!.turns.slice(0, visibleCount).map((turn, i) => (
+                <div key={i} className={`flex animate-rise ${turn.from === 'visitor' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap ${
+                      turn.from === 'visitor' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
+                    }`}
+                    style={{ background: turn.from === 'visitor' ? 'var(--accent-soft)' : 'var(--accent)' }}
+                  >
+                    {turn.text}
+                  </div>
+                </div>
+              ))}
+              {typing && <TypingBubble />}
+              {showLabel && side!.label && (
+                <p className="text-center text-[13px] font-medium text-ink-soft px-2 pt-2 animate-rise">
+                  {side!.label}
+                </p>
+              )}
+            </div>
+
+            <div className="shrink-0 border-t border-line p-3 flex items-center justify-center">
+              {done ? (
+                <button
+                  type="button"
+                  onClick={replay}
+                  className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-soft hover:text-accent transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Replay
+                </button>
+              ) : (
+                <p className="text-[12px] text-ink-faint">A real kind of conversation, both sides — no forms, no dashboards.</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
