@@ -3,8 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { createBrowserSupabase } from '@/lib/supabase';
 import NotificationBell from './NotificationBell';
+
+const COLLAPSE_KEY = 'admin-sidebar-collapsed';
 
 // Every nav Link below is prefetch={false}, paired with a manual
 // prefetchLink() called on hover/focus/touchstart - not a style
@@ -157,6 +160,33 @@ export default function AdminSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Collapsed is a per-device preference, not business data - localStorage,
+  // not the database. Starts false (matching what the server rendered, no
+  // window to read from yet) and is corrected once, right after mount -
+  // the one-time flash on reload for someone who'd collapsed it before is
+  // a real but minor cost, worth paying to avoid a hydration mismatch
+  // between what the server sent and what the client would otherwise
+  // render on its very first pass.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1');
+    } catch {
+      // Private browsing / storage disabled - just stays expanded.
+    }
+  }, []);
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        // Nothing to persist to - the toggle still works for this session.
+      }
+      return next;
+    });
+  }
 
   // The targeted-prefetch trigger every NavLink/RailLink below calls on
   // hover/focus/touchstart instead of relying on Link's own automatic
@@ -329,6 +359,60 @@ export default function AdminSidebar({
     );
   }
 
+  // The full sidebar's own collapsed state (>=900px, user's choice) -
+  // distinct from RailLink above, which is the compact 768-900px viewport
+  // rail that's icon-only unconditionally. Same icon-only shape, but the
+  // name shows on hover/focus as a real floating tooltip rather than the
+  // browser's native `title` popup (slow to appear, not styled, not
+  // reachable by touch at all) - built once here since RailLink's plain
+  // `title` was good enough for a narrow-viewport fallback nobody chose
+  // but not for a deliberate, everyday collapsed mode.
+  function CollapsedLink({
+    href,
+    label,
+    iconKey,
+    badge,
+  }: {
+    href: string;
+    label: string;
+    iconKey: string;
+    badge?: boolean;
+  }) {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        prefetch={false}
+        onMouseEnter={() => prefetchLink(href)}
+        onFocus={() => prefetchLink(href)}
+        onTouchStart={() => prefetchLink(href)}
+        aria-label={badge ? `${label} - needs attention` : label}
+        className="group relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
+        style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+      >
+        <span className={active ? '' : 'text-ink-soft'}>{icons[iconKey]}</span>
+        {badge && (
+          <span
+            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full border border-surface"
+            style={{ background: 'var(--warning)' }}
+            aria-hidden="true"
+          />
+        )}
+        {/* Floating label - hidden until hover/focus, then appears just
+            clear of the icon column so it never gets clipped by the
+            sidebar's own overflow-y-auto. z-50 to clear the admin
+            content next to it; pointer-events-none so it can't itself
+            become the thing blocking the click. */}
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink text-paper text-[12.5px] font-medium px-2.5 py-1.5 opacity-0 scale-95 origin-left transition-all duration-100 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 z-50 shadow-lift"
+        >
+          {label}
+        </span>
+      </Link>
+    );
+  }
+
   // Kept predominantly neutral - a solid brand-color sidebar was tried
   // and reads as exactly the "every component orange" overuse the
   // brand direction explicitly warns against. The accent shows up only
@@ -363,93 +447,168 @@ export default function AdminSidebar({
       </div>
     </aside>
 
-    <aside className="hidden min-[900px]:flex md:w-[256px] shrink-0 bg-surface border-r border-line-strong flex-col py-7 px-5 sticky top-0 h-screen overflow-y-auto">
+    <aside
+      className={`hidden min-[900px]:flex shrink-0 bg-surface border-r border-line-strong flex-col py-7 sticky top-0 h-screen overflow-y-auto transition-[width] duration-150 ${
+        collapsed ? 'md:w-[72px] px-0 items-center' : 'md:w-[256px] px-5'
+      }`}
+    >
       {/* Was "Salon · /glow-salon" underneath the name, permanently - a
           url slug an owner already knows (it's their own business) and
           has no reason to be reminded of on every single glance at their
           own nav. The real use for it (sharing/copying the link) already
           has a dedicated Copy link action on the dashboard header. Just
           the business type now, and only when there is one. */}
-      <div className="mb-10 px-2">
-        <div className="flex items-center gap-3">
+      {collapsed ? (
+        <div title={businessName} className="mb-8">
           <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
-          <div className="min-w-0">
+        </div>
+      ) : (
+        <div className="mb-10 px-2 flex items-center gap-2">
+          <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
+          <div className="min-w-0 flex-1">
             <div className="font-display text-[17px] font-semibold text-ink tracking-tight truncate">{businessName}</div>
             {businessType && (
               <div className="text-[12px] text-ink-faint mt-0.5 truncate">{businessType}</div>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Was plain small semibold text (11.5px, mixed case) - reading
-          smaller than the 14px nav items it's supposed to introduce, with
-          nothing else about it signaling "structural label" rather than
-          "diminished body text", so it lost the visual-hierarchy job it
-          was there to do. Same font-mono/uppercase/tracking eyebrow
-          treatment already used for section labels elsewhere in this app
-          (SettingsSections, the Assistant/Settings page headers) - reads
-          as a deliberate label at a small size instead of weak text. */}
-      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
-        Today
-      </div>
-      <nav className="flex flex-col gap-0.5 mb-5">
-        {today.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
-        ))}
-      </nav>
+      {/* The collapse toggle itself. Sits above the nav rather than
+          floating on the sidebar's own edge (a common pattern elsewhere,
+          but this sidebar is sticky/full-height with real content abutting
+          its right edge - an edge-straddling button would've sat half on
+          top of the admin canvas). Chevron direction is the only thing
+          that changes between states, so which way it points always
+          matches what pressing it is about to do. */}
+      <button
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={`flex items-center justify-center h-8 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0 mb-5 ${
+          collapsed ? 'w-8' : 'w-full gap-2 px-2 justify-start'
+        }`}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`shrink-0 transition-transform ${collapsed ? 'rotate-180' : ''}`}
+        >
+          <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+        </svg>
+        {!collapsed && <span className="text-caption font-medium">Collapse</span>}
+      </button>
 
-      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
-        Set up
-      </div>
-      <nav className="flex flex-col gap-0.5 mb-5">
-        {setup.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
-        ))}
-      </nav>
+      {collapsed ? (
+        // Flat, icon-only, same shape as the narrow-viewport RailLink -
+        // no group labels, there's no room for them at 72px and this is
+        // the same tradeoff that rail already makes.
+        <nav className="flex flex-col gap-1.5">
+          {allNavItems.map((tab) => (
+            <CollapsedLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
+          ))}
+        </nav>
+      ) : (
+        <>
+          {/* Was plain small semibold text (11.5px, mixed case) - reading
+              smaller than the 14px nav items it's supposed to introduce, with
+              nothing else about it signaling "structural label" rather than
+              "diminished body text", so it lost the visual-hierarchy job it
+              was there to do. Same font-mono/uppercase/tracking eyebrow
+              treatment already used for section labels elsewhere in this app
+              (SettingsSections, the Assistant/Settings page headers) - reads
+              as a deliberate label at a small size instead of weak text. */}
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
+            Today
+          </div>
+          <nav className="flex flex-col gap-0.5 mb-5">
+            {today.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
+            ))}
+          </nav>
 
-      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
-        Automate
-      </div>
-      <nav className="flex flex-col gap-0.5 mb-5">
-        {automate.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
-        ))}
-      </nav>
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
+            Set up
+          </div>
+          <nav className="flex flex-col gap-0.5 mb-5">
+            {setup.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
+            ))}
+          </nav>
 
-      <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
-        Business
-      </div>
-      <nav className="flex flex-col gap-0.5">
-        {business.map((tab) => (
-          <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} active={tab.active} />
-        ))}
-      </nav>
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
+            Automate
+          </div>
+          <nav className="flex flex-col gap-0.5 mb-5">
+            {automate.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} />
+            ))}
+          </nav>
 
-      <div className="mt-auto pt-5 border-t border-line">
-        <NotificationBell slug={slug} variant="row" />
-        <div className="flex items-center gap-2.5 px-1 mt-1.5">
+          <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
+            Business
+          </div>
+          <nav className="flex flex-col gap-0.5">
+            {business.map((tab) => (
+              <NavLink key={tab.href} href={tab.href} label={tab.label} iconKey={tab.key} badge={tab.badge} active={tab.active} />
+            ))}
+          </nav>
+        </>
+      )}
+
+      {collapsed ? (
+        <div className="mt-auto pt-5 border-t border-line flex flex-col items-center gap-1.5 w-full">
+          <NotificationBell slug={slug} variant="rail" />
           <div
+            title={`${userEmail} - ${role}`}
             className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
             style={{ background: 'var(--accent)' }}
           >
             {userEmail?.[0]?.toUpperCase()}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-caption font-medium truncate">{userEmail}</div>
-            <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
-          </div>
           <button
             onClick={handleSignOut}
             aria-label="Sign out"
-            className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
+            title="Sign out"
+            className="h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
             </svg>
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="mt-auto pt-5 border-t border-line">
+          <NotificationBell slug={slug} variant="row" />
+          <div className="flex items-center gap-2.5 px-1 mt-1.5">
+            <div
+              className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
+              style={{ background: 'var(--accent)' }}
+            >
+              {userEmail?.[0]?.toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-caption font-medium truncate">{userEmail}</div>
+              <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
     </>
   );
