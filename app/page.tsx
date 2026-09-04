@@ -5,10 +5,12 @@ import HeroAmbientSlots from '@/components/HeroAmbientSlots';
 import BeforeAfterCompare from '@/components/BeforeAfterCompare';
 import LandingMobileNav from '@/components/LandingMobileNav';
 import Button from '@/components/Button';
+import LandingChatDemo from '@/components/LandingChatDemo';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import { formatMoney } from '@/lib/formatMoney';
 import { safeJsonLdString } from '@/lib/jsonLd';
+import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -230,7 +232,15 @@ const businessTypes = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Real data for the embedded demo below - the exact same live Glow
+  // Salon business every /glow-salon visitor already books through, not
+  // a separate demo record. Falls back to nothing (the section below
+  // just doesn't render) rather than 500ing the whole homepage if this
+  // ever comes back empty - a missing demo section is a much smaller
+  // problem than a broken landing page.
+  const demoData = await getBusinessBySlug(DEMO_SLUG);
+
   return (
     <div className="landing min-h-screen bg-paper">
       <script
@@ -343,7 +353,14 @@ export default function LandingPage() {
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
             </Button>
-            <Button href={`/${DEMO_SLUG}`} variant="outline" size="lg" className="justify-center w-full sm:w-auto">
+            {/* Scrolls down to the real, embedded chat now instead of
+                navigating away to /glow-salon - the whole point of
+                building that section was to stop asking people to trust
+                the claim before showing it; sending the button that says
+                "try it" off the page would undo that immediately. The
+                actual booking page is still one tap away from inside
+                that section itself for anyone who wants the full site. */}
+            <Button href="#demo" variant="outline" size="lg" className="justify-center w-full sm:w-auto">
               Try live demo
             </Button>
           </div>
@@ -356,6 +373,44 @@ export default function LandingPage() {
         </Reveal>
         </div>
       </section>
+
+      {/* The one thing the whole homepage was asking people to take on
+          trust without ever showing it: "Try live demo" sent visitors
+          straight off the page to a separate business, no embedded
+          proof anywhere on the page that actually makes the claim. This
+          is the real thing, not a mockup or a scripted replay - the
+          exact same live Glow Salon widget every /glow-salon visitor
+          already uses (see LandingChatDemo.tsx), just surfaced here
+          instead of hidden behind a click. demoData is only absent if
+          the query itself failed - not rendering the section in that
+          case is a much smaller problem than breaking the homepage
+          over it. */}
+      {demoData && (
+        <section id="demo" className="bg-paper">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+            <Reveal className="flex flex-col items-center text-center">
+              <h2 className="font-display text-[26px] sm:text-[32px] font-semibold text-ink mb-3">
+                This is real. Try it yourself.
+              </h2>
+              <p className="text-[15px] sm:text-[16px] text-ink-soft max-w-md mb-8">
+                No mockup, no script - a genuine conversation with {demoData.business.name}&rsquo;s actual AI
+                receptionist, live right now.
+              </p>
+              <LandingChatDemo
+                businessId={demoData.business.id}
+                businessName={demoData.business.name}
+                serviceNames={demoData.services.map((s) => s.name)}
+              />
+              <Link
+                href={`/${DEMO_SLUG}`}
+                className="mt-6 text-[14px] font-medium text-ink-soft hover:text-ink transition-colors underline underline-offset-2"
+              >
+                See {demoData.business.name}&rsquo;s full booking page →
+              </Link>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
       {/* Channel strip moved up, right after the hero - was sitting after
           the dark "how it works" section, which meant that (denser, more
