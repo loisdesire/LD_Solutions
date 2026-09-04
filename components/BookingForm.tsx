@@ -573,7 +573,7 @@ export default function BookingForm({
                     <div className="aspect-[4/3] w-full overflow-hidden bg-warm-surface">
                       <img
                         src={s.image_url}
-                        alt=""
+                        alt={s.name}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
                     </div>

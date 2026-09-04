@@ -14,14 +14,18 @@ export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
   // brand entirely rather than appending it - the homepage was therefore
   // rendering with no brand name in the tab or in search results at all.
-  title: 'Vanova | An AI receptionist for appointment businesses',
+  // Geo-modifier added deliberately - the title carried no Nigeria/Naira
+  // signal at all despite that being a real, currently-unclaimed keyword
+  // space against the global competitors (SimplyBook, Vagaro, Booksy)
+  // that dominate the generic "AI receptionist" search results.
+  title: 'Vanova | AI Receptionist for Nigerian Appointment Businesses',
   description:
-    'Your customers ask for a time, the AI checks real availability and books it. Live on your website and Telegram. Every booking lands on one dashboard. 14 days free.',
+    'Your customers ask for a time, the AI checks real availability and books it - in Naira, on Paystack. Live on your website and Telegram. Every booking lands on one dashboard. 14 days free.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'Vanova | An AI receptionist for appointment businesses',
+    title: 'Vanova | AI Receptionist for Nigerian Appointment Businesses',
     description:
-      'Your customers ask for a time, the AI books it. Every channel, one dashboard. 14 days free.',
+      'Your customers ask for a time, the AI books it - in Naira, on Paystack. Every channel, one dashboard. 14 days free.',
     url: SITE_URL,
     type: 'website',
   },

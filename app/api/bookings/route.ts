@@ -56,7 +56,18 @@ export async function POST(req: NextRequest) {
   } = body;
 
   const validName = cleanRequiredText(customerName, 100);
-  const validEmail = cleanEmail(customerEmail, true);
+  // Not required here - NewAppointmentModal (the admin's own quick-add,
+  // sharing this exact route) already labels this field "Email
+  // (optional)" for real walk-in/phone bookings that genuinely have no
+  // email on hand. This route unconditionally requiring it anyway meant
+  // leaving it blank there killed the whole booking with a generic
+  // "Invalid booking details," contradicting what the field's own label
+  // told the admin. The public BookingForm still enforces its own
+  // `required` on this field client-side, and everything downstream
+  // already guards for a missing email correctly (the confirmation-send
+  // below is already `if (validEmail)`) - the hardcoded `true` here was
+  // the one place actually out of sync with that.
+  const validEmail = cleanEmail(customerEmail, false);
   const validPhone = cleanPhone(customerPhone, true);
   const validStartTime = cleanIsoInstant(startTime);
   const validPaymentReference = cleanOptionalText(paymentReference, 160);

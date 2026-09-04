@@ -299,7 +299,7 @@ export default function AssistantChat({
                     url, now carried on the message itself. */}
                 {m.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element -- a Supabase Storage URL, not a domain next/image is configured for
-                  <img src={m.imageUrl} alt="" className="rounded-lg mb-2 max-h-48 w-auto" />
+                  <img src={m.imageUrl} alt="Attached photo" className="rounded-lg mb-2 max-h-48 w-auto" />
                 )}
                 {m.role === 'assistant' ? formatAssistantContent(m.content) : m.content}
               </div>

@@ -56,7 +56,7 @@ export default async function AboutPage({ params }: { params: Promise<{ slug: st
           {business.cover_image_url && (
             <img
               src={business.cover_image_url}
-              alt=""
+              alt={business.name}
               className="w-full max-h-[280px] object-cover rounded-2xl mb-10"
             />
           )}

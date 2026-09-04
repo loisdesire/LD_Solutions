@@ -75,6 +75,8 @@ export default function TermsPage() {
             <li>Booking an appointment doesn't require creating a Vanova account - your name and contact details are shared with the business you're booking, so they can honor the appointment.</li>
             <li>If a business requires payment or a deposit to confirm a booking, that payment goes to the business through Paystack, subject to that business's own cancellation and refund policy, not a Vanova-wide one.</li>
             <li>You can manage, reschedule, or cancel your own booking using the link sent at confirmation, or by signing in with the email or phone number you booked with.</li>
+            <li>If your payment succeeds but the time slot is lost before it's confirmed (a rare timing conflict), the business is notified and will help sort it out - offering the next available time or a refund - rather than you being asked to simply pay again.</li>
+            <li>A dispute over a booking or a charge is between you and the business you booked with. Vanova may help pass along messages between you, but isn't the business and doesn't decide the outcome.</li>
           </ul>
 
           <h2>The AI receptionist</h2>
