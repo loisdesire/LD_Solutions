@@ -134,7 +134,7 @@ function Chip({ booking, onOpen }: { booking: Booking; onOpen: () => void }) {
   return (
     <button
       onClick={onOpen}
-      className={`w-full rounded-xl border-2 border-line px-2.5 py-2 text-left transition-colors hover:border-accent ${cancelled ? 'opacity-50' : ''}`}
+      className={`w-full rounded-xl border-2 border-line-strong px-2.5 py-2 text-left transition-colors hover:border-accent ${cancelled ? 'opacity-50' : ''}`}
       style={{ borderLeftColor: STATUS_DOT[booking.status] ?? 'var(--line)', borderLeftWidth: '3px' }}
     >
       <div className={`font-mono text-label font-semibold ${cancelled ? 'line-through' : ''}`} style={{ color: 'var(--accent)' }}>
@@ -281,7 +281,14 @@ export default function CalendarView({
           than the viewport, so reaching next week meant scrolling back up
           past everything you had just read. The controls stay with you
           instead. Sits under the admin mobile bar, which is z-40. */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-paper md:bg-warm-surface flex flex-wrap items-center justify-between gap-3">
+      {/* md:border-b - the bg-paper/bg-admin-canvas tone swap alone used to
+          be enough to read as "a bar sitting above the grid", back when
+          the desktop canvas was --warm-surface (close in lightness to
+          this bar's own --warm-surface). Since the canvas got a real,
+          separate --admin-canvas token, the two are far enough apart in
+          hue/lightness that the swap needs an actual edge to still read
+          as one, not float free of the grid below it. */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-paper md:bg-warm-surface md:border-b-2 md:border-line-strong flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAnchor((a) => addDays(a, mode === 'week' ? -7 : -1))}
@@ -373,7 +380,7 @@ export default function CalendarView({
                 </div>
                 <div className="space-y-1.5 min-h-[60px]">
                   {weekDayBookings.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-line h-[52px] flex items-center justify-center">
+                    <div className="rounded-lg border border-dashed border-line-strong h-[52px] flex items-center justify-center">
                       <span className="text-label text-ink-faint">Free</span>
                     </div>
                   ) : (

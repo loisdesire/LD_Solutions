@@ -291,8 +291,13 @@ export default function BookingsList({
           dividers reads as a schedule, not another card among cards, and
           it's the section that matters most on the page, so it shouldn't
           compete visually with everything boxed around it. */}
-      <div className="border-t-2 border-line">
-        <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
+      {/* border-line-strong, not border-line - same reasoning as
+          CustomersManager's table: no card wrapper here, these dividers
+          sit directly on the admin canvas, and border-line is too close
+          in lightness to --admin-canvas on desktop to read as a divider
+          at all. */}
+      <div className="border-t-2 border-line-strong">
+        <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
           <div>Time</div>
           <div>Customer</div>
           <div>Service</div>
@@ -335,7 +340,7 @@ export default function BookingsList({
                   }
                 }}
                 className={`cursor-pointer rounded-2xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-2 sm:py-4 hover:bg-warm-surface transition-colors ${
-                  i !== filtered.length - 1 ? 'sm:border-b sm:border-line' : ''
+                  i !== filtered.length - 1 ? 'sm:border-b sm:border-line-strong' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
                 <div className={`flex flex-col gap-2.5 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>

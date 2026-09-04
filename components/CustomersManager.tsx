@@ -160,8 +160,14 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
         />
       </div>
 
-      <div className="border-t-2 border-line">
-        <div className="hidden sm:grid grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] gap-4 px-2 py-2.5 border-b border-line font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint">
+      {/* border-line-strong, not border-line - this table has no card
+          wrapper of its own, so these dividers sit directly on the admin
+          canvas. border-line (#e7e2da) is now nearly the same lightness
+          as --admin-canvas (#e9e3d8) on desktop and reads as no divider
+          at all; border-line-strong is the token the app already reaches
+          for whenever a border needs to read against a tinted surface. */}
+      <div className="border-t-2 border-line-strong">
+        <div className="hidden sm:grid grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-[11.5px] uppercase tracking-[0.08em] text-ink-faint">
           <div>Customer</div>
           <div>Contact</div>
           <div>Visits</div>
@@ -190,7 +196,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                   }
                 }}
                 className={`cursor-pointer px-2 py-4 hover:bg-warm-surface transition-colors ${
-                  i !== filtered.length - 1 ? 'border-b border-line' : ''
+                  i !== filtered.length - 1 ? 'border-b border-line-strong' : ''
                 }`}
               >
                 <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] sm:gap-4 sm:items-center">

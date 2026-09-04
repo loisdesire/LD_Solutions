@@ -246,15 +246,24 @@ export default function AdminDashboardBody({
           still an unrelated hue sitting on top of the page rather than
           growing out of it. Mixed a little cream into --paper itself
           (the page's own background, not white) instead - the card is
-          now a warmer step along the same tone the page already is,
-          not a different color dropped onto it. No border - the tone
-          shift against --paper is what separates the card from the
-          page, not an edge - shadow-soft (a couple of points of lift,
-          same treatment every other card in the app uses) is what stops
-          that tone-on-tone approach reading as no card at all. */}
+          a warmer step along the same tone the page already is, not a
+          different color dropped onto it.
+
+          Originally shipped with no border at all - the tone shift
+          against --paper was enough on its own to separate the card
+          from the page. That stopped being true once the desktop admin
+          canvas became its own, darker --admin-canvas token instead of
+          --paper: this card's tint is still mixed from --paper, so
+          against the new canvas it can end up *lighter* than the page
+          around it instead of a step warmer, which reads as no card at
+          all rather than a different problem than before. border-line-
+          strong (not the plain, now-too-close-to-admin-canvas
+          border-line) gives it a real edge regardless of how the tint
+          and the canvas happen to compare - shadow-soft stays for the
+          same lift every other card in the app uses. */}
       {all.length > 0 && (
         <div
-          className="rounded-2xl px-5 py-5 mb-8 shadow-soft"
+          className="rounded-2xl border border-line-strong px-5 py-5 mb-8 shadow-soft"
           style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--paper))' }}
         >
           {/* Dividers only from lg: up - below that, at 4 stats x
