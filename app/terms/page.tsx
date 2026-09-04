@@ -64,7 +64,7 @@ export default function TermsPage() {
           <h2>Business accounts</h2>
           <ul>
             <li>You need to give accurate information when you sign up, and keep your login secure - you're responsible for what happens under your account.</li>
-            <li>New accounts start on a 14-day free trial. After the trial, continued access requires an active paid plan ({PLAN_LABEL.core} at {formatMoney(PLAN_PRICE_NGN.core)}/month, or {PLAN_LABEL.business_intelligence} at {formatMoney(PLAN_PRICE_NGN.business_intelligence)}/month), billed monthly through Flutterwave. You can cancel any time from your dashboard; cancelling stops future billing but doesn't refund the current period.</li>
+            <li>New accounts start on a 14-day free trial. After the trial, continued access requires an active paid plan ({PLAN_LABEL.core} at {formatMoney(PLAN_PRICE_NGN.core)}/month, or {PLAN_LABEL.business_intelligence} at {formatMoney(PLAN_PRICE_NGN.business_intelligence)}/month), billed monthly through Flutterwave. You can cancel any time from your dashboard; cancelling stops future billing but doesn't refund the current period - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for details.</li>
             <li>If you turn on payments for your customers, that's handled through your own Paystack account, which you connect and control - Vanova never holds your customers' money.</li>
             <li>You can invite staff to help manage your business. What a staff member can and can't do is described in the product itself; you're responsible for who you invite.</li>
             <li>You're responsible for the content on your booking page (business description, photos, service listings) being accurate and something you have the right to use.</li>
@@ -73,7 +73,7 @@ export default function TermsPage() {
           <h2>Customer bookings</h2>
           <ul>
             <li>Booking an appointment doesn't require creating a Vanova account - your name and contact details are shared with the business you're booking, so they can honor the appointment.</li>
-            <li>If a business requires payment or a deposit to confirm a booking, that payment goes to the business through Paystack, subject to that business's own cancellation and refund policy, not a Vanova-wide one.</li>
+            <li>If a business requires payment or a deposit to confirm a booking, that payment goes to the business through Paystack, subject to that business's own cancellation window, not a Vanova-wide policy - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for how that works.</li>
             <li>You can manage, reschedule, or cancel your own booking using the link sent at confirmation, or by signing in with the email or phone number you booked with.</li>
             <li>If your payment succeeds but the time slot is lost before it's confirmed (a rare timing conflict), the business is notified and will help sort it out - offering the next available time or a refund - rather than you being asked to simply pay again.</li>
             <li>A dispute over a booking or a charge is between you and the business you booked with. Vanova may help pass along messages between you, but isn't the business and doesn't decide the outcome.</li>

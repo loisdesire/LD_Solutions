@@ -802,6 +802,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-5">
               <Link href="/terms" className="text-[12.5px] text-ink-faint hover:text-ink-soft transition-colors">Terms</Link>
               <Link href="/privacy" className="text-[12.5px] text-ink-faint hover:text-ink-soft transition-colors">Privacy</Link>
+              <Link href="/refunds" className="text-[12.5px] text-ink-faint hover:text-ink-soft transition-colors">Refunds</Link>
               <p className="text-[12.5px] text-ink-faint">/{DEMO_SLUG} is a live demo, not a real business</p>
             </div>
           </div>
