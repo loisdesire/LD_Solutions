@@ -132,6 +132,37 @@ export default function AssistantChat({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  // The real, verified upload URL - kept independent of pendingImage
+  // (which only tracks the visual "about to send" indicator and is
+  // meant to clear the instant the message goes out). Confirmed live:
+  // attaching a cover photo and confirming it a turn later ("Go ahead")
+  // failed every single time with "might not be valid" - not
+  // intermittent, structural. The server only ever hands the model the
+  // real URL on the exact turn a photo is attached (see imageUrl in
+  // send() below and app/api/onboarding/chat/route.ts); it's never in
+  // conversation history (only final text replies are persisted, not
+  // tool-call arguments) and the model is deliberately told never to
+  // paste the raw URL into its own reply either - so by the confirm
+  // turn, the real URL is genuinely gone everywhere, and the model has
+  // no way to supply it correctly to apply_update_profile except by
+  // reconstructing something URL-shaped, which then correctly (if
+  // uselessly) fails verification every time. This keeps the real URL
+  // available for a few turns after the attach, independent of the
+  // model's own memory, so a normal "here's a photo" / "looks good, go
+  // ahead" exchange actually has something real to confirm.
+  const lastImageRef = useRef<{ url: string; turnsLeft: number } | null>(null);
+  // The autoComplete-token trick below wasn't enough on its own -
+  // confirmed live, on a real phone: Chrome still showed its key/card/
+  // location autofill icon strip above the keyboard AND a visible
+  // highlighted border around the input itself (both the same root
+  // cause: Chrome's autofill-candidate heuristics, not two separate
+  // bugs). Chrome makes that "is this an autofill field" pass largely
+  // at page load / first paint - starting the real input as readOnly
+  // means there's nothing for that pass to flag yet, and switching it
+  // to editable the instant it's actually focused (still on the very
+  // first tap, so it doesn't cost anything real) happens after that
+  // pass already ran.
+  const [inputEditable, setInputEditable] = useState(false);
 
   // bare mode (the floating-panel callers) already gets keyboard-safe
   // positioning from its own parent (useKeyboardSafeInsets - see
@@ -175,6 +206,12 @@ export default function AssistantChat({
         return;
       }
       setPendingImage({ url: data.url, previewUrl });
+      // 6 turns is generous headroom for "attach -> propose reply ->
+      // confirm -> apply", even with a clarifying question or two in
+      // between - a fresh attach always resets this rather than
+      // extending it, so an old photo can't quietly outlive its actual
+      // relevance to the conversation.
+      lastImageRef.current = { url: data.url, turnsLeft: 6 };
     } catch {
       setError("Upload failed - check your connection and try again.");
       URL.revokeObjectURL(previewUrl);
@@ -222,7 +259,23 @@ export default function AssistantChat({
 
   async function send(text: string) {
     if (!text.trim() || loading) return;
-    const imageUrl = pendingImage?.url ?? null;
+    // Two different things, deliberately not the same value anymore.
+    // visualImageUrl is only ever the photo attached THIS turn - shown
+    // inline on the message bubble, exactly as before, so "Go ahead"
+    // never wrongly shows a photo next to it that wasn't actually
+    // re-attached. requestImageUrl is what the SERVER gets, and falls
+    // back to the last real upload (see lastImageRef above) when
+    // nothing new was attached this turn - the model still only sees
+    // an image_url when there genuinely is a relevant recent one, but
+    // now that's backed by something real instead of the model's own
+    // lost memory of a URL it was told never to write down.
+    const visualImageUrl = pendingImage?.url ?? null;
+    const carried = lastImageRef.current;
+    const requestImageUrl = visualImageUrl ?? (carried && carried.turnsLeft > 0 ? carried.url : null);
+    if (carried && !visualImageUrl) {
+      carried.turnsLeft -= 1;
+      if (carried.turnsLeft <= 0) lastImageRef.current = null;
+    }
     const sentImage = pendingImage;
     // The sent photo used to just vanish the moment the message went out -
     // pendingImage (the only thing rendering it) gets cleared on send, and
@@ -232,7 +285,7 @@ export default function AssistantChat({
     // inline, same idea as any real chat UI showing what you actually sent.
     const nextMessages: Message[] = [
       ...messages,
-      { role: 'user', content: text, ...(imageUrl ? { imageUrl } : {}) },
+      { role: 'user', content: text, ...(visualImageUrl ? { imageUrl: visualImageUrl } : {}) },
     ];
     setMessages(nextMessages);
     setInput('');
@@ -245,7 +298,7 @@ export default function AssistantChat({
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, message: text, history: messages, imageUrl }),
+        body: JSON.stringify({ slug, message: text, history: messages, imageUrl: requestImageUrl }),
       });
       const data = await res.json();
       setLoading(false);
@@ -445,8 +498,19 @@ export default function AssistantChat({
             </button>
             <input
               value={input}
+              readOnly={!inputEditable}
               onChange={(e) => setInput(e.target.value)}
-              onFocus={handleInputFocus}
+              onFocus={(e) => {
+                if (!inputEditable) {
+                  setInputEditable(true);
+                  // Removing readOnly can drop the text cursor on some
+                  // browsers even though focus itself is kept - putting
+                  // it back explicitly is cheap insurance against typing
+                  // starting with no visible caret.
+                  requestAnimationFrame(() => e.currentTarget.focus());
+                }
+                handleInputFocus();
+              }}
               onKeyDown={(e) => {
                 // Belt and braces alongside the form's onSubmit below - some
                 // mobile browsers don't reliably turn a soft keyboard's

@@ -75,6 +75,17 @@ export default function WebChatWidget({
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [value, setValue] = useState('');
+  // The autoComplete-token trick a few lines below wasn't enough on its
+  // own - confirmed live, on a real phone: Chrome still showed its key/
+  // card/location autofill icon strip above the keyboard AND a visible
+  // highlighted border around the input itself (same root cause, not
+  // two separate bugs - Chrome's autofill-candidate heuristics). Chrome
+  // makes that "is this an autofill field" pass largely at page load /
+  // first paint - starting the real input as readOnly means there's
+  // nothing for that pass to flag yet, and switching it to editable the
+  // instant it's actually focused (still on the very first tap, so it
+  // doesn't cost anything real) happens after that pass already ran.
+  const [inputEditable, setInputEditable] = useState(false);
   const [thinking, setThinking] = useState(false);
   // The whole reply used to appear as one instant block the moment the
   // request resolved - technically correct, but felt like a form
@@ -432,7 +443,18 @@ export default function WebChatWidget({
               <input
                 ref={inputRef}
                 value={value}
+                readOnly={!inputEditable}
                 onChange={(e) => setValue(e.target.value)}
+                onFocus={(e) => {
+                  if (!inputEditable) {
+                    setInputEditable(true);
+                    // Removing readOnly can drop the text cursor on some
+                    // browsers even though focus itself is kept - putting
+                    // it back explicitly is cheap insurance against
+                    // typing starting with no visible caret.
+                    requestAnimationFrame(() => e.currentTarget.focus());
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') send();
                 }}
