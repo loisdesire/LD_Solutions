@@ -7,6 +7,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import NotificationBell from './NotificationBell';
 
+// The nav Link below is prefetch={false} plus a manual prefetchLink()
+// on hover/focus/touchstart, for the same real reason as AdminSidebar
+// .tsx's identical fix - see that file's comment for the full story
+// (Next's default Link prefetching, firing on every visible item at
+// once, raced Supabase's single-use refresh-token rotation and logged
+// real owners out of their own session; the fix targets prefetch to
+// what's actually about to be clicked instead of turning it off).
+
 // Was a single row of 6 pills in `overflow-x-auto` - on an actual phone
 // width that's maybe 3 pills visible and the rest scrolled off with no
 // hint they exist (and "Products" wasn't even in the list, a real dead
@@ -31,6 +39,14 @@ export default function AdminMobileNav({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Targeted-prefetch trigger the NavLink below calls on hover/focus/
+  // touchstart instead of relying on Link's own automatic prefetch - see
+  // the comment at the top of this file (and AdminSidebar.tsx's fuller
+  // one) for why.
+  function prefetchLink(href: string) {
+    router.prefetch(href);
+  }
 
   // The menu panel used to just be inline content pushing this sticky
   // header taller - so the page underneath kept scrolling normally
@@ -113,6 +129,10 @@ export default function AdminMobileNav({
     return (
       <Link
         href={href}
+        prefetch={false}
+        onMouseEnter={() => prefetchLink(href)}
+        onFocus={() => prefetchLink(href)}
+        onTouchStart={() => prefetchLink(href)}
         onClick={() => setMenuOpen(false)}
         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-[14px] transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft'

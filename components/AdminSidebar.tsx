@@ -6,6 +6,34 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import NotificationBell from './NotificationBell';
 
+// Every nav Link below is prefetch={false}, paired with a manual
+// prefetchLink() called on hover/focus/touchstart - not a style
+// preference, a real fix, and specifically NOT "just turn prefetch off
+// and eat the loading states." Confirmed live via Vercel logs: this
+// sidebar renders every admin destination at once, all visible in the
+// viewport, so Next's default Link prefetching fired a burst of
+// concurrent requests to every one of them (Calendar, Customers,
+// Services, Staff, Hours, Channels, Billing, Assistant...) the instant
+// any admin page loaded. Each of those independently calls
+// requireStaffSession -> getUser(), which refreshes the session if the
+// access token is due to expire - and Supabase rotates refresh tokens
+// on use, single-use. When several of those concurrent requests all
+// redeem the SAME refresh token at once, only the first one Supabase's
+// Auth server sees actually succeeds; every other one gets back
+// "Invalid Refresh Token: Refresh Token Not Found" and gets bounced to
+// /login - a real, logged-in owner mid-session, kicked out for
+// browsing their own sidebar.
+//
+// The fix isn't "prefetch nothing" - it's "prefetch only what someone's
+// actually about to click." A mouse hovers before it clicks; a keyboard
+// user focuses before they press Enter; even a touchscreen tap starts
+// (touchstart) a beat before it completes. Triggering one prefetch on
+// that first signal, instead of Link's automatic "everything visible on
+// mount" prefetch, cuts the realistic concurrency from nine simultaneous
+// refresh attempts down to essentially one - the actual bug - while
+// keeping the snappy feel for the real case (someone about to navigate),
+// not paying for prefetching seven destinations nobody's about to visit.
+
 // Both sidebar widths (the 72px rail and the full 256px one) used to
 // hard-code a solid accent square with the business's first letter in
 // it, full stop - a business that had actually gone and uploaded a real
@@ -130,6 +158,13 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
+  // The targeted-prefetch trigger every NavLink/RailLink below calls on
+  // hover/focus/touchstart instead of relying on Link's own automatic
+  // prefetch - see the comment at the top of this file for why.
+  function prefetchLink(href: string) {
+    router.prefetch(href);
+  }
+
   // Products isn't part of the MVP - the page/route/data still work for
   // anyone who already uses it, it's just not promoted in the primary
   // nav alongside the actual core flow (services, hours, staff).
@@ -218,6 +253,10 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
+        prefetch={false}
+        onMouseEnter={() => prefetchLink(href)}
+        onFocus={() => prefetchLink(href)}
+        onTouchStart={() => prefetchLink(href)}
         className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body-sm transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
         }`}
@@ -269,6 +308,10 @@ export default function AdminSidebar({
     return (
       <Link
         href={href}
+        prefetch={false}
+        onMouseEnter={() => prefetchLink(href)}
+        onFocus={() => prefetchLink(href)}
+        onTouchStart={() => prefetchLink(href)}
         title={label}
         aria-label={badge ? `${label} - needs attention` : label}
         className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
