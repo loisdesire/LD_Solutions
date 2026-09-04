@@ -47,6 +47,5 @@ export function useCloseOnBackButton(open: boolean, onClose: () => void) {
         window.history.back();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 }

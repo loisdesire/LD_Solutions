@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import ManageBooking from '@/components/ManageBooking';
 import { AccentScope } from '@/components/AccentScope';
 import { formatMoney } from '@/lib/formatMoney';
@@ -100,16 +101,16 @@ export default async function ManageBookingPage({
       <main className="flex items-center justify-center px-6 py-16 min-h-screen">
         <div className="w-full max-w-md animate-rise">
           <div className="flex items-center justify-between mb-6">
-            <a
+            <Link
               href={`/${slug}`}
               className="flex items-center gap-1 text-[13px] font-medium text-ink-faint hover:text-ink transition-colors"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
               {business?.name}
-            </a>
-            <a href="/account" className="text-[13px] font-medium text-ink-faint hover:text-ink transition-colors">
+            </Link>
+            <Link href="/account" className="text-[13px] font-medium text-ink-faint hover:text-ink transition-colors">
               My bookings
-            </a>
+            </Link>
           </div>
           <div className="text-center mb-6">
             <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">

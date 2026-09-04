@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 type Business = {
   name: string;
@@ -97,12 +98,12 @@ export default function SiteHeader({
               items-center was centering each on its OWN box, so the tab
               links' text sat visibly higher than this one once they
               gained their underline's extra bottom space. */}
-          <a
+          <Link
             href="/account"
             className="font-medium text-[14px] pb-1 border-b-2 border-transparent text-ink-soft hover:text-ink transition-colors"
           >
             My bookings
-          </a>
+          </Link>
           <a
             href={`/${slug}#book`}
             className="px-5 py-2.5 rounded-xl font-semibold text-[14px] text-accent-contrast transition-opacity hover:opacity-90 active:scale-95"
@@ -156,13 +157,13 @@ export default function SiteHeader({
               {l.label}
             </a>
           ))}
-          <a
+          <Link
             href="/account"
             onClick={() => setMenuOpen(false)}
             className="py-3 font-medium text-[14px] text-ink-soft"
           >
             My bookings
-          </a>
+          </Link>
         </div>
       )}
     </header>
