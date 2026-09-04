@@ -117,6 +117,8 @@ export default function StaffManager({
   const [editSaving, setEditSaving] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<StaffRow | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<Invite | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const supabase = createBrowserSupabase();
   const showToast = useToast();
@@ -220,6 +222,29 @@ export default function StaffManager({
       showToast(`${name} removed`);
     } else {
       showToast('Could not remove that team member', 'error');
+    }
+  }
+
+  // Same idea as handleRemove, for the other kind of access this page
+  // grants: an invite link that's been sent but never accepted yet. Until
+  // now the only control on a pending invite was "copy the link again" -
+  // there was no way to actually shut one down once sent (wrong email,
+  // changed your mind, or the link leaked before it was accepted). The
+  // token itself is still what /accept-invite checks against, so deleting
+  // the row here is a real revoke, not cosmetic - that token stops
+  // working the moment this runs.
+  async function handleRevoke() {
+    if (!revokeTarget) return;
+    const { id, email } = revokeTarget;
+    setRevoking(true);
+    const { error: deleteError } = await supabase.from('staff_invites').delete().eq('id', id);
+    setRevoking(false);
+    setRevokeTarget(null);
+    if (!deleteError) {
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+      showToast(`Invite to ${email} revoked`);
+    } else {
+      showToast('Could not revoke that invite', 'error');
     }
   }
 
@@ -417,6 +442,13 @@ export default function StaffManager({
                     'Copy link'
                   )}
                 </button>
+                <button
+                  onClick={() => setRevokeTarget(inv)}
+                  aria-label={`Revoke invite to ${inv.email}`}
+                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-line-strong px-3 py-1.5 text-caption font-medium text-ink-faint hover:border-error hover:text-error transition-all shrink-0"
+                >
+                  Revoke
+                </button>
               </div>
             ))}
           </div>
@@ -445,6 +477,17 @@ export default function StaffManager({
         pending={removing}
         onConfirm={handleRemove}
         onCancel={() => setRemoveTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={revokeTarget !== null}
+        title="Revoke this invite?"
+        message={`The invite link sent to ${revokeTarget?.email ?? 'this email'} will stop working immediately - they won't be able to accept it anymore.`}
+        confirmLabel="Revoke"
+        pendingLabel="Revoking…"
+        pending={revoking}
+        onConfirm={handleRevoke}
+        onCancel={() => setRevokeTarget(null)}
       />
     </div>
   );

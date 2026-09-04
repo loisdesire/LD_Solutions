@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useId } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
@@ -34,6 +35,7 @@ export default function BookingRulesManager({
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
+  const router = useRouter();
 
   const bufferId = useId();
   const advanceId = useId();
@@ -71,6 +73,10 @@ export default function BookingRulesManager({
       return;
     }
     setSaved(true);
+    // max_advance_days/cancellation_window_hours are read server-side by
+    // the public booking page and the manage-booking page - same gap as
+    // BusinessProfileManager.
+    router.refresh();
   }
 
   // numInputClass/inputClass now shared from formStyles.ts as

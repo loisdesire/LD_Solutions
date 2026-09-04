@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
@@ -47,6 +48,7 @@ export default function BusinessProfileManager({
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
+  const router = useRouter();
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +76,17 @@ export default function BusinessProfileManager({
     }
 
     setSaved(true);
+    // This form's own local state already reflects the new logo/accent/
+    // name (it's what drove the update above), but nothing else on the
+    // page does - AdminSidebar's avatar and AccentScope's CSS variable
+    // are both set from a server-fetched `business` row in the shared
+    // admin layout, rendered once per request. Writing straight to
+    // Supabase from here never told Next anything changed, so both sat
+    // stale until an unrelated hard navigation happened to re-render the
+    // layout. router.refresh() re-runs the server components for the
+    // current route (this one included) without losing this form's own
+    // client state or doing a full page reload.
+    router.refresh();
   }
 
   // inputClass/labelClass now come from formStyles.ts - this file had its

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
@@ -48,6 +49,7 @@ export default function PaymentsManager({
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
+  const router = useRouter();
 
   const paystackConnected = paystackPublicKey.trim() !== '' && paystackSecretKey.trim() !== '';
 
@@ -140,6 +142,9 @@ export default function PaymentsManager({
       return;
     }
     setSaved(true);
+    // require_payment gates whether the public booking page even shows a
+    // payment step - server-rendered, same gap as BusinessProfileManager.
+    router.refresh();
   }
 
   // numInputClass/inputClass/labelClass now shared from formStyles.ts as

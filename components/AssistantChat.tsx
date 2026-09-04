@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // imageUrl is optional and only ever set on freshly-sent messages within
@@ -117,6 +118,7 @@ export default function AssistantChat({
    * panel. Default false keeps the normal self-contained card used inline on a page (the Assistant/onboarding pages). */
   bare?: boolean;
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -320,6 +322,16 @@ export default function AssistantChat({
       setPendingImage(null);
       setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
       onReplyData?.(data);
+      // This assistant can create/change real business data (services,
+      // hours, bookings...) through its own server-side tools - a
+      // completely separate write path from any admin page's own form,
+      // which has no way to know something changed. Confirmed live: ask
+      // it to create a service, then check the Services page (same tab,
+      // client-side nav, chat widget still open) - the new service wasn't
+      // there. router.refresh() after every reply, not just ones that
+      // obviously mutated something, since this component has no reliable
+      // way to tell from `data.reply` alone whether a tool actually ran.
+      router.refresh();
     } catch {
       setLoading(false);
       setError("Couldn't reach the server. Check your connection and try again.");

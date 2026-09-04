@@ -2,6 +2,7 @@
 
 import { useRef, useState, useId } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
@@ -166,6 +167,7 @@ export default function SiteContentManager({
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
+  const router = useRouter();
 
   // Each of these three labels sits next to a Toggle, not directly above
   // its own field, so Field.tsx's rigid label-then-input layout doesn't
@@ -204,6 +206,11 @@ export default function SiteContentManager({
     }
 
     setSaved(true);
+    // Same gap as BusinessProfileManager - showAbout/showGallery/
+    // showContact are read server-side by the public site pages and
+    // SiteHeader's nav; a client-only Supabase write never told Next to
+    // re-render anything already on screen server-side.
+    router.refresh();
   }
 
   // inputClass/labelClass now shared from formStyles.ts, same reasoning

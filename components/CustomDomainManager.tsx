@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
@@ -20,6 +21,7 @@ export default function CustomDomainManager({
   const [error, setError] = useState('');
 
   const supabase = createBrowserSupabase();
+  const router = useRouter();
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +54,7 @@ export default function CustomDomainManager({
 
     setDomain(cleaned ?? '');
     setSaved(true);
+    router.refresh();
   }
 
   return (
