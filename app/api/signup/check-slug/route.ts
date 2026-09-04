@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { cleanSlug } from '@/lib/apiValidation';
+import { logError } from '@/lib/logger';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +25,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ available: false });
   }
 
-  const { data: existing } = await supabaseAdmin.from('businesses').select('id').eq('slug', slug).maybeSingle();
+  const { data: existing, error } = await supabaseAdmin.from('businesses').select('id').eq('slug', slug).maybeSingle();
+  if (error) {
+    logError('check-slug', error, { slug });
+    // Fail closed: a customer typing a slug can't tell "taken" from
+    // "couldn't check", so an errored check has to read as "not
+    // available" rather than flash a false green checkmark. The real
+    // signup route still re-validates before creating anything either
+    // way, but no reason to lie to the user in the meantime.
+    return NextResponse.json({ available: false });
+  }
 
   return NextResponse.json({ available: !existing });
 }
