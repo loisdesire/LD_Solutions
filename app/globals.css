@@ -18,9 +18,28 @@
    from the same period (radius scale, shadow tiers, card/button
    discipline) are untouched - this is a color-only revert. */
 :root {
-  --paper: #f8f6f2;
-  --surface: #ffffff;
-  --warm-surface: #f1eee8;
+  /* -base tokens are the true, never-overridden neutral values - AccentScope
+     (below/see AccentScope.tsx) mixes --accent into these to retint every
+     neutral surface/border to match a business's own chosen color, without
+     any of the ~30 files that already reference --paper/--line/etc. having
+     to change: those names keep resolving to the same values as before by
+     default, and only pick up a tint where AccentScope is actually wrapping
+     them. Defining the retinted version IN TERMS OF the same name it's
+     overriding (e.g. --paper: color-mix(..., var(--paper))) would be a
+     circular reference - CSS treats that as invalid, not "read the parent's
+     value" - so the -base name is what makes the mix formula possible at
+     all, not just tidiness. */
+  --paper-base: #f8f6f2;
+  --surface-base: #ffffff;
+  --warm-surface-base: #f1eee8;
+  --admin-canvas-base: #e9e3d8;
+  --line-base: #e7e2da;
+  --line-strong-base: #d6cec2;
+  --ink-wash-base: rgba(32, 32, 32, 0.05);
+
+  --paper: var(--paper-base);
+  --surface: var(--surface-base);
+  --warm-surface: var(--warm-surface-base);
   --cream-surface: #f4e6c5;
   /* One step deeper than --warm-surface, for exactly one job: the admin
      content canvas sitting next to the (--surface, pure white) sidebar.
@@ -30,7 +49,7 @@
      white as the sidebar. This is deliberately its own token rather than
      just redefining --warm-surface, which 26 other files also use for
      hover/active states where that original, lighter value is correct. */
-  --admin-canvas: #e9e3d8;
+  --admin-canvas: var(--admin-canvas-base);
 
   --ink: #211f1b;
   --ink-soft: #6e6a63;
@@ -48,8 +67,8 @@
      alone to carry it. */
   --ink-faint: #706b64;
 
-  --line: #e7e2da;
-  --line-strong: #d6cec2;
+  --line: var(--line-base);
+  --line-strong: var(--line-strong-base);
 
   /* Baked-in alpha, not a Tailwind opacity modifier - `bg-ink/5` and
      friends silently generate ZERO css on a color that's a `var()`
@@ -57,23 +76,22 @@
      time to blend an opacity onto it), so every "inactive" status pill
      using that pattern was rendering with no background at all. This is
      a real color value the browser can use directly. */
-  --ink-wash: rgba(32, 32, 32, 0.05);
+  --ink-wash: var(--ink-wash-base);
 
   /* Primary brand - burnt orange/terracotta. Platform default;
      businesses can still override this for their own public page via
      AccentScope.
 
-     Convention for HOW to apply --accent in a className vs. inline style,
-     so this doesn't stay an arbitrary per-file choice: on pages where
-     AccentScope can rescope this variable per business (public/[slug]
-     pages, the booking flow, anything rendered inside AccentScope) use
-     inline `style={{ color: 'var(--accent)' }}` - Tailwind's `text-accent`
-     utility is generated once at build time from this file's value, so it
-     can't react to a runtime-scoped override the way a raw var() read at
-     paint time can. Everywhere else (the marketing site, admin chrome) -
-     contexts where --accent is always this one static value - prefer the
-     `bg-accent`/`text-accent`/etc. utility classes; they're shorter and
-     get Tailwind's normal tooling (autocomplete, purge) for free.
+     Corrected note on className vs. inline style: an earlier version of
+     this comment claimed `bg-accent`/`text-accent` couldn't react to
+     AccentScope's runtime override because the utility is "generated at
+     build time." That's wrong - Tailwind emits `.text-accent { color:
+     var(--accent) }` (see tailwind.config.js), which is a live CSS
+     variable reference the browser resolves at paint time same as any
+     inline style; verified directly rather than left standing. Use
+     whichever reads better in the file - style is really only useful
+     specifically to interpolate a shade Tailwind hasn't been given a
+     class for.
 
      Tried a brighter swing at this - Tailwind's orange-500 (#f97316)
      paired with the app's --ink token instead of white, since #f97316
