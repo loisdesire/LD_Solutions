@@ -8,6 +8,7 @@ import AdminMobileNav from '@/components/AdminMobileNav';
 import PwaRegister from '@/components/PwaRegister';
 import AdminAssistantWidget from '@/components/AdminAssistantWidget';
 import { ToastProvider } from '@/components/Toast';
+import { AccentScope } from '@/components/AccentScope';
 import type { Metadata, Viewport } from 'next';
 
 // Private staff area - never indexed, regardless of what any individual
@@ -108,6 +109,16 @@ export default async function AdminLayout({
   const navStatus = { setupIncomplete, channelsDisconnected, trialEndingSoon };
 
   return (
+    // Was platform-default terracotta everywhere in here, deliberately -
+    // AccentScope's own original comment said admin/platform screens
+    // keep the platform's own accent, customer-facing pages get the
+    // business's. Reversed on request: a business's own accent_color now
+    // scopes the whole admin shell too, same --accent/--accent-contrast/
+    // --accent-soft variables the public site already uses - every
+    // existing bg-accent/text-accent/border-accent class in every admin
+    // component picks this up automatically, nothing else needed to
+    // change. Same fallback the viewport themeColor above already uses.
+    <AccentScope color={business.accent_color || '#C74A1E'}>
     <ToastProvider>
       <PwaRegister slug={slug} />
       {/* Everywhere, not just the dashboard - was AskAssistantBar, which
@@ -159,5 +170,6 @@ export default async function AdminLayout({
         </div>
       </div>
     </ToastProvider>
+    </AccentScope>
   );
 }
