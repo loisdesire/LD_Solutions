@@ -381,7 +381,11 @@ export default function WebChatWidget({
             </span>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          {/* overscroll-contain - same fix as AssistantChat.tsx's identical
+              message list: without it, scrolling to the top/bottom of this
+              list hands the rest of the scroll to the business page
+              underneath instead of just stopping. */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
             {messages.length === 0 && !thinking && (
               // Tappable openers, drawn from this business's own services.
               // The old line hardcoded "haircut", which is wrong for a

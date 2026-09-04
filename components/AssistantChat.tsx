@@ -342,7 +342,15 @@ export default function AssistantChat({
         ref={cardRef}
         className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
       >
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3.5">
+        {/* overscroll-contain - without it, scrolling this list to its own
+            top/bottom hands the leftover wheel/touch delta to whatever's
+            behind this panel. Harmless for the standalone Assistant page
+            (nothing behind it but this list), but the floating widget
+            (AdminAssistantWidget.tsx) sits fixed over a real, often-tall
+            admin page - confirmed live: trying to scroll the conversation
+            scrolled the dashboard/calendar/etc. underneath instead once
+            the list ran out of its own room to scroll. */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5 flex flex-col gap-3.5">
           {messages.length === 0 && (
             <div className="my-auto text-center">
               <p className="text-ink-soft text-[14px] mb-4">{emptyStateText}</p>
