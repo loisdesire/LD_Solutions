@@ -77,15 +77,20 @@ How to run this conversation:
   the message box (the paperclip icon) - never ask them to type or paste an image URL. When summarizing details
   before asking them to confirm, refer to an attached photo as just "Image: attached" - never paste the raw URL
   back into your reply.
-- Setting hours for several days ("Monday to Friday, 9 to 6") means one propose_update_hours call per day, then
-  one apply_update_hours call per day once confirmed - never a single call covering a range of days.
-- Read each propose_update_hours result literally, one at a time. It only has a "conflicting_bookings" field when
-  a real conflicting booking exists - for a business this early in setup that will almost always be absent, which
-  means that day is clean: call apply_update_hours for it right away, no need to ask again. Never say there is a
-  conflict, and never hold off calling apply_update_hours, unless "conflicting_bookings" is actually present in a
-  result you received THIS turn - do not assume one exists, guess, or recall a conflict from earlier in the
-  conversation. If it genuinely is present for one specific day, still apply every other clean day immediately and
-  only pause to ask about that one.
+- Setting hours for several days that share the SAME opening/closing time ("Monday to Friday, 9 to 6", or "the
+  whole week except Thursday and Saturday") means ONE propose_update_hours call with every one of those days in
+  days_of_week, then ONE apply_update_hours call the same way once confirmed - never split the same hours across
+  several calls, and never call either tool more than once for a single request unless the owner is genuinely
+  giving different days different hours (e.g. "weekdays 9 to 6, Saturday 10 to 2" is two calls, one per distinct
+  set of hours - but "Monday to Friday, 9 to 6" is one call with five days in it, not five calls).
+- Read the propose_update_hours result literally. It only has a "conflicting_bookings" field when a real
+  conflicting booking exists on one of the requested days - for a business this early in setup that will almost
+  always be absent, which means every day in the request is clean: call apply_update_hours for the whole set right
+  away, no need to ask again. Never say there is a conflict, and never hold off calling apply_update_hours, unless
+  "conflicting_bookings" is actually present in a result you received THIS turn - do not assume one exists, guess,
+  or recall a conflict from earlier in the conversation. If it's genuinely present for one specific day, apply
+  every other clean day in the same call immediately (days_of_week minus that one) and only pause to ask about
+  the day that actually conflicts.
 - A service needs a duration to be bookable at all - if they only give you a name, ask how long it takes before
   proposing it. Ask about a price too, once - "what should it cost, or should it just say 'ask for pricing'?" is
   enough. If they skip it or say they're not sure yet, leave it out and move on; don't ask a second time for the
@@ -104,14 +109,17 @@ Formatting: plain conversational text. No markdown, no asterisks, no headers.`;
     tools: MANAGE_TOOLS,
     executeTool: (name, args) => executeManageTool(name, args, businessId),
     postProcess: stripMarkdown,
-    // apply_update_hours saves one day at a time (see lib/manageTools.ts),
-    // so "open Monday to Friday, 9 to 6" needs five separate tool calls in
-    // a single turn before there's even a final reply to give - the
-    // regular assistant rarely hits that (a schedule tweak is usually one
-    // day), but this is the common case here. runToolAgent's default of 5
-    // total iterations was confirmed live to run out mid-week, leaving the
-    // owner with Monday-Wednesday saved and no reply at all. Comfortable
-    // headroom for all seven days plus the final confirmation.
+    // apply_update_hours now takes every day sharing the same hours in one
+    // call (see lib/manageTools.ts) instead of needing one call per day -
+    // "Monday to Friday, 9 to 6" is a single propose+apply pair now, not
+    // five. That was the actual fix for the real failure this headroom was
+    // originally raised to paper over: runToolAgent's default of 5 total
+    // iterations ran out mid-week, confirmed live on a real signup,
+    // leaving the owner with only some days saved and the model narrating
+    // a confused "hiccup" rather than a real reply. Left at 12 anyway - a
+    // business genuinely splitting the week into 2-3 different hour sets
+    // (e.g. weekdays vs. Saturday) still needs a few propose+apply pairs,
+    // just far fewer than one per day.
     maxIterations: 12,
   });
 }

@@ -578,6 +578,24 @@ function cleanDayOfWeek(value: unknown): number | null {
   return Number.isInteger(n) && n >= 0 && n <= 6 ? n : null;
 }
 
+// Accepts either a single day (an int, or something Number()-coercible)
+// or an array of them - one call setting "Monday, Tuesday, Wednesday,
+// Friday" to the same hours used to mean the model had to correctly
+// sequence a propose+apply pair per day, entirely on its own, with
+// nothing stopping it from silently dropping one partway through a long
+// chain of tool calls. Confirmed live, twice in a row, on a real
+// business's actual onboarding: asked for the whole week minus two
+// days, got told "only Monday has confirmed hours" - not a data bug,
+// the underlying single-day write below was always safe, it's that the
+// model had to get an 8-tool-call sequence perfectly right to set 4
+// days and it didn't. One call, one array, removes the sequence
+// entirely - the model only has to get ONE tool call right.
+function cleanDaysOfWeek(value: unknown): number[] | null {
+  const raw = Array.isArray(value) ? value : [value];
+  const days = [...new Set(raw.map((v) => cleanDayOfWeek(v)).filter((d): d is number => d !== null))];
+  return days.length > 0 ? days : null;
+}
+
 function cleanHourString(value: unknown): string | null {
   return typeof value === 'string' && HOUR_RE.test(value) ? value : null;
 }
@@ -622,10 +640,10 @@ async function findHoursConflicts(businessId: string, dayOfWeek: number, newStar
 
 export async function proposeUpdateHours(
   businessId: string,
-  args: { dayOfWeek: unknown; startTime?: unknown; endTime?: unknown; closed?: unknown }
+  args: { daysOfWeek: unknown; startTime?: unknown; endTime?: unknown; closed?: unknown }
 ) {
-  const dayOfWeek = cleanDayOfWeek(args.dayOfWeek);
-  if (dayOfWeek === null) return { error: 'Which day? Give a day of the week.' };
+  const daysOfWeek = cleanDaysOfWeek(args.daysOfWeek);
+  if (daysOfWeek === null) return { error: 'Which day(s)? Give at least one day of the week.' };
 
   const closed = Boolean(args.closed);
   let startTime: string | null = null;
@@ -637,29 +655,34 @@ export async function proposeUpdateHours(
     if (endTime <= startTime) return { error: 'Closing time has to be after opening time.' };
   }
 
-  const { data: existingRows } = await supabaseAdmin
-    .from('availability')
-    .select('start_time, end_time')
-    .eq('business_id', businessId)
-    .eq('day_of_week', dayOfWeek)
-    .is('staff_id', null)
-    .order('start_time');
-
-  const currentLabel =
-    existingRows && existingRows.length > 0
-      ? existingRows.map((r) => `${r.start_time.slice(0, 5)}-${r.end_time.slice(0, 5)}`).join(', ')
-      : 'closed';
   const proposedLabel = closed ? 'closed' : `${startTime}-${endTime}`;
+  const days = [];
+  const allConflicts: { day: string; customer_name: string; when: string }[] = [];
 
-  const conflicts = await findHoursConflicts(businessId, dayOfWeek, startTime, endTime);
+  for (const dayOfWeek of daysOfWeek) {
+    const { data: existingRows } = await supabaseAdmin
+      .from('availability')
+      .select('start_time, end_time')
+      .eq('business_id', businessId)
+      .eq('day_of_week', dayOfWeek)
+      .is('staff_id', null)
+      .order('start_time');
+
+    const currentLabel =
+      existingRows && existingRows.length > 0
+        ? existingRows.map((r) => `${r.start_time.slice(0, 5)}-${r.end_time.slice(0, 5)}`).join(', ')
+        : 'closed';
+
+    const conflicts = await findHoursConflicts(businessId, dayOfWeek, startTime, endTime);
+    days.push({ day: DAY_NAMES[dayOfWeek], from: currentLabel, to: proposedLabel });
+    for (const c of conflicts) allConflicts.push({ day: DAY_NAMES[dayOfWeek], ...c });
+  }
 
   return {
-    day: DAY_NAMES[dayOfWeek],
-    from: currentLabel,
-    to: proposedLabel,
-    conflicting_bookings: conflicts.length > 0 ? conflicts : undefined,
+    days,
+    conflicting_bookings: allConflicts.length > 0 ? allConflicts : undefined,
     note:
-      conflicts.length > 0
+      allConflicts.length > 0
         ? "These existing bookings will NOT be moved or cancelled automatically - they'll just sit outside the new hours. Tell the owner plainly and let them decide whether to proceed, reschedule those first, or pick different hours."
         : undefined,
   };
@@ -667,10 +690,10 @@ export async function proposeUpdateHours(
 
 export async function applyUpdateHours(
   businessId: string,
-  args: { dayOfWeek: unknown; startTime?: unknown; endTime?: unknown; closed?: unknown }
+  args: { daysOfWeek: unknown; startTime?: unknown; endTime?: unknown; closed?: unknown }
 ) {
-  const dayOfWeek = cleanDayOfWeek(args.dayOfWeek);
-  if (dayOfWeek === null) return { error: 'Which day? Give a day of the week.' };
+  const daysOfWeek = cleanDaysOfWeek(args.daysOfWeek);
+  if (daysOfWeek === null) return { error: 'Which day(s)? Give at least one day of the week.' };
 
   const closed = Boolean(args.closed);
   let startTime: string | null = null;
@@ -681,28 +704,50 @@ export async function applyUpdateHours(
     if (!startTime || !endTime || endTime <= startTime) return { error: 'Invalid hours - propose this again.' };
   }
 
-  // Same delete-then-insert shape as HoursManager.tsx's own save, so the
-  // AI path and the manual form never disagree about how a day's hours
-  // are represented on this table.
-  const { error: deleteError } = await supabaseAdmin
-    .from('availability')
-    .delete()
-    .eq('business_id', businessId)
-    .eq('day_of_week', dayOfWeek)
-    .is('staff_id', null);
-  if (deleteError) return { error: "That didn't save - please try again." };
+  // One day at a time internally, same delete-then-insert shape as
+  // HoursManager.tsx's own save (so the AI path and the manual form never
+  // disagree about how a day's hours are represented on this table) - but
+  // now the LOOP lives here, server-side, atomic-per-day and complete
+  // before this call returns, instead of relying on the model to correctly
+  // re-invoke this tool once per day without dropping one. A day that
+  // fails is reported individually rather than the whole request either
+  // silently half-completing or erroring out days that actually worked.
+  const applied: string[] = [];
+  const failed: string[] = [];
+  for (const dayOfWeek of daysOfWeek) {
+    const { error: deleteError } = await supabaseAdmin
+      .from('availability')
+      .delete()
+      .eq('business_id', businessId)
+      .eq('day_of_week', dayOfWeek)
+      .is('staff_id', null);
+    if (deleteError) {
+      failed.push(DAY_NAMES[dayOfWeek]);
+      continue;
+    }
 
-  if (!closed) {
-    const { error: insertError } = await supabaseAdmin.from('availability').insert({
-      business_id: businessId,
-      day_of_week: dayOfWeek,
-      start_time: startTime,
-      end_time: endTime,
-    });
-    if (insertError) return { error: "That didn't save - please try again." };
+    if (!closed) {
+      const { error: insertError } = await supabaseAdmin.from('availability').insert({
+        business_id: businessId,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+      });
+      if (insertError) {
+        failed.push(DAY_NAMES[dayOfWeek]);
+        continue;
+      }
+    }
+    applied.push(DAY_NAMES[dayOfWeek]);
   }
 
-  return { applied: true, day: DAY_NAMES[dayOfWeek], now: closed ? 'closed' : `${startTime}-${endTime}` };
+  if (applied.length === 0) return { error: "That didn't save - please try again." };
+  return {
+    applied: true,
+    days: applied,
+    now: closed ? 'closed' : `${startTime}-${endTime}`,
+    failed_days: failed.length > 0 ? failed : undefined,
+  };
 }
 
 function cleanReminderMessage(value: unknown): string | null {

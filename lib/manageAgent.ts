@@ -248,16 +248,20 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'propose_update_hours',
       description:
-        "Work out what changing one day's opening hours would look like, INCLUDING checking for upcoming bookings that would fall outside the new hours - always call this before apply_update_hours, never skip straight to applying. Read-only, changes nothing yet.",
+        "Work out what changing one or more days' opening hours to the SAME hours would look like, INCLUDING checking for upcoming bookings that would fall outside the new hours - always call this before apply_update_hours, never skip straight to applying. Read-only, changes nothing yet. Setting several days to the same hours (e.g. \"Monday to Friday, 9 to 6\") is ONE call with all of those days in days_of_week, never one call per day - only split into separate calls when different days genuinely need different hours.",
       parameters: {
         type: 'object',
         properties: {
-          day_of_week: { type: 'integer', description: '0 = Sunday, 1 = Monday, ... 6 = Saturday.' },
+          days_of_week: {
+            type: 'array',
+            items: { type: 'integer' },
+            description: '0 = Sunday, 1 = Monday, ... 6 = Saturday. Every day getting these same hours, in one array - not one call per day.',
+          },
           start_time: { type: 'string', description: '24-hour HH:MM. Omit if closed is true.' },
           end_time: { type: 'string', description: '24-hour HH:MM. Omit if closed is true.' },
-          closed: { type: 'boolean', description: 'true if this day should have no hours at all.' },
+          closed: { type: 'boolean', description: 'true if these days should have no hours at all.' },
         },
-        required: ['day_of_week'],
+        required: ['days_of_week'],
       },
     },
   },
@@ -266,16 +270,16 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'apply_update_hours',
       description:
-        'Actually applies the hours change. Only call this after the owner has explicitly confirmed the exact plan propose_update_hours just showed them - including after they have seen and responded to any conflicting-bookings warning.',
+        'Actually applies the hours change to every day in days_of_week. Only call this after the owner has explicitly confirmed the exact plan propose_update_hours just showed them - including after they have seen and responded to any conflicting-bookings warning. Same days_of_week array propose_update_hours was just called with - one call, not one per day.',
       parameters: {
         type: 'object',
         properties: {
-          day_of_week: { type: 'integer' },
+          days_of_week: { type: 'array', items: { type: 'integer' } },
           start_time: { type: 'string' },
           end_time: { type: 'string' },
           closed: { type: 'boolean' },
         },
-        required: ['day_of_week'],
+        required: ['days_of_week'],
       },
     },
   },
@@ -413,14 +417,14 @@ export async function executeManageTool(name: string, args: Record<string, unkno
       });
     case 'propose_update_hours':
       return proposeUpdateHours(businessId, {
-        dayOfWeek: args.day_of_week,
+        daysOfWeek: args.days_of_week,
         startTime: args.start_time,
         endTime: args.end_time,
         closed: args.closed,
       });
     case 'apply_update_hours':
       return applyUpdateHours(businessId, {
-        dayOfWeek: args.day_of_week,
+        daysOfWeek: args.days_of_week,
         startTime: args.start_time,
         endTime: args.end_time,
         closed: args.closed,
