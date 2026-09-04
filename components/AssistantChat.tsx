@@ -327,7 +327,22 @@ export default function AssistantChat({
   }
 
   return (
-    <div>
+    // bare mode's h-full below needs an actual definite height to resolve
+    // a percentage against - without this wrapper also passing height
+    // through (only mattered once there WAS a banner-less bare caller;
+    // banner is never used in bare mode, so this was silently fine until
+    // AdminAssistantWidget), the card just grew to fit its own content
+    // instead of being capped to the panel's real height. Confirmed live:
+    // scrollHeight and clientHeight on the message list were IDENTICAL
+    // even after forcing 30 extra messages in - there was never anything
+    // to scroll, because nothing upstream was actually constraining it.
+    // Past a certain length the panel's own overflow-hidden just clipped
+    // the rest outright, including the input row - not "the text box
+    // disappeared", it was rendered a couple hundred px below the
+    // panel's visible bottom edge with no way to scroll to it. Non-bare
+    // mode is unaffected either way - its card has its own explicit
+    // h-[560px] max-h-[70dvh], independent of this wrapper.
+    <div className={bare ? 'flex flex-col h-full min-h-0' : undefined}>
       {banner}
 
       {/* max-h-[70dvh], not 70vh - vh is pinned to the LAYOUT viewport and

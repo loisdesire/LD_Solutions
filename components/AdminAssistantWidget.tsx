@@ -34,6 +34,14 @@ export default function AdminAssistantWidget({
 }) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Desktop-only escape hatch for a real conversation that outgrows the
+  // small corner card - mobile already gets the equivalent full-viewport
+  // treatment automatically (isFullScreen below), it just never had a
+  // manual toggle since there was nothing to toggle FROM there. Resets on
+  // close so reopening always starts as the small card, not stuck expanded
+  // from last time.
+  const [expanded, setExpanded] = useState(false);
+  const isFullScreen = isMobile || expanded;
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
@@ -78,7 +86,10 @@ export default function AdminAssistantWidget({
   // the exact same close as the FAB - same reasoning as WebChatWidget's
   // identical toggleOpen.
   function toggleOpen() {
-    setOpen((v) => !v);
+    setOpen((v) => {
+      if (v) setExpanded(false);
+      return !v;
+    });
   }
 
   return (
@@ -128,11 +139,19 @@ export default function AdminAssistantWidget({
         // still visible and legible behind it, which read as broken, not
         // "blurred". Fully opaque and covering the whole viewport, so
         // there's nothing left behind it to blur - no separate backdrop
-        // needed. sm and up: unchanged, still the small corner card.
+        // needed. sm and up: the small corner card, UNLESS expanded - a
+        // real conversation (especially one with an attached photo) can
+        // genuinely outgrow a 560px-tall corner card; this is the manual
+        // version of the same full-viewport treatment mobile already gets
+        // automatically, not a new visual language.
         <div
           role="dialog"
           aria-label={`Assistant for ${businessName}`}
-          className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[560px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col"
+          className={
+            isFullScreen
+              ? 'fixed inset-0 z-50 rounded-none bg-surface border-0 shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col'
+              : 'fixed bottom-[86px] right-5 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[560px] z-50 rounded-2xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col'
+          }
           style={isMobile && keyboardInsets ? { top: keyboardInsets.top, height: keyboardInsets.height } : undefined}
         >
           {/* Same header shape as WebChatWidget's own panel - a business
@@ -165,6 +184,24 @@ export default function AdminAssistantWidget({
               <p className="text-[14px] font-semibold text-ink truncate">Assistant</p>
               <p className="text-[10.5px] text-ink-faint truncate">{businessName}</p>
             </div>
+            {/* Desktop only - mobile is already full-screen the moment it's
+                open, nothing to toggle there. */}
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              aria-label={expanded ? 'Shrink assistant' : 'Expand assistant to full screen'}
+              title={expanded ? 'Shrink' : 'Expand to full screen'}
+              className="hidden sm:flex h-8 w-8 rounded-full items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
+            >
+              {expanded ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 3v4a2 2 0 01-2 2H3M15 3v4a2 2 0 002 2h4M9 21v-4a2 2 0 00-2-2H3M15 21v-4a2 2 0 012-2h4" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9V5a2 2 0 012-2h4M15 3h4a2 2 0 012 2v4M21 15v4a2 2 0 01-2 2h-4M9 21H5a2 2 0 01-2-2v-4" />
+                </svg>
+              )}
+            </button>
           </div>
           <div className="flex-1 min-h-0">
             <AssistantChat
