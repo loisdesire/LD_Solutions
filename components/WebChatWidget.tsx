@@ -482,7 +482,7 @@ export default function WebChatWidget({
                 data-lpignore="true"
                 data-1p-ignore=""
                 data-form-type="other"
-                className="flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 py-1 text-[14px] text-ink placeholder-ink-faint"
+                className="chat-composer-input flex-1 bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 py-1 text-[14px] text-ink placeholder-ink-faint"
               />
               <button
                 onClick={() => send()}

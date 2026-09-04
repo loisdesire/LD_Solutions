@@ -260,6 +260,29 @@ textarea:focus-visible {
   outline-offset: 1px;
 }
 
+/* The chat composers (WebChatWidget, AssistantChat) are the one real
+   exception - reported live as "a weird border around the text" when
+   tapping in to type. Not the same bug as the earlier tap-highlight or
+   autofill-icon fixes: this is this rule above, correctly doing its
+   job, just landing somewhere it shouldn't. Unlike a plain input,
+   these composers already have their OWN deliberate focus indicator -
+   the whole pill's border turns accent-coloured on
+   focus-within (see each component's own composer div) - so the input
+   itself getting a second, sharp-cornered outline on top doesn't add
+   real accessibility signal, it's a second, clashing focus ring on the
+   same interaction. Also: text inputs show :focus-visible on ANY
+   focus, tap included, not just real keyboard nav the way buttons/
+   links above do - a plain click into <input> or <textarea> normally
+   still counts as "visible-worthy" by browsers' own heuristics, which
+   is exactly why this fired on a tap in the first place. A class,
+   not just relying on each input's own outline-none - a bare element
+   selector always beats a single utility class on specificity alone
+   (see the comment above this block), so only another selector at
+   least as specific can actually win here. */
+input.chat-composer-input:focus-visible {
+  outline: none;
+}
+
 /* ============================================
    Reduced motion
    ============================================

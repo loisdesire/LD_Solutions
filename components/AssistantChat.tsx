@@ -539,7 +539,7 @@ export default function AssistantChat({
               data-lpignore="true"
               data-1p-ignore=""
               data-form-type="other"
-              className="flex-1 min-w-0 bg-transparent border-none outline-none text-[14px] text-ink placeholder-ink-faint py-1.5"
+              className="chat-composer-input flex-1 min-w-0 bg-transparent border-none outline-none text-[14px] text-ink placeholder-ink-faint py-1.5"
             />
             <button
               type="submit"
