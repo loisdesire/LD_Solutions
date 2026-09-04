@@ -131,6 +131,34 @@ export default function AssistantChat({
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // bare mode (the floating-panel callers) already gets keyboard-safe
+  // positioning from its own parent (useKeyboardSafeInsets - see
+  // WebChatWidget/AdminAssistantWidget). This component's OTHER mode -
+  // a bounded card sitting in normal page flow, used standalone on the
+  // Assistant and onboarding pages - never got the same treatment, and
+  // is a genuinely different problem: the card's own height already
+  // correctly shrinks with the keyboard (max-h-[70dvh]), but real page
+  // content sits ABOVE it (the onboarding header, the step-progress
+  // banner), tall enough that the browser's own default "scroll the
+  // focused input into view" overshoots past all of it - confirmed live,
+  // on a real signup, on a real phone: tapping the input made the whole
+  // conversation and the page header vanish, leaving only the empty
+  // input box floating over the keyboard, with nothing to show what it
+  // was even replying to. Taking that scroll over on focus, once the
+  // keyboard has actually finished opening (not before - scrolling
+  // against the still-tall pre-keyboard viewport just repeats the same
+  // bug), and bringing the CARD's own top edge to the top of the now-
+  // shrunk visible area keeps the message thread and the input together
+  // and visible - the page header above scrolls out, which is fine,
+  // that's not what someone mid-reply needs to see.
+  function handleInputFocus() {
+    if (bare || typeof window === 'undefined' || !window.visualViewport) return;
+    setTimeout(() => {
+      cardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }, 300);
+  }
 
   async function handleAttach(file: File) {
     setError('');
@@ -257,7 +285,10 @@ export default function AssistantChat({
           repeatedly tries to scroll it back into view against a viewport
           that's already accounted for elsewhere. dvh tracks the real
           visible height as the keyboard opens/closes, no JS needed. */}
-      <div className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}>
+      <div
+        ref={cardRef}
+        className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
+      >
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3.5">
           {messages.length === 0 && (
             <div className="my-auto text-center">
@@ -415,6 +446,7 @@ export default function AssistantChat({
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={handleInputFocus}
               onKeyDown={(e) => {
                 // Belt and braces alongside the form's onSubmit below - some
                 // mobile browsers don't reliably turn a soft keyboard's
