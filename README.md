@@ -20,7 +20,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 
 ## Stack
 
-- Next.js 15 App Router and React 19
+- Next.js 16 App Router and React 19
 - TypeScript and Tailwind CSS
 - Supabase Auth, Postgres, Storage, and Row Level Security
 - OpenAI for conversational agents
