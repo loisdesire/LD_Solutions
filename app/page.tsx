@@ -278,16 +278,16 @@ export default function LandingPage() {
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
             </Button>
-            {/* Was #demo (the scripted replay section below) - a real
-                visitor called this out directly: a button labelled "Try
-                live demo" that just scrolls to a canned, animated replay
-                isn't a demo, it's a preview. /demo is the real thing this
-                button's own label was promising - pick a business, land
-                in its actual live admin dashboard, logged in as the
-                owner, no signup. The scripted replay didn't get deleted,
-                just correctly relabelled below (it's honest about being
-                an example conversation now, not competing with this for
-                the word "demo"). */}
+            {/* Was #demo (the scripted replay section, since moved further
+                down the page) - a real visitor called this out directly: a
+                button labelled "Try live demo" that just scrolls to a
+                canned, animated replay isn't a demo, it's a preview. /demo
+                is the real thing this button's own label was promising -
+                pick a business, land in its actual live admin dashboard,
+                logged in as the owner, no signup. The scripted replay
+                didn't get deleted, just correctly relabelled (it's honest
+                about being an example conversation now, not competing with
+                this for the word "demo"). */}
             <Button href="/demo" variant="outline" size="lg" className="justify-center w-full sm:w-auto">
               Try live demo
             </Button>
@@ -296,32 +296,6 @@ export default function LandingPage() {
               section is one scroll away regardless; a visitor who wants
               it will get there without a second button telling them so. */}
         </Reveal>
-        </div>
-      </section>
-
-      {/* The one thing the whole homepage was asking people to take on
-          trust without ever showing it: "Try live demo" sent visitors
-          straight off the page to a separate business, no embedded
-          proof anywhere on the page that actually makes the claim.
-          First built as the real, live chat itself embedded here - a
-          real visitor found it would accept typed input and never
-          respond, so this is a scripted, animated replay instead
-          (components/LandingChatDemo.tsx): genuine example
-          conversations, not the live agent, which removes that failure
-          mode entirely rather than debugging a live-AI issue on the
-          single highest-traffic page in the product. Content is real,
-          just not a live call - see lib/landingDemoScripts.ts. */}
-      <section id="demo" className="bg-paper">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-          {/* Title/description moved inside LandingChatDemo itself, into
-              its left column alongside the picker - was centered above
-              both columns here, which read as a heading floating over a
-              two-column layout it wasn't actually part of. Left column
-              now reads as one real group (title, description, picker),
-              matching the right column's own group (toggle, conversation). */}
-          <Reveal>
-            <LandingChatDemo />
-          </Reveal>
         </div>
       </section>
 
@@ -559,6 +533,31 @@ export default function LandingPage() {
               </div>
             </Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* Moved here (was directly after the hero, with nothing between
+          them but a nav bar) - the hero's "Try live demo" button points
+          at /demo now, not this section, so nothing on the page actually
+          lands a visitor here anymore; scrolling past the hero straight
+          into this dropped a visitor into "pick a business" with zero
+          context for why. Right after How it works + The owner's side
+          instead: mechanism explained, one concrete artifact shown, then
+          this is the natural "try it yourself, in your own vertical"
+          capstone to both, before the page moves on to outcome-contrast
+          and features. First built as the real, live chat itself embedded
+          here - a real visitor found it would accept typed input and
+          never respond, so this is a scripted, animated replay instead
+          (components/LandingChatDemo.tsx): genuine example conversations,
+          not the live agent, which removes that failure mode entirely
+          rather than debugging a live-AI issue on a high-traffic page.
+          Content is real, just not a live call - see
+          lib/landingDemoScripts.ts. */}
+      <section id="demo" className="bg-paper">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal>
+            <LandingChatDemo />
+          </Reveal>
         </div>
       </section>
 
