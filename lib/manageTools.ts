@@ -110,98 +110,152 @@ async function findServiceByName(businessId: string, name: string) {
   return data ?? [];
 }
 
-export async function proposeCreateService(
-  businessId: string,
-  args: { name: unknown; durationMinutes: unknown; price: unknown; description?: unknown; imageUrl?: unknown; category?: unknown }
-) {
-  const name = cleanName(args.name);
-  const durationMinutes = cleanDuration(args.durationMinutes);
-  const price = cleanPrice(args.price);
-  const description = cleanDescription(args.description);
-  const imageUrl = cleanImageUrl(args.imageUrl, businessId);
+type ServiceInput = {
+  name: unknown;
+  durationMinutes: unknown;
+  price?: unknown;
+  description?: unknown;
+  imageUrl?: unknown;
+  category?: unknown;
+};
 
-  if (!name) return { error: 'Give this service a real name (1-100 characters).' };
-  if (!durationMinutes) return { error: 'Duration needs to be a real number of minutes, between 5 and 480.' };
-  if (price === undefined) return { error: "That price doesn't look right - give a plain number, or leave it out entirely for \"ask for pricing\"." };
-  if (description === undefined) return { error: `Description is too long - keep it under ${MAX_DESCRIPTION_LENGTH} characters.` };
-  if (imageUrl === undefined) return { error: "That image doesn't look like one uploaded through this chat - ask them to attach it again." };
+// Same fix, same reasoning, as apply_update_hours's days_of_week array
+// (see cleanDaysOfWeek below) - propose/apply_create_service only ever
+// took ONE service, which meant "save all three" (a real, common
+// onboarding message - a fresh business always has more than one
+// service to set up at once) needed three separate propose+apply pairs
+// chained correctly by the model. Confirmed live: this is exactly where
+// the reported "shows the same list again and asks to confirm a second
+// time" came from - not a wording problem, a structural one. Accepts
+// either `services: [...]` (the real shape now) or a single flat
+// service at the top level (defensive - if the model ever reverts to
+// the old single-item shape, this still works instead of hard-failing).
+function cleanServicesInput(args: Record<string, unknown>): ServiceInput[] {
+  if (Array.isArray(args.services)) return args.services as ServiceInput[];
+  if (args.name !== undefined || args.durationMinutes !== undefined) return [args as unknown as ServiceInput];
+  return [];
+}
 
-  const { data: existing } = await supabaseAdmin
-    .from('services')
-    .select('id')
-    .eq('business_id', businessId)
-    .ilike('name', name)
-    .maybeSingle();
+export async function proposeCreateService(businessId: string, args: { services?: unknown } & Partial<ServiceInput>) {
+  const items = cleanServicesInput(args as Record<string, unknown>);
+  if (items.length === 0) return { error: 'No services given - include at least one in `services`.' };
 
-  return {
-    already_exists: Boolean(existing),
-    proposed: {
+  const proposed: unknown[] = [];
+  for (const item of items) {
+    const name = cleanName(item.name);
+    const durationMinutes = cleanDuration(item.durationMinutes);
+    const price = cleanPrice(item.price);
+    const description = cleanDescription(item.description);
+    const imageUrl = cleanImageUrl(item.imageUrl, businessId);
+
+    if (!name) {
+      proposed.push({ input_name: item.name, error: 'Give this service a real name (1-100 characters).' });
+      continue;
+    }
+    if (!durationMinutes) {
+      proposed.push({ name, error: 'Duration needs to be a real number of minutes, between 5 and 480.' });
+      continue;
+    }
+    if (price === undefined) {
+      proposed.push({ name, error: "That price doesn't look right - give a plain number, or leave it out entirely for \"ask for pricing\"." });
+      continue;
+    }
+    if (description === undefined) {
+      proposed.push({ name, error: `Description is too long - keep it under ${MAX_DESCRIPTION_LENGTH} characters.` });
+      continue;
+    }
+    if (imageUrl === undefined) {
+      proposed.push({ name, error: "That image doesn't look like one uploaded through this chat - ask them to attach it again." });
+      continue;
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from('services')
+      .select('id')
+      .eq('business_id', businessId)
+      .ilike('name', name)
+      .maybeSingle();
+
+    proposed.push({
+      already_exists: Boolean(existing),
       name,
       duration_minutes: durationMinutes,
       price: price != null ? formatMoney(price) : 'Ask for pricing (no price set)',
       description: description ?? 'None',
       has_image: Boolean(imageUrl),
-      category: typeof args.category === 'string' && args.category.trim() ? args.category.trim() : 'None',
-    },
-    note: existing
-      ? 'A service with this name already exists - creating another will make two with the same name. Confirm the owner really wants a duplicate, or suggest editing the existing one instead.'
-      : undefined,
-  };
+      category: typeof item.category === 'string' && item.category.trim() ? item.category.trim() : 'None',
+      note: existing
+        ? 'A service with this name already exists - creating another will make two with the same name. Confirm the owner really wants a duplicate, or suggest editing the existing one instead.'
+        : undefined,
+    });
+  }
+
+  return { services: proposed };
 }
 
-export async function applyCreateService(
-  businessId: string,
-  args: { name: unknown; durationMinutes: unknown; price: unknown; description?: unknown; imageUrl?: unknown; category?: unknown }
-) {
-  const name = cleanName(args.name);
-  const durationMinutes = cleanDuration(args.durationMinutes);
-  const price = cleanPrice(args.price);
-  const description = cleanDescription(args.description);
-  const imageUrl = cleanImageUrl(args.imageUrl, businessId);
+export async function applyCreateService(businessId: string, args: { services?: unknown } & Partial<ServiceInput>) {
+  const items = cleanServicesInput(args as Record<string, unknown>);
+  if (items.length === 0) return { error: 'No services given - include at least one in `services`.' };
 
-  if (!name || !durationMinutes || price === undefined || description === undefined || imageUrl === undefined) {
-    return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
-  }
+  const created: unknown[] = [];
+  for (const item of items) {
+    const name = cleanName(item.name);
+    const durationMinutes = cleanDuration(item.durationMinutes);
+    const price = cleanPrice(item.price);
+    const description = cleanDescription(item.description);
+    const imageUrl = cleanImageUrl(item.imageUrl, businessId);
 
-  let { data, error } = await supabaseAdmin
-    .from('services')
-    .insert({
-      business_id: businessId,
-      name,
-      duration_minutes: durationMinutes,
-      price,
-      description,
-      image_url: imageUrl,
-      category: typeof args.category === 'string' && args.category.trim() ? args.category.trim() : null,
-    })
-    .select('id, name')
-    .single();
+    if (!name || !durationMinutes || price === undefined || description === undefined || imageUrl === undefined) {
+      created.push({ input_name: item.name, error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' });
+      continue;
+    }
 
-  // Same missing-column fallback as findServiceByName above - the service itself
-  // (name, duration, price, all it needs to be bookable) still gets
-  // created; only the description/photo/category are dropped, and the
-  // caller is told plainly rather than silently losing them.
-  let droppedExtras = false;
-  if (isMissingColumnError(error)) {
-    const fallback = await supabaseAdmin
+    let { data, error } = await supabaseAdmin
       .from('services')
-      .insert({ business_id: businessId, name, duration_minutes: durationMinutes, price })
+      .insert({
+        business_id: businessId,
+        name,
+        duration_minutes: durationMinutes,
+        price,
+        description,
+        image_url: imageUrl,
+        category: typeof item.category === 'string' && item.category.trim() ? item.category.trim() : null,
+      })
       .select('id, name')
       .single();
-    data = fallback.data;
-    error = fallback.error;
-    droppedExtras = !error && (description != null || imageUrl != null || Boolean(args.category));
+
+    // Same missing-column fallback as findServiceByName above - the service
+    // itself (name, duration, price, all it needs to be bookable) still
+    // gets created; only the description/photo/category are dropped, and
+    // the caller is told plainly rather than silently losing them.
+    let droppedExtras = false;
+    if (isMissingColumnError(error)) {
+      const fallback = await supabaseAdmin
+        .from('services')
+        .insert({ business_id: businessId, name, duration_minutes: durationMinutes, price })
+        .select('id, name')
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+      droppedExtras = !error && (description != null || imageUrl != null || Boolean(item.category));
+    }
+
+    if (error) {
+      created.push({ name, error: "That didn't save - please try again." });
+      continue;
+    }
+
+    created.push({
+      created: true,
+      service_id: data!.id,
+      name: data!.name,
+      ...(droppedExtras
+        ? { note: "The service itself saved, but the description/photo/category couldn't - a pending database update needs to be run first. Tell the owner the service was created and that part can be added once that's done." }
+        : {}),
+    });
   }
 
-  if (error) return { error: "That didn't save - please try again." };
-  return {
-    created: true,
-    service_id: data!.id,
-    name: data!.name,
-    ...(droppedExtras
-      ? { note: "The service itself saved, but the description/photo/category couldn't - a pending database update needs to be run first. Tell the owner the service was created and that part can be added once that's done." }
-      : {}),
-  };
+  return { services: created };
 }
 
 export async function proposeUpdateService(

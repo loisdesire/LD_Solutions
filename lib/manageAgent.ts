@@ -53,18 +53,28 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'propose_create_service',
       description:
-        'Work out what a new service would look like from what the owner described - name, duration, price, description, and a photo if one was attached to this message. Read-only, creates nothing yet.',
+        'Work out what one or more new services would look like from what the owner described - name, duration, price, description, and a photo if one was attached to this message. Read-only, creates nothing yet. Pass every service the owner just described in ONE call (a fresh business is very often setting up several at once) - never split them across multiple propose_create_service calls.',
       parameters: {
         type: 'object',
         properties: {
-          name: { type: 'string' },
-          duration_minutes: { type: 'number', description: DURATION_MINUTES_DESCRIPTION },
-          price: { type: 'number', description: 'Omit entirely for "ask for pricing" - do not pass 0 to mean unpriced.' },
-          description: { type: 'string', description: 'Optional, one or two sentences.' },
-          image_url: { type: 'string', description: 'Only pass this if the owner\'s message included an attached image URL - never invent one.' },
-          category: { type: 'string', description: 'Optional grouping label, e.g. "Hair", "Nails".' },
+          services: {
+            type: 'array',
+            description: 'One entry per service - almost always more than one during onboarding.',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                duration_minutes: { type: 'number', description: DURATION_MINUTES_DESCRIPTION },
+                price: { type: 'number', description: 'Omit entirely for "ask for pricing" - do not pass 0 to mean unpriced.' },
+                description: { type: 'string', description: 'Optional, one or two sentences.' },
+                image_url: { type: 'string', description: 'Only pass this if the owner\'s message included an attached image URL - never invent one.' },
+                category: { type: 'string', description: 'Optional grouping label, e.g. "Hair", "Nails".' },
+              },
+              required: ['name', 'duration_minutes'],
+            },
+          },
         },
-        required: ['name', 'duration_minutes'],
+        required: ['services'],
       },
     },
   },
@@ -73,18 +83,27 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'apply_create_service',
       description:
-        'Actually creates the service. Only call this after the owner has explicitly confirmed the exact plan propose_create_service just showed them - pass the same values.',
+        'Actually creates the service(s). Only call this after the owner has explicitly confirmed the exact plan propose_create_service just showed them - pass the same `services` array, one call for all of them together, never one call per service.',
       parameters: {
         type: 'object',
         properties: {
-          name: { type: 'string' },
-          duration_minutes: { type: 'number' },
-          price: { type: 'number' },
-          description: { type: 'string' },
-          image_url: { type: 'string' },
-          category: { type: 'string' },
+          services: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                duration_minutes: { type: 'number' },
+                price: { type: 'number' },
+                description: { type: 'string' },
+                image_url: { type: 'string' },
+                category: { type: 'string' },
+              },
+              required: ['name', 'duration_minutes'],
+            },
+          },
         },
-        required: ['name', 'duration_minutes'],
+        required: ['services'],
       },
     },
   },
@@ -355,26 +374,32 @@ export const MANAGE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
+// Maps the tool schema's snake_case per-item fields (services: [{ name,
+// duration_minutes, ... }]) to the camelCase shape proposeCreateService/
+// applyCreateService expect internally - also accepts a single flat
+// service at the top level (no `services` array at all) since
+// cleanServicesInput in manageTools.ts already normalizes either shape,
+// so a model that ever reverts to the old single-item call still works.
+function mapServicesArgs(args: Record<string, unknown>) {
+  const rawServices = Array.isArray(args.services) ? args.services : [args];
+  return {
+    services: rawServices.map((s: Record<string, unknown>) => ({
+      name: s.name,
+      durationMinutes: s.duration_minutes,
+      price: s.price,
+      description: s.description,
+      imageUrl: s.image_url,
+      category: s.category,
+    })),
+  };
+}
+
 export async function executeManageTool(name: string, args: Record<string, unknown>, businessId: string) {
   switch (name) {
     case 'propose_create_service':
-      return proposeCreateService(businessId, {
-        name: args.name,
-        durationMinutes: args.duration_minutes,
-        price: args.price,
-        description: args.description,
-        imageUrl: args.image_url,
-        category: args.category,
-      });
+      return proposeCreateService(businessId, mapServicesArgs(args));
     case 'apply_create_service':
-      return applyCreateService(businessId, {
-        name: args.name,
-        durationMinutes: args.duration_minutes,
-        price: args.price,
-        description: args.description,
-        imageUrl: args.image_url,
-        category: args.category,
-      });
+      return applyCreateService(businessId, mapServicesArgs(args));
     case 'propose_update_service':
       return proposeUpdateService(businessId, {
         serviceName: args.service_name,
