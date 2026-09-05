@@ -33,7 +33,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 1. Install dependencies with `npm install`.
 2. Create a Supabase project.
 3. Apply `supabase/schema.sql` to a new database. For an existing deployment, review and apply only migrations not already present.
-4. Copy `.env.example` to `.env.local` and provide the required credentials.
+4. Copy `.env.example` to `.env.local` and provide the required credentials. Supabase, `NEXT_PUBLIC_SITE_URL`, OpenAI, Resend, and `CRON_SECRET` are required; Flutterwave is required to accept real subscription payments; Telegram, WhatsApp/Messenger, and web push are each independently optional — the app runs without them, just without that channel or notification.
 5. Start the development server with `npm run dev`.
 6. Visit `http://localhost:3000/signup` to create a business.
 
@@ -50,4 +50,9 @@ npm start       Serve the production build
 
 ## Deployment
 
-The app supports Vercel and other Node.js hosts. Configure `NEXT_PUBLIC_SITE_URL` with the canonical production URL, apply all database migrations, set provider webhook URLs and secrets, and use a shared rate-limit store before scaling beyond a single process.
+The app supports Vercel and other Node.js hosts. Configure `NEXT_PUBLIC_SITE_URL` with the canonical production URL, apply all database migrations, set provider webhook URLs and secrets, and use a shared rate-limit store before scaling beyond a single process. See `.env.example` for the full list of environment variables, which are required, and what each one is for. Webhook endpoints to register with each provider once its credentials are set:
+
+- Flutterwave: `/api/webhooks/flutterwave`
+- Paystack: `/api/webhooks/paystack`
+- Telegram: registered automatically per business from Settings, using `TELEGRAM_WEBHOOK_SECRET`
+- Meta (WhatsApp/Messenger): `/api/meta/webhook` and `/api/messenger/webhook`, verified with `META_WEBHOOK_VERIFY_TOKEN`
