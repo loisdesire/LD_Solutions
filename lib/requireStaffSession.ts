@@ -2,6 +2,7 @@ import { getBusinessBySlug } from './getBusinessBySlug';
 import { createServerSupabase } from './supabase-server';
 import { getSubscriptionState } from './subscription';
 import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { DEMO_VIEWER_AUTH_ID } from './demo';
 
 // Shared by every /[slug]/admin/* page: confirms the visitor is logged in
@@ -47,7 +48,23 @@ export async function requireStaffSession(
     redirect(`/${slug}/admin`);
   }
 
-  if (!options.skipSubscriptionCheck) {
+  // This layout-level check runs for EVERY /admin/* page - including the
+  // billing page itself, which is the one page a locked-out business must
+  // still be able to reach to pay and regain access. billing/page.tsx
+  // already passes skipSubscriptionCheck: true for exactly this reason,
+  // but that only protects against ITS OWN call; this shared gate runs
+  // first, from the layout that wraps billing too, and would redirect
+  // /admin/billing right back to /admin/billing - a genuine infinite
+  // redirect loop (confirmed live: a business with no subscriptions row
+  // at all hit exactly this - ERR_TOO_MANY_REDIRECTS). x-pathname (see
+  // middleware.ts) is how a Server Component finds out what page is
+  // actually being requested, since usePathname() only exists for Client
+  // Components - reading it here makes the shared gate safe for every
+  // page under it, not just the ones that remember to opt out.
+  const pathname = (await headers()).get('x-pathname') ?? '';
+  const isBillingPage = pathname === `/${slug}/admin/billing` || pathname.startsWith(`/${slug}/admin/billing/`);
+
+  if (!options.skipSubscriptionCheck && !isBillingPage) {
     const { data: sub } = await supabase
       .from('subscriptions')
       .select('status, trial_ends_at, current_period_end')

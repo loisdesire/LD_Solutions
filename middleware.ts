@@ -42,9 +42,20 @@ function isPlatformHost(hostname: string): boolean {
 // Settings, or the migration hasn't run yet - see the 42703 handling
 // below) falls through to ordinary routing, which just renders the
 // platform's own marketing site rather than erroring.
+// Server Components (the admin layout, requireStaffSession) have no
+// built-in way to read the current request's pathname - usePathname()
+// only exists for Client Components. This header is the standard
+// workaround: middleware runs on every request anyway, so it's a cheap
+// place to hand the pathname down to anything server-side that needs it
+// (see requireStaffSession's billing-page carve-out for why this exists).
+function withPathnameHeader(req: NextRequest, res: NextResponse): NextResponse {
+  res.headers.set('x-pathname', req.nextUrl.pathname);
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const hostname = req.nextUrl.hostname;
-  if (isPlatformHost(hostname)) return NextResponse.next();
+  if (isPlatformHost(hostname)) return withPathnameHeader(req, NextResponse.next());
 
   // Wrapped because this runs on EVERY request that reaches it: an
   // unguarded throw here (network blip, Supabase timeout) would 500 the
