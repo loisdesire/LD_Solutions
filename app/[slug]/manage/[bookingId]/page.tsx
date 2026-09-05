@@ -35,7 +35,7 @@ export default async function ManageBookingPage({
   // this code on a genuine booking, on both this query and its 42703
   // fallback below.
   const BOOKING_COLUMNS =
-    'id, customer_name, start_time, status, business_id, service_id, payment_status, amount_paid, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color)';
+    'id, customer_name, start_time, status, business_id, service_id, payment_status, amount_paid, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color, timezone)';
 
   let { data: booking, error: bookingError } = await supabaseAdmin
     .from('bookings')
@@ -50,7 +50,7 @@ export default async function ManageBookingPage({
   if (bookingError?.code === '42703') {
     const fallback = await supabaseAdmin
       .from('bookings')
-      .select('id, customer_name, start_time, status, business_id, service_id, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color)')
+      .select('id, customer_name, start_time, status, business_id, service_id, services!bookings_service_business_fk(name, duration_minutes, price), businesses(name, slug, accent_color, timezone)')
       .eq('id', bookingId)
       .maybeSingle();
     booking = fallback.data ? { ...fallback.data, payment_status: null, amount_paid: null } : null;
@@ -141,10 +141,17 @@ export default async function ManageBookingPage({
                   Date
                 </span>
                 <span className="font-semibold">
+                  {/* timeZone explicitly set to the business's own - was
+                      missing entirely (toLocaleDateString with no
+                      timeZone uses the VIEWER's device zone), so a
+                      customer or business outside that zone saw a time
+                      genuinely offset from the real appointment. Same
+                      fix as BookingForm's confirmation step. */}
                   {new Date(booking.start_time).toLocaleDateString(undefined, {
                     weekday: 'long',
                     month: 'long',
                     day: 'numeric',
+                    timeZone: business?.timezone,
                   })}
                 </span>
               </div>
@@ -156,6 +163,7 @@ export default async function ManageBookingPage({
                   {new Date(booking.start_time).toLocaleTimeString(undefined, {
                     hour: 'numeric',
                     minute: '2-digit',
+                    timeZone: business?.timezone,
                   })}
                 </span>
               </div>
@@ -217,6 +225,7 @@ export default async function ManageBookingPage({
               initialStatus={booking.status}
               startTime={booking.start_time}
               maxAdvanceDays={maxAdvanceDays}
+              timeZone={business?.timezone}
             />
           </div>
         </div>

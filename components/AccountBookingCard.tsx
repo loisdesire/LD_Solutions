@@ -46,13 +46,22 @@ export default function AccountBookingCard({
             {service?.name ?? 'Service'}
           </div>
           <div className="text-[12.5px] text-ink-soft mt-0.5">
+            {/* timeZone: business?.timezone - was missing, which meant
+                this rendered in the VIEWER's own device zone rather than
+                the business's; see SlotTimePicker's own note, same bug,
+                third copy of the pattern found in this file. */}
             {new Date(booking.start_time).toLocaleDateString(undefined, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
+              timeZone: business?.timezone,
             })}
             {' · '}
-            {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+            {new Date(booking.start_time).toLocaleTimeString(undefined, {
+              hour: 'numeric',
+              minute: '2-digit',
+              timeZone: business?.timezone,
+            })}
             {service?.price != null && <> · {formatMoney(service.price)}</>}
           </div>
         </div>

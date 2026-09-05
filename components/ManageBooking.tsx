@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CalendarPicker from './CalendarPicker';
 import Skeleton from './Skeleton';
@@ -21,6 +22,7 @@ export default function ManageBooking({
   initialStatus,
   startTime,
   maxAdvanceDays = 30,
+  timeZone,
 }: {
   slug: string;
   bookingId: string;
@@ -29,7 +31,12 @@ export default function ManageBooking({
   initialStatus: string;
   startTime: string;
   maxAdvanceDays?: number;
+  /** The business's own IANA zone, passed through to the reschedule
+   * picker so its slot times/grouping match the business, not the
+   * customer's own device - see SlotTimePicker's own note on this. */
+  timeZone?: string;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -101,6 +108,13 @@ export default function ManageBooking({
       }
 
       setStatus('cancelled');
+      // This component's own status pill/copy updates from local state
+      // (above), but the page around it - the status badge in the card
+      // header, rendered server-side from the original booking prop -
+      // has no way to know anything changed. Confirmed live: it kept
+      // reading "CONFIRMED" until a manual reload. refresh() re-runs the
+      // server component with fresh data without a full page reload.
+      router.refresh();
     } catch {
       setError("We couldn't reach the server. Please check your connection and try again.");
     } finally {
@@ -128,6 +142,10 @@ export default function ManageBooking({
 
       setRescheduling(false);
       setRescheduled(true);
+      // Same reasoning as handleCancel above - the server-rendered date/
+      // time in the card header would otherwise still show the old slot
+      // until a manual reload.
+      router.refresh();
     } catch {
       setError("We couldn't reach the server. Please check your connection and try again.");
     } finally {
@@ -241,7 +259,7 @@ export default function ManageBooking({
               // used to have. `key={date}` remounts on date change so it
               // resets closed.
               <div className="mb-4">
-                <SlotTimePicker key={date} slots={slots} selectedSlot={selectedSlot} onSelect={setSelectedSlot} />
+                <SlotTimePicker key={date} slots={slots} selectedSlot={selectedSlot} onSelect={setSelectedSlot} timeZone={timeZone} />
               </div>
             )}
           </div>

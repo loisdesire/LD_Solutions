@@ -9,7 +9,7 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
 import { AccentScope } from '@/components/AccentScope';
-import { SITE_URL, DEMO_SLUG } from '@/lib/site';
+import { SITE_URL, isDemoSlug } from '@/lib/site';
 import { canAcceptBookings } from '@/lib/subscription-server';
 import { safeJsonLdString } from '@/lib/jsonLd';
 
@@ -127,7 +127,11 @@ export default async function BusinessBookingPage({
           right now) is the one that actually matters to every visitor,
           demo or not. A plain, persistent strip reads as "site-wide
           notice" too, which is closer to what this actually is. */}
-      {slug === DEMO_SLUG && (
+      {/* isDemoSlug(slug), not slug === DEMO_SLUG - was only ever checking
+          against the one original demo business, so Calm Wellness Clinic
+          and Bright Minds Tutoring silently had no disclosure at all once
+          they existed. Confirmed live: this exact inconsistency. */}
+      {isDemoSlug(slug) && (
         <div className="text-center py-2 px-4" style={{ background: 'var(--accent-soft)' }}>
           <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: 'var(--accent)' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" /></svg>

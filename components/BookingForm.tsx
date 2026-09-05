@@ -42,8 +42,15 @@ function formatDuration(min: number): string {
   return rest === 0 ? `${h} hr` : `${h} hr ${rest} min`;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+// timeZone was never actually passed here despite the page telling the
+// customer "Times shown in {business}'s timezone" right above the slot
+// picker (see the tzLabel line below) - toLocaleTimeString with no
+// timeZone uses the VIEWER's own device zone instead, silently breaking
+// that promise for anyone whose device isn't in the business's zone.
+// Confirmed live: a customer/tester outside the business's timezone saw
+// a time genuinely offset by the difference between the two zones.
+function formatTime(iso: string, timeZone?: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone });
 }
 
 // Was a visible progress bar + "Step X of 3" label - explicitly called
@@ -372,7 +379,7 @@ export default function BookingForm({
             <p className="text-ink-soft text-[14px] mt-2">
               {emailSent
                 ? `A confirmation has been sent to ${email}`
-                : 'Save your booking code below - your confirmation email may take a moment, or not arrive at all.'}
+                : 'Save your booking code below to look up or manage this booking anytime.'}
             </p>
           </div>
 
@@ -386,11 +393,12 @@ export default function BookingForm({
                       weekday: 'long',
                       month: 'long',
                       day: 'numeric',
+                      timeZone: timezone,
                     })
                   : ''
               }
             />
-            <ConfirmationRow label="Time" value={selectedSlot ? formatTime(selectedSlot) : ''} />
+            <ConfirmationRow label="Time" value={selectedSlot ? formatTime(selectedSlot, timezone) : ''} />
             {paymentActive ? (
               <>
                 <ConfirmationRow label="Paid now" value={formatMoney(amountDue)} />
@@ -491,9 +499,10 @@ export default function BookingForm({
                     weekday: 'short',
                     month: 'short',
                     day: 'numeric',
+                    timeZone: timezone,
                   })}
                   {' · '}
-                  {formatTime(selectedSlot)}
+                  {formatTime(selectedSlot, timezone)}
                   {' · '}
                   {formatDuration(selectedService.duration_minutes)}
                 </div>
@@ -703,7 +712,7 @@ export default function BookingForm({
                 you can actually pick. */}
             {!loadingSlots && !slotsError && slots.length > 0 && (
               <p className="text-[12.5px] text-ink-faint mt-0.5">
-                Available {formatTime(slots[0])} &ndash; {formatTime(slots[slots.length - 1])}
+                Available {formatTime(slots[0], timezone)} &ndash; {formatTime(slots[slots.length - 1], timezone)}
               </p>
             )}
           </div>
@@ -758,6 +767,7 @@ export default function BookingForm({
                 key={selectedDate}
                 slots={slots}
                 selectedSlot={selectedSlot}
+                timeZone={timezone}
                 onSelect={(t) => {
                   setSelectedSlot(t);
                   if (status === 'error') {

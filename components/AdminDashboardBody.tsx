@@ -140,6 +140,23 @@ export default function AdminDashboardBody({
 
   const minutesUntilNext =
     nextSlot && now !== null ? Math.round((new Date(nextSlot.start_time).getTime() - now) / 60000) : null;
+  // Bare time-of-day with no date at all once the countdown window passes -
+  // confirmed live: a next appointment 2 days out showed as "9:00 AM" with
+  // nothing distinguishing it from "today at 9am", which reads as a
+  // contradiction next to the "Nothing booked today" line right above it.
+  // Today/Tomorrow/short-weekday prefix, same convention used elsewhere in
+  // the admin (reminders, the calendar's own day labels).
+  function dayPrefix(startTime: string): string {
+    const start = new Date(startTime);
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const today = new Date();
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const daysOut = Math.round((startDay - todayDay) / 86400000);
+    if (daysOut === 0) return 'Today';
+    if (daysOut === 1) return 'Tomorrow';
+    return start.toLocaleDateString(undefined, { weekday: 'short' });
+  }
+
   const nextSlotLabel =
     nextSlot == null
       ? '-'
@@ -147,7 +164,7 @@ export default function AdminDashboardBody({
         ? minutesUntilNext < 60
           ? `In ${Math.max(minutesUntilNext, 1)}m`
           : `In ${Math.floor(minutesUntilNext / 60)}h ${minutesUntilNext % 60}m`
-        : new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        : `${dayPrefix(nextSlot.start_time)} ${new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
   const hour = now ? new Date(now).getHours() : null;
   const greeting =

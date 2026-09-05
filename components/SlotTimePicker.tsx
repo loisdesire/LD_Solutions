@@ -21,31 +21,55 @@
 // until it's opened.
 type Period = 'Morning' | 'Afternoon' | 'Evening';
 
-function groupByPeriod(slots: string[]): [Period, string[]][] {
+// Date.getHours() is always the VIEWER's device hour - grouping a
+// business's own 9am slot as "Evening" for a viewer far enough away in
+// the other direction is the exact same class of bug as BookingForm's
+// missing timeZone (see that file's own note on this). Intl gives the
+// hour in a specific zone the way getHours() never can.
+function hourInZone(iso: string, timeZone?: string): number {
+  if (!timeZone) return new Date(iso).getHours();
+  const hourPart = new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', hourCycle: 'h23' })
+    .formatToParts(new Date(iso))
+    .find((p) => p.type === 'hour');
+  return hourPart ? Number(hourPart.value) : new Date(iso).getHours();
+}
+
+function groupByPeriod(slots: string[], timeZone?: string): [Period, string[]][] {
   const order: Period[] = ['Morning', 'Afternoon', 'Evening'];
   const groups: Record<Period, string[]> = { Morning: [], Afternoon: [], Evening: [] };
   for (const s of slots) {
-    const h = new Date(s).getHours();
+    const h = hourInZone(s, timeZone);
     const period: Period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
     groups[period].push(s);
   }
   return order.filter((p) => groups[p].length > 0).map((p) => [p, groups[p]]);
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+// timeZone was never accepted here at all - toLocaleTimeString with no
+// timeZone uses the viewer's own device zone, same bug BookingForm.tsx's
+// own formatTime had (see that file's note on this - it's the same
+// underlying gap, just a second copy of the pattern).
+function formatTime(iso: string, timeZone?: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone });
 }
 
 export default function SlotTimePicker({
   slots,
   selectedSlot,
   onSelect,
+  timeZone,
 }: {
   slots: string[];
   selectedSlot: string;
   onSelect: (iso: string) => void;
+  /** The business's own IANA zone - every slot is shown and grouped in this
+   * zone, not the viewer's device zone, so it always matches what the
+   * business actually means by "9am". Optional only for backward
+   * compatibility with a caller that hasn't been threaded yet; omitting it
+   * falls back to the viewer's own zone, the original (buggy) behavior. */
+  timeZone?: string;
 }) {
-  const periods = groupByPeriod(slots);
+  const periods = groupByPeriod(slots, timeZone);
 
   return (
     <div className="relative">
@@ -67,7 +91,7 @@ export default function SlotTimePicker({
           <optgroup key={period} label={period}>
             {times.map((t) => (
               <option key={t} value={t}>
-                {formatTime(t)}
+                {formatTime(t, timeZone)}
               </option>
             ))}
           </optgroup>
