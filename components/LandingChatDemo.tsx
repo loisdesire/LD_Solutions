@@ -153,9 +153,10 @@ export default function LandingChatDemo() {
             this cap, since 3 columns of pill buttons want the full
             column width, not a narrowed one. */}
         <div className="max-w-md mx-auto lg:mx-0">
-          <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
-            Try it yourself
-          </div>
+          {/* Eyebrow label removed - "Try it yourself" implied typing
+              into a live chat, which this replay stopped being a while
+              ago (it's a scripted, animated example, not something a
+              visitor interacts with). */}
           <h2 className="font-display text-[2.25rem] sm:text-4xl leading-[1.12] text-ink mb-4">
             See it for a business <span className="italic" style={{ color: 'var(--accent)' }}>like yours.</span>
           </h2>
