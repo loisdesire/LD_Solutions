@@ -160,16 +160,17 @@ export default function LandingChatDemo() {
             See it for a business <span className="italic" style={{ color: 'var(--accent)' }}>like yours.</span>
           </h2>
           <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed max-w-sm mx-auto lg:mx-0 mb-7">
-            Pick a business below to see the exact exchange, word for word.
+            Pick a business below to see the exact exchange.
           </p>
         </div>
-        {/* A real 3-column grid, not flex-wrap - 6 chips wrapping at
-            whatever width their own text happened to allow left an
-            uneven last row (5-then-1, or similar), with one chip sitting
-            alone taking up a whole row's worth of space for nothing.
-            3 columns x 2 rows is exact for 6 items, and stays exact for
-            any future multiple of 3. */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* Scrollable on mobile - real width to scroll through per chip,
+            for maximum viewing effect, rather than wrapping and shrinking
+            everything to fit two rows on a narrow screen. lg: switches to
+            the 3-column grid instead (exact for 6 items, no chip stuck
+            alone on its own row) once there's a real desktop-width column
+            to wrap within. -mx-4/px-4 lets the scroll row bleed to the
+            true edge on mobile without clipping a chip's focus ring. */}
+        <div className="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 -mx-4 px-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-3 lg:overflow-visible">
           {pickerTypes.map((biz) => {
             const index = landingDemoScripts.findIndex((s) => s.label === biz.label);
             const active = selected === index;
@@ -181,7 +182,7 @@ export default function LandingChatDemo() {
                   setSelected(index);
                   setPill('customer');
                 }}
-                className={`flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-2.5 text-[12.5px] font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 rounded-full border px-3.5 py-2.5 lg:px-2.5 text-[12.5px] font-medium transition-colors ${
                   active
                     ? 'border-transparent text-accent-contrast'
                     : 'border-line bg-surface text-ink-soft hover:border-accent hover:text-accent'
@@ -323,7 +324,7 @@ export default function LandingChatDemo() {
                   )}
                 </>
               ) : (
-                <p className="text-[12px] text-ink-faint">Word for word, exactly as it happened.</p>
+                <p className="text-[12px] text-ink-faint">Exactly as it happened.</p>
               )}
             </div>
           </div>
