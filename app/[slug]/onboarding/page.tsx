@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getOnboardingProgress } from '@/lib/onboardingProgress';
@@ -47,26 +46,21 @@ export default async function OnboardingPage({ params }: { params: Promise<{ slu
   return (
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-        <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="mb-6">
           <AuthMark name={business.name} label="Getting started" logoUrl={business.logo_url} />
-          {/* Always visible, never buried - leaving mid-setup lands on the
-              exact same dashboard every other business sees, badge and
-              SetupChecklist doing their normal job. Nobody is trapped here. */}
-          <Link
-            href={`/${slug}/admin`}
-            className="text-[13px] font-medium text-ink-faint hover:text-ink transition-colors shrink-0 mt-1"
-          >
-            Skip for now
-          </Link>
         </div>
 
-        <h1 className="font-display text-[26px] sm:text-[30px] leading-[1.15] mb-2">
+        <h1 className="font-display text-[26px] sm:text-[30px] leading-[1.15] mb-7">
           Let&rsquo;s set up your booking page
         </h1>
-        <p className="text-ink-soft text-[14.5px] mb-7 max-w-md">
-          Answer a few questions here - no forms. Say as much or as little as you want in each message.
-        </p>
 
+        {/* "Skip for now" used to live up here, next to AuthMark - findable
+            on the very first screen, then gone the moment the conversation
+            grew past one screen's worth (confirmed live: a real signup
+            reported not seeing any way to reach the dashboard at all).
+            Lives inside OnboardingChat's banner now instead, right next to
+            the progress steps, which render above the chat on every turn -
+            not a one-time header row, so it can't scroll out of reach. */}
         <OnboardingChat slug={slug} businessName={business.name} initialProgress={progress} initialMessages={history} />
       </div>
     </main>

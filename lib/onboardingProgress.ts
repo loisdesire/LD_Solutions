@@ -6,22 +6,36 @@ const supabaseAdmin = createClient(
 );
 
 export type OnboardingProgress = {
+  // Kept exactly as before - "either one is enough" - for the chip/allDone
+  // gate that unlocks the chat's own "you're all set" banner. Deliberately
+  // NOT tightened to require both logo and description: that gate is about
+  // "have they engaged with this section", not "is it perfectly complete",
+  // and the new checklist below must never be able to trap someone here -
+  // they can always finish and go to their dashboard, an outstanding
+  // essential item just follows them there as a reminder instead of
+  // blocking the door.
   profileDone: boolean;
   servicesDone: boolean;
   hoursDone: boolean;
   allDone: boolean;
   slug: string;
-  // Optional extras (cover photo, buffer time, a deposit) used to never
-  // get asked about at all - the conversation just stopped the moment the
-  // three required things above were done. hasCoverImage is a real,
-  // unambiguous signal (null vs set); buffer_minutes/deposit_percentage
-  // aren't included here on purpose - buffer_minutes defaults to 0 in the
-  // schema, so there's no way to tell "never asked" from "deliberately
-  // left at zero" from the column alone. The prompt in onboardingAgent.ts
-  // offers those once and relies on its own conversation history to
-  // avoid re-asking, the same way it already tracks everything else that
-  // doesn't have a clean database flag.
+  // Granular profile signals, separate from profileDone above - the
+  // checklist/reminder logic in onboardingAgent.ts and the dashboard
+  // reminder banner both need to know SPECIFICALLY which of logo/
+  // description/cover photo is still missing, not just "profile has at
+  // least one of them". hasCoverImage already existed for the old
+  // "optional extras" round; hasLogo/hasDescription are new, now that
+  // logo and description are each tracked (and, per the owner's own
+  // instruction, treated as essential) individually rather than as one
+  // combined either/or signal.
+  hasLogo: boolean;
+  hasDescription: boolean;
   hasCoverImage: boolean;
+  // Real counts, not just done/not-done - the section-transition nudge
+  // needs to say "you've only added one service" specifically, not just
+  // know that the minimum was met.
+  servicesCount: number;
+  hoursCount: number;
 };
 
 // Same three-signal formula as app/[slug]/admin/layout.tsx's
@@ -51,6 +65,10 @@ export async function getOnboardingProgress(businessId: string, slug: string): P
     hoursDone,
     allDone: profileDone && servicesDone && hoursDone,
     slug,
+    hasLogo: Boolean(business?.logo_url),
+    hasDescription: Boolean(business?.description?.trim()),
     hasCoverImage: Boolean(business?.cover_image_url),
+    servicesCount: servicesCount ?? 0,
+    hoursCount: hoursCount ?? 0,
   };
 }

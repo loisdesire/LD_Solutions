@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
 import SetupChecklist from './SetupChecklist';
+import ProfileReminderBanner from './ProfileReminderBanner';
 import EnableNotificationsBanner from './EnableNotificationsBanner';
 import { formatMoney } from '@/lib/formatMoney';
 
@@ -107,6 +108,8 @@ export default function AdminDashboardBody({
   servicesDone,
   hoursDone,
   paymentDone,
+  hasLogo,
+  hasDescription,
 }: {
   slug: string;
   businessName: string;
@@ -125,6 +128,8 @@ export default function AdminDashboardBody({
   servicesDone: boolean;
   hoursDone: boolean;
   paymentDone: boolean;
+  hasLogo: boolean;
+  hasDescription: boolean;
 }) {
   const [search, setSearch] = useState('');
 
@@ -245,6 +250,7 @@ export default function AdminDashboardBody({
         hoursDone={hoursDone}
         paymentDone={paymentDone}
       />
+      <ProfileReminderBanner slug={slug} profileDone={profileDone} hasLogo={hasLogo} hasDescription={hasDescription} />
 
       {/* One card, one line - Next up, Today, Today's revenue, This week
           all the same size, side by side, not a detail panel with its

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AssistantChat from './AssistantChat';
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -86,15 +87,30 @@ export default function OnboardingChat({
         }}
         banner={
           <div className="mb-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              {STEPS.map((step) => (
-                <div key={step.key} className="flex items-center gap-1.5">
-                  <StepDot done={Boolean(progress[step.key])} />
-                  <span className={`text-[13px] font-medium ${progress[step.key] ? 'text-ink' : 'text-ink-faint'}`}>
-                    {step.label}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4 flex-wrap">
+                {STEPS.map((step) => (
+                  <div key={step.key} className="flex items-center gap-1.5">
+                    <StepDot done={Boolean(progress[step.key])} />
+                    <span className={`text-[13px] font-medium ${progress[step.key] ? 'text-ink' : 'text-ink-faint'}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {/* Rendered here, next to the progress steps, rather than in a
+                  one-time page header - this banner is what actually shows
+                  above the chat on every turn, so the way out stays
+                  reachable no matter how long the conversation gets.
+                  Leaving mid-setup lands on the exact same dashboard every
+                  other business sees, badge and SetupChecklist doing their
+                  normal job - nobody is trapped here. */}
+              <Link
+                href={`/${slug}/admin`}
+                className="text-[13px] font-medium text-ink-faint hover:text-ink transition-colors shrink-0"
+              >
+                Skip for now
+              </Link>
             </div>
 
             {progress.allDone && (

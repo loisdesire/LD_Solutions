@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { BUBBLE_SPLIT_MARKER } from '@/lib/bubbleMarker';
 
 // imageUrl is optional and only ever set on freshly-sent messages within
 // this session - restored history (initialMessages, from the database)
@@ -10,6 +11,23 @@ import Link from 'next/link';
 // keyed to a specific message. Both are valid Message values either way.
 type Message = { role: 'user' | 'assistant'; content: string; imageUrl?: string };
 type PendingImage = { url: string; previewUrl: string };
+
+// Lets a system prompt ask for two (or more) separate bubbles instead of
+// one dense paragraph - the onboarding chat's opening reply is the first
+// real user of this (a short "Welcome, {business}!" then the actual
+// checklist, arriving a beat later rather than crammed into one message),
+// but it's generic: any endpoint's prompt can use the same marker (imported
+// from lib/bubbleMarker.ts so the server-side prompt and this splitter can
+// never disagree on the literal string), and a reply that never contains it
+// behaves exactly as before.
+const BUBBLE_DELAY_MS = 900;
+
+function splitIntoBubbles(reply: string): string[] {
+  return reply
+    .split(BUBBLE_SPLIT_MARKER)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
 
 // The model naturally reaches for markdown when it summarizes a set of
 // details (bold, "- " bullets, occasionally a [text](url) link) - this
@@ -134,6 +152,20 @@ export default function AssistantChat({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  // Pending setTimeouts for any not-yet-arrived split bubbles (see
+  // BUBBLE_SPLIT_MARKER) - cleared on unmount so a bubble doesn't try to
+  // land on a component that's no longer there.
+  const bubbleTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    // Capture the ref's array reference itself, not bubbleTimers - by the
+    // time this cleanup actually runs (unmount), bubbleTimers.current may
+    // already point at a different array than the one live when this effect
+    // was set up, and that stale one is exactly what still needs clearing.
+    const timers = bubbleTimers.current;
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, []);
   // The real, verified upload URL - kept independent of pendingImage
   // (which only tracks the visual "about to send" indicator and is
   // meant to clear the instant the message goes out). Confirmed live:
@@ -320,7 +352,17 @@ export default function AssistantChat({
       // send actually retries the same photo.
       if (sentImage) URL.revokeObjectURL(sentImage.previewUrl);
       setPendingImage(null);
-      setMessages([...nextMessages, { role: 'assistant', content: data.reply }]);
+      const bubbles = splitIntoBubbles(data.reply);
+      // First bubble lands immediately; any further ones arrive with a
+      // real gap (a natural typing pause, not everything at once) -
+      // see BUBBLE_SPLIT_MARKER's own comment above.
+      setMessages([...nextMessages, { role: 'assistant', content: bubbles[0] ?? data.reply }]);
+      bubbles.slice(1).forEach((bubble, i) => {
+        const id = setTimeout(() => {
+          setMessages((prev) => [...prev, { role: 'assistant', content: bubble }]);
+        }, BUBBLE_DELAY_MS * (i + 1));
+        bubbleTimers.current.push(id);
+      });
       onReplyData?.(data);
       // This assistant can create/change real business data (services,
       // hours, bookings...) through its own server-side tools - a
