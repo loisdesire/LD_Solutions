@@ -142,6 +142,19 @@
   --info-border: #a9d2ed;
 }
 
+/* Reusable: a horizontally-scrollable row that keeps real scroll (mouse
+   wheel, trackpad, touch, arrow-key once focused) without the visible
+   scrollbar track/thumb - for content that should read as "a strip of
+   chips," not "a scroll widget." scrollbar-width covers Firefox; the
+   pseudo-element covers Chrome/Safari/Edge. */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    Radius convention
    ============================================

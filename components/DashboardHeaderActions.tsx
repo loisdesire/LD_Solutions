@@ -52,6 +52,24 @@ export default function DashboardHeaderActions({
           unchanged) reads as the one deliberately separate primary action
           instead of a third peer in an undifferentiated row. */}
       <div className="flex items-center gap-0.5 rounded-full border border-line bg-surface p-1">
+        {/* Copy link put the URL on the clipboard, but there was no way to
+            actually SEE the live page from the admin itself - an owner
+            wanting to check what a customer sees had to know the URL and
+            open it manually. A real, direct view, not another copy step. */}
+        <a
+          href={`/${slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View live booking page"
+          title="View live booking page"
+          className="h-8 sm:h-auto flex items-center justify-center sm:justify-start gap-2 rounded-full px-0 sm:px-3.5 sm:py-2 w-8 sm:w-auto text-ink-faint hover:bg-paper hover:text-ink transition-colors"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="shrink-0" aria-hidden="true">
+            <path d="M14 3h7v7" /><path d="M10 14L21 3" />
+            <path d="M19 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
+          </svg>
+          <span className="hidden sm:inline text-[13px] font-medium whitespace-nowrap">View live page</span>
+        </a>
         <button
           onClick={handleCopy}
           aria-label="Copy booking link"

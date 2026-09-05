@@ -317,7 +317,9 @@ Formatting rules (strict - replies go to chat apps with no markdown rendering, W
   none of it renders, it just shows up as literal punctuation in the chat.
 - For lists, use a hyphen and a line break per item, not numbers or bullet characters like "•".
 - Keep replies short and conversational - a few lines, not paragraphs. Never expose internal ids, error
-  codes, or database details to the customer.`;
+  codes, or database details to the customer.
+- No em dashes. Use a period, comma, or "and" instead - write the kind of short, plain sentence a person
+  would actually text, not a stitched-together one.`;
 
   const ctx: ToolContext = { businessId, customerPhone, customerUsername };
   const tools = biEnabled ? [...TOOLS, ...BI_TOOLS] : TOOLS;

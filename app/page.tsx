@@ -10,7 +10,6 @@ import { SITE_URL, DEMO_SLUG } from '@/lib/site';
 import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
 import { formatMoney } from '@/lib/formatMoney';
 import { safeJsonLdString } from '@/lib/jsonLd';
-import { businessTypes } from '@/lib/businessTypes';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -279,23 +278,23 @@ export default function LandingPage() {
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
             </Button>
-            {/* Scrolls down to the real, embedded chat now instead of
-                navigating away to /glow-salon - the whole point of
-                building that section was to stop asking people to trust
-                the claim before showing it; sending the button that says
-                "try it" off the page would undo that immediately. The
-                actual booking page is still one tap away from inside
-                that section itself for anyone who wants the full site. */}
-            <Button href="#demo" variant="outline" size="lg" className="justify-center w-full sm:w-auto">
+            {/* Was #demo (the scripted replay section below) - a real
+                visitor called this out directly: a button labelled "Try
+                live demo" that just scrolls to a canned, animated replay
+                isn't a demo, it's a preview. /demo is the real thing this
+                button's own label was promising - pick a business, land
+                in its actual live admin dashboard, logged in as the
+                owner, no signup. The scripted replay didn't get deleted,
+                just correctly relabelled below (it's honest about being
+                an example conversation now, not competing with this for
+                the word "demo"). */}
+            <Button href="/demo" variant="outline" size="lg" className="justify-center w-full sm:w-auto">
               Try live demo
             </Button>
           </div>
-          {/* "Or explore the dashboard" dropped - within one mobile scroll
-              this sat next to "Try live demo" (same idea, different
-              destination) and "Test the live booking page" in the section
-              right below (same idea again). Three "go try it" links in one
-              screen was the actual complaint; "Try live demo" alone
-              carries that job here. */}
+          {/* No secondary link here on purpose - the example-conversation
+              section is one scroll away regardless; a visitor who wants
+              it will get there without a second button telling them so. */}
         </Reveal>
         </div>
       </section>
@@ -314,13 +313,13 @@ export default function LandingPage() {
           just not a live call - see lib/landingDemoScripts.ts. */}
       <section id="demo" className="bg-paper">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-          <Reveal className="flex flex-col items-center text-center">
-            <h2 className="font-display text-[26px] sm:text-[32px] font-semibold text-ink mb-3">
-              See it for a business like yours.
-            </h2>
-            <p className="text-[15px] sm:text-[16px] text-ink-soft max-w-md mb-8">
-              A real kind of conversation, both sides - no forms, no dashboards.
-            </p>
+          {/* Title/description moved inside LandingChatDemo itself, into
+              its left column alongside the picker - was centered above
+              both columns here, which read as a heading floating over a
+              two-column layout it wasn't actually part of. Left column
+              now reads as one real group (title, description, picker),
+              matching the right column's own group (toggle, conversation). */}
+          <Reveal>
             <LandingChatDemo />
           </Reveal>
         </div>
@@ -612,53 +611,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Who it's for */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
-        <Reveal className="mb-8 sm:mb-10 mx-auto text-center">
-          <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-3 leading-snug lg:whitespace-nowrap">
-            Built for businesses that <span className="italic">take appointments.</span>
-          </h2>
-          {/* Examples dropped - the pill row right below already names eight
-              business types; naming four more here just before it was the
-              exact "text re-explains what the visual already shows" pattern
-              trimmed elsewhere on this page. */}
-          <p className="text-[15px] text-ink-soft leading-relaxed">
-            If your customers need to book time with you, this is for you.
-          </p>
-        </Reveal>
-        {/* A single stacked column read as a long, plain list - a lot of
-            scroll for eight short category names, and every pill the same
-            shape start to finish is exactly the "boring" complaint. CSS
-            columns-2 instead of the grid this was trying to be before:
-            unlike grid, columns don't stretch every item in a row to
-            match the tallest, so the earlier uneven-height bug (labels
-            like "Hair salons & barbershops" wrapping to two lines and
-            dragging their neighbour's box taller with them) can't happen
-            here regardless of label length - each column just flows
-            independently. display:flex from sm: naturally overrides
-            multi-column layout on its own, so this doesn't need a
-            separate sm+ variant. Icons added per category (not just
-            trimmed labels) for real visual variety instead of a wall of
-            identically-shaped text pills, and each pill sizes to its own
-            content rather than stretching full width, so it reads as a
-            loose tag cloud, not a form. */}
-        <Reveal delay={80} className="columns-2 gap-3 sm:flex sm:flex-wrap sm:justify-center">
-          {businessTypes.map((biz) => (
-            <span
-              key={biz.label}
-              className="mb-3 sm:mb-0 flex items-center gap-2 break-inside-avoid rounded-full border border-line bg-surface px-3.5 py-2.5 sm:px-5 text-[12.5px] sm:text-[14px] font-medium text-ink-soft shadow-lift"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
-                {biz.icon}
-              </svg>
-              {biz.label}
-            </span>
-          ))}
-          <span className="mb-3 sm:mb-0 flex items-center justify-center break-inside-avoid rounded-full border border-dashed border-line-strong px-3.5 py-2.5 sm:px-5 text-[12.5px] sm:text-[14px] font-medium text-ink-faint">
-            + whatever yours is
-          </span>
-        </Reveal>
-      </section>
+      {/* "Who it's for" section removed - it was a static list of the same
+          eight business types the demo section (id="demo", now the
+          bigger, more prominent, actually-interactive picker right under
+          the hero) already shows. Once that section got its own big
+          title and real layout, having a second plain pill list further
+          down the page repeating the same names felt like exactly that:
+          repetition, not reinforcement. Dropped along with it: the
+          "+ whatever yours is" catch-all pill and the 2 business types
+          that don't have a demo script yet (Massage therapists, Music
+          teachers) - neither had another home on the page. */}
 
       {/* Pricing - one plan, stated plainly, no tiers to compare */}
       <section id="pricing" className="border-t border-line">

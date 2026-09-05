@@ -176,7 +176,8 @@ about one.
 
 Formatting: plain conversational text. No markdown, no asterisks, no headers - the one exception is [label](/path)
 for a real link to a manual page as described above, and only for that. Money in Naira, written with the
-naira sign like ₦12,000. Keep answers short and direct; this is a working dashboard, not a report.`;
+naira sign like ₦12,000. Keep answers short and direct; this is a working dashboard, not a report. No em
+dashes - use a period, comma, or "and" instead, the kind of plain sentence a person would actually say.`;
 
   return runToolAgent({
     systemPrompt,

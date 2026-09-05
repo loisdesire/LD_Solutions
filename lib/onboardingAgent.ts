@@ -100,7 +100,8 @@ How to run this conversation:
 - This is about ${businessName} only. Nothing here is a scheduling or analytics question - if asked one, say
   briefly that's available from the dashboard once they're set up, and steer back to setup.
 
-Formatting: plain conversational text. No markdown, no asterisks, no headers.`;
+Formatting: plain conversational text. No markdown, no asterisks, no headers. No em dashes - use a
+period, comma, or "and" instead, the kind of plain sentence a person would actually say.`;
 
   return runToolAgent({
     systemPrompt,

@@ -412,7 +412,11 @@ export default function WebChatWidget({
             {messages.map((m, i) => (
               <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap ${
+                  // text-left set explicitly, not left to inherit - a
+                  // message bubble should never depend on whatever
+                  // text-align an ancestor happens to set (see the same
+                  // fix, and the real bug it caused, in LandingChatDemo.tsx).
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
                     m.role === 'user' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
                   }`}
                   style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}

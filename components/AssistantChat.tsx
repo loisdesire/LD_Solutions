@@ -407,7 +407,9 @@ export default function AssistantChat({
           {messages.map((m, i) => (
             <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${
+                // text-left set explicitly, not left to inherit - see the
+                // same fix, and the real bug it caused, in LandingChatDemo.tsx.
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
                   m.role === 'user' ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink'
                 }`}
               >

@@ -11,3 +11,18 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://vanovahub.c
 // completely ordinary, oddly-named real business with no indication it
 // isn't one.
 export const DEMO_SLUG = 'glow-salon';
+
+// The full set of public-facing chat-demo tenants - DEMO_SLUG stays the
+// default/primary one (the admin-dashboard walkthrough at /api/demo-login
+// is scoped to it specifically, via a single demo-viewer staff row - see
+// lib/demo.ts), but the homepage's per-vertical picker links out to
+// whichever one of these actually matches a given business type, so a
+// visitor gets a real business in something like their own vertical
+// rather than always landing on a salon. Add a slug here (and give it a
+// matching entry in lib/landingDemoScripts.ts) whenever a new demo
+// business is seeded.
+export const DEMO_SLUGS: readonly string[] = [DEMO_SLUG, 'calm-wellness-clinic', 'bright-minds-tutoring'];
+
+export function isDemoSlug(slug: string): boolean {
+  return DEMO_SLUGS.includes(slug);
+}

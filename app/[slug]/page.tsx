@@ -3,16 +3,17 @@ import { getSiteContentFlags } from '@/lib/siteContent';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import BookingForm from '@/components/BookingForm';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import WebChatWidget from '@/components/WebChatWidget';
+import ChatHero from '@/components/ChatHero';
+import InfoPanel from '@/components/InfoPanel';
 import { AccentScope } from '@/components/AccentScope';
-import { SITE_URL, DEMO_SLUG } from '@/lib/site';
+import { SITE_URL, DEMO_SLUG, isDemoSlug } from '@/lib/site';
 import { canAcceptBookings } from '@/lib/subscription-server';
-import { formatMoney } from '@/lib/formatMoney';
 import { safeJsonLdString } from '@/lib/jsonLd';
+import { logError } from '@/lib/logger';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,13 +73,6 @@ export default async function BusinessBookingPage({
 
   const { business, services, hoursSummary, isOpenNow } = data;
 
-  // "From ₦X" rather than nothing - the hero previously gave no price
-  // signal at all until you'd already picked a service in the booking
-  // form below. Only services with a real price count; a null price
-  // means "ask for pricing", not free.
-  const pricedServices = services.map((s) => s.price).filter((p): p is number => p != null);
-  const startingPrice = pricedServices.length > 0 ? Math.min(...pricedServices) : null;
-
   // Service role: booking_rules is staff-only under RLS, but the date
   // picker below needs max_advance_days to cap what it lets a customer pick,
   // and now also whether this business requires payment to confirm.
@@ -95,6 +89,43 @@ export default async function BusinessBookingPage({
   const requirePayment = Boolean(rules?.require_payment && business.paystack_public_key);
   const { showAbout, showGallery, showContact } = getSiteContentFlags(business);
   const acceptingBookings = await canAcceptBookings(business.id);
+
+  // Top 3 services by real booking volume, for the chat-first hero's info
+  // panel - a brand-new business with no booking history yet falls back
+  // to the first 3 configured services rather than an empty card (see
+  // InfoPanel's own comment). Plain service_id counts, not an embedded
+  // services(...) join - avoids the exact PGRST201 ambiguity that broke
+  // every other bookings->services embed in this codebase (two valid FKs
+  // on the pair) by never embedding at all; counts are just mapped onto
+  // the services array already loaded above.
+  const { data: bookingCounts, error: bookingCountsError } = await supabaseAdmin
+    .from('bookings')
+    .select('service_id')
+    .eq('business_id', business.id)
+    .neq('status', 'cancelled');
+  if (bookingCountsError) {
+    logError('business-page:popular-services', bookingCountsError, { businessId: business.id });
+  }
+  const countsByService = new Map<string, number>();
+  for (const row of bookingCounts ?? []) {
+    if (!row.service_id) continue;
+    countsByService.set(row.service_id, (countsByService.get(row.service_id) ?? 0) + 1);
+  }
+  const popularServices =
+    countsByService.size > 0
+      ? [...services].sort((a, b) => (countsByService.get(b.id) ?? 0) - (countsByService.get(a.id) ?? 0)).slice(0, 3)
+      : services.slice(0, 3);
+
+  // Tuned for range, not just "book an appointment" four times over -
+  // one on timing, one on hours, one on price, one that surfaces a real
+  // service by name so the chat doesn't read as a generic bot the moment
+  // someone actually tries it.
+  const suggestedPrompts = [
+    'What times are free tomorrow?',
+    'Are you open at the weekend?',
+    services[0] ? `How much is ${services[0].name}?` : 'What do you charge?',
+    services[1] ? `Can I book ${services[1].name} this week?` : 'Can I book right now?',
+  ];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -144,135 +175,47 @@ export default async function BusinessBookingPage({
         </div>
       )}
 
-      {/* Full-bleed now - was boxed inside max-w-6xl with side padding and
-          margin all round, so the photo itself never actually reached
-          either edge of the screen (the thing "fill the screen" was
-          actually asking for - the height already filled the viewport,
-          the width didn't). No horizontal constraint here at all now;
-          the text/button content below gets its own max-w-6xl centering
-          instead, so it stays readable on a wide screen without the
-          photo being boxed in to match it. */}
-      <section className="relative">
-        <div className="relative overflow-hidden bg-surface shadow-card">
-          {/* min-h-[54vh] on mobile, min-h-[70vh] from sm up - a flat 70vh
-              on a phone pushed the very next section (the "3 simple
-              steps" eyebrow starting step 1) to land half-cut-off at the
-              bottom edge of the screen, which read as broken/cropped
-              rather than "scroll for more". Shorter on the smallest
-              screens, where there's also the least room to spare;
-              unchanged on a wide desktop screen where the photo has real
-              composition to fill. */}
-          <div className="relative min-h-[54vh] sm:min-h-[70vh]">
-            <div className="absolute inset-0 z-0">
-              {business.cover_image_url ? (
-                <>
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        'linear-gradient(90deg, rgba(23,20,18,0.28) 0%, rgba(23,20,18,0.15) 36%, rgba(23,20,18,0.2) 100%)',
-                    }}
-                  />
-                  <Image
-                    src={business.cover_image_url}
-                    alt=""
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="scale-[1.01] object-cover opacity-85 contrast-[1.02] brightness-[0.92] grayscale-[0.08]"
-                  />
-                </>
-              ) : (
-                <div
-                  className="h-full w-full"
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(18,18,18,0.88), rgba(102,76,61,0.74), rgba(18,18,18,0.82))',
-                  }}
-                />
-              )}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(17,17,17,0.04) 0%, rgba(17,17,17,0.18) 42%, rgba(17,17,17,0.38) 100%)',
-                }}
-              />
-            </div>
+      {/* Chat-first hero - was a full-bleed cover photo behind a centered
+          "Book an appointment" / "Ask AI" button pair, leading into a
+          3-step manual form; the AI chat only ever existed as a secondary
+          link. That directly contradicted the site's own "AI receptionist
+          that actually books" claim - a visitor who clicked through
+          landed on a page that led with a form. Nothing below is removed:
+          the manual flow (BookingForm at #book) is completely unchanged,
+          just no longer the first thing on the page; cover_image_url is
+          still used on the About page, just not leading this one. Grid,
+          not floated/absolutely-positioned pieces, so the two columns
+          stack on mobile without restructuring anything. */}
+      <section className="bg-paper">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
+          <div className="max-w-2xl mx-auto text-center mb-8 sm:mb-10">
+            <h1 className="font-display text-[32px] sm:text-[42px] font-bold leading-[1.02] tracking-[-0.03em] text-ink mb-2.5">
+              {business.name}
+            </h1>
+            {business.description && (
+              <p className="text-[15px] sm:text-[16px] leading-relaxed text-ink-soft">{business.description}</p>
+            )}
+          </div>
 
-            <div className="relative z-10 flex min-h-[54vh] sm:min-h-[70vh] items-center p-4 sm:p-6 lg:p-8">
-              <div className="w-full max-w-6xl mx-auto">
-              {/* Centered now, not left/bottom-anchored - with the section
-                  actually filling real vertical space (70vh) on a wide
-                  screen, a left-anchored text block left most of the
-                  frame reading as empty photo with content shoved in one
-                  corner. Centering makes the size the hero now has feel
-                  intentional instead of unused. */}
-              <div className="max-w-2xl mx-auto text-center">
-                {hoursSummary && (
-                  <span
-                    className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
-                    style={
-                      isOpenNow
-                        ? { background: 'rgba(20,184,166,0.9)', color: '#fff' }
-                        : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)' }
-                    }
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    {isOpenNow ? 'Open now' : 'Closed now'}
-                  </span>
-                )}
-
-                <div className="space-y-4">
-                  <div className="min-w-0">
-                    {/* Sized down two steps at each breakpoint from the
-                        previous pass (46/76/92 -> 40/66/80) - the jump to
-                        bold+big for a centered 70vh hero was right, that
-                        was just one notch past it. */}
-                    <h1 className="font-display text-[40px] font-bold leading-[0.96] tracking-[-0.04em] text-white sm:text-[66px] lg:text-[80px]">
-                      {business.name}
-                    </h1>
-                  </div>
-
-                  {business.description && (
-                    <p className="max-w-[54ch] mx-auto text-[17px] leading-relaxed text-white/90 sm:text-[19px]">
-                      {business.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* w-full on mobile, a shared fixed width from sm up (was
-                    sm:w-auto, sizing each button to its own text - "Ask
-                    AI" stayed visibly stubbier than "Book an appointment"
-                    side by side too, just less obviously than when they
-                    were stacked). sm:w-[236px] fits the longer label
-                    comfortably; the shorter one now matches it exactly
-                    rather than just "close enough". */}
-                <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center">
-                  <a
-                    href="#book"
-                    className="w-full sm:w-[236px] inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[14px] font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-                    style={{ background: 'var(--accent-contrast)', color: 'var(--accent)' }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
-                    </svg>
-                    Book an appointment
-                  </a>
-
-                  <a
-                    href="#chat"
-                    className="w-full sm:w-[236px] inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/50 bg-white/10 px-6 py-3.5 text-[14px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/18 active:scale-[0.98]"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M4 4h16v12H8l-4 4V4z" />
-                    </svg>
-                    Ask AI
-                  </a>
-                </div>
-              </div>
-              </div>
-            </div>
+          {/* 1.5fr/1fr on lg+ (chat visibly primary, info secondary but not
+              cramped); stacked below that rather than squeezing a
+              two-column layout into a width where the chat card would
+              drop under ~340px wide. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5 items-start">
+            <ChatHero
+              businessId={business.id}
+              businessName={business.name}
+              suggestedPrompts={suggestedPrompts}
+              onBookingLinkFallback="#book"
+              isDemo={isDemoSlug(slug)}
+            />
+            <InfoPanel
+              hoursSummary={hoursSummary}
+              isOpenNow={isOpenNow}
+              location={null}
+              popularServices={popularServices}
+              manualFlowHref="#book"
+            />
           </div>
         </div>
       </section>

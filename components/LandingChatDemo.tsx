@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { businessTypes } from '@/lib/businessTypes';
 import { landingDemoScripts, type ReplayTurn } from '@/lib/landingDemoScripts';
@@ -134,80 +135,119 @@ export default function LandingChatDemo() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* The picker - reuses lib/businessTypes.tsx, the exact same data
-          (and so the exact same icons/labels) the "Built for businesses
-          that take appointments" section further down the page already
-          renders, rather than a second, quietly-driftable copy. */}
-      <p className="text-[13px] font-medium text-ink-faint uppercase tracking-[0.08em] mb-3">
-        See it for a business like yours
-      </p>
-      <div className="flex flex-wrap justify-center gap-2 mb-6">
-        {pickerTypes.map((biz) => {
-          const index = landingDemoScripts.findIndex((s) => s.label === biz.label);
-          const active = selected === index;
-          return (
-            <button
-              key={biz.label}
-              type="button"
-              onClick={() => {
-                setSelected(index);
-                setPill('customer');
-              }}
-              className={`flex items-center gap-2 rounded-full border px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
-                active
-                  ? 'border-transparent text-accent-contrast'
-                  : 'border-line bg-surface text-ink-soft hover:border-accent hover:text-accent'
-              }`}
-              style={active ? { background: 'var(--accent)' } : undefined}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={active ? 'currentColor' : 'var(--accent)'}
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="shrink-0"
-                aria-hidden="true"
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center text-center lg:text-left">
+      {/* Left: picking a business - same shape as "The owner's side"
+          section just above this one on the page (eyebrow label, big
+          title, supporting line, real content below) rather than the
+          smaller, narrow-sidebar treatment tried first. True 50/50
+          columns now, not a 240px rail, so a horizontal row of chips has
+          real room instead of needing a vertical list to fit. Reuses
+          lib/businessTypes.tsx, the exact same data (and so the exact
+          same icons/labels) the "Built for businesses that take
+          appointments" section further down the page already renders,
+          rather than a second, quietly-driftable copy. */}
+      <div>
+        {/* max-w-md caps the TEXT specifically (a real readability need -
+            a heading/paragraph spanning the whole column reads worse,
+            not better) - the picker grid below is deliberately outside
+            this cap, since 3 columns of pill buttons want the full
+            column width, not a narrowed one. */}
+        <div className="max-w-md mx-auto lg:mx-0">
+          <div className="font-mono text-[11px] uppercase tracking-[0.12em] mb-3.5" style={{ color: 'var(--accent)' }}>
+            Try it yourself
+          </div>
+          <h2 className="font-display text-[2.25rem] sm:text-4xl leading-[1.12] text-ink mb-4">
+            See it for a business <span className="italic" style={{ color: 'var(--accent)' }}>like yours.</span>
+          </h2>
+          <p className="text-[15px] sm:text-[16px] text-ink-soft leading-relaxed max-w-sm mx-auto lg:mx-0 mb-7">
+            Pick a business below to see the exact exchange, word for word.
+          </p>
+        </div>
+        {/* A real 3-column grid, not flex-wrap - 6 chips wrapping at
+            whatever width their own text happened to allow left an
+            uneven last row (5-then-1, or similar), with one chip sitting
+            alone taking up a whole row's worth of space for nothing.
+            3 columns x 2 rows is exact for 6 items, and stays exact for
+            any future multiple of 3. */}
+        <div className="grid grid-cols-3 gap-2">
+          {pickerTypes.map((biz) => {
+            const index = landingDemoScripts.findIndex((s) => s.label === biz.label);
+            const active = selected === index;
+            return (
+              <button
+                key={biz.label}
+                type="button"
+                onClick={() => {
+                  setSelected(index);
+                  setPill('customer');
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-2.5 text-[12.5px] font-medium transition-colors ${
+                  active
+                    ? 'border-transparent text-accent-contrast'
+                    : 'border-line bg-surface text-ink-soft hover:border-accent hover:text-accent'
+                }`}
+                style={active ? { background: 'var(--accent)' } : undefined}
               >
-                {biz.icon}
-              </svg>
-              {biz.label}
-            </button>
-          );
-        })}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={active ? 'currentColor' : 'var(--accent)'}
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0"
+                  aria-hidden="true"
+                >
+                  {biz.icon}
+                </svg>
+                {biz.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* The customer/owner toggle moved here, under the picker - both
+            are controls now, grouped together on this side, leaving the
+            right side as pure conversation display. A plain divider +
+            small label keeps it from reading as more business types: a
+            different control shape (one compact segmented pill, not a
+            row of individual chips) plus its own "Viewing as" caption
+            makes clear it's a second, different kind of choice, not an
+            extension of the first. Only shown once a business is picked -
+            nothing to toggle between yet otherwise. */}
+        {script && (
+          <div className="mt-6 pt-6 border-t border-line flex flex-col items-center lg:items-start gap-2.5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint">Viewing as</p>
+            <div className="inline-flex items-center gap-0.5 rounded-full bg-warm-surface p-1">
+              {(['customer', 'owner'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPill(p)}
+                  className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                    pill === p ? 'text-accent-contrast' : 'text-ink-soft hover:text-ink'
+                  }`}
+                  style={pill === p ? { background: 'var(--accent)' } : undefined}
+                >
+                  {p === 'customer' ? 'Customer' : 'Business owner'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {!script ? (
-        <div className="rounded-3xl border-2 border-dashed border-line bg-warm-surface flex items-center justify-center h-[220px]">
-          <p className="text-[14px] text-ink-faint">Pick your business above to see it in action</p>
-        </div>
-      ) : (
-        <>
-          {/* The customer/owner pill toggle - a fresh pick above always
-              lands back on "customer" first (see onClick), matching the
-              order a first-time visitor would actually want to see:
-              what their OWN customers experience, before how they'd run
-              it themselves. */}
-          <div className="flex justify-center gap-2 mb-4">
-            {(['customer', 'owner'] as const).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPill(p)}
-                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                  pill === p ? 'text-accent-contrast' : 'bg-warm-surface text-ink-soft hover:text-ink'
-                }`}
-                style={pill === p ? { background: 'var(--accent)' } : undefined}
-              >
-                {p === 'customer' ? 'As the customer' : 'As the business owner'}
-              </button>
-            ))}
+      {/* Right: pure conversation display now - both controls (business,
+          viewpoint) live on the left, so this side is just the result of
+          them, nothing else competing for attention. */}
+      <div className="min-w-0">
+        {!script ? (
+          <div className="rounded-3xl border-2 border-dashed border-line bg-warm-surface flex items-center justify-center h-[220px]">
+            <p className="text-[14px] text-ink-faint">Pick your business to see it in action</p>
           </div>
-
+        ) : (
           <div className="w-full max-w-md mx-auto rounded-3xl bg-surface border-2 border-line shadow-card flex flex-col h-[460px] overflow-hidden">
             <div className="shrink-0 px-4 py-3.5 border-b border-line flex items-center gap-3">
               <div
@@ -228,7 +268,14 @@ export default function LandingChatDemo() {
               {side!.turns.slice(0, visibleCount).map((turn, i) => (
                 <div key={i} className={`flex animate-rise ${turn.from === 'visitor' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap ${
+                    // text-left: this whole section's parent (app/page.tsx's
+                    // <Reveal> for the heading above) has no text-align of
+                    // its own any more (that used to be text-center, the
+                    // real bug this comment originally documented), but
+                    // set directly on the bubble anyway so it holds
+                    // regardless of what ancestor this ever gets mounted
+                    // under.
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
                       turn.from === 'visitor' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
                     }`}
                     style={{ background: turn.from === 'visitor' ? 'var(--accent-soft)' : 'var(--accent)' }}
@@ -245,26 +292,43 @@ export default function LandingChatDemo() {
               )}
             </div>
 
-            <div className="shrink-0 border-t border-line p-3 flex items-center justify-center">
+            <div className="shrink-0 border-t border-line p-3 flex items-center justify-center gap-4">
               {done ? (
-                <button
-                  type="button"
-                  onClick={replay}
-                  className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-soft hover:text-accent transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
-                  Replay
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={replay}
+                    className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-soft hover:text-accent transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" />
+                      <path d="M3 3v5h5" />
+                    </svg>
+                    Replay
+                  </button>
+                  {/* Only for a vertical with a real seeded business behind
+                      it (see demoSlug on lib/landingDemoScripts.ts) - a
+                      vertical with no matching tenant yet gets Replay
+                      alone rather than a CTA that would just land on
+                      Glow Salon again regardless of what someone just
+                      watched. */}
+                  {script?.demoSlug && (
+                    <Link
+                      href={`/${script.demoSlug}`}
+                      className="flex items-center gap-1 text-[13px] font-semibold"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Try it for real with {script.businessName} →
+                    </Link>
+                  )}
+                </>
               ) : (
-                <p className="text-[12px] text-ink-faint">A real kind of conversation, both sides — no forms, no dashboards.</p>
+                <p className="text-[12px] text-ink-faint">Word for word, exactly as it happened.</p>
               )}
             </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
