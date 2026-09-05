@@ -12,17 +12,29 @@ import { logError } from '@/lib/logger';
 // being built to include every one plus their about/gallery/contact
 // pages - reading and logging the real error now instead of quietly
 // falling back to an empty list is the same fix, applied here too.
+//
+// That logging is what caught the ACTUAL root cause, live: this used to
+// also select `updated_at`, a column businesses has never had (verified
+// against supabase/schema.sql - only created_at exists, and nothing
+// anywhere sets an updated_at on this table). Every single request was
+// failing with a real Postgres "column does not exist" error, which the
+// error-swallowing bug above was hiding - the sitemap had been serving
+// just the 2 static URLs in production this whole time. created_at is
+// real and always populated, so lastModified uses that alone now, rather
+// than adding a genuinely-tracked updated_at column, which would mean
+// touching every write path across the app (settings, services, hours,
+// channels, profile...) just to keep one sitemap hint fresh.
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: businesses, error } = await supabasePublic
     .from('businesses')
-    .select('slug, created_at, updated_at, show_about, show_gallery, show_contact');
+    .select('slug, created_at, show_about, show_gallery, show_contact');
   if (error) logError('sitemap:businesses-query', error);
 
   const businessUrls: MetadataRoute.Sitemap = (businesses ?? []).map((b) => ({
     url: `${SITE_URL}/${b.slug}`,
-    lastModified: b.updated_at ? new Date(b.updated_at) : b.created_at ? new Date(b.created_at) : undefined,
+    lastModified: b.created_at ? new Date(b.created_at) : undefined,
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
@@ -36,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((page): page is string => Boolean(page))
       .map((page) => ({
         url: `${SITE_URL}/${b.slug}/${page}`,
-        lastModified: b.updated_at ? new Date(b.updated_at) : undefined,
+        lastModified: b.created_at ? new Date(b.created_at) : undefined,
         changeFrequency: 'monthly' as const,
         priority: 0.5,
       }))
