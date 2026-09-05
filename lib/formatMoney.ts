@@ -9,8 +9,10 @@
 //
 // Retrofit done: every real call site now goes through this (BillingManager,
 // ServicesManager, ProductsManager, CustomersManager, AdminDashboardBody,
-// BookingForm, the booking API routes, DashboardPreview.tsx's marketing
-// mockup, and both marketing pages).
+// BookingForm, the booking API routes, and both marketing pages).
+// DashboardPreview.tsx (a marketing-page mockup this list used to name) no
+// longer exists in the codebase - removed at some point after this comment
+// was written; not replacing it with anything, just correcting the record.
 const CURRENCY_LOCALE: Record<string, string> = {
   NGN: 'en-NG',
   USD: 'en-US',

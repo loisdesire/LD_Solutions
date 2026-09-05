@@ -9,7 +9,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 - Branded public business pages with services, about, gallery, and contact content
 - Traditional service/date/time booking flow with real-time availability
 - AI receptionist shared across website chat, Telegram, WhatsApp, and Messenger integrations
-- Timezone-aware hours, buffer rules, advance limits, and database-backed overlap protection
+- Timezone-aware hours, buffer rules, advance limits, and database-backed overlap protection, per staff member (automatic assignment to whichever staff is free - no "pick your stylist" step)
 - Paystack customer deposits and payment verification
 - Email confirmations and reminders
 - Customer accounts with cancellation and rescheduling
@@ -47,12 +47,6 @@ npm test        Run the Vitest suite
 npm run build   Type-check and create a production build
 npm start       Serve the production build
 ```
-
-## Important current limitation
-
-Staff accounts and staff-specific availability exist, but the public booking flow does not yet map services to qualified staff or automatically assign a staff member. Until that resource model is completed, simultaneous capacity is enforced at the business level.
-
-The implementation backlog from the codebase audit is tracked in `AUDIT_IMPLEMENTATION_TODO.md`.
 
 ## Deployment
 
