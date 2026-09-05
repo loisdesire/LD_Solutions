@@ -738,7 +738,7 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
     .from('bookings')
     // services!bookings_service_business_fk - see getPopularServices
     // above for why the bare embed is ambiguous.
-    .select('id, business_id, customer_phone, status, start_time, service_id, staff_id, services!bookings_service_business_fk(duration_minutes)')
+    .select('id, business_id, customer_phone, customer_email, status, start_time, service_id, staff_id, services!bookings_service_business_fk(duration_minutes)')
     .eq('business_id', ctx.businessId)
     .eq('customer_phone', ctx.customerPhone)
     .eq('service_id', service.id)
@@ -751,10 +751,45 @@ async function findOwnedBooking(ctx: ToolContext, args: { serviceName: string; d
   return data;
 }
 
-export async function cancelBooking(ctx: ToolContext, args: { serviceName: string; date: string; time: string }) {
+// Anonymous web chat identifies "whose bookings are these" purely by a
+// browser-local session id (ctx.customerPhone === "web:<sessionId>") - no
+// login, no proof, just whichever device the conversation is happening
+// on. That's fine for reading ("what's my next appointment") but not for
+// cancelling or moving someone else's real appointment: a shared family
+// computer, a borrowed phone, or a salon's own front-desk tablet all
+// carry that same session forward, and would let whoever's typing now
+// act on a stranger's booking with zero verification. Confirmed live: a
+// completely fresh "cancel my booking," no name/email/code, cancelled a
+// real customer's real appointment immediately. WhatsApp/Telegram don't
+// have this gap - ctx.customerPhone there is the actual phone number/
+// telegram account the message arrived from, which isn't something a
+// different person can just inherit by using the same device.
+function isUnverifiedWebIdentity(ctx: ToolContext): boolean {
+  return ctx.customerPhone.startsWith('web:');
+}
+
+function contactMatches(confirmContact: string | undefined, existing: { customer_email?: string | null }): boolean {
+  if (!confirmContact) return false;
+  const given = confirmContact.trim().toLowerCase();
+  const onFile = existing.customer_email?.trim().toLowerCase();
+  return Boolean(onFile) && given === onFile;
+}
+
+export async function cancelBooking(
+  ctx: ToolContext,
+  args: { serviceName: string; date: string; time: string; confirmContact?: string }
+) {
   const existing = await findOwnedBooking(ctx, args);
   if (!existing) return { error: 'Could not find a matching booking for that service, date, and time.' };
   if (existing.status === 'cancelled') return { error: 'That booking is already cancelled.' };
+
+  if (isUnverifiedWebIdentity(ctx) && !contactMatches(args.confirmContact, existing)) {
+    return {
+      needs_confirmation: true,
+      instructions:
+        "Before cancelling, ask the customer to confirm the email address the booking was made with, then call this again with that value in confirm_contact. Do not cancel yet - if what they give you doesn't match, tell them plainly it doesn't match this booking and suggest using the manage-booking link from their confirmation email instead.",
+    };
+  }
 
   const { data: rules } = await supabaseAdmin
     .from('booking_rules')
@@ -775,11 +810,22 @@ export async function cancelBooking(ctx: ToolContext, args: { serviceName: strin
 
 export async function rescheduleBooking(
   ctx: ToolContext,
-  args: { serviceName: string; date: string; time: string; newDate: string; newTime: string }
+  args: { serviceName: string; date: string; time: string; newDate: string; newTime: string; confirmContact?: string }
 ) {
   const existing = await findOwnedBooking(ctx, args);
   if (!existing) return { error: 'Could not find a matching booking for that service, date, and time.' };
   if (existing.status === 'cancelled') return { error: 'That booking is already cancelled.' };
+
+  // Same reasoning as cancelBooking's identical check above - moving a
+  // stranger's real appointment to a time that doesn't work for them is
+  // the same class of harm as cancelling it outright.
+  if (isUnverifiedWebIdentity(ctx) && !contactMatches(args.confirmContact, existing)) {
+    return {
+      needs_confirmation: true,
+      instructions:
+        "Before rescheduling, ask the customer to confirm the email address the booking was made with, then call this again with that value in confirm_contact. Do not reschedule yet - if what they give you doesn't match, tell them plainly it doesn't match this booking and suggest using the manage-booking link from their confirmation email instead.",
+    };
+  }
 
   const [timeZone, { data: rules }] = await Promise.all([
     getBusinessTimezone(ctx.businessId),

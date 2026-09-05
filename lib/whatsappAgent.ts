@@ -81,13 +81,18 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'cancel_booking',
       description:
-        "Cancel one of the customer's existing bookings. Identify it by its service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation.",
+        "Cancel one of the customer's existing bookings. Identify it by its service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation. On a web chat (an anonymous browser session, not WhatsApp/Telegram), this may come back asking you to confirm the customer's email before it will actually cancel - see confirm_contact.",
       parameters: {
         type: 'object',
         properties: {
           service_name: { type: 'string' },
           date: { type: 'string', description: 'YYYY-MM-DD, the date of the existing booking' },
           time: { type: 'string', description: '24-hour HH:MM, business local time, of the existing booking' },
+          confirm_contact: {
+            type: 'string',
+            description:
+              'The email address the customer confirms this booking was made with. Only needed on a web chat session when this tool first asks for it (needs_confirmation: true) - never ask for this upfront, only after that happens.',
+          },
         },
         required: ['service_name', 'date', 'time'],
       },
@@ -98,7 +103,7 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     function: {
       name: 'reschedule_booking',
       description:
-        "Move an existing booking to a new date/time. Identify the existing booking by its current service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation.",
+        "Move an existing booking to a new date/time. Identify the existing booking by its current service, date, and time - call find_customer_bookings first if you don't already have these exactly right from this conversation. On a web chat (an anonymous browser session, not WhatsApp/Telegram), this may come back asking you to confirm the customer's email before it will actually reschedule - see confirm_contact.",
       parameters: {
         type: 'object',
         properties: {
@@ -107,6 +112,11 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           time: { type: 'string', description: '24-hour HH:MM, the CURRENT time of the existing booking' },
           new_date: { type: 'string', description: 'YYYY-MM-DD, the new date to move it to' },
           new_time: { type: 'string', description: '24-hour HH:MM, the new time to move it to' },
+          confirm_contact: {
+            type: 'string',
+            description:
+              'The email address the customer confirms this booking was made with. Only needed on a web chat session when this tool first asks for it (needs_confirmation: true) - never ask for this upfront, only after that happens.',
+          },
         },
         required: ['service_name', 'date', 'time', 'new_date', 'new_time'],
       },
@@ -172,6 +182,7 @@ async function executeTool(name: string, args: Record<string, unknown>, ctx: Too
         serviceName: String(args.service_name),
         date: String(args.date),
         time: String(args.time),
+        confirmContact: args.confirm_contact ? String(args.confirm_contact) : undefined,
       });
     case 'reschedule_booking':
       return rescheduleBooking(ctx, {
@@ -180,6 +191,7 @@ async function executeTool(name: string, args: Record<string, unknown>, ctx: Too
         time: String(args.time),
         newDate: String(args.new_date),
         newTime: String(args.new_time),
+        confirmContact: args.confirm_contact ? String(args.confirm_contact) : undefined,
       });
     case 'check_payment':
       return checkPayment(ctx);
@@ -274,6 +286,14 @@ actually confirm the booking.
 Before cancelling or rescheduling anything, always call find_customer_bookings first in that same turn to get
 the current, correct booking id - never reuse an id or time you recall from earlier in the conversation, even
 if you're confident about it. Bookings can change, and re-checking costs nothing.
+On a web chat, cancel_booking/reschedule_booking may come back with needs_confirmation: true instead of actually
+doing it - that means this conversation's identity is just an anonymous browser session, not a verified phone
+number, so anyone on the same device could otherwise cancel or move someone else's real appointment with nothing
+more than "cancel my booking." When that happens, ask the customer to confirm the email address the booking was
+made with, then call the same tool again with that value in confirm_contact - do not tell them it's cancelled or
+rescheduled until the tool actually confirms that, and if the email they give doesn't match, say plainly it
+doesn't match this booking and point them to the manage-booking link in their confirmation email instead of
+retrying blindly.
 When telling the customer a time (from any tool result), always use the exact "when" or "label" string that
 tool gave you, word for word - never calculate, convert, or restate a time yourself.
 find_customer_bookings' "paid" field: true means paid in full, false means payment was required but hasn't come
@@ -288,9 +308,24 @@ again; Paystack needs one to send the receipt.
 When the customer says they've paid (or asks whether it worked), call check_payment. If it says slot_taken, their
 payment succeeded but the hold had already lapsed - apologise plainly, tell them the business has been notified and
 will sort their payment out, and offer the alternative times it gives you.
-Always confirm the service, date, and time back to the customer in plain language before calling create_booking.
+Always confirm the service, date, and time back to the customer in plain language before calling create_booking -
+and "before" means your ENTIRE reply is that confirmation and nothing else, ending with a real question ("shall I
+book that?" or similar). Do not call create_booking in that same reply, even if you already have every detail you
+need and are confident nothing's wrong. Wait for their next message to say yes, THEN call it. This matters most
+exactly when you'd be tempted to skip it - a customer who gives the service, date, time, name, and email all in
+one confident message is the one most likely to have a typo in it (a fat-fingered date, a misheard time, an
+autocorrected email) and least likely to get a chance to catch it if you book on the spot. Confirmed live: this
+safety step was reliably happening when a customer answered questions one at a time, and reliably skipped when
+they gave everything at once - it needs to hold every time, not just when the conversation happens to be slow.
 If asked something you have no info for (address, parking, payment methods, etc.), say so plainly and suggest
 contacting the business directly - never invent details.
+If a booking got started earlier in this conversation but never finished (they gave a name or a time but the
+conversation moved on, or they went quiet before giving an email), and their latest message is a plain, unrelated
+question ("how much is a haircut", "are you open Sunday") - just answer that question. Don't lead with picking the
+old booking back up or asking for what it was still missing; they may not even remember starting it, especially if
+real time has passed. It's fine to mention it's still there once you've answered what they actually just asked,
+briefly and without pressure ("by the way, want to finish that booking from earlier?") - never as the first thing
+in your reply, and never phrased like they owe you a missing detail before you'll answer something new.
 ${biEnabled ? '\nIf asked what\'s popular or recommended, you can call get_popular_services to answer with real booking data instead of guessing.\n' : ''}
 If asked when the business is busiest or quietest (e.g. "when should I avoid coming", "what's a slow day"), call
 get_busy_times rather than guessing - it's real data, not something to estimate from services or hours alone.

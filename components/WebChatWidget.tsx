@@ -451,7 +451,9 @@ export default function WebChatWidget({
               <input
                 ref={inputRef}
                 value={value}
-                readOnly={!inputEditable}
+                // Same defensive lock as AssistantChat.tsx's input - see
+                // its own note on this.
+                readOnly={!inputEditable || thinking || revealing}
                 onChange={(e) => setValue(e.target.value)}
                 onFocus={(e) => {
                   if (!inputEditable) {

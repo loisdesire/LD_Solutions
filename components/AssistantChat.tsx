@@ -535,7 +535,16 @@ export default function AssistantChat({
             </button>
             <input
               value={input}
-              readOnly={!inputEditable}
+              // !inputEditable is the anti-autofill trick (see its own
+              // comment above); loading locks the box while a reply is
+              // in flight - reported live as rapid retyping producing
+              // one garbled, interleaved message instead of separate
+              // ones. Couldn't confirm the exact mechanism (send() already
+              // guards against a second concurrent send while loading),
+              // but locking the input itself removes the possibility
+              // regardless of cause, the same way the send button already
+              // disables during this window.
+              readOnly={!inputEditable || loading}
               onChange={(e) => setInput(e.target.value)}
               onFocus={(e) => {
                 if (!inputEditable) {
