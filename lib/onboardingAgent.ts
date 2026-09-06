@@ -1,6 +1,8 @@
 import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
 import { BUBBLE_SPLIT_MARKER } from './bubbleMarker';
+import { getBusinessTimezone } from './getBusinessTimezone';
+import { todayInTimezone, upcomingDatesTable, weekdayName } from './timezone';
 import type { OnboardingProgress } from './onboardingProgress';
 
 // The guided first-time setup conversation ("scope the dedicated first-time
@@ -24,6 +26,21 @@ export async function runOnboardingAgent(params: {
 }): Promise<string> {
   const { businessId, businessName, history, progress, imageUrl } = params;
   const message = imageUrl ? `${params.message}\n\n[Attached image: ${imageUrl}]` : params.message;
+
+  // MANAGE_TOOLS includes propose_create_reminder/apply_create_reminder,
+  // which needs today's real date and the business timezone to resolve a
+  // relative phrase ("tomorrow at 8am", "6th September") into an exact ISO
+  // datetime - see lib/assistantAgent.ts, which grounds the same tools the
+  // same way. This agent reused MANAGE_TOOLS as-is (see the file comment
+  // above) but never carried over that grounding, so the model had nothing
+  // but its own guess for "today" - confirmed live: it rejected "tomorrow
+  // at 8am" as already past, then insisted the real September 6th was
+  // already in the past too, until the owner corrected it by hand. Same
+  // fix as assistantAgent.ts: hand it the already-correct date/table
+  // instead of leaving it to work out "today" on its own.
+  const timeZone = await getBusinessTimezone(businessId);
+  const today = todayInTimezone(timeZone);
+  const datesTable = upcomingDatesTable(timeZone);
 
   // Per-item signals, not just per-section done/not-done - a live test
   // (screenshot from a real "Testie" signup) plus a full written spec from
@@ -50,6 +67,11 @@ HOURS
 time, entirely by chatting with you instead of filling out a form. This is their first time here, and they don't
 already know what "done" looks like - that's your job to make obvious as you go, not something to assume they'll
 figure out.
+
+Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}). If they ask you to set a reminder
+("remind me to add a cover photo tomorrow", "remind me on the 6th"), work out the real date from here rather than
+guessing - a named weekday or relative phrase resolves against this table, not by hand:
+${datesTable}
 
 ${statusBlock}
 
@@ -192,6 +214,12 @@ OTHER RULES THAT STILL APPLY
   never make it sound like they're stuck or being rushed.
 - This is about ${businessName} only. Nothing here is a scheduling or analytics question - if asked one, say
   briefly that's available from the dashboard once they're set up, and steer back to setup.
+- If they ask for a reminder about something unrelated to this setup checklist ("remind me to call my landlord
+  tomorrow"), that's a real, separate feature (propose_create_reminder / apply_create_reminder), not the automatic
+  dashboard reminder point 4 above describes for outstanding setup items - use an exact ISO datetime resolved
+  against today's date and the table above, never the relative phrase itself, show them the plain-language time it
+  resolved to, and ask them to confirm before calling apply_create_reminder. Mention it's delivered as a push
+  notification checked once a day, not at the exact minute, and requires notifications enabled on their device.
 
 Formatting: plain conversational text. No markdown, no asterisks, no headers. No em dashes - use a
 period, comma, or "and" instead, the kind of plain sentence a person would actually say. Numbered lists are fine
