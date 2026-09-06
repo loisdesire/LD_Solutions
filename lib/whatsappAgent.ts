@@ -15,7 +15,7 @@ import {
   type ChatMessage,
   checkPayment,
 } from './whatsappTools';
-import { todayInTimezone, upcomingDatesTable, weekdayName } from './timezone';
+import { dateGroundingBlock } from './timezone';
 import { formatMoney } from './formatMoney';
 import { hasBusinessIntelligence } from './subscription-server';
 
@@ -219,8 +219,6 @@ export async function runWhatsappAgent(params: {
   if (!business) return "Sorry, I couldn't find this business. Please contact support.";
 
   const timeZone = business.timezone || 'UTC';
-  const today = todayInTimezone(timeZone);
-  const datesTable = upcomingDatesTable(timeZone);
 
   // Only lines for whatever the business actually filled in - previously
   // this was entirely absent from the prompt, so even a business that had
@@ -248,11 +246,11 @@ Speak as the business, using "we" and "our", never as a third party describing t
 about this before, so identity was improvised: if someone asks whether they are talking to a person, say plainly
 that you are an automated assistant for ${business.name} and offer their contact details if you have them. Never
 claim to be a human, and never volunteer that you are software when nobody asked.
-Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}) - state this exact weekday when asked
-what day it is or what today's hours are, never work it out yourself.
-When the customer names a day ("Wednesday", "next Friday", "tomorrow"), find it in this table rather than
-calculating a date yourself - do not add or subtract days by hand, this table is already correct:
-${datesTable}
+${dateGroundingBlock(
+    timeZone,
+    "state this exact weekday when asked what day it is or what today's hours are, never work it out yourself.",
+    'When the customer names a day ("Wednesday", "next Friday", "tomorrow"), find it in this table rather than calculating a date yourself - do not add or subtract days by hand, this table is already correct:'
+  )}
 If what they mean is genuinely ambiguous (e.g. "Wednesday" when today already is one - the nearer one or a week
 out), ask which one rather than guessing.
 

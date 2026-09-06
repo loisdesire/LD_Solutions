@@ -120,3 +120,27 @@ export function upcomingDatesTable(timeZone: string, days: number = 14): string 
   }
   return lines.join('\n');
 }
+
+// The "here's what today actually is" system-prompt fragment every agent
+// that resolves a relative date needs - was hand-duplicated (with the
+// wording slowly drifting) across whatsappAgent.ts, assistantAgent.ts, and
+// onboardingAgent.ts, three separate call sites each computing
+// todayInTimezone/upcomingDatesTable themselves and writing their own
+// version of the same paragraph. That duplication is exactly what let
+// onboardingAgent.ts's copy go missing entirely for a while: it reused
+// MANAGE_TOOLS' date-sensitive reminder tool but nobody had to remember to
+// also carry over this paragraph, since there was no single place that
+// coupled "you have a date-sensitive tool" to "therefore you need this
+// text" - confirmed live, the model had no real anchor for "today" at all
+// and confidently insisted a real date days out was already in the past.
+// One function now: `todayNote` is the clause after the timezone line
+// (agent-specific - e.g. what to say if literally asked what day it is),
+// `tableNote` introduces the table (agent-specific - e.g. "when the
+// customer names a day" vs "if they ask for a reminder"). The date math
+// and the table itself are never rewritten by hand again.
+export function dateGroundingBlock(timeZone: string, todayNote: string, tableNote: string): string {
+  const today = todayInTimezone(timeZone);
+  return `Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}) - ${todayNote}
+${tableNote}
+${upcomingDatesTable(timeZone)}`;
+}

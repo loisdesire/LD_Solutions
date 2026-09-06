@@ -2,7 +2,7 @@ import { runToolAgent, stripMarkdown, type AgentMessage } from './agentLoop';
 import { MANAGE_TOOLS, executeManageTool } from './manageAgent';
 import { BUBBLE_SPLIT_MARKER } from './bubbleMarker';
 import { getBusinessTimezone } from './getBusinessTimezone';
-import { todayInTimezone, upcomingDatesTable, weekdayName } from './timezone';
+import { dateGroundingBlock } from './timezone';
 import type { OnboardingProgress } from './onboardingProgress';
 
 // The guided first-time setup conversation ("scope the dedicated first-time
@@ -36,11 +36,10 @@ export async function runOnboardingAgent(params: {
   // but its own guess for "today" - confirmed live: it rejected "tomorrow
   // at 8am" as already past, then insisted the real September 6th was
   // already in the past too, until the owner corrected it by hand. Same
-  // fix as assistantAgent.ts: hand it the already-correct date/table
-  // instead of leaving it to work out "today" on its own.
+  // fix as assistantAgent.ts: hand it the already-correct date/table via
+  // the now-shared dateGroundingBlock (lib/timezone.ts) instead of leaving
+  // it to work out "today" on its own.
   const timeZone = await getBusinessTimezone(businessId);
-  const today = todayInTimezone(timeZone);
-  const datesTable = upcomingDatesTable(timeZone);
 
   // Per-item signals, not just per-section done/not-done - a live test
   // (screenshot from a real "Testie" signup) plus a full written spec from
@@ -68,10 +67,11 @@ time, entirely by chatting with you instead of filling out a form. This is their
 already know what "done" looks like - that's your job to make obvious as you go, not something to assume they'll
 figure out.
 
-Today is ${weekdayName(today)}, ${today} (business timezone: ${timeZone}). If they ask you to set a reminder
-("remind me to add a cover photo tomorrow", "remind me on the 6th"), work out the real date from here rather than
-guessing - a named weekday or relative phrase resolves against this table, not by hand:
-${datesTable}
+${dateGroundingBlock(
+    timeZone,
+    'if they ask you to set a reminder ("remind me to add a cover photo tomorrow", "remind me on the 6th"), work out the real date from here rather than guessing.',
+    'A named weekday or relative phrase resolves against this table, not by hand:'
+  )}
 
 ${statusBlock}
 
