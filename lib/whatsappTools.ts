@@ -7,7 +7,7 @@ import { sendEmail } from './email';
 import { renderEmail } from './emailTemplate';
 import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
-import { initializePaystackTransaction, verifyPaystackTransaction } from './paystack';
+import { initializeSplitTransaction, verifyTransaction } from './flutterwave';
 import { formatMoney } from './formatMoney';
 import { notifyStaffOfNewBooking } from './pushNotify';
 import { pickAvailableStaffId } from './assignStaff';
@@ -190,7 +190,7 @@ export async function createBooking(
   let [{ data: business }, { data: rules }] = await Promise.all([
     supabaseAdmin
       .from('businesses')
-      .select('name, slug, timezone, accent_color, logo_url, paystack_public_key, paystack_secret_key')
+      .select('name, slug, timezone, accent_color, logo_url, flw_subaccount_id')
       .eq('id', ctx.businessId)
       .single(),
     supabaseAdmin.from('booking_rules').select('require_payment, deposit_percentage').eq('business_id', ctx.businessId).maybeSingle(),
@@ -205,7 +205,7 @@ export async function createBooking(
   // reads as falsy either way - exactly the safe "not required" default.
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('name, slug, timezone, accent_color, logo_url').eq('id', ctx.businessId).single();
-    if (fallback.data) business = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null };
+    if (fallback.data) business = { ...fallback.data, flw_subaccount_id: null };
   }
 
   const timeZone = business?.timezone || 'UTC';
@@ -218,25 +218,21 @@ export async function createBooking(
   // checkout inside a chat conversation to collect that payment, so the
   // fix isn't to collect it here - it's to never let this tool create an
   // unpaid booking for a service that requires one. Gated on
-  // paystack_public_key specifically (not just the require_payment
-  // toggle) to match the exact same condition the public booking page
-  // uses to decide whether payment is actually active - a business that
-  // switched the toggle on but never connected Paystack isn't actually
+  // flw_subaccount_id specifically (not just the require_payment toggle)
+  // to match the exact same condition the public booking page uses to
+  // decide whether payment is actually active - a business that switched
+  // the toggle on but never linked a payout account isn't actually
   // collecting payment anywhere, on this channel or the web one.
   // Paid services used to be refused outright here with a "book it on the
   // website" link - correct at the time (a chat has no popup checkout, and
   // letting this tool book a paid service free was the actual bug) but a
   // dead end in the conversation. Now the slot is held as 'pending_payment'
-  // and the customer gets a hosted Paystack link they can open from the
+  // and the customer gets a hosted Flutterwave link they can open from the
   // chat. The hold is what makes this safe: it reserves the slot via the
   // same no_overlapping_bookings constraint a confirmed booking uses, so
   // nobody can take it while they pay, and it self-releases if they don't
   // (see expireStalePaymentHolds in getAvailableSlots).
-  const paymentRequired = Boolean(rules?.require_payment && service.price && business?.paystack_public_key);
-
-  if (paymentRequired && !business?.paystack_secret_key) {
-    return { error: "This business hasn't finished setting up payments, so this service can't be booked here yet. Tell the customer to contact them directly." };
-  }
+  const paymentRequired = Boolean(rules?.require_payment && service.price && business?.flw_subaccount_id);
 
   // WhatsApp/Telegram's ctx.customerPhone IS a real, reachable contact (a
   // real number, a real chat id) even when the customer never mentions it -
@@ -256,7 +252,7 @@ export async function createBooking(
     return {
       needs_email: true,
       instructions: paymentRequired
-        ? 'This service needs paying for before it can be booked, and Paystack requires an email address to send the receipt to. Ask the customer for their email, then call this tool again with it.'
+        ? 'This service needs paying for before it can be booked, and an email address is required to send the receipt to. Ask the customer for their email, then call this tool again with it.'
         : "This conversation has no real way to reach this customer back - not a phone number, not a verified account. Ask for their email address so the business can actually contact them about this booking, then call this tool again with it.",
     };
   }
@@ -315,13 +311,13 @@ export async function createBooking(
     const amountNaira = Math.round(service.price! * (depositPct / 100));
     const reference = `chat_${booking.id}_${randomUUID().slice(0, 8)}`;
 
-    const init = await initializePaystackTransaction({
-      secretKey: business!.paystack_secret_key!,
+    const init = await initializeSplitTransaction({
+      subaccountId: business!.flw_subaccount_id!,
       email: args.customerEmail!,
-      amountKobo: amountNaira * 100,
-      reference,
+      amountNaira,
+      txRef: reference,
       bookingId: booking.id,
-      callbackUrl: business?.slug ? `${SITE_URL}/${business.slug}` : undefined,
+      redirectUrl: business?.slug ? `${SITE_URL}/${business.slug}` : undefined,
     });
 
     if (!init) {
@@ -340,12 +336,12 @@ export async function createBooking(
       when: formatLocalDateTime(booking.start_time, timeZone),
       amount_naira: amountNaira,
       is_deposit: depositPct < 100,
-      payment_url: init.authorizationUrl,
+      payment_url: init.checkoutUrl,
       holds_slot_for_minutes: 15,
       instructions:
         `Do NOT say the booking is confirmed - it is not. Tell the customer their ${service.name} slot at ` +
         `${formatLocalDateTime(booking.start_time, timeZone)} is held for 15 minutes, give them this exact link to pay ` +
-        `${formatMoney(amountNaira)}: ${init.authorizationUrl} - and tell them to message you once they have paid so you can confirm it. ` +
+        `${formatMoney(amountNaira)}: ${init.checkoutUrl} - and tell them to message you once they have paid so you can confirm it. ` +
         `If they don't pay within 15 minutes the slot is released.`,
     };
   }
@@ -466,10 +462,9 @@ export async function getBusyTimes(businessId: string) {
 }
 
 // Confirms a held booking once the customer says they've paid. This is the
-// no-setup path: the Paystack webhook is faster and needs no prompting,
-// but it only fires for businesses that have pasted the webhook URL into
-// their own Paystack dashboard, and many won't have. Verifying on demand
-// works for everyone.
+// no-setup path: the Flutterwave webhook is faster and needs no
+// prompting, but a webhook can be slow to arrive or (rarely) not arrive
+// at all. Verifying on demand works regardless, every time.
 //
 // Shares confirmPaidBooking with the webhook so both routes apply the
 // identical amount check and idempotency rule.
@@ -484,7 +479,7 @@ export async function checkPayment(ctx: ToolContext) {
   // booking found" forever, with confirmPaidBooking's own real handling
   // for exactly this case (mark paid_slot_lost, offer alternatives, never
   // ask them to pay twice) never even reached. Confirmed live: a real
-  // Paystack payment went completely unreconciled and the model, with no
+  // payment went completely unreconciled and the model, with no
   // real tool result to work from, started improvising - telling the
   // customer their payment "was for a test transaction" and to pay again.
   // Cancelled rows are now included too, but only ones with a
@@ -547,7 +542,7 @@ export async function checkPayment(ctx: ToolContext) {
   if (result.reason === 'not_paid') {
     return {
       confirmed: false,
-      instructions: "Paystack hasn't recorded that payment yet. Tell the customer it may take a moment, and to try the link again if they haven't completed it.",
+      instructions: "That payment hasn't been recorded yet. Tell the customer it may take a moment, and to try the link again if they haven't completed it.",
     };
   }
   if (result.reason === 'slot_taken') {
@@ -587,22 +582,22 @@ export async function confirmPaidBooking(
   }
 
   const [{ data: business }, { data: rules }, { data: service }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('paystack_secret_key').eq('id', booking.business_id).single(),
+    supabaseAdmin.from('businesses').select('flw_subaccount_id').eq('id', booking.business_id).single(),
     supabaseAdmin.from('booking_rules').select('deposit_percentage').eq('business_id', booking.business_id).maybeSingle(),
     supabaseAdmin.from('services').select('price, name').eq('id', booking.service_id).maybeSingle(),
   ]);
 
-  if (!business?.paystack_secret_key) return { confirmed: false, reason: 'not_configured' };
+  if (!business?.flw_subaccount_id) return { confirmed: false, reason: 'not_configured' };
 
-  const verified = await verifyPaystackTransaction(business.paystack_secret_key, reference);
-  if (!verified || verified.status !== 'success') return { confirmed: false, reason: 'not_paid' };
+  const verified = await verifyTransaction(reference);
+  if (!verified || verified.status !== 'successful') return { confirmed: false, reason: 'not_paid' };
 
   // Never trust an amount reported to us - recompute what was owed and
-  // compare against what Paystack says actually settled.
-  const expectedKobo = Math.round((service?.price ?? 0) * ((rules?.deposit_percentage ?? 100) / 100)) * 100;
-  if (Math.abs(verified.amount - expectedKobo) > 200) return { confirmed: false, reason: 'amount_mismatch' };
+  // compare against what Flutterwave says actually settled.
+  const expectedNaira = Math.round((service?.price ?? 0) * ((rules?.deposit_percentage ?? 100) / 100));
+  if (Math.abs(verified.amountNaira - expectedNaira) > 2) return { confirmed: false, reason: 'amount_mismatch' };
 
-  const amountPaid = Math.round(verified.amount / 100);
+  const amountPaid = Math.round(verified.amountNaira);
 
   // .select() added - was update().eq('status','pending_payment') with no
   // select, so 0 rows matching that WHERE clause came back as `error: null`

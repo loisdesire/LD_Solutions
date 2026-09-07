@@ -21,12 +21,12 @@ export const metadata: Metadata = {
   // that dominate the generic "AI receptionist" search results.
   title: 'Vanova | AI Receptionist for Nigerian Appointment Businesses',
   description:
-    'Your customers ask for a time, the AI checks real availability and books it - in Naira, on Paystack. Live on your website and Telegram. Every booking lands on one dashboard. 14 days free.',
+    'Your customers ask for a time, the AI checks real availability and books it - in Naira, via Flutterwave. Live on your website and Telegram. Every booking lands on one dashboard. 14 days free.',
   alternates: { canonical: '/' },
   openGraph: {
     title: 'Vanova | AI Receptionist for Nigerian Appointment Businesses',
     description:
-      'Your customers ask for a time, the AI books it - in Naira, on Paystack. Every channel, one dashboard. 14 days free.',
+      'Your customers ask for a time, the AI books it - in Naira, via Flutterwave. Every channel, one dashboard. 14 days free.',
     url: SITE_URL,
     type: 'website',
   },
@@ -152,7 +152,7 @@ const CORE_INCLUDES = [
   'Unlimited bookings and services',
   'One dashboard for every appointment',
   'Automatic email confirmations and reminders',
-  'Take deposits and payments with Paystack',
+  'Take deposits and payments - just link a bank account',
   'Your own branded booking page and custom domain',
   'Team accounts for your staff',
 ];

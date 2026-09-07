@@ -415,9 +415,9 @@ export async function proposeToggleSetting(businessId: string, args: { setting: 
   const enabled = Boolean(args.enabled);
 
   if (args.setting === 'payment' && enabled) {
-    const { data: business } = await supabaseAdmin.from('businesses').select('paystack_secret_key').eq('id', businessId).maybeSingle();
-    if (!business?.paystack_secret_key) {
-      return { error: "Payments can't be turned on yet - no Paystack account is connected. That has to be done from Settings > Payments first, this chat can't paste in a secret key." };
+    const { data: business } = await supabaseAdmin.from('businesses').select('flw_subaccount_id').eq('id', businessId).maybeSingle();
+    if (!business?.flw_subaccount_id) {
+      return { error: "Payments can't be turned on yet - no payout account is linked. That has to be done from Settings > Payments first, this chat can't link a bank account for you." };
     }
   }
 
@@ -434,8 +434,8 @@ export async function applyToggleSetting(businessId: string, args: { setting: un
   const column = TOGGLE_COLUMN[args.setting];
 
   if (args.setting === 'payment' && enabled) {
-    const { data: business } = await supabaseAdmin.from('businesses').select('paystack_secret_key').eq('id', businessId).maybeSingle();
-    if (!business?.paystack_secret_key) return { error: 'No Paystack account connected - cannot turn payments on.' };
+    const { data: business } = await supabaseAdmin.from('businesses').select('flw_subaccount_id').eq('id', businessId).maybeSingle();
+    if (!business?.flw_subaccount_id) return { error: 'No payout account linked - cannot turn payments on.' };
   }
 
   const query =

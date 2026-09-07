@@ -22,9 +22,10 @@ type Step = 'service' | 'datetime' | 'details' | 'confirmed';
 
 declare global {
   interface Window {
-    PaystackPop?: {
-      setup: (opts: Record<string, unknown>) => { openIframe: () => void };
-    };
+    // Flutterwave's inline checkout - a global function the checkout.js
+    // script attaches, same shape/role Paystack's PaystackPop used to
+    // fill (opens a modal on this page, never a full navigate-away).
+    FlutterwaveCheckout?: (opts: Record<string, unknown>) => void;
   }
 }
 
@@ -93,7 +94,7 @@ export default function BookingForm({
   maxAdvanceDays,
   requirePayment = false,
   depositPercentage = 100,
-  paystackPublicKey,
+  flwSubaccountId,
   timezone,
   cancellationWindowHours = 24,
 }: {
@@ -104,7 +105,7 @@ export default function BookingForm({
   maxAdvanceDays: number;
   requirePayment?: boolean;
   depositPercentage?: number;
-  paystackPublicKey?: string | null;
+  flwSubaccountId?: string | null;
   timezone?: string;
   cancellationWindowHours?: number;
 }) {
@@ -130,7 +131,7 @@ export default function BookingForm({
   // has been sent to {email}" unconditionally, even though sendEmail is
   // fire-and-await but its result was discarded server-side.
   const [emailSent, setEmailSent] = useState(false);
-  const [paystackReady, setPaystackReady] = useState(false);
+  const [flutterwaveReady, setFlutterwaveReady] = useState(false);
   // Distinguishes "this day is genuinely fully booked" from "we couldn't
   // load availability" - before this, a network failure or a 429 rendered
   // as "No openings on this day", telling the customer the business was
@@ -143,7 +144,7 @@ export default function BookingForm({
   // Only a service with a real price can actually require payment - a
   // service with no price set (price is nullable) has nothing to charge,
   // so this business's toggle can't apply to it no matter what.
-  const paymentActive = requirePayment && Boolean(selectedService?.price) && Boolean(paystackPublicKey);
+  const paymentActive = requirePayment && Boolean(selectedService?.price) && Boolean(flwSubaccountId);
   const amountDue = paymentActive ? Math.round(selectedService!.price! * (depositPercentage / 100)) : 0;
 
   // A short zone label ("WAT", "GMT+1") rather than the raw IANA string -
@@ -176,16 +177,16 @@ export default function BookingForm({
 
   useEffect(() => {
     if (!requirePayment) return;
-    if (window.PaystackPop) {
-      setPaystackReady(true);
+    if (window.FlutterwaveCheckout) {
+      setFlutterwaveReady(true);
       return;
     }
-    if (document.getElementById('paystack-inline-js')) return;
+    if (document.getElementById('flutterwave-checkout-js')) return;
     const script = document.createElement('script');
-    script.id = 'paystack-inline-js';
-    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.id = 'flutterwave-checkout-js';
+    script.src = 'https://checkout.flutterwave.com/v3.js';
     script.async = true;
-    script.onload = () => setPaystackReady(true);
+    script.onload = () => setFlutterwaveReady(true);
     document.body.appendChild(script);
   }, [requirePayment]);
 
@@ -322,33 +323,46 @@ export default function BookingForm({
     // creates the booking. A cancelled/failed payment just returns to the
     // form with nothing booked and nothing charged.
     if (paymentActive) {
-      if (!window.PaystackPop) {
+      if (!window.FlutterwaveCheckout) {
         setErrorMessage(
           "The payment window couldn't load. Check your connection (or any ad blocker) and try again. Nothing has been charged."
         );
         setStatus('error');
         return;
       }
-      window.PaystackPop.setup({
-        key: paystackPublicKey,
-        email: email || 'customer@example.com',
-        amount: amountDue * 100, // kobo
+      // Flutterwave's inline checkout needs a tx_ref supplied upfront
+      // (unlike Paystack's, which minted its own reference and handed it
+      // back) - generated here, then reused as the exact string the
+      // server independently verifies against Flutterwave with
+      // (app/api/bookings/route.ts), same "never trust what the client
+      // reports paid" rule the old Paystack flow already followed.
+      const txRef = `web_${crypto.randomUUID()}`;
+      window.FlutterwaveCheckout({
+        public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY,
+        tx_ref: txRef,
+        amount: amountDue,
         currency: 'NGN',
-        metadata: { businessId, serviceId: selectedService.id, customerName: name },
+        customer: { email: email || 'customer@example.com', name },
+        // Splits the payment straight to this business's own linked
+        // account - see lib/flutterwave.ts and supabase/schema.sql's
+        // "Payments (Flutterwave)" section for the full reasoning.
+        subaccounts: [{ id: flwSubaccountId }],
+        customizations: { title: businessName },
+        meta: { businessId, serviceId: selectedService.id },
         // A non-async callback calling an async function: any rejection
         // here is unhandled and silently strands a PAID customer with a
         // spinning button. createBooking now handles its own failures,
         // and this .catch is the belt-and-braces backstop.
-        callback: (response: { reference: string }) => {
-          createBooking(response.reference).catch(() => {
+        callback: () => {
+          createBooking(txRef).catch(() => {
             setErrorMessage(PAYMENT_TAKEN_FAILURE);
             setStatus('error');
           });
         },
-        onClose: () => {
+        onclose: () => {
           setStatus('idle');
         },
-      }).openIframe();
+      });
       return;
     }
 
@@ -874,12 +888,12 @@ export default function BookingForm({
                 </span>
               </div>
               {/* Trimmed further - "(card or bank transfer)" was detail
-                  Paystack's own checkout screen already shows a breath
+                  Flutterwave's own checkout screen already shows a breath
                   later; cutting it left room for the balance and
                   cancellation facts to read as two short sentences
                   instead of one that ran on. */}
               <p className="text-ink-faint text-[13px] mt-1.5 leading-relaxed">
-                Paid via Paystack.
+                Paid via Flutterwave.
                 {depositPercentage < 100 && selectedService.price != null && (
                   <> {formatMoney(selectedService.price - amountDue)} due at your visit.</>
                 )}
@@ -891,7 +905,7 @@ export default function BookingForm({
 
           {/* No payment in play here, so there's no box for a cancellation
               note to live inside - still worth the one line on its own,
-              just without the deposit/Paystack text that only applies when
+              just without the deposit/payment text that only applies when
               money's actually moving. */}
           {!paymentActive && (
             <p className="text-ink-faint text-[13px] text-center mb-6 leading-relaxed">
@@ -910,7 +924,7 @@ export default function BookingForm({
 
           <button
             type="submit"
-            disabled={status === 'saving' || (paymentActive && !paystackReady)}
+            disabled={status === 'saving' || (paymentActive && !flutterwaveReady)}
             style={{ background: 'var(--accent)' }}
             className="w-full py-3.5 text-[14px] font-semibold text-accent-contrast rounded-full transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
           >

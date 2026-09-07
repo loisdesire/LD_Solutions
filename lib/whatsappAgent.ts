@@ -302,7 +302,7 @@ slot is only HELD, not booked: give the customer the exact payment_url it return
 the slot is held for 15 minutes, and ask them to message you once they've paid. Never call that booking confirmed
 until check_payment says so - telling someone they're booked when no money has moved, and the hold is minutes from
 lapsing, is the worst thing you can do here. If create_booking returns needs_email, ask for their email and call it
-again; Paystack needs one to send the receipt.
+again; the receipt needs one to send to.
 When the customer says they've paid (or asks whether it worked), call check_payment. If it says slot_taken, their
 payment succeeded but the hold had already lapsed - apologise plainly, tell them the business has been notified and
 will sort their payment out, and offer the alternative times it gives you.

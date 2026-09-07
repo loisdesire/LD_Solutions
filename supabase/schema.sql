@@ -439,10 +439,22 @@ alter table bookings add column if not exists reminder_sent_at timestamptz;
 alter table bookings add column if not exists customer_telegram_username text;
 
 -- ============================================
--- Payments (Paystack) - each business connects its own Paystack account
--- (same self-serve pattern as Telegram/WhatsApp: they paste their own
--- keys in Settings), so a customer's payment settles straight to that
--- business's own account. The platform never touches or splits the money.
+-- Payments (Flutterwave) - originally Paystack, replaced entirely (not
+-- run alongside it): Paystack's own merchant verification stalled for
+-- over two weeks with no way through it, which blocks every business on
+-- the platform the same way, not just one - a structural reason to move,
+-- not a preference. Nobody had a live Paystack account connected when
+-- this migration landed, so this is a clean cutover: the two Paystack
+-- columns are dropped outright below rather than kept alongside new ones.
+--
+-- Model: each business links their own bank account (account number +
+-- bank), never a Flutterwave login of their own - Vanova's own verified
+-- Flutterwave account creates a Subaccount on their behalf via the API
+-- (lib/flutterwave.ts createSubaccount) and every deposit is a Split
+-- Payment to it. That means Vanova - not the individual business - is
+-- the one responsible for vetting who gets a subaccount and absorbs any
+-- dispute/chargeback risk; a deliberate tradeoff for removing the
+-- per-business verification wait entirely, not an oversight.
 -- ============================================
 
 -- Toggle + how much of the service price is due upfront. null/100 means
@@ -451,12 +463,26 @@ alter table bookings add column if not exists customer_telegram_username text;
 alter table booking_rules add column if not exists require_payment boolean not null default false;
 alter table booking_rules add column if not exists deposit_percentage integer;
 
-alter table businesses add column if not exists paystack_public_key text;
-alter table businesses add column if not exists paystack_secret_key text;
+alter table businesses drop column if exists paystack_public_key;
+alter table businesses drop column if exists paystack_secret_key;
+
+-- flw_subaccount_id is the one that actually matters for taking a
+-- payment (passed as subaccounts[].id on every split transaction) - the
+-- other three exist so Settings can show what's connected without a
+-- round trip to Flutterwave, and so a business can be reconnected/edited
+-- without re-typing everything. flw_account_name is Flutterwave's own
+-- resolved account-holder name (from the bank-account-resolve step, see
+-- lib/flutterwave.ts resolveBankAccount) - shown back to the owner to
+-- confirm before saving, the same reason a bank transfer app shows you
+-- who you're actually about to pay.
+alter table businesses add column if not exists flw_subaccount_id text;
+alter table businesses add column if not exists flw_bank_code text;
+alter table businesses add column if not exists flw_account_number text;
+alter table businesses add column if not exists flw_account_name text;
 
 -- Set only after the booking route has independently verified the
--- payment_reference against Paystack's own API (never trusted from the
--- client) - payment_status is null for every booking where payment
+-- payment_reference against Flutterwave's own API (never trusted from
+-- the client) - payment_status is null for every booking where payment
 -- wasn't required, not just the unpaid ones.
 alter table bookings add column if not exists payment_status text;
 alter table bookings add column if not exists payment_reference text;

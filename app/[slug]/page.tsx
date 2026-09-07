@@ -81,10 +81,10 @@ export default async function BusinessBookingPage({
     .maybeSingle();
 
   const maxAdvanceDays = rules?.max_advance_days ?? 30;
-  // Payment only actually applies if the business also finished connecting
-  // Paystack - a business that flips the toggle on but never pastes a
-  // public key shouldn't silently break booking for every customer.
-  const requirePayment = Boolean(rules?.require_payment && business.paystack_public_key);
+  // Payment only actually applies if the business also finished linking a
+  // payout account - a business that flips the toggle on but never links
+  // one shouldn't silently break booking for every customer.
+  const requirePayment = Boolean(rules?.require_payment && business.flw_subaccount_id);
   const { showAbout, showGallery, showContact } = getSiteContentFlags(business);
   const acceptingBookings = await canAcceptBookings(business.id);
 
@@ -296,7 +296,7 @@ export default async function BusinessBookingPage({
             maxAdvanceDays={maxAdvanceDays}
             requirePayment={requirePayment}
             depositPercentage={rules?.deposit_percentage ?? 100}
-            paystackPublicKey={business.paystack_public_key}
+            flwSubaccountId={business.flw_subaccount_id}
             timezone={business.timezone || 'UTC'}
             cancellationWindowHours={rules?.cancellation_window_hours ?? 24}
           />

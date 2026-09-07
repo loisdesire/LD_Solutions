@@ -41,9 +41,13 @@ export default async function SettingsPage({
         // the anon client, and this text is private, staff-only context for
         // the AI receptionist's own prompt (see lib/whatsappAgent.ts),
         // never meant to be readable by anyone loading a business's page.
-        // Same reasoning custom_domain/paystack_secret_key already follow
-        // here rather than living in that shared loader.
-        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, paystack_public_key, paystack_secret_key, custom_domain, ai_context'
+        // Same reasoning custom_domain follows here rather than living in
+        // that shared loader. flw_subaccount_id/flw_bank_code/
+        // flw_account_number aren't secret the way a Paystack key was
+        // (they're a bank routing destination, not a credential), but kept
+        // out of the public loader anyway since only this settings page
+        // has any use for them.
+        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, flw_subaccount_id, flw_bank_code, flw_account_number, flw_account_name, custom_domain, ai_context'
       )
       .eq('id', business.id)
       .single(),
@@ -70,7 +74,17 @@ export default async function SettingsPage({
       .select('about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact')
       .eq('id', business.id)
       .single();
-    if (fallback.data) bizRow = { ...fallback.data, paystack_public_key: null, paystack_secret_key: null, custom_domain: null, ai_context: null };
+    if (fallback.data) {
+      bizRow = {
+        ...fallback.data,
+        flw_subaccount_id: null,
+        flw_bank_code: null,
+        flw_account_number: null,
+        flw_account_name: null,
+        custom_domain: null,
+        ai_context: null,
+      };
+    }
   }
 
   // If even the fallback came back empty, the forms below will render
@@ -152,21 +166,22 @@ export default async function SettingsPage({
             ),
           },
           {
-            // Split out of "Booking rules and payments" - a live Paystack
-            // secret key used to share one Save button with a buffer-time
+            // Split out of "Booking rules and payments" - a live payment
+            // secret used to share one Save button with a buffer-time
             // number field and a Zapier URL. Money handling gets its own
             // section and its own save action now.
             key: 'payments',
             label: 'Payments',
-            description: 'Take a deposit or full payment at booking time, and connect Paystack.',
+            description: 'Take a deposit or full payment at booking time, and link a payout account.',
             content: (
               <PaymentsManager
                 slug={slug}
                 businessId={business.id}
                 initialRequirePayment={rules?.require_payment ?? false}
                 initialDepositPercentage={rules?.deposit_percentage ?? null}
-                initialPaystackPublicKey={bizRow?.paystack_public_key ?? null}
-                initialPaystackSecretKey={bizRow?.paystack_secret_key ?? null}
+                initialAccountName={bizRow?.flw_account_name ?? null}
+                initialBankCode={bizRow?.flw_bank_code ?? null}
+                initialAccountNumber={bizRow?.flw_account_number ?? null}
               />
             ),
           },

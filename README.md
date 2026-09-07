@@ -10,7 +10,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 - Traditional service/date/time booking flow with real-time availability
 - AI receptionist shared across website chat, Telegram, WhatsApp, and Messenger integrations
 - Timezone-aware hours, buffer rules, advance limits, and database-backed overlap protection, per staff member (automatic assignment to whichever staff is free - no "pick your stylist" step)
-- Paystack customer deposits and payment verification
+- Flutterwave customer deposits and payment verification - a business links a bank account, never a payment-provider account of their own; Vanova's own Flutterwave account splits every payment straight to it
 - Email confirmations and reminders
 - Customer accounts with cancellation and rescheduling
 - Owner/staff dashboard, calendar, customers, services, hours, and invitations
@@ -24,8 +24,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 - TypeScript and Tailwind CSS
 - Supabase Auth, Postgres, Storage, and Row Level Security
 - OpenAI for conversational agents
-- Paystack for booking payments
-- Flutterwave for platform subscriptions
+- Flutterwave for both booking payments (split to each business's linked bank account) and platform subscriptions
 - Vitest for automated tests
 
 ## Local setup
@@ -33,7 +32,7 @@ Each tenant is identified by a URL slug (`/[slug]`) and can also connect a custo
 1. Install dependencies with `npm install`.
 2. Create a Supabase project.
 3. Apply `supabase/schema.sql` to a new database. For an existing deployment, review and apply only migrations not already present.
-4. Copy `.env.example` to `.env.local` and provide the required credentials. Supabase, `NEXT_PUBLIC_SITE_URL`, OpenAI, Resend, and `CRON_SECRET` are required; Flutterwave is required to accept real subscription payments; Telegram, WhatsApp/Messenger, and web push are each independently optional — the app runs without them, just without that channel or notification.
+4. Copy `.env.example` to `.env.local` and provide the required credentials. Supabase, `NEXT_PUBLIC_SITE_URL`, OpenAI, Resend, and `CRON_SECRET` are required; Flutterwave is required to accept real subscription payments or customer deposits (a business can still run on Vanova with neither - "pay at appointment" needs no payment provider at all); Telegram, WhatsApp/Messenger, and web push are each independently optional — the app runs without them, just without that channel or notification.
 5. Start the development server with `npm run dev`.
 6. Visit `http://localhost:3000/signup` to create a business.
 
@@ -52,7 +51,6 @@ npm start       Serve the production build
 
 The app supports Vercel and other Node.js hosts. Configure `NEXT_PUBLIC_SITE_URL` with the canonical production URL, apply all database migrations, set provider webhook URLs and secrets, and use a shared rate-limit store before scaling beyond a single process. See `.env.example` for the full list of environment variables, which are required, and what each one is for. Webhook endpoints to register with each provider once its credentials are set:
 
-- Flutterwave: `/api/webhooks/flutterwave`
-- Paystack: `/api/webhooks/paystack`
+- Flutterwave: `/api/webhooks/flutterwave` (handles both subscription billing and booking-deposit confirmations)
 - Telegram: registered automatically per business from Settings, using `TELEGRAM_WEBHOOK_SECRET`
 - Meta (WhatsApp/Messenger): `/api/meta/webhook` and `/api/messenger/webhook`, verified with `META_WEBHOOK_VERIFY_TOKEN`

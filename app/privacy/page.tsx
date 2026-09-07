@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'August 31, 2026';
+const LAST_UPDATED = 'September 6, 2026';
 
 // Grounded in what the app actually does - every claim below is checked
 // against the real data flows in this codebase (Supabase for storage/
-// auth, Resend for email, OpenAI for the AI receptionist, Paystack for
-// customer payments, Flutterwave for platform billing, Telegram/Meta for
-// the optional chat channels) rather than generic boilerplate. Contact
+// auth, Resend for email, OpenAI for the AI receptionist, Flutterwave for
+// both customer payments and platform billing, Telegram/Meta for the
+// optional chat channels) rather than generic boilerplate. Contact
 // email and jurisdiction are real, confirmed with the business owner.
 // No registered legal entity/address yet - Vanova Hub isn't incorporated
 // as of this writing, so this deliberately doesn't claim one; add those
@@ -51,14 +51,15 @@ export default function PrivacyPage() {
             <strong>From a business owner:</strong> your name, email address, and password (handled by our
             authentication provider, Supabase - we never see or store your raw password), your business profile
             (business name, description, logo, cover photo, contact details, opening hours), and anything you
-            connect on purpose: a Paystack account for taking payments, a Telegram bot, a WhatsApp Business number,
-            or a Facebook Page for Messenger.
+            connect on purpose: a bank account for taking payments (verified with, and paid out through,
+            Flutterwave - see "How it's used" below for what that means), a Telegram bot, a WhatsApp Business
+            number, or a Facebook Page for Messenger.
           </p>
           <p>
             <strong>From a customer booking an appointment:</strong> your name, and whichever contact method you
             book through - phone number, email address, or your Telegram/WhatsApp/Messenger identifier - plus the
-            service and time you booked. If the business requires payment to confirm, your payment is handled
-            entirely by Paystack; we never receive or store your card details.
+            service and time you booked. If the business requires payment to confirm, your payment is handled by
+            Flutterwave; we never receive or store your card details.
           </p>
           <p>
             <strong>From anyone using the AI chat</strong> on a business's booking page or through Telegram/WhatsApp/
@@ -69,7 +70,7 @@ export default function PrivacyPage() {
           <ul>
             <li>To run the actual product: showing your booking page, checking availability, confirming appointments, and sending confirmation emails.</li>
             <li>To power the AI receptionist - your messages are sent to our AI provider (OpenAI) to generate a reply; they are not used to train OpenAI's models on our current arrangement.</li>
-            <li>To process payments - handled by Paystack (for a business's customer payments) or Flutterwave (for a business's own subscription to Vanova). Neither we nor the other of those two providers ever sees your full card number.</li>
+            <li>To process payments - handled by Flutterwave, whether it's a customer paying a business or a business paying its own Vanova subscription. A customer's payment to a business runs through Vanova's own Flutterwave account (split automatically to that business's linked bank account, never held by us) rather than an account the business controls directly - see the Terms of Service for what that means for who's responsible for it. We never see your full card number.</li>
             <li>To send transactional email (booking confirmations, reminders, staff invites) through Resend.</li>
             <li>To improve reliability and fix problems - basic error logging, without which we can't tell when something is actually broken for you.</li>
           </ul>
@@ -81,8 +82,7 @@ export default function PrivacyPage() {
             <li><strong>Supabase</strong> - database hosting and authentication for every account and booking.</li>
             <li><strong>OpenAI</strong> - powers the AI receptionist's replies.</li>
             <li><strong>Resend</strong> - sends transactional email on our behalf.</li>
-            <li><strong>Paystack</strong> - processes a customer's payment to a business, when a business turns that on.</li>
-            <li><strong>Flutterwave</strong> - processes a business's own subscription payment to us.</li>
+            <li><strong>Flutterwave</strong> - processes a customer's payment to a business (when a business turns that on) and a business's own subscription payment to us.</li>
             <li><strong>Telegram / Meta (WhatsApp, Messenger)</strong> - only if a business owner chooses to connect one of these channels, and only for messages sent through that channel.</li>
           </ul>
           <p>

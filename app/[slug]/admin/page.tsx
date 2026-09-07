@@ -168,7 +168,7 @@ export default async function AdminDashboard({
       profileDone={Boolean(business.description?.trim() || business.logo_url)}
       servicesDone={(bookableServices?.length ?? 0) > 0}
       hoursDone={(hoursCount ?? 0) > 0}
-      paymentDone={Boolean(business.paystack_public_key)}
+      paymentDone={Boolean(business.flw_subaccount_id)}
       hasLogo={Boolean(business.logo_url)}
       hasDescription={Boolean(business.description?.trim())}
     />

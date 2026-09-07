@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { sendEmail } from '@/lib/email';
 import { canAcceptBookings } from '@/lib/subscription-server';
-import { verifyPaystackTransaction } from '@/lib/paystack';
+import { verifyTransaction } from '@/lib/flutterwave';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
 import { formatMoney } from '@/lib/formatMoney';
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       .select('webhook_url, max_advance_days, require_payment, deposit_percentage')
       .eq('business_id', businessId)
       .maybeSingle(),
-    supabaseAdmin.from('businesses').select('timezone, paystack_secret_key, name, accent_color, logo_url, slug').eq('id', businessId).single(),
+    supabaseAdmin.from('businesses').select('timezone, flw_subaccount_id, name, accent_color, logo_url, slug').eq('id', businessId).single(),
     supabaseAdmin
       .from('services')
       .select('price, name, duration_minutes')
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
   }
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('timezone, name, accent_color, logo_url, slug').eq('id', businessId).single();
-    if (fallback.data) business = { ...fallback.data, paystack_secret_key: null };
+    if (fallback.data) business = { ...fallback.data, flw_subaccount_id: null };
   }
 
   const timeZone = business?.timezone || 'UTC';
@@ -161,16 +161,16 @@ export async function POST(req: NextRequest) {
 
   // Payment gate - only when the business has turned this on AND actually
   // has a price on the service; a free/unpriced service can't require
-  // payment no matter what the toggle says. Verified against Paystack
+  // payment no matter what the toggle says. Verified against Flutterwave
   // directly rather than trusting whatever the client claims it paid -
-  // the client only ever hands us a reference, never an amount or a
-  // "paid" flag we'd have to take on faith.
+  // the client only ever hands us a tx_ref, never an amount or a "paid"
+  // flag we'd have to take on faith.
   let paymentStatus: string | null = null;
   let amountPaid: number | null = null;
 
   if (rules?.require_payment && service?.price) {
-    if (!business?.paystack_secret_key) {
-      logError('api/bookings:payment-misconfigured', new Error('require_payment is on with no Paystack key'), { businessId });
+    if (!business?.flw_subaccount_id) {
+      logError('api/bookings:payment-misconfigured', new Error('require_payment is on with no linked payout account'), { businessId });
       return NextResponse.json({ error: 'This business hasn\'t finished setting up payments. Please contact them directly.' }, { status: 503 });
     }
     if (!validPaymentReference) {
@@ -178,15 +178,14 @@ export async function POST(req: NextRequest) {
     }
 
     const expectedNaira = Math.round(service.price * ((rules.deposit_percentage ?? 100) / 100));
-    const expectedKobo = expectedNaira * 100;
 
-    const verified = await verifyPaystackTransaction(business.paystack_secret_key, validPaymentReference);
-    // A few naira of rounding slack, not an exact-match requirement -
-    // Paystack's own fee handling can shift the settled amount by a kobo
-    // or two even when the customer paid the right thing.
-    if (!verified || verified.status !== 'success' || Math.abs(verified.amount - expectedKobo) > 200) {
+    const verified = await verifyTransaction(validPaymentReference);
+    // A couple naira of rounding slack, not an exact-match requirement -
+    // Flutterwave's own fee handling can shift the settled amount
+    // slightly even when the customer paid the right thing.
+    if (!verified || verified.status !== 'successful' || Math.abs(verified.amountNaira - expectedNaira) > 2) {
       logError('api/bookings:payment-verify-failed', new Error('Payment verification failed'), {
-        businessId, paymentReference: validPaymentReference, expectedKobo, got: verified,
+        businessId, paymentReference: validPaymentReference, expectedNaira, got: verified,
       });
       return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
     }

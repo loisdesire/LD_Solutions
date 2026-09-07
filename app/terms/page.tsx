@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/terms' },
 };
 
-const LAST_UPDATED = 'August 31, 2026';
+const LAST_UPDATED = 'September 6, 2026';
 
 // Same grounding rule as privacy/page.tsx: every concrete claim here
 // (pricing, trial length, what payment providers actually handle) is
@@ -65,7 +65,7 @@ export default function TermsPage() {
           <ul>
             <li>You need to give accurate information when you sign up, and keep your login secure - you're responsible for what happens under your account.</li>
             <li>New accounts start on a 14-day free trial. After the trial, continued access requires an active paid plan ({PLAN_LABEL.core} at {formatMoney(PLAN_PRICE_NGN.core)}/month, or {PLAN_LABEL.business_intelligence} at {formatMoney(PLAN_PRICE_NGN.business_intelligence)}/month), billed monthly through Flutterwave. You can cancel any time from your dashboard; cancelling stops future billing but doesn't refund the current period - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for details.</li>
-            <li>If you turn on payments for your customers, that's handled through your own Paystack account, which you connect and control - Vanova never holds your customers' money.</li>
+            <li>If you turn on payments for your customers, you link a bank account and Vanova sets up the payout for you through our own Flutterwave account (no separate account of your own to open or verify) - every payment splits straight to your linked bank account, Vanova never holds the money. Because this runs through our account rather than one you control directly, Vanova is responsible for vetting who we set this up for, and for handling any payment dispute or chargeback with Flutterwave - not you.</li>
             <li>You can invite staff to help manage your business. What a staff member can and can't do is described in the product itself; you're responsible for who you invite.</li>
             <li>You're responsible for the content on your booking page (business description, photos, service listings) being accurate and something you have the right to use.</li>
           </ul>
@@ -73,7 +73,7 @@ export default function TermsPage() {
           <h2>Customer bookings</h2>
           <ul>
             <li>Booking an appointment doesn't require creating a Vanova account - your name and contact details are shared with the business you're booking, so they can honor the appointment.</li>
-            <li>If a business requires payment or a deposit to confirm a booking, that payment goes to the business through Paystack, subject to that business's own cancellation window, not a Vanova-wide policy - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for how that works.</li>
+            <li>If a business requires payment or a deposit to confirm a booking, that payment splits straight to the business's own linked bank account through Flutterwave, subject to that business's own cancellation window, not a Vanova-wide policy - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for how that works.</li>
             <li>You can manage, reschedule, or cancel your own booking using the link sent at confirmation, or by signing in with the email or phone number you booked with.</li>
             <li>If your payment succeeds but the time slot is lost before it's confirmed (a rare timing conflict), the business is notified and will help sort it out - offering the next available time or a refund - rather than you being asked to simply pay again.</li>
             <li>A dispute over a booking or a charge is between you and the business you booked with. Vanova may help pass along messages between you, but isn't the business and doesn't decide the outcome.</li>
@@ -98,8 +98,10 @@ export default function TermsPage() {
           <h2>Payments</h2>
           <p>
             All payment processing - a customer paying a business, or a business paying its Vanova subscription -
-            is handled by Paystack or Flutterwave respectively, not by us directly. Their own terms and any
-            transaction fees apply on top of this agreement.
+            is handled by Flutterwave, not by us directly. A customer's payment to a business runs through
+            Vanova's own Flutterwave account (split straight to that business's linked bank account, see "Business
+            accounts" above); a business's own subscription payment is billed directly by Flutterwave to Vanova.
+            Flutterwave's own terms and any transaction fees apply on top of this agreement.
           </p>
 
           <h2>Availability and changes</h2>

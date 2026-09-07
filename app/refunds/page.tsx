@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   alternates: { canonical: '/refunds' },
 };
 
-const LAST_UPDATED = 'September 4, 2026';
+const LAST_UPDATED = 'September 6, 2026';
 
 // Same grounding rule as terms/page.tsx and privacy/page.tsx: every claim
 // here is checked against the real code, not written as generic SaaS
 // boilerplate. In particular - there's no automated refund flow anywhere
 // in this codebase (a cancellation just marks a booking `cancelled`;
-// nothing touches Paystack to reverse a charge), so this doesn't promise
+// nothing touches Flutterwave to reverse a charge), so this doesn't promise
 // one. What's real and already enforced server-side (app/api/bookings/
 // [id]/cancel/route.ts) is the per-business cancellation window - this
 // page explains that mechanism plainly rather than inventing a refund
@@ -74,9 +74,9 @@ export default function RefundsPage() {
               declined, not just discouraged.
             </li>
             <li>
-              If a business requires payment or a deposit to confirm a booking, that money goes directly to the
-              business&rsquo;s own Paystack account. Vanova never holds it, and doesn&rsquo;t automatically reverse or
-              refund a charge on a customer&rsquo;s behalf.
+              If a business requires payment or a deposit to confirm a booking, that money splits automatically to
+              the business&rsquo;s own linked bank account the moment it&rsquo;s paid. Vanova never holds it, and
+              doesn&rsquo;t automatically reverse or refund a charge on a customer&rsquo;s behalf.
             </li>
             <li>
               That means a refund for a cancelled booking, a late cancellation, or a no-show is a decision the

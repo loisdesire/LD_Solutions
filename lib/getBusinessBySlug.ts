@@ -7,13 +7,17 @@ const BASE_COLUMNS =
 // This one function is what makes "one file handles every business" work.
 // Every business page calls this to load only its own data.
 export async function getBusinessBySlug(slug: string) {
-  // paystack_public_key is a *public* key by design (Paystack's own docs
-  // have it embedded straight in client-side checkout code) -
-  // paystack_secret_key never appears in this public-facing loader, only
-  // in the service-role-scoped route that actually verifies a payment.
+  // flw_subaccount_id isn't secret the way the old Paystack secret key
+  // was (it's a routing destination, not a credential - Flutterwave's own
+  // API needs FLUTTERWAVE_SECRET_KEY, which never appears here, to
+  // actually move money), so it's fine in this public-facing loader. The
+  // public booking page needs it client-side anyway, to pass into the
+  // Flutterwave inline checkout's `subaccounts` param (components/
+  // BookingForm.tsx) - it's the one piece of business-specific
+  // information that checkout call requires.
   let { data: business, error } = await supabasePublic
     .from('businesses')
-    .select(`${BASE_COLUMNS}, paystack_public_key`)
+    .select(`${BASE_COLUMNS}, flw_subaccount_id`)
     .eq('slug', slug)
     .single();
 
@@ -23,7 +27,7 @@ export async function getBusinessBySlug(slug: string) {
   // in the meantime; payment collection just stays off until it's run.
   if (error?.code === '42703') {
     const fallback = await supabasePublic.from('businesses').select(BASE_COLUMNS).eq('slug', slug).single();
-    business = fallback.data ? { ...fallback.data, paystack_public_key: null } : null;
+    business = fallback.data ? { ...fallback.data, flw_subaccount_id: null } : null;
     error = fallback.error;
   }
 
