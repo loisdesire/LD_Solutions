@@ -170,7 +170,12 @@ export async function POST(req: NextRequest) {
 
   if (rules?.require_payment && service?.price) {
     if (!business?.flw_subaccount_id) {
-      logError('api/bookings:payment-misconfigured', new Error('require_payment is on with no linked payout account'), { businessId });
+      logError(
+        'api/bookings:payment-misconfigured',
+        new Error('require_payment is on with no linked payout account'),
+        { businessId },
+        { critical: true }
+      );
       return NextResponse.json({ error: 'This business hasn\'t finished setting up payments. Please contact them directly.' }, { status: 503 });
     }
     if (!validPaymentReference) {
@@ -184,9 +189,12 @@ export async function POST(req: NextRequest) {
     // Flutterwave's own fee handling can shift the settled amount
     // slightly even when the customer paid the right thing.
     if (!verified || verified.status !== 'successful' || Math.abs(verified.amountNaira - expectedNaira) > 2) {
-      logError('api/bookings:payment-verify-failed', new Error('Payment verification failed'), {
-        businessId, paymentReference: validPaymentReference, expectedNaira, got: verified,
-      });
+      logError(
+        'api/bookings:payment-verify-failed',
+        new Error('Payment verification failed'),
+        { businessId, paymentReference: validPaymentReference, expectedNaira, got: verified },
+        { critical: true }
+      );
       return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
     }
 

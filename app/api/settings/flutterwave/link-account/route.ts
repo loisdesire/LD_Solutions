@@ -65,9 +65,12 @@ export async function POST(req: NextRequest) {
   });
 
   if (!sub) {
-    logError('api/settings/flutterwave/link-account:create-subaccount', new Error('Flutterwave subaccount creation failed'), {
-      businessId: business.id,
-    });
+    logError(
+      'api/settings/flutterwave/link-account:create-subaccount',
+      new Error('Flutterwave subaccount creation failed'),
+      { businessId: business.id },
+      { critical: true }
+    );
     return NextResponse.json({ ok: false, error: "Couldn't set up payouts with Flutterwave. Try again shortly." });
   }
 

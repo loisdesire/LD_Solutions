@@ -76,7 +76,12 @@ export async function POST(req: NextRequest) {
     // idempotent, so a retry or a duplicate delivery can't double-confirm.
     const result = await confirmPaidBooking(bookingId, txRef!);
     if (!result.confirmed && result.reason === 'slot_taken') {
-      logError('api/webhooks/flutterwave:paid-slot-lost', new Error('paid after hold expired'), { bookingId });
+      logError(
+        'api/webhooks/flutterwave:paid-slot-lost',
+        new Error('paid after hold expired'),
+        { bookingId },
+        { critical: true }
+      );
     }
     return NextResponse.json({ ok: true, confirmed: result.confirmed, reason: result.reason });
   }

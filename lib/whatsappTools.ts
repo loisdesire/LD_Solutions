@@ -546,6 +546,18 @@ export async function checkPayment(ctx: ToolContext) {
     };
   }
   if (result.reason === 'slot_taken') {
+    // The model's own reply here says "the business has been notified" -
+    // that was never actually true on THIS path (the webhook route logs
+    // the identical paid_slot_lost case as critical; this one, reached
+    // when the customer says "I've paid" instead of the webhook firing
+    // first, logged nothing at all). Same alert, so the claim the model
+    // makes to the customer is finally backed by something real.
+    logError(
+      'whatsappTools:checkPayment:paid-slot-lost',
+      new Error('paid after hold expired'),
+      { businessId: ctx.businessId },
+      { critical: true }
+    );
     return {
       confirmed: false,
       slot_taken: true,
