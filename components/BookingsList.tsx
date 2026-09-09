@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ConversationPanel from './ConversationPanel';
 import BookingDetailModal from './BookingDetailModal';
+import EmptyState from './EmptyState';
 import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
 import { parseContact } from '@/lib/contact';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -315,23 +316,40 @@ export default function BookingsList({
           sit directly on the admin canvas, and border-line is too close
           in lightness to --admin-canvas on desktop to read as a divider
           at all. */}
-      <div>
-        <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
-          <div>Time</div>
-          <div>Customer</div>
-          <div>Service</div>
-          {showStaff && <div>Staff</div>}
-          <div>Contact</div>
-          <div>Status</div>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div className="px-2 py-10 text-center text-body-sm text-ink-faint">
-            No {statusFilter !== 'all' ? `${STATUS_LABELS[statusFilter]?.toLowerCase()} ` : ''}
-            {scope === 'today' ? "bookings today" : `${scope} bookings`}.
+      {/* Was a header row (Time/Customer/Service/.../Status) that stayed
+          visible even with nothing underneath it - a column-headings bar
+          floating over a single line of grey text read as a broken table,
+          not a considered "nothing here yet" state. The header only makes
+          sense once there's a real row for it to label, so now it (and
+          the whole list wrapper) simply doesn't render when there's
+          nothing to show - EmptyState (already used by Billing/Staff)
+          takes over completely instead of sharing space with it. */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          compact
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <rect x="3" y="4.5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M3 9.5h18M8 2.5v4M16 2.5v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          }
+          title="Nothing here"
+          description={`No ${statusFilter !== 'all' ? `${STATUS_LABELS[statusFilter]?.toLowerCase()} ` : ''}${
+            scope === 'today' ? 'bookings today' : `${scope} bookings`
+          }.`}
+        />
+      ) : (
+        <div>
+          <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
+            <div>Time</div>
+            <div>Customer</div>
+            <div>Service</div>
+            {showStaff && <div>Staff</div>}
+            <div>Contact</div>
+            <div>Status</div>
           </div>
-        ) : (
-          filtered.map((b, i) => {
+
+          {filtered.map((b, i) => {
             const staffName = Array.isArray(b.staff) ? b.staff[0]?.name : b.staff?.name;
             return (
               <div
@@ -426,9 +444,9 @@ export default function BookingsList({
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       {openConversation && (
         <ConversationPanel

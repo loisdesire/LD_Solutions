@@ -199,7 +199,14 @@ export default function AdminDashboardBody({
           - name, summary, search - flows below as its own full-width
           block instead of fighting the actions for horizontal room. */}
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-3">
+        {/* items-end, not items-center - matches the Services page's own
+            heading+actions row (sm:items-end there), where the action
+            group bottom-aligns with the text beside it rather than
+            floating centered against it. Only one line of text here (no
+            subtitle inside this specific row), so the difference is
+            small, but it's the same convention, not two different ones
+            for the same kind of row. */}
+        <div className="flex items-end justify-between gap-3">
           <div className="text-[13px] font-semibold text-accent">
             {now
               ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
