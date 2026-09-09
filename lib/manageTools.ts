@@ -5,6 +5,7 @@ import { to24Hour, formatLocalDateTime } from './formatDateTime';
 import { verifyBusinessMediaUrl } from './verifyBusinessMediaUrl';
 import { sendEmail } from './email';
 import { renderEmail } from './emailTemplate';
+import { rateLimit } from './rateLimit';
 
 // Owner-facing, write-capable - "manage your business by chat" instead of
 // the Services form and the Settings toggles. Same two-step shape as
@@ -875,6 +876,26 @@ export async function applyCreateReminder(businessId: string, args: { message: u
     return { error: 'One of those values changed or was invalid since it was proposed - propose it again before applying.' };
   }
 
+  // Same class of bug as applyCreateService's own duplicate-guard (see its
+  // comment) - a repeat apply_create_reminder call for the same reminder
+  // would otherwise silently insert it twice, and the owner gets paged
+  // about the same thing twice. Exact match on message + remind_at, not a
+  // fuzzy one - two genuinely different reminders that happen to land on
+  // the same minute are still two different reminders.
+  const { data: existing } = await supabaseAdmin
+    .from('owner_reminders')
+    .select('id')
+    .eq('business_id', businessId)
+    .eq('message', message)
+    .eq('remind_at', remindAt)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    const timeZone = await getBusinessTimezone(businessId);
+    return { applied: true, already_existed: true, message, remind_at: formatLocalDateTime(remindAt, timeZone) };
+  }
+
   // staff_id deliberately left unset - who specifically asked isn't
   // threaded down through the agent call chain yet, and delivery below
   // goes to the whole business's notification-enabled devices regardless
@@ -971,6 +992,28 @@ export async function applyEmailCustomer(businessId: string, args: { customerNam
     return { error: 'That customer could not be re-confirmed - propose this again.' };
   }
   const customer = matches[0] as { name: string; email: string };
+
+  // Same class of bug as applyCreateService/applyCreateReminder's own
+  // duplicate-guards, but there's no row here to check for existence
+  // against - this sends an email, it doesn't insert one. Reuses the
+  // shared atomic rate limiter instead: a repeat call with the same
+  // customer + subject + message body within 2 minutes is treated as the
+  // same accidental double-call, not a genuinely new email the owner
+  // meant to send again. Keyed on a short slice of the message (not the
+  // whole thing - rateLimit's own key is capped at 300 chars) rather than
+  // just subject, so two different messages that happen to share a
+  // subject line don't get wrongly treated as duplicates of each other.
+  // Reserved before the send, not after - the honest tradeoff is that a
+  // send which then genuinely fails (Resend down, say) also can't be
+  // retried for the same 2 minutes, rather than risking two concurrent
+  // calls both slipping past a check-after-send. Worth it here: this is a
+  // single conversational turn calling a tool, not concurrent traffic,
+  // so a double-call is the realistic failure mode this guards against.
+  const dedupeKey = `email-customer:${businessId}:${customer.email}:${subject}:${message.slice(0, 80)}`;
+  const allowed = await rateLimit(dedupeKey, 1, 2 * 60_000);
+  if (!allowed) {
+    return { applied: true, already_sent: true, customer_name: customer.name, customer_email: customer.email, subject };
+  }
 
   const { data: business } = await supabaseAdmin
     .from('businesses')
