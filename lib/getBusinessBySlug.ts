@@ -15,9 +15,12 @@ export async function getBusinessBySlug(slug: string) {
   // Flutterwave inline checkout's `subaccounts` param (components/
   // BookingForm.tsx) - it's the one piece of business-specific
   // information that checkout call requires.
+  // currency/accept_foreign_currency added alongside flw_subaccount_id -
+  // same reasoning (a routing destination/preference, not a credential),
+  // needed by BookingForm to show/gate the foreign-currency selector.
   let { data: business, error } = await supabasePublic
     .from('businesses')
-    .select(`${BASE_COLUMNS}, flw_subaccount_id`)
+    .select(`${BASE_COLUMNS}, flw_subaccount_id, currency, accept_foreign_currency`)
     .eq('slug', slug)
     .single();
 
@@ -27,7 +30,9 @@ export async function getBusinessBySlug(slug: string) {
   // in the meantime; payment collection just stays off until it's run.
   if (error?.code === '42703') {
     const fallback = await supabasePublic.from('businesses').select(BASE_COLUMNS).eq('slug', slug).single();
-    business = fallback.data ? { ...fallback.data, flw_subaccount_id: null } : null;
+    business = fallback.data
+      ? { ...fallback.data, flw_subaccount_id: null, currency: 'NGN', accept_foreign_currency: false }
+      : null;
     error = fallback.error;
   }
 

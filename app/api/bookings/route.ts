@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { sendEmail } from '@/lib/email';
 import { canAcceptBookings } from '@/lib/subscription-server';
-import { verifyTransaction } from '@/lib/flutterwave';
+import { verifyTransaction, getConvertedAmount, createPayoutTransfer, FOREIGN_CURRENCIES } from '@/lib/flutterwave';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
 import { formatMoney } from '@/lib/formatMoney';
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
     startTime,
     durationMinutes,
     paymentReference,
+    currency,
   } = body;
 
   const validName = cleanRequiredText(customerName, 100);
@@ -102,7 +103,11 @@ export async function POST(req: NextRequest) {
       .select('webhook_url, max_advance_days, require_payment, deposit_percentage')
       .eq('business_id', businessId)
       .maybeSingle(),
-    supabaseAdmin.from('businesses').select('timezone, flw_subaccount_id, name, accent_color, logo_url, slug').eq('id', businessId).single(),
+    supabaseAdmin
+      .from('businesses')
+      .select('timezone, flw_subaccount_id, flw_bank_code, flw_account_number, currency, accept_foreign_currency, name, accent_color, logo_url, slug')
+      .eq('id', businessId)
+      .single(),
     supabaseAdmin
       .from('services')
       .select('price, name, duration_minutes')
@@ -146,7 +151,16 @@ export async function POST(req: NextRequest) {
   }
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('timezone, name, accent_color, logo_url, slug').eq('id', businessId).single();
-    if (fallback.data) business = { ...fallback.data, flw_subaccount_id: null };
+    if (fallback.data) {
+      business = {
+        ...fallback.data,
+        flw_subaccount_id: null,
+        flw_bank_code: null,
+        flw_account_number: null,
+        currency: 'NGN',
+        accept_foreign_currency: false,
+      };
+    }
   }
 
   const timeZone = business?.timezone || 'UTC';
@@ -163,10 +177,16 @@ export async function POST(req: NextRequest) {
   // has a price on the service; a free/unpriced service can't require
   // payment no matter what the toggle says. Verified against Flutterwave
   // directly rather than trusting whatever the client claims it paid -
-  // the client only ever hands us a tx_ref, never an amount or a "paid"
-  // flag we'd have to take on faith.
+  // the client only ever hands us a tx_ref (and, now, a currency it
+  // claims to have paid in), never an amount or a "paid" flag we'd have
+  // to take on faith.
   let paymentStatus: string | null = null;
   let amountPaid: number | null = null;
+  let paidCurrency: string | null = null;
+  // Set only for a genuinely foreign-currency payment - drives the
+  // payout-transfer step after the booking is inserted (same-currency
+  // payments already auto-split via the subaccount, nothing extra to do).
+  let foreignPayout: { chargedAmount: number; chargedCurrency: string; localAmount: number } | null = null;
 
   if (rules?.require_payment && service?.price) {
     if (!business?.flw_subaccount_id) {
@@ -182,24 +202,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payment is required to book this service.' }, { status: 402 });
     }
 
-    const expectedNaira = Math.round(service.price * ((rules.deposit_percentage ?? 100) / 100));
+    const localCurrency = business?.currency || 'NGN';
+    const requestedCurrency = typeof currency === 'string' && currency.trim() ? currency.trim().toUpperCase() : localCurrency;
+    const expectedLocal = Math.round(service.price * ((rules.deposit_percentage ?? 100) / 100));
 
     const verified = await verifyTransaction(validPaymentReference);
-    // A couple naira of rounding slack, not an exact-match requirement -
-    // Flutterwave's own fee handling can shift the settled amount
-    // slightly even when the customer paid the right thing.
-    if (!verified || verified.status !== 'successful' || Math.abs(verified.amountNaira - expectedNaira) > 2) {
+    if (!verified || verified.status !== 'successful') {
       logError(
         'api/bookings:payment-verify-failed',
         new Error('Payment verification failed'),
-        { businessId, paymentReference: validPaymentReference, expectedNaira, got: verified },
+        { businessId, paymentReference: validPaymentReference, requestedCurrency, got: verified },
         { critical: true }
       );
       return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
     }
 
-    paymentStatus = 'paid';
-    amountPaid = expectedNaira;
+    if (requestedCurrency === localCurrency) {
+      // Existing same-currency path - a couple units of rounding slack,
+      // not an exact-match requirement (Flutterwave's own fee handling
+      // can shift the settled amount slightly even when the customer
+      // paid the right thing). Now also checks verified.currency, which
+      // nothing here did before Ghana/foreign-currency payments existed -
+      // a transaction settling in a currency other than what the business
+      // is actually paid out in was never actually ruled out previously.
+      if (verified.currency !== localCurrency || Math.abs(verified.amount - expectedLocal) > 2) {
+        logError(
+          'api/bookings:payment-verify-failed',
+          new Error('Payment amount/currency mismatch'),
+          { businessId, paymentReference: validPaymentReference, expectedLocal, localCurrency, got: verified },
+          { critical: true }
+        );
+        return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
+      }
+      paymentStatus = 'paid';
+      amountPaid = expectedLocal;
+    } else if (business?.accept_foreign_currency && (FOREIGN_CURRENCIES as readonly string[]).includes(requestedCurrency)) {
+      // Foreign-currency path: FX moves, so this isn't an exact-match
+      // check - a fresh rate is fetched right now (not reused from
+      // whatever quote the customer saw before paying) and the actually-
+      // settled amount is accepted within ±5%, tight enough to catch a
+      // genuinely wrong/short amount, loose enough to survive normal rate
+      // movement between charge and verify.
+      const freshQuote = await getConvertedAmount(expectedLocal, localCurrency, requestedCurrency);
+      const withinTolerance =
+        freshQuote && verified.amount >= freshQuote.amount * 0.95 && verified.amount <= freshQuote.amount * 1.05;
+
+      if (verified.currency !== requestedCurrency || !withinTolerance) {
+        logError(
+          'api/bookings:payment-verify-failed',
+          new Error('Foreign-currency payment amount/currency mismatch'),
+          { businessId, paymentReference: validPaymentReference, expectedLocal, localCurrency, requestedCurrency, freshQuote, got: verified },
+          { critical: true }
+        );
+        return NextResponse.json({ error: 'We couldn\'t verify that payment. Please try again.' }, { status: 402 });
+      }
+      paymentStatus = 'paid';
+      amountPaid = verified.amount;
+      paidCurrency = requestedCurrency;
+      foreignPayout = { chargedAmount: verified.amount, chargedCurrency: requestedCurrency, localAmount: expectedLocal };
+    } else {
+      return NextResponse.json({ error: 'This business does not accept payment in that currency.' }, { status: 400 });
+    }
   }
 
   // Picks whichever staff member is actually free for this window - see
@@ -229,6 +292,7 @@ export async function POST(req: NextRequest) {
       payment_status: paymentStatus,
       payment_reference: paymentStatus ? validPaymentReference : null,
       amount_paid: amountPaid,
+      payment_currency: paidCurrency,
     })
     .select()
     .single();
@@ -250,6 +314,65 @@ export async function POST(req: NextRequest) {
       { error: "We couldn't complete that booking. Please try again, or contact the business directly." },
       { status: 400 }
     );
+  }
+
+  // A foreign-currency payment can't auto-split to the business's
+  // subaccount the way a same-currency one does (see
+  // initializeSplitTransaction's own comment) - the money the customer
+  // just paid is sitting in Vanova's own currency-matched balance, and
+  // this is the explicit second step that actually forwards it. Deliberately
+  // never allowed to fail the booking itself: the customer already paid
+  // and is already confirmed by this point, so a transfer failure here is
+  // Vanova's problem to reconcile, not something that can retroactively
+  // un-book a paying customer. Every outcome (success or failure) is
+  // recorded in payout_transfers - see that table's own comment in
+  // supabase/schema.sql for why there's no automated retry yet.
+  if (foreignPayout && business?.flw_bank_code && business?.flw_account_number) {
+    const localCurrency = business.currency || 'NGN';
+    try {
+      const transfer = await createPayoutTransfer({
+        accountNumber: business.flw_account_number,
+        bankCode: business.flw_bank_code,
+        amount: foreignPayout.localAmount,
+        currency: localCurrency,
+        debitCurrency: foreignPayout.chargedCurrency,
+        narration: `Vanova booking ${booking.id}`,
+        reference: `payout_${booking.id}`,
+      });
+
+      await supabaseAdmin.from('payout_transfers').insert({
+        booking_id: booking.id,
+        business_id: businessId,
+        charged_currency: foreignPayout.chargedCurrency,
+        charged_amount: foreignPayout.chargedAmount,
+        payout_currency: localCurrency,
+        payout_amount: foreignPayout.localAmount,
+        flw_transfer_id: transfer?.transferId ?? null,
+        status: transfer ? 'completed' : 'failed',
+        error: transfer ? null : 'createPayoutTransfer returned null',
+      });
+
+      if (!transfer) {
+        logError(
+          'api/bookings:payout-transfer-failed',
+          new Error('Foreign-currency payout transfer failed'),
+          { businessId, bookingId: booking.id, foreignPayout },
+          { critical: true }
+        );
+      }
+    } catch (err) {
+      logError('api/bookings:payout-transfer', err, { businessId, bookingId: booking.id, foreignPayout }, { critical: true });
+      await supabaseAdmin.from('payout_transfers').insert({
+        booking_id: booking.id,
+        business_id: businessId,
+        charged_currency: foreignPayout.chargedCurrency,
+        charged_amount: foreignPayout.chargedAmount,
+        payout_currency: localCurrency,
+        payout_amount: foreignPayout.localAmount,
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   // Fire-and-forget webhook, if the business has one configured (Zapier,
@@ -296,7 +419,10 @@ export async function POST(req: NextRequest) {
       { label: 'Service', value: service?.name ?? 'Appointment' },
       { label: 'When', value: whenLabel },
     ];
-    if (amountPaid) rows.push({ label: 'Paid', value: formatMoney(amountPaid) });
+    // paidCurrency is only ever set for a foreign-currency payment - a
+    // local-currency one keeps formatMoney's own NGN default, unchanged
+    // from before this currency was tracked at all.
+    if (amountPaid) rows.push({ label: 'Paid', value: formatMoney(amountPaid, paidCurrency ?? undefined) });
 
     // Return value used to matter to no one - the confirmation screen
     // told every customer "A confirmation has been sent to {email}"

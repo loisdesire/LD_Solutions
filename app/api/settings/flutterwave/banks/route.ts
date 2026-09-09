@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
-import { listNigerianBanks } from '@/lib/flutterwave';
+import { listBanksForCountry } from '@/lib/flutterwave';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // GET /api/settings/flutterwave/banks?slug=... - the bank picker's option
@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
   const auth = await requireStaffApiSession(req, slug);
   if (auth.error) return auth.error;
 
-  const banks = await listNigerianBanks();
+  // Only 'NG'/'GH' mean anything - same fallback as link-account/route.ts.
+  const country = req.nextUrl.searchParams.get('country') === 'GH' ? 'GH' : 'NG';
+  const banks = await listBanksForCountry(country);
   if (!banks) return NextResponse.json({ error: "Couldn't reach Flutterwave for the bank list. Try again shortly." }, { status: 502 });
 
   return NextResponse.json({ banks });

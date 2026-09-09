@@ -190,7 +190,7 @@ export async function createBooking(
   let [{ data: business }, { data: rules }] = await Promise.all([
     supabaseAdmin
       .from('businesses')
-      .select('name, slug, timezone, accent_color, logo_url, flw_subaccount_id')
+      .select('name, slug, timezone, accent_color, logo_url, flw_subaccount_id, currency')
       .eq('id', ctx.businessId)
       .single(),
     supabaseAdmin.from('booking_rules').select('require_payment, deposit_percentage').eq('business_id', ctx.businessId).maybeSingle(),
@@ -205,7 +205,7 @@ export async function createBooking(
   // reads as falsy either way - exactly the safe "not required" default.
   if (business === null) {
     const fallback = await supabaseAdmin.from('businesses').select('name, slug, timezone, accent_color, logo_url').eq('id', ctx.businessId).single();
-    if (fallback.data) business = { ...fallback.data, flw_subaccount_id: null };
+    if (fallback.data) business = { ...fallback.data, flw_subaccount_id: null, currency: 'NGN' };
   }
 
   const timeZone = business?.timezone || 'UTC';
@@ -308,13 +308,21 @@ export async function createBooking(
   // has moved and the hold is about to lapse.
   if (paymentRequired) {
     const depositPct = rules?.deposit_percentage ?? 100;
+    // amountNaira kept as the local variable/field name here - chat-
+    // initiated deposits are scoped to the business's own local currency
+    // for now (NGN or GHS), never a foreign one; a customer messaging a
+    // Nigerian/Ghanaian business directly is a different situation from
+    // browsing the public booking page, and offering a currency choice
+    // mid-conversation is real, deferred scope (see lib/flutterwave.ts's
+    // FOREIGN_CURRENCIES comment) - not built here.
     const amountNaira = Math.round(service.price! * (depositPct / 100));
     const reference = `chat_${booking.id}_${randomUUID().slice(0, 8)}`;
 
     const init = await initializeSplitTransaction({
       subaccountId: business!.flw_subaccount_id!,
       email: args.customerEmail!,
-      amountNaira,
+      amount: amountNaira,
+      currency: business?.currency ?? 'NGN',
       txRef: reference,
       bookingId: booking.id,
       redirectUrl: business?.slug ? `${SITE_URL}/${business.slug}` : undefined,
@@ -594,7 +602,7 @@ export async function confirmPaidBooking(
   }
 
   const [{ data: business }, { data: rules }, { data: service }] = await Promise.all([
-    supabaseAdmin.from('businesses').select('flw_subaccount_id').eq('id', booking.business_id).single(),
+    supabaseAdmin.from('businesses').select('flw_subaccount_id, currency').eq('id', booking.business_id).single(),
     supabaseAdmin.from('booking_rules').select('deposit_percentage').eq('business_id', booking.business_id).maybeSingle(),
     supabaseAdmin.from('services').select('price, name').eq('id', booking.service_id).maybeSingle(),
   ]);
@@ -604,12 +612,17 @@ export async function confirmPaidBooking(
   const verified = await verifyTransaction(reference);
   if (!verified || verified.status !== 'successful') return { confirmed: false, reason: 'not_paid' };
 
-  // Never trust an amount reported to us - recompute what was owed and
-  // compare against what Flutterwave says actually settled.
+  // Never trust an amount (or currency) reported to us - recompute what
+  // was owed and compare against what Flutterwave says actually settled.
+  // Chat deposits are always initiated in the business's own local
+  // currency (see createBooking's own comment on why foreign-currency
+  // chat payments aren't built) - a currency mismatch here means
+  // something is wrong, not a legitimate variant to accept.
+  if (verified.currency !== (business.currency ?? 'NGN')) return { confirmed: false, reason: 'amount_mismatch' };
   const expectedNaira = Math.round((service?.price ?? 0) * ((rules?.deposit_percentage ?? 100) / 100));
-  if (Math.abs(verified.amountNaira - expectedNaira) > 2) return { confirmed: false, reason: 'amount_mismatch' };
+  if (Math.abs(verified.amount - expectedNaira) > 2) return { confirmed: false, reason: 'amount_mismatch' };
 
-  const amountPaid = Math.round(verified.amountNaira);
+  const amountPaid = Math.round(verified.amount);
 
   // .select() added - was update().eq('status','pending_payment') with no
   // select, so 0 rows matching that WHERE clause came back as `error: null`

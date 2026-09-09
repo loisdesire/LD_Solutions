@@ -297,6 +297,8 @@ export default async function BusinessBookingPage({
             requirePayment={requirePayment}
             depositPercentage={rules?.deposit_percentage ?? 100}
             flwSubaccountId={business.flw_subaccount_id}
+            localCurrency={business.currency || 'NGN'}
+            acceptForeignCurrency={Boolean(business.accept_foreign_currency)}
             timezone={business.timezone || 'UTC'}
             cancellationWindowHours={rules?.cancellation_window_hours ?? 24}
           />

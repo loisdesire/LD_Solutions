@@ -86,6 +86,11 @@ function ConfirmationRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// The five currencies FOREIGN_CURRENCIES in lib/flutterwave.ts covers -
+// duplicated here rather than imported since that file is server-only
+// (it reads FLUTTERWAVE_SECRET_KEY), and this is a 'use client' component.
+const FOREIGN_CURRENCY_OPTIONS = ['USD', 'KES', 'UGX', 'TZS', 'ZAR'] as const;
+
 export default function BookingForm({
   businessId,
   slug,
@@ -95,6 +100,8 @@ export default function BookingForm({
   requirePayment = false,
   depositPercentage = 100,
   flwSubaccountId,
+  localCurrency = 'NGN',
+  acceptForeignCurrency = false,
   timezone,
   cancellationWindowHours = 24,
 }: {
@@ -106,6 +113,8 @@ export default function BookingForm({
   requirePayment?: boolean;
   depositPercentage?: number;
   flwSubaccountId?: string | null;
+  localCurrency?: string;
+  acceptForeignCurrency?: boolean;
   timezone?: string;
   cancellationWindowHours?: number;
 }) {
@@ -137,6 +146,13 @@ export default function BookingForm({
   // as "No openings on this day", telling the customer the business was
   // full when it wasn't.
   const [slotsError, setSlotsError] = useState(false);
+  // Defaults to the business's own currency - a customer never has to
+  // touch this unless the business opted into accept_foreign_currency AND
+  // they specifically want to pay in something else.
+  const [payCurrency, setPayCurrency] = useState(localCurrency);
+  const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
+  const [convertLoading, setConvertLoading] = useState(false);
+  const [convertError, setConvertError] = useState('');
 
   const today = toDateStr(new Date());
   const maxDate = toDateStr(new Date(Date.now() + maxAdvanceDays * 86400000));
@@ -145,7 +161,43 @@ export default function BookingForm({
   // service with no price set (price is nullable) has nothing to charge,
   // so this business's toggle can't apply to it no matter what.
   const paymentActive = requirePayment && Boolean(selectedService?.price) && Boolean(flwSubaccountId);
-  const amountDue = paymentActive ? Math.round(selectedService!.price! * (depositPercentage / 100)) : 0;
+  const amountDueLocal = paymentActive ? Math.round(selectedService!.price! * (depositPercentage / 100)) : 0;
+  const isForeignCurrency = payCurrency !== localCurrency;
+  // The actual amount to charge: the live-quoted foreign figure once one
+  // exists, the plain local amount otherwise (including while a quote is
+  // still loading, so the screen never shows a stale/wrong number).
+  const amountDue = isForeignCurrency && convertedAmount != null ? convertedAmount : amountDueLocal;
+
+  // Live quote whenever the customer picks a foreign currency (or the
+  // price/deposit changes under them) - informational only, the server
+  // independently re-verifies at booking time (see app/api/bookings/
+  // route.ts) rather than trusting whatever this returns.
+  useEffect(() => {
+    if (!paymentActive || !isForeignCurrency || amountDueLocal <= 0) {
+      setConvertedAmount(null);
+      setConvertError('');
+      return;
+    }
+    let cancelled = false;
+    setConvertLoading(true);
+    setConvertError('');
+    fetch(`/api/payments/convert?slug=${encodeURIComponent(slug)}&amount=${amountDueLocal}&currency=${payCurrency}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (typeof data.amount === 'number') setConvertedAmount(data.amount);
+        else setConvertError(data.error ?? 'Could not get a live rate.');
+      })
+      .catch(() => {
+        if (!cancelled) setConvertError('Could not get a live rate.');
+      })
+      .finally(() => {
+        if (!cancelled) setConvertLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentActive, isForeignCurrency, amountDueLocal, payCurrency, slug]);
 
   // A short zone label ("WAT", "GMT+1") rather than the raw IANA string -
   // readable at a glance, and it's the one honest way to answer "is that
@@ -260,6 +312,12 @@ export default function BookingForm({
           startTime: selectedSlot,
           durationMinutes: selectedService!.duration_minutes,
           paymentReference,
+          // Only meaningful alongside a paymentReference - the server
+          // ignores it entirely for an unpaid booking. Always the
+          // currency actually charged (payCurrency defaults to the
+          // business's own local currency, so this is a no-op for every
+          // booking that never touches the foreign-currency selector).
+          currency: paymentReference ? payCurrency : undefined,
         }),
       });
 
@@ -330,6 +388,14 @@ export default function BookingForm({
         setStatus('error');
         return;
       }
+      // A foreign-currency quote is still loading, or failed - don't let
+      // the checkout open with a stale/local amount under a currency
+      // label that doesn't match it.
+      if (isForeignCurrency && (convertLoading || convertedAmount == null)) {
+        setErrorMessage(convertError || 'Still getting a live rate for that currency - one moment and try again.');
+        setStatus('error');
+        return;
+      }
       // Flutterwave's inline checkout needs a tx_ref supplied upfront
       // (unlike Paystack's, which minted its own reference and handed it
       // back) - generated here, then reused as the exact string the
@@ -341,12 +407,19 @@ export default function BookingForm({
         public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY,
         tx_ref: txRef,
         amount: amountDue,
-        currency: 'NGN',
+        currency: payCurrency,
         customer: { email: email || 'customer@example.com', name },
         // Splits the payment straight to this business's own linked
         // account - see lib/flutterwave.ts and supabase/schema.sql's
-        // "Payments (Flutterwave)" section for the full reasoning.
-        subaccounts: [{ id: flwSubaccountId }],
+        // "Payments (Flutterwave)" section for the full reasoning. Only
+        // for a same-currency payment: a foreign-currency charge can't
+        // split to a differently-denominated subaccount at all, so
+        // `subaccounts` is omitted entirely rather than passed with the
+        // wrong id - the money lands in Vanova's own currency-matched
+        // balance instead, and reaching the business is a separate
+        // server-side transfer after payment is verified (see
+        // app/api/bookings/route.ts).
+        ...(isForeignCurrency ? {} : { subaccounts: [{ id: flwSubaccountId }] }),
         customizations: { title: businessName },
         meta: { businessId, serviceId: selectedService.id },
         // A non-async callback calling an async function: any rejection
@@ -415,11 +488,15 @@ export default function BookingForm({
             <ConfirmationRow label="Time" value={selectedSlot ? formatTime(selectedSlot, timezone) : ''} />
             {paymentActive ? (
               <>
-                <ConfirmationRow label="Paid now" value={formatMoney(amountDue)} />
+                <ConfirmationRow label="Paid now" value={formatMoney(amountDue, payCurrency)} />
                 {depositPercentage < 100 && selectedService?.price != null && (
+                  // Always the LOCAL-currency remainder, never amountDue's
+                  // possibly-foreign figure - the business still charges
+                  // the rest in their own currency regardless of what the
+                  // deposit was paid in.
                   <ConfirmationRow
                     label="Balance due at your visit"
-                    value={formatMoney(selectedService.price - amountDue)}
+                    value={formatMoney(selectedService.price - amountDueLocal, localCurrency)}
                   />
                 )}
               </>
@@ -525,9 +602,9 @@ export default function BookingForm({
                 <span className="text-[12.5px] font-semibold block mt-0.5" style={{ color: 'var(--accent)' }}>
                   {paymentActive
                     ? depositPercentage < 100
-                      ? `Deposit ${formatMoney(amountDue)} of ${formatMoney(selectedService.price)}`
-                      : `Due ${formatMoney(amountDue)}`
-                    : formatMoney(selectedService.price)}
+                      ? `Deposit ${formatMoney(amountDue, payCurrency)} of ${formatMoney(selectedService.price, localCurrency)}`
+                      : `Due ${formatMoney(amountDue, payCurrency)}`
+                    : formatMoney(selectedService.price, localCurrency)}
                 </span>
               )}
             </div>
@@ -879,14 +956,35 @@ export default function BookingForm({
               single tightened caption underneath it. */}
           {paymentActive && (
             <div className="rounded-2xl bg-warm-surface p-4 mb-6">
+              {acceptForeignCurrency && (
+                <div className="flex items-center justify-between text-[13px] mb-3">
+                  <span className="text-ink-faint">Pay in</span>
+                  <select
+                    aria-label="Currency"
+                    value={payCurrency}
+                    onChange={(e) => setPayCurrency(e.target.value)}
+                    className="bg-transparent border border-line-strong rounded-lg px-2 py-1 text-[13px] font-medium text-ink"
+                  >
+                    <option value={localCurrency}>{localCurrency}</option>
+                    {FOREIGN_CURRENCY_OPTIONS.filter((c) => c !== localCurrency).map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex items-center justify-between text-[13.5px]">
                 <span className="text-ink-soft">
                   {depositPercentage < 100 ? `Deposit (${depositPercentage}%) to confirm` : 'Due to confirm'}
                 </span>
                 <span className="font-display font-bold text-[17px]" style={{ color: 'var(--accent)' }}>
-                  {formatMoney(amountDue)}
+                  {isForeignCurrency && convertLoading ? 'Getting rate…' : formatMoney(amountDue, payCurrency)}
                 </span>
               </div>
+              {isForeignCurrency && convertError && (
+                <p className="text-error text-[12.5px] mt-1.5">{convertError}</p>
+              )}
               {/* Trimmed further - "(card or bank transfer)" was detail
                   Flutterwave's own checkout screen already shows a breath
                   later; cutting it left room for the balance and
@@ -895,7 +993,9 @@ export default function BookingForm({
               <p className="text-ink-faint text-[13px] mt-1.5 leading-relaxed">
                 Paid via Flutterwave.
                 {depositPercentage < 100 && selectedService.price != null && (
-                  <> {formatMoney(selectedService.price - amountDue)} due at your visit.</>
+                  // Always the local-currency remainder - see the matching
+                  // comment on the confirmation-screen version of this row.
+                  <> {formatMoney(selectedService.price - amountDueLocal, localCurrency)} due at your visit.</>
                 )}
                 {' '}Free to cancel up to {cancellationWindowHours} hour
                 {cancellationWindowHours === 1 ? '' : 's'} before.
@@ -924,7 +1024,11 @@ export default function BookingForm({
 
           <button
             type="submit"
-            disabled={status === 'saving' || (paymentActive && !flutterwaveReady)}
+            disabled={
+              status === 'saving' ||
+              (paymentActive && !flutterwaveReady) ||
+              (isForeignCurrency && (convertLoading || convertedAmount == null))
+            }
             style={{ background: 'var(--accent)' }}
             className="w-full py-3.5 text-[14px] font-semibold text-accent-contrast rounded-full transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
           >
@@ -936,7 +1040,7 @@ export default function BookingForm({
                 Confirming…
               </span>
             ) : paymentActive ? (
-              `Pay ${formatMoney(amountDue)} & confirm`
+              `Pay ${formatMoney(amountDue, payCurrency)} & confirm`
             ) : (
               'Confirm booking'
             )}

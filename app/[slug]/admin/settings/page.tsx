@@ -47,7 +47,7 @@ export default async function SettingsPage({
         // (they're a bank routing destination, not a credential), but kept
         // out of the public loader anyway since only this settings page
         // has any use for them.
-        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, flw_subaccount_id, flw_bank_code, flw_account_number, flw_account_name, custom_domain, ai_context'
+        'about_text, gallery_urls, contact_phone, contact_email, instagram_url, facebook_url, show_about, show_gallery, show_contact, flw_subaccount_id, flw_bank_code, flw_account_number, flw_account_name, flw_branch_code, country, accept_foreign_currency, custom_domain, ai_context'
       )
       .eq('id', business.id)
       .single(),
@@ -81,6 +81,9 @@ export default async function SettingsPage({
         flw_bank_code: null,
         flw_account_number: null,
         flw_account_name: null,
+        flw_branch_code: null,
+        country: 'NG',
+        accept_foreign_currency: false,
         custom_domain: null,
         ai_context: null,
       };
@@ -182,6 +185,9 @@ export default async function SettingsPage({
                 initialAccountName={bizRow?.flw_account_name ?? null}
                 initialBankCode={bizRow?.flw_bank_code ?? null}
                 initialAccountNumber={bizRow?.flw_account_number ?? null}
+                initialCountry={bizRow?.country ?? 'NG'}
+                initialBranchCode={bizRow?.flw_branch_code ?? null}
+                initialAcceptForeignCurrency={bizRow?.accept_foreign_currency ?? false}
               />
             ),
           },

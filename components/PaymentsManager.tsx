@@ -30,6 +30,9 @@ export default function PaymentsManager({
   initialAccountName,
   initialBankCode,
   initialAccountNumber,
+  initialCountry,
+  initialBranchCode,
+  initialAcceptForeignCurrency,
 }: {
   slug: string;
   businessId: string;
@@ -38,6 +41,9 @@ export default function PaymentsManager({
   initialAccountName: string | null;
   initialBankCode: string | null;
   initialAccountNumber: string | null;
+  initialCountry: string;
+  initialBranchCode: string | null;
+  initialAcceptForeignCurrency: boolean;
 }) {
   const [requirePayment, setRequirePayment] = useState(initialRequirePayment);
   // null/100 both mean "full amount" - one flag (isDeposit) plus a number
@@ -48,16 +54,25 @@ export default function PaymentsManager({
     initialDepositPercentage != null && initialDepositPercentage < 100 ? initialDepositPercentage : 50
   );
 
-  const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
+  // 'NG'/'GH' are the only two that mean anything (see COUNTRY_CURRENCY in
+  // lib/flutterwave.ts) - a business picks this once, alongside their
+  // bank, since it decides both the bank list and whether a branch code
+  // is needed at all (Ghana only).
+  const [country, setCountry] = useState(initialCountry === 'GH' ? 'GH' : 'NG');
+  const [banks, setBanks] = useState<{ id: string; code: string; name: string }[]>([]);
   const [banksError, setBanksError] = useState('');
   const [bankCode, setBankCode] = useState(initialBankCode ?? '');
   const [accountNumber, setAccountNumber] = useState(initialAccountNumber ?? '');
   const [businessMobile, setBusinessMobile] = useState('');
+  const [branches, setBranches] = useState<{ code: string; name: string }[]>([]);
+  const [branchesError, setBranchesError] = useState('');
+  const [branchCode, setBranchCode] = useState(initialBranchCode ?? '');
   // Set once a save actually succeeds (this session or a prior one) -
   // separate from bankCode/accountNumber so editing either field without
   // saving doesn't make a previously-linked account look connected under
   // different numbers.
   const [linkedAccountName, setLinkedAccountName] = useState(initialAccountName ?? '');
+  const [acceptForeignCurrency, setAcceptForeignCurrency] = useState(initialAcceptForeignCurrency);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -66,18 +81,44 @@ export default function PaymentsManager({
   const supabase = createBrowserSupabase();
   const router = useRouter();
 
-  // Loaded once, on demand rather than on every render - a business that
-  // never opens the payments toggle never pays for this request.
+  // Re-fetched whenever the country changes (a Ghana bank list is a
+  // different set from Nigeria's), and reset first so a stale NG bank
+  // code can't linger selected under a GH label. Loaded on demand rather
+  // than on every render - a business that never opens the payments
+  // toggle never pays for this request.
   useEffect(() => {
-    if (!requirePayment || banks.length > 0 || banksError) return;
-    fetch(`/api/settings/flutterwave/banks?slug=${encodeURIComponent(slug)}`)
+    if (!requirePayment) return;
+    setBanks([]);
+    setBanksError('');
+    fetch(`/api/settings/flutterwave/banks?slug=${encodeURIComponent(slug)}&country=${country}`)
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data.banks)) setBanks(data.banks);
         else setBanksError(data.error ?? 'Could not load the bank list.');
       })
       .catch(() => setBanksError('Could not load the bank list.'));
-  }, [requirePayment, banks.length, banksError, slug]);
+  }, [requirePayment, country, slug]);
+
+  // Ghana needs a branch code alongside the bank + account number -
+  // fetched once a specific bank is picked (the branch list is per-bank),
+  // never for Nigeria at all.
+  useEffect(() => {
+    if (country !== 'GH' || !bankCode) {
+      setBranches([]);
+      return;
+    }
+    const bank = banks.find((b) => b.code === bankCode);
+    if (!bank) return;
+    setBranches([]);
+    setBranchesError('');
+    fetch(`/api/settings/flutterwave/branches?slug=${encodeURIComponent(slug)}&bankId=${bank.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.branches)) setBranches(data.branches);
+        else setBranchesError(data.error ?? 'Could not load the branch list.');
+      })
+      .catch(() => setBranchesError('Could not load the branch list.'));
+  }, [country, bankCode, banks, slug]);
 
   const accountConnected = linkedAccountName.trim() !== '';
 
@@ -85,7 +126,9 @@ export default function PaymentsManager({
     !saved &&
     (requirePayment !== initialRequirePayment ||
       bankCode !== (initialBankCode ?? '') ||
-      accountNumber !== (initialAccountNumber ?? ''));
+      accountNumber !== (initialAccountNumber ?? '') ||
+      branchCode !== (initialBranchCode ?? '') ||
+      acceptForeignCurrency !== initialAcceptForeignCurrency);
   useUnsavedChangesWarning(dirty);
 
   async function handleSave(e: React.FormEvent) {
@@ -98,9 +141,12 @@ export default function PaymentsManager({
     // re-verifying and re-creating a subaccount on every save (even one
     // that only touched the deposit percentage) would be wasteful and,
     // worse, would silently create a fresh Flutterwave subaccount each
-    // time. Only runs when the account number or bank actually changed
-    // from what's already linked.
-    const accountChanged = bankCode !== (initialBankCode ?? '') || accountNumber !== (initialAccountNumber ?? '');
+    // time. Only runs when the account number, bank, or branch actually
+    // changed from what's already linked.
+    const accountChanged =
+      bankCode !== (initialBankCode ?? '') ||
+      accountNumber !== (initialAccountNumber ?? '') ||
+      branchCode !== (initialBranchCode ?? '');
 
     if (requirePayment && accountChanged) {
       if (!bankCode || !accountNumber) {
@@ -108,11 +154,16 @@ export default function PaymentsManager({
         setError('Pick a bank and enter an account number.');
         return;
       }
+      if (country === 'GH' && !branchCode) {
+        setSaving(false);
+        setError('Pick your bank branch first.');
+        return;
+      }
       try {
         const res = await fetch('/api/settings/flutterwave/link-account', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, bankCode, accountNumber, businessMobile }),
+          body: JSON.stringify({ slug, bankCode, accountNumber, businessMobile, country, branchCode }),
         });
         const check = await res.json();
         if (!res.ok || !check.ok) {
@@ -129,22 +180,28 @@ export default function PaymentsManager({
     }
 
     // link-account already saved flw_subaccount_id/flw_bank_code/
-    // flw_account_number/flw_account_name server-side when the account
-    // changed - this only ever needs to save the require_payment/deposit
-    // toggle, which the client is allowed to write directly (same RLS
-    // scope as every other business-owned setting).
-    const { error: rulesError } = await supabase
-      .from('booking_rules')
-      .update({
-        require_payment: requirePayment,
-        deposit_percentage: requirePayment ? (isDeposit ? depositPercentage : 100) : null,
-      })
-      .eq('business_id', businessId);
+    // flw_account_number/flw_account_name/flw_branch_code/country/currency
+    // server-side when the account changed - this saves the two settings
+    // the client is allowed to write directly (same RLS scope as every
+    // other business-owned setting): the require_payment/deposit toggle
+    // on booking_rules, and accept_foreign_currency on businesses itself
+    // (a separate table, so a separate call - no shared row to update
+    // both in one write).
+    const [{ error: rulesError }, { error: businessError }] = await Promise.all([
+      supabase
+        .from('booking_rules')
+        .update({
+          require_payment: requirePayment,
+          deposit_percentage: requirePayment ? (isDeposit ? depositPercentage : 100) : null,
+        })
+        .eq('business_id', businessId),
+      supabase.from('businesses').update({ accept_foreign_currency: acceptForeignCurrency }).eq('id', businessId),
+    ]);
 
     setSaving(false);
 
-    if (rulesError) {
-      setError(friendlyError(rulesError));
+    if (rulesError || businessError) {
+      setError(friendlyError(rulesError ?? businessError));
       return;
     }
     setSaved(true);
@@ -229,10 +286,33 @@ export default function PaymentsManager({
             {banksError && <p className="text-caption text-error mb-2">{banksError}</p>}
 
             <div className="space-y-2.5">
+              {/* Country picks the bank list/currency below it, so it comes
+                  first - changing it clears whatever bank was already
+                  selected rather than leaving a Nigeria-only code sitting
+                  under a Ghana label. */}
+              <div className="flex items-center gap-1 bg-warm-surface rounded-full p-1 w-fit">
+                {(['NG', 'GH'] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      if (c === country) return;
+                      setCountry(c);
+                      setBankCode('');
+                      setBranchCode('');
+                      setLinkedAccountName('');
+                      setSaved(false);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${country === c ? 'bg-accent text-accent-contrast' : 'text-ink-faint hover:text-ink'}`}
+                  >
+                    {c === 'NG' ? 'Nigeria' : 'Ghana'}
+                  </button>
+                ))}
+              </div>
               <select
                 aria-label="Bank"
                 value={bankCode}
-                onChange={(e) => { setBankCode(e.target.value); setLinkedAccountName(''); setSaved(false); }}
+                onChange={(e) => { setBankCode(e.target.value); setBranchCode(''); setLinkedAccountName(''); setSaved(false); }}
                 className={inputClass}
               >
                 <option value="" disabled>
@@ -244,6 +324,29 @@ export default function PaymentsManager({
                   </option>
                 ))}
               </select>
+              {/* Ghana-only - Flutterwave needs a specific branch alongside
+                  the bank + account number for a GH payout, a requirement
+                  Nigeria never has. */}
+              {country === 'GH' && bankCode && (
+                <>
+                  {branchesError && <p className="text-caption text-error">{branchesError}</p>}
+                  <select
+                    aria-label="Bank branch"
+                    value={branchCode}
+                    onChange={(e) => { setBranchCode(e.target.value); setLinkedAccountName(''); setSaved(false); }}
+                    className={inputClass}
+                  >
+                    <option value="" disabled>
+                      {branches.length > 0 ? 'Select your branch' : 'Loading branches…'}
+                    </option>
+                    {branches.map((b) => (
+                      <option key={b.code} value={b.code}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
               <input
                 aria-label="Account number"
                 inputMode="numeric"
@@ -278,6 +381,22 @@ export default function PaymentsManager({
             <p className="text-ink-faint text-[12px] mt-2.5">
               We verify this account with Flutterwave before saving and show you the name on file, the same way a
               bank-transfer app confirms who you&rsquo;re paying before you send anything.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between gap-4">
+              <span className={labelClass}>Accept payments in other currencies</span>
+              <Toggle
+                on={acceptForeignCurrency}
+                onChange={(v) => { setAcceptForeignCurrency(v); setSaved(false); }}
+                label="Foreign currency"
+              />
+            </div>
+            <p className="text-ink-faint text-[12px] mt-2 leading-relaxed">
+              Lets a customer outside Nigeria/Ghana pay you in their own currency (USD, KES, UGX, TZS, or ZAR)
+              instead of {country === 'GH' ? 'GHS' : 'NGN'}. We convert it and forward the equivalent to your
+              account above - a small extra step compared to a same-currency payment, which splits to you instantly.
             </p>
           </div>
         </div>

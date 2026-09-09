@@ -21,6 +21,13 @@ const CURRENCY_LOCALE: Record<string, string> = {
   GHS: 'en-GH',
   KES: 'en-KE',
   ZAR: 'en-ZA',
+  // UGX/TZS added alongside the foreign-currency customer payments work
+  // (see FOREIGN_CURRENCIES in lib/flutterwave.ts) - previously missing
+  // here entirely, which would have silently fallen back to 'en-US'
+  // digit-grouping for two of the six currencies that feature actually
+  // supports.
+  UGX: 'en-UG',
+  TZS: 'en-TZ',
 };
 
 // A narrow no-break space, not a regular one - visually just a hair of

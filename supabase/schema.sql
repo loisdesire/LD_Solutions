@@ -487,6 +487,75 @@ alter table businesses add column if not exists flw_account_name text;
 alter table bookings add column if not exists payment_status text;
 alter table bookings add column if not exists payment_reference text;
 alter table bookings add column if not exists amount_paid numeric;
+-- Null means "the business's own local currency" (true for every booking
+-- before foreign-currency payments existed, and still the common case) -
+-- only set explicitly when a customer paid in a currency different from
+-- the business's own, so amount_paid is read correctly (it's always in
+-- WHATEVER currency was actually charged, never silently converted).
+alter table bookings add column if not exists payment_currency text;
+
+-- ============================================
+-- Multi-currency payments - Ghana as a second local market, plus
+-- optional foreign-currency customer payments (see lib/flutterwave.ts).
+-- ============================================
+
+-- Drives which local Flutterwave rules apply (bank list, whether a
+-- branch code is required) and, via COUNTRY_CURRENCY in lib/flutterwave.ts,
+-- what currency() below gets set to at account-link time. Free text, but
+-- only 'NG' and 'GH' do anything right now - the two countries this
+-- Flutterwave account is actually approved for.
+alter table businesses add column if not exists country text not null default 'NG';
+
+-- currency already existed (added when Flutterwave first replaced
+-- Paystack, "a real place to say otherwise once a second payment rail
+-- exists") but was never actually written to anywhere - every business
+-- silently defaulted to NGN regardless of what this said. Now genuinely
+-- set from country at account-link time; no new column needed for the
+-- same idea.
+
+-- Ghana/Tanzania/Rwanda/Uganda subaccounts require a branch code
+-- alongside the account number/bank (Flutterwave's own "bank_branch"
+-- meta field) - Nigeria never uses this.
+alter table businesses add column if not exists flw_branch_code text;
+
+-- Explicit opt-in, not automatic - accepting a customer's own currency
+-- means Vanova briefly holds that money before converting and forwarding
+-- it (see lib/flutterwave.ts createPayoutTransfer), a materially
+-- different trust model from a same-currency deposit auto-splitting
+-- straight through. A business turns this on knowingly in Settings.
+alter table businesses add column if not exists accept_foreign_currency boolean not null default false;
+
+-- A same-currency (NGN/GHS) deposit auto-splits with nothing to track
+-- here. A foreign-currency payment (say, USD) can never auto-split -
+-- Flutterwave settles it into a currency-matched balance, not a
+-- differently-denominated subaccount - so it needs a second, explicit
+-- Transfer call after the booking is confirmed, and that call can fail
+-- independently of whether the customer's payment succeeded. This table
+-- is how a failed transfer gets found and manually reconciled rather than
+-- silently lost - a customer who paid and got their booking confirmed
+-- must never depend on this transfer succeeding synchronously. No
+-- automated retry yet (see lib/flutterwave.ts's own comment on why) -
+-- failures are logged critical and reconciled by hand until real volume
+-- justifies automating it.
+create table if not exists payout_transfers (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid references bookings(id) on delete set null,
+  business_id uuid references businesses(id) on delete cascade not null,
+  charged_currency text not null,
+  charged_amount numeric not null,
+  payout_currency text not null,
+  payout_amount numeric not null,
+  flw_transfer_id text,
+  status text not null default 'pending', -- pending | completed | failed
+  error text,
+  created_at timestamptz default now()
+);
+
+-- Service-role-only, same as whatsapp_conversations above - nothing here
+-- is ever read or written from a business's own RLS-scoped session.
+alter table payout_transfers enable row level security;
+
+create index if not exists payout_transfers_status_idx on payout_transfers (status) where status <> 'completed';
 
 -- ============================================
 -- Products (AI-assisted product discovery, web only for now - no
