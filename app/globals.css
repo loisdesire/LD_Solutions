@@ -29,20 +29,22 @@
      circular reference - CSS treats that as invalid, not "read the parent's
      value" - so the -base name is what makes the mix formula possible at
      all, not just tidiness. */
-  /* Palette below is adopted from the Stitch-generated dashboard concept
-     (Material You tonal palette seeded from this app's own --accent),
-     confirmed live as "literally perfect... top to bottom". Its actual
-     technique for card separation is a real border + a subtle shadow,
-     not a deliberately-deepened canvas color the way --admin-canvas
-     used to work - paper/admin-canvas/surface converge close together
-     here on purpose, matching the source design rather than the earlier
-     "make the canvas darker" fix from before this direction existed. */
-  --paper-base: #fff8f6;
+  /* The Material You tonal palette Stitch derived from this app's own
+     --accent (seeded #fff8f6/#fee9e4/etc.) read as genuinely too pink
+     once live, confirmed directly: "the bg first off should be much
+     closer to white like we had before... and those pinkish colors oo
+     on the collected via and table col header fill." Reverted these six
+     back to their pre-Stitch values - the ones already tuned and lived
+     with for weeks before this pass. Card separation still leans on a
+     real border + shadow rather than a deliberately-darker canvas (that
+     part of the Stitch direction is kept); only the actual hex values
+     that made the near-white pinkish are reverted. */
+  --paper-base: #faf8f4;
   --surface-base: #ffffff;
-  --warm-surface-base: #fee9e4;
-  --admin-canvas-base: #fff8f6;
-  --line-base: #e3d3cd;
-  --line-strong-base: #c3ada7;
+  --warm-surface-base: #f0ebe3;
+  --admin-canvas-base: #f7f7f4;
+  --line-base: #e1d8cc;
+  --line-strong-base: #cfc3b4;
   --ink-wash-base: rgba(32, 32, 32, 0.05);
 
   --paper: var(--paper-base);

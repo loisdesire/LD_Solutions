@@ -1,3 +1,4 @@
+import { Geist, Inter } from 'next/font/google';
 import { requireStaffSession } from '@/lib/requireStaffSession';
 import { getBusinessBySlug } from '@/lib/getBusinessBySlug';
 import { getSubscriptionState } from '@/lib/subscription';
@@ -10,6 +11,28 @@ import AdminAssistantWidget from '@/components/AdminAssistantWidget';
 import { ToastProvider } from '@/components/Toast';
 import { AccentScope } from '@/components/AccentScope';
 import type { Metadata, Viewport } from 'next';
+
+// Geist/Inter - the actual typefaces the Stitch dashboard design was
+// generated with ("headline": Geist, "body"/"label": Inter, confirmed
+// directly against the design system asset), requested on top of the
+// visual pass already done. Scoped to the admin shell only, not the root
+// layout - the marketing site's Outfit/Plus Jakarta Sans pairing was
+// never part of this redesign and keeps its own identity. Same
+// --font-display/--font-body variable names the root layout already
+// defines, so every existing font-display/font-body class in every admin
+// component picks these up automatically just by being rendered inside
+// this layout's subtree - nothing else needs to change.
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600', '700'],
+});
 
 // Private staff area - never indexed, regardless of what any individual
 // admin page under here does or doesn't set.
@@ -118,7 +141,7 @@ export default async function AdminLayout({
     // existing bg-accent/text-accent/border-accent class in every admin
     // component picks this up automatically, nothing else needed to
     // change. Same fallback the viewport themeColor above already uses.
-    <AccentScope color={business.accent_color || '#C74A1E'}>
+    <AccentScope color={business.accent_color || '#C74A1E'} className={`${geist.variable} ${inter.variable}`}>
     <ToastProvider>
       <PwaRegister slug={slug} />
       {/* Everywhere, not just the dashboard - was AskAssistantBar, which
