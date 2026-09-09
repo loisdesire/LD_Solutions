@@ -459,7 +459,7 @@ export default function AdminSidebar({
           has a dedicated Copy link action on the dashboard header. Just
           the business type now, and only when there is one. */}
       {collapsed ? (
-        <div title={businessName} className="mb-8">
+        <div title={businessName} className="mb-6">
           <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
         </div>
       ) : (
@@ -474,36 +474,39 @@ export default function AdminSidebar({
         </div>
       )}
 
-      {/* The collapse toggle itself. Sits above the nav rather than
-          floating on the sidebar's own edge (a common pattern elsewhere,
-          but this sidebar is sticky/full-height with real content abutting
-          its right edge - an edge-straddling button would've sat half on
-          top of the admin canvas). Chevron direction is the only thing
-          that changes between states, so which way it points always
-          matches what pressing it is about to do. */}
-      <button
-        onClick={toggleCollapsed}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className={`flex items-center justify-center h-8 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0 mb-5 ${
-          collapsed ? 'w-8' : 'w-full gap-2 px-2 justify-start'
-        }`}
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`shrink-0 transition-transform ${collapsed ? 'rotate-180' : ''}`}
+      {/* Was its own full-width row (icon + "Collapse" label) sitting
+          above the entire nav, just for a rarely-used action - real
+          estate that belongs to the nav itself, confirmed live as reading
+          "makes no sense". Inline and icon-only now: small, in the corner,
+          out of the way, its own row still (mb-5) rather than crowding the
+          business-name header, but no wasted full-width label. Not
+          edge-floating (see the removed comment this replaced) - same
+          layout reasoning still holds, this just sits above the nav
+          without claiming its own full line. Chevron direction is the
+          only thing that changes between states, so which way it points
+          always matches what pressing it is about to do. */}
+      <div className={`flex mb-5 ${collapsed ? 'justify-center' : 'justify-end'}`}>
+        <button
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
         >
-          <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
-        </svg>
-        {!collapsed && <span className="text-caption font-medium">Collapse</span>}
-      </button>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`shrink-0 transition-transform ${collapsed ? 'rotate-180' : ''}`}
+          >
+            <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+          </svg>
+        </button>
+      </div>
 
       {collapsed ? (
         // Flat, icon-only, same shape as the narrow-viewport RailLink -
