@@ -210,6 +210,41 @@ export async function applyCreateService(businessId: string, args: { services?: 
       continue;
     }
 
+    // Confirmed live: a real business ended up with the same service
+    // (identical name, price, duration) twice from a single onboarding
+    // conversation - traced to this function having no idempotency check
+    // at all, so any double call (the model re-issuing apply_create_service
+    // for something it already just created - a batching fix landed for
+    // the "split across N calls" version of this bug, but nothing stopped
+    // a genuine repeat call with the same item) silently inserted a second
+    // row. There is no unique constraint on (business_id, name) at the
+    // database level either (a legitimate business could conceivably want
+    // two differently-configured services sharing a display name), so this
+    // has to be an application-level check, not a constraint the DB
+    // enforces on its own. Exact match only (case-insensitive, trimmed) -
+    // deliberately not findServiceByName's fuzzy `%name%` search above,
+    // which is built for the owner searching for "the haircut one" and
+    // would wrongly treat "Haircut" and "Haircut & Beard" as the same
+    // service here.
+    const { data: existing } = await supabaseAdmin
+      .from('services')
+      .select('id, name')
+      .eq('business_id', businessId)
+      .eq('active', true)
+      .ilike('name', name)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      created.push({
+        created: false,
+        already_existed: true,
+        service_id: existing.id,
+        name: existing.name,
+      });
+      continue;
+    }
+
     let { data, error } = await supabaseAdmin
       .from('services')
       .insert({
