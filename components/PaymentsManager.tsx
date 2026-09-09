@@ -338,13 +338,25 @@ export default function PaymentsManager({
             </div>
             {isDeposit && (
               <div className="flex items-center gap-2 mt-3">
+                {/* type="number" showed a stray leading zero on mobile
+                    ("010") - confirmed live, a real quirk of how some
+                    numeric-keyboard IMEs manage a number input's display
+                    text semi-independently of React's own value. Text +
+                    manual digit filtering instead, same pattern the
+                    account number field above already uses - full
+                    control over the exact string shown, no native
+                    number-input behavior left to misbehave. */}
                 <input
-                  type="number"
-                  min={1}
-                  max={99}
+                  type="text"
+                  inputMode="numeric"
                   aria-label="Deposit percentage"
-                  value={depositPercentage}
-                  onChange={(e) => { setDepositPercentage(Number(e.target.value)); setSaved(false); }}
+                  value={depositPercentage === 0 ? '' : depositPercentage}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
+                    const clamped = digits === '' ? 0 : Math.min(99, parseInt(digits, 10));
+                    setDepositPercentage(clamped);
+                    setSaved(false);
+                  }}
                   className={`${smallInputClass} w-20`}
                 />
                 <span className="text-[13px] text-ink-faint">% of the service price, upfront</span>
