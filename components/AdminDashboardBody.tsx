@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Icon from './Icon';
 import DashboardHeaderActions from './DashboardHeaderActions';
 import BookingsList from './BookingsList';
 import SetupChecklist from './SetupChecklist';
@@ -63,25 +64,32 @@ function TodayStat({
     // parent goes away entirely rather than doubling up with this.
     <div className="flex items-center justify-between gap-4 py-3 sm:block sm:py-0 sm:flex-1 sm:min-w-[120px] sm:px-4">
       <div className="min-w-0">
-        <div className="text-caption font-semibold text-ink-faint sm:mb-1">{label}</div>
+        {/* Uppercase + tracking-wide label - the Stitch stat strip's own
+            treatment (label sits above the number, quieter and smaller
+            than it, not competing with it). */}
+        <div className="text-[11px] font-semibold text-ink-faint uppercase tracking-wider sm:mb-1.5">{label}</div>
         {sub && <div className="text-caption text-ink-faint truncate sm:hidden">{sub}</div>}
       </div>
       <div className="text-right shrink-0 sm:text-left">
-        <div className="font-display text-[19px] sm:text-[22px] font-semibold leading-tight" style={{ color }}>
+        <div className="font-display text-[20px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
           {value}
         </div>
         <div className="hidden items-baseline gap-1.5 mt-1 sm:flex">
           {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
           {delta && (
-            <span className={`text-caption font-semibold shrink-0 ${delta.up ? 'text-success' : 'text-error'}`}>
-              {delta.up ? '↑' : '↓'} {delta.value}
+            <span
+              className={`inline-flex items-center rounded text-[11px] font-semibold px-1.5 py-0.5 border shrink-0 ${delta.up ? 'text-success bg-success-bg border-success-border' : 'text-error bg-error-bg border-error-border'}`}
+            >
+              {delta.value}
             </span>
           )}
         </div>
         {delta && (
           <div className="mt-0.5 sm:hidden">
-            <span className={`text-caption font-semibold ${delta.up ? 'text-success' : 'text-error'}`}>
-              {delta.up ? '↑' : '↓'} {delta.value}
+            <span
+              className={`inline-flex items-center rounded text-[11px] font-semibold px-1.5 py-0.5 border ${delta.up ? 'text-success bg-success-bg border-success-border' : 'text-error bg-error-bg border-error-border'}`}
+            >
+              {delta.value}
             </span>
           </div>
         )}
@@ -214,7 +222,9 @@ export default function AdminDashboardBody({
             for the same kind of row. */}
         <div className="flex items-end justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="text-[13px] font-semibold text-accent">
+            {/* Uppercase + tracking-wide, matching the Stitch header's own
+                date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
               {now
                 ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
                 : 'Today'}
@@ -228,7 +238,7 @@ export default function AdminDashboardBody({
             {!acceptingBookings && (
               <Link
                 href={`/${slug}/admin/billing`}
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] bg-warning-bg text-warning"
+                className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium bg-warning-bg text-warning border border-warning-border"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 Not accepting bookings
@@ -294,7 +304,7 @@ export default function AdminDashboardBody({
           canvas happen to compare. */}
       {all.length > 0 && (
         <div
-          className="rounded-2xl border border-line px-5 py-5 mb-8 bg-surface shadow-soft"
+          className="rounded-xl border border-line px-5 py-5 mb-8 bg-surface shadow-soft"
         >
           {/* Dividers only from lg: up - below that, at 4 stats x
               min-w-[120px], the row doesn't reliably have the ~576px it
@@ -363,11 +373,33 @@ export default function AdminDashboardBody({
               that doesn't take online payments at all, or hasn't yet
               today). */}
           {(todayCollected > 0 || weekCollected > 0) && (
-            <div className="border-t border-line-strong mt-4 pt-3.5 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-caption text-ink-faint">Collected via Vanova (deposits + full payments)</span>
-              <span className="text-caption font-semibold text-ink">
-                {formatMoney(todayCollected)} today · {formatMoney(weekCollected)} this week
+            // Sub-summary strip, matching the Stitch design's own treatment:
+            // its own tinted band under the stat grid, a small icon leading
+            // the line, and a link+chevron on the right. That link goes to
+            // Settings, where PaymentsManager (the actual Flutterwave
+            // account screen) lives - "View payout ledger" was Stitch's
+            // placeholder copy for a ledger page this app doesn't have;
+            // linking it to a real screen instead of a dead end.
+            // Plain bg-warm-surface, not a /NN opacity modifier - this app's
+            // surface tokens are CSS custom properties, and Tailwind can't
+            // decompose a var() reference into RGB channels at build time,
+            // so an opacity suffix here would silently produce no tint at
+            // all (documented earlier this session). warm-surface is
+            // already the right strength on its own.
+            <div className="-mx-5 -mb-5 mt-4 border-t border-line-strong bg-warm-surface px-5 py-3 flex items-center justify-between gap-3 flex-wrap rounded-b-xl">
+              <span className="inline-flex items-center gap-1.5 text-caption text-ink-faint">
+                <Icon name="payments" size={15} className="text-accent" />
+                Collected via Vanova (deposits + full payments) —{' '}
+                <strong className="font-semibold text-ink">{formatMoney(todayCollected)}</strong> today ·{' '}
+                <strong className="font-semibold text-ink">{formatMoney(weekCollected)}</strong> this week
               </span>
+              <Link
+                href={`/${slug}/admin/settings`}
+                className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-accent hover:underline shrink-0"
+              >
+                Payment settings
+                <Icon name="chevron_right" size={14} />
+              </Link>
             </div>
           )}
         </div>
@@ -376,11 +408,7 @@ export default function AdminDashboardBody({
       {all.length === 0 ? (
         <div className="border border-line rounded-2xl bg-warm-surface p-10 text-center sm:p-14">
           <div className="mx-auto mb-5 h-14 w-14 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M3 9.5H21" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
+            <Icon name="calendar_today" size={26} />
           </div>
           <h2 className="font-display text-[20px] font-semibold">No bookings yet - that's normal</h2>
           <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import ConversationPanel from './ConversationPanel';
 import BookingDetailModal from './BookingDetailModal';
 import EmptyState from './EmptyState';
+import Icon from './Icon';
 import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
 import { parseContact } from '@/lib/contact';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -215,10 +216,7 @@ export default function BookingsList({
         </div>
         {bookings.length > 8 && onSearchChange && (
           <div className="order-3 flex w-full items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 min-h-[40px] transition-colors focus-within:border-[var(--accent)] sm:order-none sm:w-52">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
+            <Icon name="search" size={16} className="text-ink-faint shrink-0" />
             <input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -334,12 +332,7 @@ export default function BookingsList({
       {filtered.length === 0 ? (
         <EmptyState
           compact
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <rect x="3" y="4.5" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M3 9.5h18M8 2.5v4M16 2.5v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          }
+          icon={<Icon name="event_busy" size={22} />}
           title="Nothing here"
           description={`No ${statusFilter !== 'all' ? `${STATUS_LABELS[statusFilter]?.toLowerCase()} ` : ''}${
             scope === 'today' ? 'bookings today' : `${scope} bookings`
