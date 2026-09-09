@@ -99,9 +99,11 @@ export default function AdminDashboardBody({
   all,
   todayCount,
   todayRevenue,
+  todayCollected,
   thisWeekCount,
   weekCountDelta,
   weekRevenue,
+  weekCollected,
   revenuePctDelta,
   nextSlot,
   profileDone,
@@ -119,9 +121,11 @@ export default function AdminDashboardBody({
   all: Booking[];
   todayCount: number;
   todayRevenue: number;
+  todayCollected: number;
   thisWeekCount: number;
   weekCountDelta: number;
   weekRevenue: number;
+  weekCollected: number;
   revenuePctDelta: number | null;
   nextSlot: Booking | undefined;
   profileDone: boolean;
@@ -327,6 +331,26 @@ export default function AdminDashboardBody({
               }
             />
           </div>
+          {/* Today's revenue/This week above are the VALUE of what's
+              booked (every active booking's full service price) - a
+              business taking a 10% deposit, or one that collects in
+              person, was reading as if the full price had already come
+              in. Confirmed live: "shouldn't there be something that
+              shows how much [was collected] from deposits and full
+              payments?" This is that - a real, separate figure, summed
+              from the actual verified Flutterwave amount rather than the
+              service's list price. Only shows once there's genuinely
+              something to report (no permanent empty line for a business
+              that doesn't take online payments at all, or hasn't yet
+              today). */}
+          {(todayCollected > 0 || weekCollected > 0) && (
+            <div className="border-t border-line-strong mt-4 pt-3.5 flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-caption text-ink-faint">Collected via Vanova (deposits + full payments)</span>
+              <span className="text-caption font-semibold text-ink">
+                {formatMoney(todayCollected)} today · {formatMoney(weekCollected)} this week
+              </span>
+            </div>
+          )}
         </div>
       )}
 

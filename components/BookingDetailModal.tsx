@@ -46,7 +46,17 @@ export default function BookingDetailModal({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
-        <div className="-mt-8">
+        {/* Was -mt-8 (-32px) - confirmed live, that pulled the content up
+            further than the close-button row above it actually is (a
+            12px/pt-3 button in a 32px/h-8 box = 44px tall), so
+            BookingDetail's own header (the "Next appointment" label and
+            the status pill) landed back underneath that row - which is
+            sticky+z-10, opaque bg-surface, and therefore visually
+            covered whatever overlapped it instead of just sitting close
+            to it. -mt-2 leaves a real, if small, gap clear of that
+            row's actual height instead of guessing a bigger pull looked
+            fine. */}
+        <div className="-mt-2">
           <BookingDetail slug={slug} booking={booking} onChanged={onClose} />
         </div>
       </div>

@@ -48,7 +48,7 @@ export default async function AdminDashboard({
   // rather than letting it be seen, which on THIS page meant a genuine
   // error rendered as a false "nothing booked today" empty state.
   const BOOKING_COLUMNS =
-    'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, services!bookings_service_business_fk(name, price, duration_minutes), staff(name)';
+    'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, payment_status, amount_paid, payment_currency, services!bookings_service_business_fk(name, price, duration_minutes), staff(name)';
 
   const nowMs = Date.now();
   const pastFrom = from ? new Date(`${from}T00:00:00`) : new Date(nowMs - 7 * 86400000);
@@ -145,6 +145,24 @@ export default async function AdminDashboard({
   const weekRevenue = thisWeek.reduce((sum, b: any) => sum + (b.services?.price ?? 0), 0);
   const prevWeekRevenue = prevWeek.reduce((sum, b: any) => sum + (b.services?.price ?? 0), 0);
   const weekCountDelta = thisWeek.length - prevWeek.length;
+
+  // Todayrevenue/weekRevenue above are the VALUE of what's booked (every
+  // active booking's full service price), not what's actually been
+  // collected online - a business taking a 10% deposit, or one that
+  // collects in person, was showing as if the full price had already
+  // come in. Confirmed live: "money neva show for my account... shouldn't
+  // there be something that shows how much [was collected] from deposits
+  // and full payments?" This is that - a real, separate figure, summed
+  // from amount_paid (the actual verified Flutterwave amount) rather than
+  // the service's list price. payment_currency is null for a local-
+  // currency payment and set for a foreign one (see app/api/bookings/
+  // route.ts) - only local-currency payments are summed here, since
+  // adding raw NGN and USD figures together would be meaningless; a
+  // business with real foreign-currency volume needs its own breakdown,
+  // not a blended total, and that's genuinely deferred scope for now.
+  const isPaidLocal = (b: any) => b.payment_status === 'paid' && !b.payment_currency;
+  const todayCollected = todayBookings.filter(isPaidLocal).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
+  const weekCollected = thisWeek.filter(isPaidLocal).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
   const revenuePctDelta =
     prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : null;
   const nextSlot = active.find((b) => new Date(b.start_time) >= now);
@@ -160,9 +178,11 @@ export default async function AdminDashboard({
       all={all}
       todayCount={todayCount}
       todayRevenue={todayRevenue}
+      todayCollected={todayCollected}
       thisWeekCount={thisWeek.length}
       weekCountDelta={weekCountDelta}
       weekRevenue={weekRevenue}
+      weekCollected={weekCollected}
       revenuePctDelta={revenuePctDelta}
       nextSlot={nextSlot}
       profileDone={Boolean(business.description?.trim() || business.logo_url)}
