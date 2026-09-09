@@ -30,17 +30,24 @@
      value" - so the -base name is what makes the mix formula possible at
      all, not just tidiness. */
   --paper-base: #f8f6f2;
-  --surface-base: #ffffff;
+  /* Was pure #ffffff - shifted a hair to #f9f9f9 on request. Barely
+     perceptible on its own (255->250, ~2% darker), but it means --surface
+     is no longer literal white, which matters once AccentScope tints it:
+     mixing a color into true white desaturates the most a mix can - the
+     tiniest headroom below full white lets a tint actually read as a
+     tint rather than getting swallowed entirely. */
+  --surface-base: #f9f9f9;
   --warm-surface-base: #f1eee8;
-  /* Was #e9e3d8, only ~7 points of lightness below --surface-base (white)
-     - confirmed live (real dashboard screenshots) that gap reads as
-     nearly flat, not two layers, especially once AccentScope's tinting
-     is mixed on top (see that file's own comment on why a cooler accent
-     made it worse, not just less warm). Deepened to a real, unambiguous
-     step down from white - this is the one token driving "does a white
-     card actually look like it's sitting on something," so it needed
-     enough of a jump to survive tinting, not just look right untinted. */
-  --admin-canvas-base: #ded4c1;
+  /* Was a warm tan (#ded4c1 briefly, #e9e3d8 before that) - moved to a
+     genuinely neutral grey on request instead of tuning the warm version
+     further. This is the more robust fix for the real problem underneath
+     "dull colors": a warm-tinted canvas fights a cool accent color
+     (partial-complementary hues partially cancel each other's
+     saturation, which is exactly what read as lifeless slate in the blue
+     business's screenshot) - a neutral, hueless grey doesn't fight ANY
+     accent, warm or cool, so this stops being a per-business problem
+     instead of needing separate tuning for every possible accent color. */
+  --admin-canvas-base: #d9d9d9;
   --line-base: #e7e2da;
   --line-strong-base: #d6cec2;
   --ink-wash-base: rgba(32, 32, 32, 0.05);
