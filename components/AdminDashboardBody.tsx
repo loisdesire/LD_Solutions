@@ -267,28 +267,23 @@ export default function AdminDashboardBody({
           off --paper and read as "no background"; plain --cream-surface
           was a full-strength mustard fill; mixed 45% into white it was
           still an unrelated hue sitting on top of the page rather than
-          growing out of it.
+          growing out of it. Mixed a little cream into --paper itself
+          (the page's own background, not white) instead - the card is
+          a warmer step along the same tone the page already is, not a
+          different color dropped onto it.
 
-          Was mixed into --paper - reverted off that, confirmed live: with
-          the admin canvas now meaningfully deeper than before (see
-          --admin-canvas-base in globals.css) and --paper itself carrying
-          an AccentScope tint on top, mixing this card off --paper made it
-          drift toward the SAME tone as whatever the canvas happened to be
-          tinted, for the same reason both were being pulled toward the
-          business's accent color from a similar starting point - reading
-          as "no card" again, just for a different reason than the
-          original bug this comment used to describe. Mixed into --surface
-          now instead (cards' own token, kept close to true white by
-          AccentScope's own 2% cap - see that file) - a warm cream note on
-          top of something that stays legibly closer to white than the
-          floor it's sitting on, regardless of what the accent color is.
-          border-line-strong and shadow-soft both stay for the same
-          reason as before - a real edge and lift, not relying on tone
-          alone. */}
+          Briefly mixed into --surface instead during this window's color
+          pass, reverted back to --paper on request along with
+          --admin-canvas-base/--surface-base themselves going back to
+          their two-weeks-ago values (see globals.css) - this formula and
+          those base values are meant to be read together, not one
+          reverted without the other. border-line-strong and shadow-soft
+          give it a real edge/lift regardless of how the tint and the
+          canvas happen to compare. */}
       {all.length > 0 && (
         <div
           className="rounded-2xl border border-line-strong px-5 py-5 mb-8 shadow-soft"
-          style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--surface))' }}
+          style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--paper))' }}
         >
           {/* Dividers only from lg: up - below that, at 4 stats x
               min-w-[120px], the row doesn't reliably have the ~576px it
