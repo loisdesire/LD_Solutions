@@ -106,6 +106,7 @@ export default function AdminDashboardBody({
   weekCollected,
   revenuePctDelta,
   nextSlot,
+  acceptingBookings,
   profileDone,
   servicesDone,
   hoursDone,
@@ -128,6 +129,7 @@ export default function AdminDashboardBody({
   weekCollected: number;
   revenuePctDelta: number | null;
   nextSlot: Booking | undefined;
+  acceptingBookings: boolean;
   profileDone: boolean;
   servicesDone: boolean;
   hoursDone: boolean;
@@ -211,10 +213,27 @@ export default function AdminDashboardBody({
             small, but it's the same convention, not two different ones
             for the same kind of row. */}
         <div className="flex items-end justify-between gap-3">
-          <div className="text-[13px] font-semibold text-accent">
-            {now
-              ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-              : 'Today'}
+          <div className="flex items-center gap-2.5">
+            <span className="text-[13px] font-semibold text-accent">
+              {now
+                ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+                : 'Today'}
+            </span>
+            {/* Real status, not decoration (see the server component's own
+                comment on where this comes from) - only shown for the
+                abnormal case. A permanent "Accepting bookings" pill on
+                every normal day is chrome nobody needs to see 365 days a
+                year; the moment it actually matters is the one day it's
+                false, and that's the one day this needs to be loud. */}
+            {!acceptingBookings && (
+              <Link
+                href={`/${slug}/admin/billing`}
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] bg-warning-bg text-warning"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                Not accepting bookings
+              </Link>
+            )}
           </div>
           <DashboardHeaderActions
             slug={slug}

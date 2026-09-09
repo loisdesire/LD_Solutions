@@ -205,7 +205,14 @@ export default function BookingsList({
           each other) so it reads as one continuous row, status chips
           appended after Past. */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 className="font-display text-[19px] font-semibold text-ink">{SCOPE_HEADING[scope]}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-display text-[19px] font-semibold text-ink">{SCOPE_HEADING[scope]}</h2>
+          {filtered.length > 0 && (
+            <span className="inline-flex items-center rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[11px] text-ink-faint">
+              {filtered.length}
+            </span>
+          )}
+        </div>
         {bookings.length > 8 && onSearchChange && (
           <div className="order-3 flex w-full items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 min-h-[40px] transition-colors focus-within:border-[var(--accent)] sm:order-none sm:w-52">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">

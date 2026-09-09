@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import AdminDashboardBody from '@/components/AdminDashboardBody';
 import { todayInTimezone, zonedTimeToUtc } from '@/lib/timezone';
 import { logError } from '@/lib/logger';
+import { canAcceptBookings } from '@/lib/subscription-server';
 
 // Server-side only: bookings contain customer PII, so this uses the service
 // role key rather than opening a public RLS policy on the table.
@@ -60,6 +61,7 @@ export default async function AdminDashboard({
     { data: bookableServices },
     { data: rules },
     { count: hoursCount },
+    acceptingBookings,
   ] =
     await Promise.all([
       supabaseAdmin
@@ -96,6 +98,11 @@ export default async function AdminDashboard({
         .select('id', { count: 'exact', head: true })
         .eq('business_id', business.id)
         .is('staff_id', null),
+      // Real status, not decoration - the same check the public booking
+      // route itself gates on (subscription active/trialing). Shown next
+      // to the date so an owner whose trial lapsed sees why bookings
+      // stopped without having to go find Billing first.
+      canAcceptBookings(business.id),
     ]);
 
   if (recentError) logError('admin/dashboard:recent-bookings-query', recentError, { businessId: business.id });
@@ -185,6 +192,7 @@ export default async function AdminDashboard({
       weekCollected={weekCollected}
       revenuePctDelta={revenuePctDelta}
       nextSlot={nextSlot}
+      acceptingBookings={acceptingBookings}
       profileDone={Boolean(business.description?.trim() || business.logo_url)}
       servicesDone={(bookableServices?.length ?? 0) > 0}
       hoursDone={(hoursCount ?? 0) > 0}
