@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createBrowserSupabase } from '@/lib/supabase';
 import NotificationBell from './NotificationBell';
+import Icon from './Icon';
 
 const COLLAPSE_KEY = 'admin-sidebar-collapsed';
 
@@ -70,74 +71,25 @@ function BusinessMark({
   );
 }
 
-const icons: Record<string, React.ReactNode> = {
-  bookings: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3" y="4" width="7" height="7" rx="1.5" />
-      <rect x="14" y="4" width="7" height="7" rx="1.5" />
-      <rect x="3" y="13" width="7" height="7" rx="1.5" />
-      <rect x="14" y="13" width="7" height="7" rx="1.5" />
-    </svg>
-  ),
-  calendar: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M3 9.5H21" />
-      <path d="M8 3V6.5M16 3V6.5" strokeLinecap="round" />
-    </svg>
-  ),
-  customers: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
-    </svg>
-  ),
-  channels: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M4 4h16v12H8l-4 4V4z" />
-      <path d="M8 9h8M8 12h5" />
-    </svg>
-  ),
-  services: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M4 6h16M4 12h16M4 18h10" />
-    </svg>
-  ),
-  products: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  ),
-  hours: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  ),
-  staff: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
-      <circle cx="9" cy="11" r="4" />
-      <path d="M23 21v-2a4 4 0 00-3-3.87M17 3.13A4 4 0 0117 11" />
-    </svg>
-  ),
-  settings: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.51 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.51-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34h0a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.51 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87v0a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1z" />
-    </svg>
-  ),
-  billing: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <path d="M2 10h20" />
-    </svg>
-  ),
-  insights: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
-    </svg>
-  ),
+// Material Symbols Outlined ligature names, adopted from the Stitch-
+// generated dashboard design (confirmed live: "the choice of icons...
+// literally perfect") - replaces the hand-drawn inline SVGs this record
+// used to hold one-by-one. Same keys everywhere they're already used
+// (NavLink/RailLink/CollapsedLink below all just look up icons[iconKey]
+// and hand it to the shared Icon component), so nothing about how a nav
+// item picks its icon had to change, only what that icon actually is.
+const icons: Record<string, string> = {
+  bookings: 'dashboard',
+  calendar: 'calendar_today',
+  customers: 'group',
+  channels: 'hub',
+  services: 'spa',
+  products: 'inventory_2',
+  hours: 'schedule',
+  staff: 'badge',
+  settings: 'settings',
+  billing: 'credit_card',
+  insights: 'smart_toy',
 };
 
 type NavStatus = { setupIncomplete: boolean; channelsDisconnected: boolean; trialEndingSoon: boolean };
@@ -288,7 +240,7 @@ export default function AdminSidebar({
         onMouseEnter={() => prefetchLink(href)}
         onFocus={() => prefetchLink(href)}
         onTouchStart={() => prefetchLink(href)}
-        className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body-sm transition-colors ${
+        className={`relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] transition-colors ${
           active ? 'font-semibold' : 'text-ink-soft hover:bg-warm-surface hover:text-ink'
         }`}
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
@@ -305,11 +257,11 @@ export default function AdminSidebar({
           />
         )}
         <span className="relative shrink-0">
-          {icons[iconKey]}
+          <Icon name={icons[iconKey]} size={18} />
           {badge && (
             <span
-              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-surface"
-              style={{ background: 'var(--warning)' }}
+              className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full"
+              style={{ background: 'var(--warning)', boxShadow: '0 0 0 2px var(--surface)' }}
               aria-hidden="true"
             />
           )}
@@ -358,11 +310,11 @@ export default function AdminSidebar({
         className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
-        <span className={active ? '' : 'text-ink-soft'}>{icons[iconKey]}</span>
+        <Icon name={icons[iconKey]} size={20} className={active ? 'text-accent' : 'text-ink-soft'} />
         {badge && (
           <span
-            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full border border-surface"
-            style={{ background: 'var(--warning)' }}
+            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full"
+            style={{ background: 'var(--warning)', boxShadow: '0 0 0 2px var(--surface)' }}
             aria-hidden="true"
           />
         )}
@@ -438,11 +390,11 @@ export default function AdminSidebar({
         className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
-        <span className={active ? '' : 'text-ink-soft'}>{icons[iconKey]}</span>
+        <Icon name={icons[iconKey]} size={20} className={active ? 'text-accent' : 'text-ink-soft'} />
         {badge && (
           <span
-            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full border border-surface"
-            style={{ background: 'var(--warning)' }}
+            className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full"
+            style={{ background: 'var(--warning)', boxShadow: '0 0 0 2px var(--surface)' }}
             aria-hidden="true"
           />
         )}
@@ -489,9 +441,7 @@ export default function AdminSidebar({
           title="Sign out"
           className="h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
+          <Icon name="logout" size={18} />
         </button>
       </div>
     </aside>
@@ -519,9 +469,9 @@ export default function AdminSidebar({
           standalone small icon still makes sense, since it's the only
           thing on that line. */}
       {collapsed ? (
-        <div className="mb-4 flex flex-col items-center gap-2">
+        <div className="-mx-0 mb-4 pb-4 border-b border-line flex flex-col items-center gap-2">
           <div title={businessName}>
-            <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
+            <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-9 w-9 rounded-lg text-[13px]" />
           </div>
           <button
             onClick={toggleCollapsed}
@@ -529,19 +479,20 @@ export default function AdminSidebar({
             title="Expand sidebar"
             className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-180">
-              <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
-            </svg>
+            <Icon name="menu" size={18} />
           </button>
         </div>
       ) : (
-        <div className="mb-10 px-2 flex items-center gap-2">
-          <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
+        // -mx-5 px-5 cancels and re-applies the <aside>'s own horizontal
+        // padding just for this row, so the border-b underneath it can
+        // span the sidebar's full width - matching the Stitch design's
+        // own bordered brand-header strip - without restructuring the
+        // whole aside's padding model just for one row.
+        <div className="-mx-5 px-5 mb-5 pb-4 border-b border-line flex items-center gap-2.5">
+          <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-8 w-8 rounded-lg text-[13px]" />
           <div className="min-w-0 flex-1">
-            <div className="font-display text-[17px] font-semibold text-ink tracking-tight truncate">{businessName}</div>
-            {businessType && (
-              <div className="text-[12px] text-ink-faint mt-0.5 truncate">{businessType}</div>
-            )}
+            <div className="font-display text-[14px] font-semibold text-ink tracking-tight truncate leading-tight">{businessName}</div>
+            <div className="text-[10.5px] text-ink-faint truncate leading-tight">{businessType || 'Vanova Hub Admin'}</div>
           </div>
           <button
             onClick={toggleCollapsed}
@@ -549,9 +500,7 @@ export default function AdminSidebar({
             title="Collapse sidebar"
             className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
-            </svg>
+            <Icon name="menu_open" size={18} />
           </button>
         </div>
       )}
@@ -618,7 +567,7 @@ export default function AdminSidebar({
           <NotificationBell slug={slug} variant="rail" />
           <div
             title={`${userEmail} - ${role}`}
-            className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
+            className="h-8 w-8 rounded-full text-accent-contrast flex items-center justify-center font-display text-[13px] font-bold shrink-0"
             style={{ background: 'var(--accent)' }}
           >
             {userEmail?.[0]?.toUpperCase()}
@@ -629,33 +578,29 @@ export default function AdminSidebar({
             title="Sign out"
             className="h-11 w-11 flex items-center justify-center rounded-xl text-ink-faint hover:text-ink hover:bg-warm-surface transition-colors shrink-0"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
+            <Icon name="logout" size={18} />
           </button>
         </div>
       ) : (
-        <div className="mt-auto pt-5 border-t border-line">
+        <div className="mt-auto pt-4 border-t border-line">
           <NotificationBell slug={slug} variant="row" />
           <div className="flex items-center gap-2.5 px-1 mt-1.5">
             <div
-              className="h-10 w-10 rounded-2xl text-accent-contrast flex items-center justify-center font-display text-[15px] font-bold shrink-0"
+              className="h-8 w-8 rounded-full text-accent-contrast flex items-center justify-center font-display text-[13px] font-bold shrink-0"
               style={{ background: 'var(--accent)' }}
             >
               {userEmail?.[0]?.toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-caption font-medium truncate">{userEmail}</div>
-              <div className="font-mono text-[10px] text-ink-faint capitalize">{role}</div>
+              <div className="text-[12.5px] font-semibold text-ink truncate">{userEmail}</div>
+              <div className="text-[10.5px] text-ink-faint capitalize truncate">Admin · {role}</div>
             </div>
             <button
               onClick={handleSignOut}
               aria-label="Sign out"
-              className="p-1.5 text-ink-faint hover:text-ink transition-colors shrink-0"
+              className="p-1.5 rounded-md text-ink-faint hover:text-error transition-colors shrink-0"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-              </svg>
+              <Icon name="logout" size={16} />
             </button>
           </div>
         </div>

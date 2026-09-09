@@ -29,25 +29,20 @@
      circular reference - CSS treats that as invalid, not "read the parent's
      value" - so the -base name is what makes the mix formula possible at
      all, not just tidiness. */
-  --paper-base: #faf8f4;
-  /* Reverted to the pre-redesign value (pure white) on request, after
-     the f9/d9/tan experiments this window didn't land - see git history
-     (commit 6ba5459, 2026-08-25) for the last state before any of
-     --admin-canvas or AccentScope's neutral-tinting existed at all. */
+  /* Palette below is adopted from the Stitch-generated dashboard concept
+     (Material You tonal palette seeded from this app's own --accent),
+     confirmed live as "literally perfect... top to bottom". Its actual
+     technique for card separation is a real border + a subtle shadow,
+     not a deliberately-deepened canvas color the way --admin-canvas
+     used to work - paper/admin-canvas/surface converge close together
+     here on purpose, matching the source design rather than the earlier
+     "make the canvas darker" fix from before this direction existed. */
+  --paper-base: #fff8f6;
   --surface-base: #ffffff;
-  --warm-surface-base: #f0ebe3;
-  /* Reverted to equal --warm-surface-base, matching the two-weeks-ago
-     admin canvas exactly (it was plain bg-warm-surface then - see
-     app/[slug]/admin/layout.tsx at the same commit, no separate token
-     existed). Worth knowing plainly: this brings back the ORIGINAL
-     reason --admin-canvas was split into its own, deeper token in the
-     first place - white cards and this canvas will read close to
-     identical again, the same flatness the first complaint in this
-     whole thread was about. Reverting anyway because that's what was
-     asked for; flagging it so it's a known tradeoff, not a surprise. */
-  --admin-canvas-base: #f7f7f4;
-  --line-base: #e1d8cc;
-  --line-strong-base: #cfc3b4;
+  --warm-surface-base: #fee9e4;
+  --admin-canvas-base: #fff8f6;
+  --line-base: #e3d3cd;
+  --line-strong-base: #c3ada7;
   --ink-wash-base: rgba(32, 32, 32, 0.05);
 
   --paper: var(--paper-base);
@@ -153,6 +148,28 @@
   --info: #1769aa;
   --info-bg: #eaf4fb;
   --info-border: #a9d2ed;
+}
+
+/* Material Symbols Outlined - see components/Icon.tsx, the admin shell's
+   icon set as of the Stitch-adopted redesign. font-variation-settings is
+   what actually turns the ligature text into a rendered glyph at the
+   right weight/fill - without it this just shows literal text ("dashboard"
+   as a word), which is the classic symptom of loading the font file but
+   never setting these axes. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Reusable: a horizontally-scrollable row that keeps real scroll (mouse

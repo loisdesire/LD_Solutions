@@ -58,6 +58,22 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${outfit.variable}`}>
+      <head>
+        {/* Material Symbols Outlined - the admin shell's icon set, adopted
+            from the Stitch-generated dashboard design (see components/Icon.tsx
+            for the small wrapper every admin icon now goes through). A real
+            Google Font link, not next/font/google - that helper is built for
+            text fonts, not a ligature-based icon font like this one.
+            eslint's no-page-custom-font rule flags this ("will only load
+            for a single page") - a known false positive here, predating
+            App Router: this IS the root layout, rendered for every route
+            in the app, the direct App Router equivalent of the
+            pages/_document.js placement that rule actually wants. */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );
