@@ -153,7 +153,7 @@ export default function AdminMobileNav({
   }
 
   return (
-    <div className="md:hidden border-b border-line bg-paper/95 backdrop-blur-xl sticky top-0 z-40">
+    <div className="md:hidden relative border-b border-line bg-paper/95 backdrop-blur-xl sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2 min-w-0">
           {logoUrl ? (
@@ -201,10 +201,21 @@ export default function AdminMobileNav({
       </div>
 
       {menuOpen && (
+        // absolute, not static flow - this used to be a normal block
+        // sitting inside the sticky header, so opening it grew the
+        // header's own height and pushed every bit of page content below
+        // it further down the screen. The body-scroll lock above stopped
+        // the PAGE from scrolling behind an open menu, but never stopped
+        // the menu itself from shoving that page down first - a real,
+        // separate bug, confirmed live. Floats below the header now
+        // (top-full, relative to the header's own relative wrapper)
+        // instead of taking up layout space in it - a genuine overlay,
+        // solid background + shadow so it reads as floating over the
+        // page rather than part of the same bar.
         <div
           id="admin-mobile-nav-menu"
           role="menu"
-          className="border-t border-line px-4 py-4 animate-rise overflow-y-auto"
+          className="absolute top-full left-0 right-0 z-40 border-t border-line bg-paper shadow-card px-4 py-4 animate-rise overflow-y-auto"
           style={{ maxHeight: 'calc(100vh - 64px)' }}
         >
           <div className="font-mono text-label uppercase tracking-[0.1em] text-ink-faint px-3 mb-1.5">
