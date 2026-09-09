@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import PillTabs from './PillTabs';
+import Icon from './Icon';
 import ConversationPanel from './ConversationPanel';
 import { todayInTimezone, dayOfWeekForDate } from '@/lib/timezone';
 
@@ -289,27 +290,30 @@ export default function CalendarView({
           hue/lightness that the swap needs an actual edge to still read
           as one, not float free of the grid below it. */}
       <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-transparent border-b border-line flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        {/* Bordered rounded-md squares, not full circles - the same icon-
+            button chrome adopted from the Stitch dashboard for every other
+            toolbar action in the admin (see DashboardHeaderActions). */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setAnchor((a) => addDays(a, mode === 'week' ? -7 : -1))}
-            className="h-10 w-10 flex items-center justify-center rounded-full border-2 border-line-strong hover:border-accent hover:text-accent transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-line bg-surface text-ink-faint hover:bg-warm-surface hover:text-ink transition-all"
             aria-label={mode === 'week' ? 'Previous week' : 'Previous day'}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+            <Icon name="chevron_left" size={18} />
           </button>
           <button
             onClick={() => setAnchor(today)}
             disabled={anchor === today}
-            className="px-4 py-2 min-h-[40px] rounded-full font-mono text-label border-2 transition-colors disabled:opacity-40 disabled:cursor-default border-line-strong text-ink-soft enabled:hover:border-accent enabled:hover:text-accent"
+            className="h-9 px-3.5 rounded-md border text-[13px] font-medium transition-all disabled:opacity-40 disabled:cursor-default border-line bg-surface text-ink-soft enabled:hover:bg-warm-surface enabled:hover:text-ink"
           >
             Today
           </button>
           <button
             onClick={() => setAnchor((a) => addDays(a, mode === 'week' ? 7 : 1))}
-            className="h-10 w-10 flex items-center justify-center rounded-full border-2 border-line-strong hover:border-accent hover:text-accent transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-md border border-line bg-surface text-ink-faint hover:bg-warm-surface hover:text-ink transition-all"
             aria-label={mode === 'week' ? 'Next week' : 'Next day'}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+            <Icon name="chevron_right" size={18} />
           </button>
           <div className="ml-2">
             <span className="font-display text-[15px] font-semibold text-ink">{rangeLabel}</span>

@@ -137,12 +137,14 @@ export default function BookingsList({
   // only generates classes it can see literally in the source, so building
   // one with `sm:${...}` at runtime would produce a class that has no CSS
   // behind it and silently collapse the grid.
+  // Trailing 48px column added for the row-action icon - matches the
+  // Stitch table's own dedicated Actions column.
   const GRID_HEAD = showStaff
-    ? 'grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
-    : 'grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
+    ? 'grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px_48px]'
+    : 'grid-cols-[84px_1.4fr_1.1fr_1fr_100px_48px]';
   const GRID_ROW = showStaff
-    ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
-    : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
+    ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px_48px]'
+    : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px_48px]';
 
   const isPast = scope === 'past';
 
@@ -312,23 +314,16 @@ export default function BookingsList({
         </div>
       )}
 
-      {/* Deliberately not a bordered box anymore - a top rule plus row
-          dividers reads as a schedule, not another card among cards, and
-          it's the section that matters most on the page, so it shouldn't
-          compete visually with everything boxed around it. */}
-      {/* border-line-strong, not border-line - same reasoning as
-          CustomersManager's table: no card wrapper here, these dividers
-          sit directly on the admin canvas, and border-line is too close
-          in lightness to --admin-canvas on desktop to read as a divider
-          at all. */}
-      {/* Was a header row (Time/Customer/Service/.../Status) that stayed
-          visible even with nothing underneath it - a column-headings bar
-          floating over a single line of grey text read as a broken table,
-          not a considered "nothing here yet" state. The header only makes
-          sense once there's a real row for it to label, so now it (and
-          the whole list wrapper) simply doesn't render when there's
-          nothing to show - EmptyState (already used by Billing/Staff)
-          takes over completely instead of sharing space with it. */}
+      {/* A real bordered/banded table now (Stitch's own table treatment,
+          confirmed against its actual screenshot: a bordered card, a
+          tinted header band, per-row hover, a dedicated actions column) -
+          previously an intentionally unboxed "schedule" (top rule + row
+          dividers, no card, no header background) on the theory that the
+          page's most important section shouldn't compete visually with
+          everything boxed around it. Reversed on direct feedback that the
+          rendered page didn't match the generated design here. Mobile
+          still gets its own card-per-row treatment below sm: (Stitch's
+          source is desktop-only, has no mobile layout to match against). */}
       {filtered.length === 0 ? (
         <EmptyState
           compact
@@ -339,14 +334,15 @@ export default function BookingsList({
           }.`}
         />
       ) : (
-        <div>
-          <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
+        <div className="sm:border sm:border-line sm:rounded-xl sm:bg-surface sm:overflow-hidden sm:shadow-soft">
+          <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-4 py-2.5 border-b border-line-strong bg-warm-surface font-mono text-label uppercase tracking-[0.1em] text-ink-faint`}>
             <div>Time</div>
             <div>Customer</div>
             <div>Service</div>
             {showStaff && <div>Staff</div>}
             <div>Contact</div>
             <div>Status</div>
+            <div className="text-right">Actions</div>
           </div>
 
           {filtered.map((b, i) => {
@@ -376,7 +372,7 @@ export default function BookingsList({
                     setDetailBooking(b);
                   }
                 }}
-                className={`cursor-pointer rounded-2xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-2 sm:py-4 hover:bg-warm-surface transition-colors ${
+                className={`group/row cursor-pointer rounded-2xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-4 sm:py-3 hover:bg-warm-surface transition-colors ${
                   i !== filtered.length - 1 ? 'sm:border-b sm:border-line-strong' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
@@ -441,6 +437,29 @@ export default function BookingsList({
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {b.status.replace('_', ' ')}
                   </span>
+
+                  {/* Matches the Stitch table's own Actions column - a
+                      hover-revealed view icon. The row itself already opens
+                      this same detail modal on click, so this button fires
+                      the identical action; it exists for visual parity with
+                      the generated design, not as a second, different
+                      affordance. No "more options" icon alongside it (Stitch
+                      had one) - this app has no secondary menu of options to
+                      put behind it, and a button that opens nothing would be
+                      a real regression, not a visual one. */}
+                  <div className="hidden sm:flex items-center justify-end opacity-0 group-hover/row:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailBooking(b);
+                      }}
+                      aria-label="View details"
+                      title="View details"
+                      className="flex h-7 w-7 items-center justify-center rounded text-ink-faint hover:bg-surface hover:text-ink"
+                    >
+                      <Icon name="visibility" size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

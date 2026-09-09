@@ -230,20 +230,27 @@ export default function AdminDashboardBody({
                 : 'Today'}
             </span>
             {/* Real status, not decoration (see the server component's own
-                comment on where this comes from) - only shown for the
-                abnormal case. A permanent "Accepting bookings" pill on
-                every normal day is chrome nobody needs to see 365 days a
-                year; the moment it actually matters is the one day it's
-                false, and that's the one day this needs to be loud. */}
-            {!acceptingBookings && (
-              <Link
-                href={`/${slug}/admin/billing`}
-                className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium bg-warning-bg text-warning border border-warning-border"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                Not accepting bookings
-              </Link>
-            )}
+                comment on where this comes from) - matches the Stitch
+                dashboard's own header exactly: a permanent status pill,
+                green/"Accepting Online Bookings" in the normal case,
+                switching to the warning treatment on the one day it's
+                actually false. Previously shown only for the abnormal
+                case on the theory that a permanent positive pill was
+                chrome nobody needed to see 365 days a year - reversed on
+                request: this is the Stitch source's own real treatment,
+                confirmed against the generated screenshot, not a
+                fabricated addition. */}
+            <Link
+              href={`/${slug}/admin/billing`}
+              className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium border ${
+                acceptingBookings
+                  ? 'bg-success-bg text-success border-success-border'
+                  : 'bg-warning-bg text-warning border-warning-border'
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}
+            </Link>
           </div>
           <DashboardHeaderActions
             slug={slug}
@@ -325,15 +332,17 @@ export default function AdminDashboardBody({
               lands exactly on the card's own px-5 edge instead of
               sitting 16px further in than every other card in the app. */}
           <div className="flex flex-col divide-y divide-line-strong sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
+            {/* Color emphasis matches the Stitch source exactly (confirmed
+                against its actual HTML, not just the screenshot): "Next
+                up"'s time is plain ink there, not accent - the accent is
+                spent on "Today's revenue" instead, the one number on this
+                strip actually worth drawing the eye to. Had this backwards
+                before - accent on Next up, plain ink on revenue. */}
             <TodayStat
               label="Next up"
               value={nextSlotLabel}
               sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
-              // Accent only when there's actually something to draw the eye
-              // to - on empty days this rendered a lone "-" in brand orange
-              // with nothing around it, which read as a glitch, not an
-              // empty state. Neutral ink when there's nothing next.
-              color={nextSlot ? 'var(--accent)' : 'var(--ink-faint)'}
+              color={nextSlot ? 'var(--ink)' : 'var(--ink-faint)'}
             />
             <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
             {/* Was the one stat in this row with nothing under its number -
@@ -346,6 +355,7 @@ export default function AdminDashboardBody({
               label="Today's revenue"
               value={formatMoney(todayRevenue)}
               sub={todayCount === 0 ? 'no bookings yet' : `from ${todayCount} ${todayCount === 1 ? 'appointment' : 'appointments'}`}
+              color={todayRevenue > 0 ? 'var(--accent)' : 'var(--ink)'}
             />
             <TodayStat
               label="This week"
