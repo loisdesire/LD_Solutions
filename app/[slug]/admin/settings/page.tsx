@@ -4,7 +4,6 @@ import BusinessProfileManager from '@/components/BusinessProfileManager';
 import SiteContentManager from '@/components/SiteContentManager';
 import BookingRulesManager from '@/components/BookingRulesManager';
 import PaymentsManager from '@/components/PaymentsManager';
-import CustomDomainManager from '@/components/CustomDomainManager';
 import SettingsSections from '@/components/SettingsSections';
 
 export const metadata: Metadata = { title: 'Settings' };
@@ -191,12 +190,16 @@ export default async function SettingsPage({
               />
             ),
           },
-          {
-            key: 'domain',
-            label: 'Custom domain',
-            description: 'Use your own web address instead of ours for your public pages.',
-            content: <CustomDomainManager businessId={business.id} initialCustomDomain={bizRow?.custom_domain ?? null} />,
-          },
+          // Custom domain section deliberately removed from here, not the
+          // codebase - CustomDomainManager.tsx and the custom_domain column
+          // both stay intact (middleware.ts's hostname resolution still
+          // reads it, businesses using it if any). Not offering this as a
+          // feature for now: zero businesses have one set (confirmed
+          // live), and the real answer for "many customer-owned domains,
+          // one origin app" needs infrastructure (Cloudflare for SaaS, or
+          // a platform change) this deployment doesn't have yet. Re-add
+          // this section once that's actually built, rather than let
+          // businesses configure something that was never going to work.
         ]}
       />
     </div>
