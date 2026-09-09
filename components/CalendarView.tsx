@@ -288,7 +288,7 @@ export default function CalendarView({
           separate --admin-canvas token, the two are far enough apart in
           hue/lightness that the swap needs an actual edge to still read
           as one, not float free of the grid below it. */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-paper md:bg-warm-surface md:border-b-2 md:border-line-strong flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-transparent border-b border-line flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAnchor((a) => addDays(a, mode === 'week' ? -7 : -1))}

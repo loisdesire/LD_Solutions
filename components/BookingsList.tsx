@@ -79,10 +79,12 @@ export default function BookingsList({
   slug,
   bookings,
   search = '',
+  onSearchChange,
 }: {
   slug: string;
   bookings: Booking[];
   search?: string;
+  onSearchChange?: (value: string) => void;
 }) {
   // Two independent controls, not one flat pill row mixing them - "past"
   // is a time scope, "confirmed" is a status, and "all" is neither; they
@@ -201,9 +203,24 @@ export default function BookingsList({
           (rather than two separate PillTabs instances sitting next to
           each other) so it reads as one continuous row, status chips
           appended after Past. */}
-      <div className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="font-display text-[19px] font-semibold text-ink">{SCOPE_HEADING[scope]}</h2>
-        <div className="inline-flex items-center gap-0.5 bg-warm-surface rounded-lg p-1 flex-wrap">
+        {bookings.length > 8 && onSearchChange && (
+          <div className="order-3 flex w-full items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 min-h-[40px] transition-colors focus-within:border-[var(--accent)] sm:order-none sm:w-52">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              aria-label="Search customers or bookings"
+              placeholder="Search"
+              className="bg-transparent border-none outline-none focus:outline-none rounded-lg text-body-sm text-ink placeholder-ink-faint w-full"
+            />
+          </div>
+        )}
+        <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto scrollbar-none bg-warm-surface rounded-lg p-1 flex-nowrap">
           {(
             [
               { key: 'upcoming', label: 'Upcoming' },
@@ -219,7 +236,7 @@ export default function BookingsList({
                 if (opt.key !== 'past') setRange({ from: '', to: '' });
               }}
               aria-current={scope === opt.key ? 'true' : undefined}
-              className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+              className={`shrink-0 px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
                 scope === opt.key ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
               }`}
             >
@@ -233,7 +250,7 @@ export default function BookingsList({
                 key={s}
                 onClick={() => setStatusFilter(isActive ? 'all' : s)}
                 aria-pressed={isActive}
-                className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                  className={`shrink-0 px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
                   isActive ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
                 }`}
               >
@@ -298,7 +315,7 @@ export default function BookingsList({
           sit directly on the admin canvas, and border-line is too close
           in lightness to --admin-canvas on desktop to read as a divider
           at all. */}
-      <div className="border-t-2 border-line-strong">
+      <div>
         <div className={`hidden sm:grid ${GRID_HEAD} gap-4 px-2 py-2.5 border-b border-line-strong font-mono text-label uppercase tracking-[0.12em] text-ink-faint`}>
           <div>Time</div>
           <div>Customer</div>

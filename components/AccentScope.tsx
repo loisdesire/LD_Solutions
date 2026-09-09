@@ -50,10 +50,10 @@ export function AccentScope({
     // where real content/text sits, so they're the one surface that most
     // needs to stay legible rather than take the brunt of that muddying.
     '--surface': tint('--surface-base', 2),
-    '--warm-surface': tint('--warm-surface-base', 10),
-    '--admin-canvas': tint('--admin-canvas-base', 14),
-    '--line': tint('--line-base', 16),
-    '--line-strong': tint('--line-strong-base', 22),
+    '--warm-surface': tint('--warm-surface-base', 5),
+    '--admin-canvas': tint('--admin-canvas-base', 4),
+    '--line': tint('--line-base', 8),
+    '--line-strong': tint('--line-strong-base', 12),
     '--ink-wash': tint('--ink-wash-base', 12),
   } as CSSProperties;
   return (

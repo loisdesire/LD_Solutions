@@ -29,13 +29,13 @@
      circular reference - CSS treats that as invalid, not "read the parent's
      value" - so the -base name is what makes the mix formula possible at
      all, not just tidiness. */
-  --paper-base: #f8f6f2;
+  --paper-base: #faf8f4;
   /* Reverted to the pre-redesign value (pure white) on request, after
      the f9/d9/tan experiments this window didn't land - see git history
      (commit 6ba5459, 2026-08-25) for the last state before any of
      --admin-canvas or AccentScope's neutral-tinting existed at all. */
   --surface-base: #ffffff;
-  --warm-surface-base: #f1eee8;
+  --warm-surface-base: #f0ebe3;
   /* Reverted to equal --warm-surface-base, matching the two-weeks-ago
      admin canvas exactly (it was plain bg-warm-surface then - see
      app/[slug]/admin/layout.tsx at the same commit, no separate token
@@ -45,9 +45,9 @@
      identical again, the same flatness the first complaint in this
      whole thread was about. Reverting anyway because that's what was
      asked for; flagging it so it's a known tradeoff, not a surprise. */
-  --admin-canvas-base: #f1eee8;
-  --line-base: #e7e2da;
-  --line-strong-base: #d6cec2;
+  --admin-canvas-base: #f7f7f4;
+  --line-base: #e1d8cc;
+  --line-strong-base: #cfc3b4;
   --ink-wash-base: rgba(32, 32, 32, 0.05);
 
   --paper: var(--paper-base);
@@ -234,6 +234,10 @@ body {
      noise nothing in this app ever asked for.
    */
   -webkit-tap-highlight-color: transparent;
+}
+
+.admin-canvas {
+  background-color: var(--admin-canvas);
 }
 
 button,

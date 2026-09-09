@@ -143,7 +143,7 @@ export default async function AdminLayout({
           role={staff.role ?? 'staff'}
           navStatus={navStatus}
         />
-        <div className="flex-1 min-w-0 bg-paper md:bg-admin-canvas">
+        <div className="admin-canvas flex-1 min-w-0 bg-paper md:bg-admin-canvas">
           <AdminMobileNav
             slug={slug}
             businessName={business.name}

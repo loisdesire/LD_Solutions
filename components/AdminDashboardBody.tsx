@@ -67,7 +67,7 @@ function TodayStat({
         {sub && <div className="text-caption text-ink-faint truncate sm:hidden">{sub}</div>}
       </div>
       <div className="text-right shrink-0 sm:text-left">
-        <div className="font-display text-[20px] sm:text-[24px] font-bold leading-none" style={{ color }}>
+        <div className="font-display text-[19px] sm:text-[22px] font-semibold leading-tight" style={{ color }}>
           {value}
         </div>
         <div className="hidden items-baseline gap-1.5 mt-1 sm:flex">
@@ -217,24 +217,6 @@ export default function AdminDashboardBody({
         </h1>
         <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
 
-        {/* Search only earns its place once there is enough to search
-            through. Below that it is a permanent empty box on a page
-            whose whole job is showing you a short list. */}
-        {all.length > 8 && (
-          <div className="flex items-center gap-2 bg-surface border border-line-strong rounded-lg px-4 py-2.5 min-h-[44px] mt-4 lg:w-64 transition-colors focus-within:border-[var(--accent)]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search customers or bookings"
-              placeholder="Search"
-              className="bg-transparent border-none outline-none focus:outline-none rounded-lg px-1 -mx-1 text-body-sm text-ink placeholder-ink-faint w-full"
-            />
-          </div>
-        )}
       </div>
 
       {/* Was findable only by going looking in the nav (sidebar/rail/
@@ -282,8 +264,7 @@ export default function AdminDashboardBody({
           canvas happen to compare. */}
       {all.length > 0 && (
         <div
-          className="rounded-2xl border border-line-strong px-5 py-5 mb-8 shadow-soft"
-          style={{ background: 'color-mix(in srgb, var(--cream-surface) 22%, var(--paper))' }}
+          className="rounded-2xl border border-line px-5 py-5 mb-8 bg-surface shadow-soft"
         >
           {/* Dividers only from lg: up - below that, at 4 stats x
               min-w-[120px], the row doesn't reliably have the ~576px it
@@ -373,7 +354,7 @@ export default function AdminDashboardBody({
           <div className="text-caption font-medium text-ink-faint mt-6">/{slug}</div>
         </div>
       ) : (
-        <BookingsList slug={slug} bookings={all} search={search} />
+        <BookingsList slug={slug} bookings={all} search={search} onSearchChange={setSearch} />
       )}
     </div>
   );
