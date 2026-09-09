@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
@@ -62,6 +62,12 @@ export default function PaymentsManager({
   const [banks, setBanks] = useState<{ id: string; code: string; name: string }[]>([]);
   const [banksError, setBanksError] = useState('');
   const [bankCode, setBankCode] = useState(initialBankCode ?? '');
+  // What's actually typed in the bank field - a plain <select> can't be
+  // searched by typing, confirmed live as "insane" with 20+ Nigerian
+  // banks in an unsorted list. Kept separate from bankCode: this is
+  // free-text the user is actively editing/searching with, bankCode is
+  // only ever set once it resolves to a real, exact bank match.
+  const [bankQuery, setBankQuery] = useState('');
   const [accountNumber, setAccountNumber] = useState(initialAccountNumber ?? '');
   const [businessMobile, setBusinessMobile] = useState('');
   const [branches, setBranches] = useState<{ code: string; name: string }[]>([]);
@@ -73,6 +79,15 @@ export default function PaymentsManager({
   // different numbers.
   const [linkedAccountName, setLinkedAccountName] = useState(initialAccountName ?? '');
   const [acceptForeignCurrency, setAcceptForeignCurrency] = useState(initialAcceptForeignCurrency);
+
+  // Live account-name lookup as bank + account number fill in - resolved
+  // the moment both are present, not held back until Save is clicked.
+  // Read-only preview: applying it for real (creating the Flutterwave
+  // subaccount) still only happens on Save, this is purely "does this
+  // look right before you commit to it."
+  const [resolvedName, setResolvedName] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -93,8 +108,15 @@ export default function PaymentsManager({
     fetch(`/api/settings/flutterwave/banks?slug=${encodeURIComponent(slug)}&country=${country}`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data.banks)) setBanks(data.banks);
-        else setBanksError(data.error ?? 'Could not load the bank list.');
+        // Flutterwave returns these in whatever order their own system
+        // happens to have them in - not alphabetical, confirmed live.
+        // Sorted here once, client-side, rather than trusting the API's
+        // own ordering.
+        if (Array.isArray(data.banks)) {
+          setBanks([...data.banks].sort((a, b) => a.name.localeCompare(b.name)));
+        } else {
+          setBanksError(data.error ?? 'Could not load the bank list.');
+        }
       })
       .catch(() => setBanksError('Could not load the bank list.'));
   }, [requirePayment, country, slug]);
@@ -120,7 +142,69 @@ export default function PaymentsManager({
       .catch(() => setBranchesError('Could not load the branch list.'));
   }, [country, bankCode, banks, slug]);
 
+  // Fills the search field with the already-linked bank's real name once
+  // the list loads - otherwise a business editing an existing account
+  // would see an empty search box next to "Connected", with no way to
+  // tell which bank that connection is actually for.
+  useEffect(() => {
+    if (!bankCode || bankQuery) return;
+    const match = banks.find((b) => b.code === bankCode);
+    if (match) setBankQuery(match.name);
+  }, [banks, bankCode, bankQuery]);
+
   const accountConnected = linkedAccountName.trim() !== '';
+  // Read inside the debounce effect below via a ref, not the plain
+  // boolean directly - that effect's own dependency array can't include
+  // accountConnected without re-running (and re-debouncing) every time
+  // linkedAccountName changes, which happens mid-edit specifically
+  // because the field handlers below clear it on every keystroke.
+  const accountConnectedRef = useRef(accountConnected);
+  accountConnectedRef.current = accountConnected;
+
+  // Live account-name preview - resolves the moment a real bank and a
+  // full 10-digit account number are both present, debounced so it's not
+  // firing on every keystroke while the number's still being typed. Pure
+  // preview: this never creates anything on Flutterwave's side (that's
+  // resolveBankAccount alone, not createSubaccount) - Save is still the
+  // only action that actually links the account.
+  useEffect(() => {
+    setResolveError('');
+    if (!bankCode || accountNumber.length !== 10) {
+      setResolvedName('');
+      return;
+    }
+    // Already known (either just linked, or loaded from a saved account
+    // that hasn't changed) - no need to re-resolve the same pair again.
+    if (accountConnectedRef.current && bankCode === initialBankCode && accountNumber === initialAccountNumber) {
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    const timer = setTimeout(() => {
+      fetch(
+        `/api/settings/flutterwave/resolve-account?slug=${encodeURIComponent(slug)}&bankCode=${bankCode}&accountNumber=${accountNumber}`
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          if (cancelled) return;
+          if (data.accountName) setResolvedName(data.accountName);
+          else {
+            setResolvedName('');
+            setResolveError(data.error ?? "Couldn't verify that account.");
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setResolveError("Couldn't verify that account.");
+        })
+        .finally(() => {
+          if (!cancelled) setResolving(false);
+        });
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [bankCode, accountNumber, slug, initialBankCode, initialAccountNumber]);
 
   const dirty =
     !saved &&
@@ -299,6 +383,7 @@ export default function PaymentsManager({
                       if (c === country) return;
                       setCountry(c);
                       setBankCode('');
+                      setBankQuery('');
                       setBranchCode('');
                       setLinkedAccountName('');
                       setSaved(false);
@@ -309,21 +394,39 @@ export default function PaymentsManager({
                   </button>
                 ))}
               </div>
-              <select
+              {/* Real search, not a plain <select> - with 20+ banks in an
+                  unsorted list, typing to filter is the difference
+                  between finding your bank and scrolling a wall of
+                  names. A native input+datalist combo: real browser
+                  search-as-you-type, no extra library. Typing a name
+                  that doesn't exactly match anything leaves bankCode
+                  unset (see onChange) rather than silently keeping a
+                  stale selection from before the search started. */}
+              <input
                 aria-label="Bank"
-                value={bankCode}
-                onChange={(e) => { setBankCode(e.target.value); setBranchCode(''); setLinkedAccountName(''); setSaved(false); }}
+                list="flutterwave-bank-options"
+                value={bankQuery}
+                onChange={(e) => {
+                  const query = e.target.value;
+                  setBankQuery(query);
+                  const match = banks.find((b) => b.name === query);
+                  setBankCode(match?.code ?? '');
+                  setBranchCode('');
+                  setLinkedAccountName('');
+                  setSaved(false);
+                }}
+                placeholder={banks.length > 0 ? 'Search for your bank…' : 'Loading banks…'}
+                autoComplete="off"
                 className={inputClass}
-              >
-                <option value="" disabled>
-                  {banks.length > 0 ? 'Select your bank' : 'Loading banks…'}
-                </option>
+              />
+              <datalist id="flutterwave-bank-options">
                 {banks.map((b) => (
-                  <option key={b.code} value={b.code}>
-                    {b.name}
-                  </option>
+                  <option key={b.code} value={b.name} />
                 ))}
-              </select>
+              </datalist>
+              {bankQuery && !bankCode && (
+                <p className="text-caption text-ink-faint">No bank matches &ldquo;{bankQuery}&rdquo; - pick one from the list.</p>
+              )}
               {/* Ghana-only - Flutterwave needs a specific branch alongside
                   the bank + account number for a GH payout, a requirement
                   Nigeria never has. */}
@@ -372,10 +475,27 @@ export default function PaymentsManager({
               )}
             </div>
 
-            {accountConnected && (
+            {accountConnected ? (
               <p className="text-caption mt-3" style={{ color: 'var(--success)' }}>
                 Verified: paying out to {linkedAccountName}.
               </p>
+            ) : (
+              // The live preview - shows up as soon as a real bank +
+              // full account number are entered, well before Save is
+              // ever clicked. Nothing here is saved yet; it's purely
+              // "does this look like the right account" before
+              // committing to it.
+              <>
+                {resolving && <p className="text-caption text-ink-faint mt-3">Checking that account…</p>}
+                {!resolving && resolvedName && (
+                  <p className="text-caption mt-3" style={{ color: 'var(--success)' }}>
+                    Name on file: {resolvedName}
+                  </p>
+                )}
+                {!resolving && resolveError && (
+                  <p className="text-caption text-error mt-3">{resolveError}</p>
+                )}
+              </>
             )}
 
             <p className="text-ink-faint text-[12px] mt-2.5">
