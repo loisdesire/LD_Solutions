@@ -5,6 +5,7 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import { useToast } from './Toast';
 import { friendlyError } from '@/lib/friendlyError';
 import { formatMoney } from '@/lib/formatMoney';
+import { toSentenceCase } from '@/lib/textCase';
 import PillTabs from './PillTabs';
 import { useDialog } from './useDialog';
 import { inputClass, labelClass, iconBtnClass } from './formStyles';
@@ -333,11 +334,19 @@ export default function ServicesManager({
     setSaving(true);
     setError('');
 
+    // Sentence case, not saved exactly as typed - confirmed live, a
+    // service typed lowercase ("haircut") saved that way with no cleanup
+    // at all (this form didn't even trim before now). Same
+    // lib/textCase.ts helper the AI agent's own service-creation path
+    // uses, so a name typed here and a name typed via chat land on the
+    // same rule instead of two independent ones.
+    const cleanedName = toSentenceCase(name.trim());
+
     let { data, error: insertError } = await supabase
       .from('services')
       .insert({
         business_id: businessId,
-        name,
+        name: cleanedName,
         category: category.trim() || null,
         duration_minutes: duration,
         price: price ? Number(price) : null,
@@ -353,7 +362,7 @@ export default function ServicesManager({
     if (isMissingColumnError(insertError)) {
       const fallback = await supabase
         .from('services')
-        .insert({ business_id: businessId, name, category: category.trim() || null, duration_minutes: duration, price: price ? Number(price) : null })
+        .insert({ business_id: businessId, name: cleanedName, category: category.trim() || null, duration_minutes: duration, price: price ? Number(price) : null })
         .select()
         .single();
       data = fallback.data;
@@ -430,7 +439,7 @@ export default function ServicesManager({
     setEditSaving(true);
 
     const update = {
-      name: editDraft.name,
+      name: toSentenceCase(editDraft.name.trim()),
       category: editDraft.category.trim() || null,
       duration_minutes: editDraft.duration_minutes,
       price: editDraft.price ? Number(editDraft.price) : null,

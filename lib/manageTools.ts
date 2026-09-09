@@ -6,6 +6,7 @@ import { verifyBusinessMediaUrl } from './verifyBusinessMediaUrl';
 import { sendEmail } from './email';
 import { renderEmail } from './emailTemplate';
 import { rateLimit } from './rateLimit';
+import { toSentenceCase } from './textCase';
 
 // Owner-facing, write-capable - "manage your business by chat" instead of
 // the Services form and the Settings toggles. Same two-step shape as
@@ -28,7 +29,11 @@ const MAX_DESCRIPTION_LENGTH = 500;
 function cleanName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const cleaned = value.trim();
-  return cleaned.length > 0 && cleaned.length <= MAX_NAME_LENGTH ? cleaned : null;
+  if (cleaned.length === 0 || cleaned.length > MAX_NAME_LENGTH) return null;
+  // Sentence case - confirmed live, a service typed lowercase ("haircut")
+  // saved exactly as typed. See lib/textCase.ts for why this is shared
+  // rather than reimplemented per call site.
+  return toSentenceCase(cleaned);
 }
 
 function cleanDescription(value: unknown): string | null | undefined {
