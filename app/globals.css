@@ -32,7 +32,15 @@
   --paper-base: #f8f6f2;
   --surface-base: #ffffff;
   --warm-surface-base: #f1eee8;
-  --admin-canvas-base: #e9e3d8;
+  /* Was #e9e3d8, only ~7 points of lightness below --surface-base (white)
+     - confirmed live (real dashboard screenshots) that gap reads as
+     nearly flat, not two layers, especially once AccentScope's tinting
+     is mixed on top (see that file's own comment on why a cooler accent
+     made it worse, not just less warm). Deepened to a real, unambiguous
+     step down from white - this is the one token driving "does a white
+     card actually look like it's sitting on something," so it needed
+     enough of a jump to survive tinting, not just look right untinted. */
+  --admin-canvas-base: #ded4c1;
   --line-base: #e7e2da;
   --line-strong-base: #d6cec2;
   --ink-wash-base: rgba(32, 32, 32, 0.05);
@@ -312,6 +320,31 @@ textarea:focus-visible {
    least as specific can actually win here. */
 input.chat-composer-input:focus-visible {
   outline: none;
+}
+
+/* ============================================
+   Sidebar scrollbar - hidden until hovered
+   ============================================
+   Confirmed live: the admin sidebar's vertical scrollbar sat permanently
+   visible down its right edge, a thin but constant strip of chrome next
+   to real nav content. Firefox has no hover-reveal primitive for
+   scrollbars (scrollbar-width is binary: auto/thin/none) - it just gets
+   none here, which is a reasonable tradeoff (scrolling itself is
+   unaffected, only the always-visible track goes away). WebKit/Blink get
+   the real hover behavior via the vendor-prefixed pseudo-elements. */
+.sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
 }
 
 /* ============================================

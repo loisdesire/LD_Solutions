@@ -38,7 +38,18 @@ export function AccentScope({
     '--accent-contrast': getContrastColor(color),
     '--accent-soft': hexToRgba(color, 0.1),
     '--paper': tint('--paper-base', 5),
-    '--surface': tint('--surface-base', 4),
+    // Confirmed live: at 4% into pure white, --surface (cards) already
+    // read as barely-tinted, meaning the actual "pop" a card had against
+    // the canvas behind it was coming almost entirely from the
+    // --admin-canvas-base lightness gap, not from this tint - so pushing
+    // this any lower doesn't cost the "every surface carries the accent"
+    // intent much, and it matters more than it looks: for a cool accent
+    // (blue, etc.) mixed against a WARM base, even a small percentage
+    // measurably greys the result rather than tinting it cleanly (warm
+    // and cool partially cancel each other's saturation) - cards are
+    // where real content/text sits, so they're the one surface that most
+    // needs to stay legible rather than take the brunt of that muddying.
+    '--surface': tint('--surface-base', 2),
     '--warm-surface': tint('--warm-surface-base', 10),
     '--admin-canvas': tint('--admin-canvas-base', 14),
     '--line': tint('--line-base', 16),

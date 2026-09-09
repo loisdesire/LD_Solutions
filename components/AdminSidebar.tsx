@@ -313,7 +313,17 @@ export default function AdminSidebar({
             />
           )}
         </span>
-        {label}
+        {/* min-w-0 is load-bearing here, not decoration - a flex item's
+            default min-width is `auto` (its own unwrapped content width),
+            not 0, so a bare text node never shrinks below its full
+            length no matter how little room is left. Confirmed live: that
+            forced the whole sidebar into horizontal overflow once a label
+            didn't fit, and since the aside already has overflow-y-auto,
+            the CSS spec makes the x-axis compute to auto too the moment
+            anything overflows it - so it silently grew a sideways
+            scrollbar instead of just truncating the text. truncate now
+            does what it looks like it should have been doing already. */}
+        <span className="min-w-0 truncate">{label}</span>
         {badge && <span className="sr-only"> - needs attention</span>}
       </Link>
     );
@@ -448,7 +458,7 @@ export default function AdminSidebar({
     </aside>
 
     <aside
-      className={`hidden min-[900px]:flex shrink-0 bg-surface border-r border-line-strong flex-col py-7 sticky top-0 h-screen overflow-y-auto transition-[width] duration-150 ${
+      className={`hidden min-[900px]:flex shrink-0 bg-surface border-r border-line-strong flex-col py-7 sticky top-0 h-screen overflow-y-auto transition-[width] duration-150 sidebar-scroll ${
         collapsed ? 'md:w-[72px] px-0 items-center' : 'md:w-[256px] px-5'
       }`}
     >
@@ -458,9 +468,32 @@ export default function AdminSidebar({
           own nav. The real use for it (sharing/copying the link) already
           has a dedicated Copy link action on the dashboard header. Just
           the business type now, and only when there is one. */}
+      {/* Second attempt at this, confirmed live the first one ("its own
+          row, right-aligned above the nav") still read as arbitrary -
+          floating alone with nothing to anchor it to. Inline in the
+          header row now, the standard placement for this control (same
+          spot Notion/Linear-style sidebars put it): right at the end of
+          the business-name row, so it reads as part of that row's own
+          controls rather than an unexplained icon sitting by itself.
+          Collapsed state has no header row to attach to (just the mark),
+          so it stays centered below it there - the one state where a
+          standalone small icon still makes sense, since it's the only
+          thing on that line. */}
       {collapsed ? (
-        <div title={businessName} className="mb-6">
-          <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
+        <div className="mb-4 flex flex-col items-center gap-2">
+          <div title={businessName}>
+            <BusinessMark logoUrl={logoUrl} businessName={businessName} className="h-10 w-10 rounded-xl text-[15px]" />
+          </div>
+          <button
+            onClick={toggleCollapsed}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+            className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-180">
+              <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+            </svg>
+          </button>
         </div>
       ) : (
         <div className="mb-10 px-2 flex items-center gap-2">
@@ -471,42 +504,18 @@ export default function AdminSidebar({
               <div className="text-[12px] text-ink-faint mt-0.5 truncate">{businessType}</div>
             )}
           </div>
+          <button
+            onClick={toggleCollapsed}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+            className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+            </svg>
+          </button>
         </div>
       )}
-
-      {/* Was its own full-width row (icon + "Collapse" label) sitting
-          above the entire nav, just for a rarely-used action - real
-          estate that belongs to the nav itself, confirmed live as reading
-          "makes no sense". Inline and icon-only now: small, in the corner,
-          out of the way, its own row still (mb-5) rather than crowding the
-          business-name header, but no wasted full-width label. Not
-          edge-floating (see the removed comment this replaced) - same
-          layout reasoning still holds, this just sits above the nav
-          without claiming its own full line. Chevron direction is the
-          only thing that changes between states, so which way it points
-          always matches what pressing it is about to do. */}
-      <div className={`flex mb-5 ${collapsed ? 'justify-center' : 'justify-end'}`}>
-        <button
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex items-center justify-center h-7 w-7 rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`shrink-0 transition-transform ${collapsed ? 'rotate-180' : ''}`}
-          >
-            <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
-          </svg>
-        </button>
-      </div>
 
       {collapsed ? (
         // Flat, icon-only, same shape as the narrow-viewport RailLink -
