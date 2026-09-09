@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createBrowserSupabase } from '@/lib/supabase';
 import NotificationBell from './NotificationBell';
 
@@ -377,6 +378,26 @@ export default function AdminSidebar({
   // reachable by touch at all) - built once here since RailLink's plain
   // `title` was good enough for a narrow-viewport fallback nobody chose
   // but not for a deliberate, everyday collapsed mode.
+  //
+  // The floating label used to be `position: absolute` inside the icon's
+  // own Link, meant to escape the 72px column visually on hover ("never
+  // gets clipped by the sidebar's own overflow-y-auto" - see the comment
+  // this replaced). It did escape visually, but confirmed live: it never
+  // escaped the sidebar's own SCROLLABLE width - opacity-0 still occupies
+  // real layout space, `absolute` is still sized/positioned relative to
+  // an ancestor inside that scroll container, and per spec, a container
+  // with any non-'visible' overflow axis (overflow-y-auto here) computes
+  // the OTHER axis to 'auto' too rather than leaving it 'visible' the
+  // moment anything overflows it - so every tooltip's full width was
+  // silently counted as real scrollable content, growing a horizontal
+  // scrollbar on a sidebar that's supposed to only scroll vertically.
+  //
+  // Fixed by taking the tooltip out of the sidebar's DOM subtree
+  // entirely - portaled to document.body, `position: fixed` (computed
+  // against the viewport, not any scrolling/clipping ancestor), with its
+  // coordinates read from the icon's own real position on hover/focus.
+  // Nothing rendered inside the sidebar's own scroll container can affect
+  // its scrollWidth once it isn't inside that container at all.
   function CollapsedLink({
     href,
     label,
@@ -389,15 +410,32 @@ export default function AdminSidebar({
     badge?: boolean;
   }) {
     const active = pathname === href;
+    const linkRef = useRef<HTMLAnchorElement>(null);
+    const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
+
+    function showTooltip() {
+      const rect = linkRef.current?.getBoundingClientRect();
+      if (rect) setTooltipPos({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+    }
+
     return (
       <Link
+        ref={linkRef}
         href={href}
         prefetch={false}
-        onMouseEnter={() => prefetchLink(href)}
-        onFocus={() => prefetchLink(href)}
+        onMouseEnter={() => {
+          prefetchLink(href);
+          showTooltip();
+        }}
+        onMouseLeave={() => setTooltipPos(null)}
+        onFocus={() => {
+          prefetchLink(href);
+          showTooltip();
+        }}
+        onBlur={() => setTooltipPos(null)}
         onTouchStart={() => prefetchLink(href)}
         aria-label={badge ? `${label} - needs attention` : label}
-        className="group relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
+        className="relative flex items-center justify-center h-11 w-11 rounded-xl transition-colors"
         style={active ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
       >
         <span className={active ? '' : 'text-ink-soft'}>{icons[iconKey]}</span>
@@ -408,17 +446,18 @@ export default function AdminSidebar({
             aria-hidden="true"
           />
         )}
-        {/* Floating label - hidden until hover/focus, then appears just
-            clear of the icon column so it never gets clipped by the
-            sidebar's own overflow-y-auto. z-50 to clear the admin
-            content next to it; pointer-events-none so it can't itself
-            become the thing blocking the click. */}
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink text-paper text-[12.5px] font-medium px-2.5 py-1.5 opacity-0 scale-95 origin-left transition-all duration-100 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 z-50 shadow-lift"
-        >
-          {label}
-        </span>
+        {tooltipPos &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <span
+              role="tooltip"
+              className="pointer-events-none fixed -translate-y-1/2 whitespace-nowrap rounded-lg bg-ink text-paper text-[12.5px] font-medium px-2.5 py-1.5 z-50 shadow-lift"
+              style={{ top: tooltipPos.top, left: tooltipPos.left }}
+            >
+              {label}
+            </span>,
+            document.body
+          )}
       </Link>
     );
   }
