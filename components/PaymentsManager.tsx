@@ -297,11 +297,11 @@ export default function PaymentsManager({
   return (
     <form onSubmit={handleSave} className="space-y-6">
       <div className="flex items-center justify-between gap-4 mb-1">
-        <h3 className="font-display text-[18px] font-semibold text-ink">Take payment at booking</h3>
+        <h3 className="font-display text-[16px] font-semibold text-ink">Take payments at booking</h3>
         <Toggle on={requirePayment} onChange={(v) => { setRequirePayment(v); setSaved(false); }} label="Payment" />
       </div>
       <p className="text-[12.5px] text-ink-faint mb-4">
-        Customers pay (card or bank transfer) to confirm a booking, instead of paying you separately after.
+        Customers pay a deposit or the full amount through Flutterwave before the slot is held, instead of paying you separately after.
       </p>
 
       {!requirePayment && (
@@ -320,18 +320,21 @@ export default function PaymentsManager({
         <div className="space-y-5 mb-5">
           <div>
             <span className={labelClass}>How much upfront</span>
-            <div className="flex items-center gap-1 bg-warm-surface rounded-full p-1 w-fit">
+            {/* Segmented control, same light-track / elevated-chip
+                pattern as PillTabs and the Stitch Payments screen -
+                reserves the accent for real primary actions. */}
+            <div className="inline-flex items-center gap-0.5 bg-warm-surface rounded-lg p-1">
               <button
                 type="button"
                 onClick={() => { setIsDeposit(false); setSaved(false); }}
-                className={`px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${!isDeposit ? 'bg-accent text-accent-contrast' : 'text-ink-faint hover:text-ink'}`}
+                className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${!isDeposit ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'}`}
               >
                 Full amount
               </button>
               <button
                 type="button"
                 onClick={() => { setIsDeposit(true); setSaved(false); }}
-                className={`px-3.5 py-1.5 rounded-full font-mono text-[11px] transition-colors ${isDeposit ? 'bg-accent text-accent-contrast' : 'text-ink-faint hover:text-ink'}`}
+                className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${isDeposit ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'}`}
               >
                 Deposit
               </button>
@@ -534,15 +537,21 @@ export default function PaymentsManager({
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-      >
-        {saving ? 'Saving…' : saved ? <>Saved <CheckIcon className="h-3.5 w-3.5" /></> : 'Save'}
-      </button>
-
-      {error && <p className="text-sm text-error">{error}</p>}
+      <div className="border-t border-line pt-5 flex items-center justify-end gap-3">
+        {saved && (
+          <span className="inline-flex items-center gap-1.5 text-caption text-success">
+            <CheckIcon className="h-3.5 w-3.5" /> Saved
+          </span>
+        )}
+        {error && <span className="text-caption text-error">{error}</span>}
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
     </form>
   );
 }
