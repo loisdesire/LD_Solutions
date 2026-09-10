@@ -7,7 +7,7 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
-import { inputClass, labelClass } from './formStyles';
+import { inputClass } from './formStyles';
 import Icon from './Icon';
 
 // A grid of real photo uploads instead of a textarea where you paste
@@ -78,7 +78,7 @@ function GalleryUploader({
     <div>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
         {urls.map((url, i) => (
-          <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-line-strong bg-paper group">
+          <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-line-strong bg-paper group">
             <Image src={url} alt={`Gallery photo ${i + 1} preview`} fill sizes="150px" className="object-cover" />
             <button
               type="button"
@@ -99,7 +99,7 @@ function GalleryUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="aspect-square rounded-xl border-2 border-dashed border-line-strong flex flex-col items-center justify-center gap-1 text-ink-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
+          className="aspect-square rounded-xl border border-dashed border-line-strong flex flex-col items-center justify-center gap-1 text-ink-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
         >
           {uploading ? (
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
@@ -214,63 +214,44 @@ export default function SiteContentManager({
     router.refresh();
   }
 
-  // inputClass/labelClass now shared from formStyles.ts, same reasoning
-  // as BusinessProfileManager - see its comment.
-  // Same weight bump as BusinessProfileManager's sectionHeadingClass -
-  // 16px with no explicit weight read barely heavier than the 14px
-  // inputs sitting right under it.
-  const sectionHeadingClass = 'font-display text-[18px] font-semibold text-ink mb-4';
+  // inputClass/labelClass shared from formStyles.ts (see
+  // BusinessProfileManager's comment). Group heading = the field's own
+  // <label> styled up, with the show/hide Toggle sitting on the same
+  // row - the Stitch "Booking page" screen's own treatment (heading +
+  // "Show on booking page" switch as one line per group), instead of a
+  // heading, then a redundant smaller label, then the toggle.
+  const groupHeadingClass = 'font-display text-[16px] font-semibold text-ink';
 
   return (
-    <form onSubmit={handleSave} className="space-y-8">
+    <form onSubmit={handleSave} className="space-y-6">
       <div>
-        {/* Was "Pages" - a heading that describes what the site calls
-            these (About/Gallery/Contact are each "a page"), not which
-            one this particular section is about. Named per-section
-            below instead, matching what the toggle right underneath it
-            actually says ("About page"). */}
-        <h3 className={sectionHeadingClass}>About page</h3>
-        <div className="flex items-center justify-between mb-1.5">
-          <label htmlFor={aboutId} className={labelClass}>About</label>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <label htmlFor={aboutId} className={groupHeadingClass}>About</label>
           <Toggle
             on={showAbout}
-            onChange={(v) => {
-              setShowAbout(v);
-              setSaved(false);
-            }}
+            onChange={(v) => { setShowAbout(v); setSaved(false); }}
             label="About page"
           />
         </div>
         <textarea
           id={aboutId}
           value={aboutText}
-          onChange={(e) => {
-            setAboutText(e.target.value);
-            setSaved(false);
-          }}
+          onChange={(e) => { setAboutText(e.target.value); setSaved(false); }}
           rows={4}
           placeholder="Tell customers who you are and what makes your place worth visiting."
           className={inputClass}
         />
         <p className="text-ink-faint text-[12px] mt-2">
-          Gets its own page, linked from your nav. Needs both the toggle on and text filled in to show up.
+          Shown at the top of your booking page, and gets its own linked page. Needs the toggle on and text filled in.
         </p>
       </div>
 
       <div className="border-t border-line pt-6">
-        {/* This heading actually read "Contact details" before, sitting
-            directly over the gallery uploader - a real mislabel, not
-            just a styling gap. Anyone scanning for where contact info
-            lives would land here and see photo uploads instead. */}
-        <h3 className={sectionHeadingClass}>Gallery</h3>
-        <div className="flex items-center justify-between mb-1.5">
-          <label id={galleryId} className={labelClass}>Gallery photos</label>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <span id={galleryId} className={groupHeadingClass}>Gallery</span>
           <Toggle
             on={showGallery}
-            onChange={(v) => {
-              setShowGallery(v);
-              setSaved(false);
-            }}
+            onChange={(v) => { setShowGallery(v); setSaved(false); }}
             label="Gallery page"
           />
         </div>
@@ -278,48 +259,28 @@ export default function SiteContentManager({
           slug={slug}
           urls={galleryUrls}
           labelId={galleryId}
-          onChange={(urls) => {
-            setGalleryUrls(urls);
-            setSaved(false);
-          }}
+          onChange={(urls) => { setGalleryUrls(urls); setSaved(false); }}
         />
-        <p className="text-ink-faint text-[12px] mt-2">Upload as many as you like. Also gets its own page.</p>
+        <p className="text-ink-faint text-[12px] mt-2">Photos of your space, your work, your team. Also gets its own page.</p>
       </div>
 
       <div className="border-t border-line pt-6">
-        {/* The section this heading actually belongs to had none at all
-            before - the real contact fields (phone/email/Instagram/
-            Facebook) sat unlabeled right after the misnamed "Contact
-            details" heading above, which pointed at the gallery instead. */}
-        <h3 className={sectionHeadingClass}>Contact details</h3>
-        <div className="flex items-center justify-between mb-1.5">
-          {/* Not a <label> - it doesn't describe one control, it captions
-              a group of four (phone/email/Instagram/Facebook). A <label>
-              with no matching htmlFor target is itself the kind of
-              half-association this whole pass exists to fix; each input
-              below gets its own real aria-label instead, since none of
-              them had a visible label at all before, just a placeholder
-              (which disappears the moment you type, and isn't reliably
-              read as a label by every screen reader). */}
-          <span className={labelClass}>Contact</span>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <span className={groupHeadingClass}>Contact details</span>
           <Toggle
             on={showContact}
-            onChange={(v) => {
-              setShowContact(v);
-              setSaved(false);
-            }}
+            onChange={(v) => { setShowContact(v); setSaved(false); }}
             label="Contact page"
           />
         </div>
-        <div className="space-y-2.5">
+        {/* 2-up grid, matching the Stitch screen (phone/email, then the
+            two socials) rather than a single stacked column. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="tel"
             aria-label="Phone number"
             value={contactPhone}
-            onChange={(e) => {
-              setContactPhone(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setContactPhone(e.target.value); setSaved(false); }}
             placeholder="Phone number"
             className={inputClass}
           />
@@ -327,10 +288,7 @@ export default function SiteContentManager({
             type="email"
             aria-label="Email address"
             value={contactEmail}
-            onChange={(e) => {
-              setContactEmail(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setContactEmail(e.target.value); setSaved(false); }}
             placeholder="Email address"
             className={inputClass}
           />
@@ -338,10 +296,7 @@ export default function SiteContentManager({
             type="url"
             aria-label="Instagram link"
             value={instagramUrl}
-            onChange={(e) => {
-              setInstagramUrl(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setInstagramUrl(e.target.value); setSaved(false); }}
             placeholder="Instagram link"
             className={inputClass}
           />
@@ -349,36 +304,31 @@ export default function SiteContentManager({
             type="url"
             aria-label="Facebook link"
             value={facebookUrl}
-            onChange={(e) => {
-              setFacebookUrl(e.target.value);
-              setSaved(false);
-            }}
+            onChange={(e) => { setFacebookUrl(e.target.value); setSaved(false); }}
             placeholder="Facebook link"
             className={inputClass}
           />
         </div>
         <p className="text-ink-faint text-[12px] mt-2">
-          All optional - only the ones you fill in show up, and only if the toggle above is on.
+          All optional - only the ones you fill in show, and only with the toggle on.
         </p>
       </div>
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-      >
-        {saving ? (
-          'Saving…'
-        ) : saved ? (
-          <>
-            Saved <CheckIcon className="h-3.5 w-3.5" />
-          </>
-        ) : (
-          'Save'
+      <div className="border-t border-line pt-5 flex items-center justify-end gap-3">
+        {saved && (
+          <span className="inline-flex items-center gap-1.5 text-caption text-success">
+            <CheckIcon className="h-3.5 w-3.5" /> Saved
+          </span>
         )}
-      </button>
-
-      {error && <p className="text-sm text-error">{error}</p>}
+        {error && <span className="text-caption text-error">{error}</span>}
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
     </form>
   );
 }
