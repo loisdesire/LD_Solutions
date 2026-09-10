@@ -372,7 +372,7 @@ export default function BookingsList({
                     setDetailBooking(b);
                   }
                 }}
-                className={`group/row cursor-pointer rounded-2xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-4 sm:py-3 hover:bg-warm-surface transition-colors ${
+                className={`group/row cursor-pointer rounded-xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-4 sm:py-3 hover:bg-warm-surface transition-colors ${
                   i !== filtered.length - 1 ? 'sm:border-b sm:border-line-strong' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
