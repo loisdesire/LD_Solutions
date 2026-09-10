@@ -492,32 +492,27 @@ export default function ServicesManager({
           the live counts and the button don't (no-print). */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[28px] text-ink mb-1.5">Service catalog</h1>
-          <p className="text-ink-soft text-[14px]">What customers can book, and what it costs.</p>
+          {/* Same eyebrow + h1 as Customers / Calendar / Hours / the
+              Stitch screens - Services was the one page still on its own
+              bigger, eyebrow-less heading. */}
+          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5 no-print">Set up</div>
+          <h1 className="font-display text-[26px] text-ink">Services</h1>
+          <p className="text-ink-soft text-[13.5px] mt-1">What customers can book, and what it costs.</p>
         </div>
         <div className="flex items-center gap-2.5 no-print">
           {services.length > 0 && (
-            <>
-              <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
-                <span className="text-[12px] text-ink-faint">Active</span>
-                <span className="text-[13.5px] font-semibold text-accent">{activeCount}</span>
-              </div>
-              {hiddenCount > 0 && (
-                <div className="bg-surface px-4 py-2 rounded-xl border-2 border-line flex items-center gap-2">
-                  <span className="text-[12px] text-ink-faint">Hidden</span>
-                  <span className="text-[13.5px] font-semibold text-ink">{hiddenCount}</span>
-                </div>
-              )}
-            </>
+            <span className="text-caption text-ink-faint">
+              {activeCount} active{hiddenCount > 0 ? ` · ${hiddenCount} hidden` : ''}
+            </span>
           )}
           <button
             onClick={() => {
               setError('');
               setShowAdd(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3.5 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
           >
-            <Icon name="add" size={17} />
+            <Icon name="add" size={16} />
             Add service
           </button>
         </div>
@@ -597,7 +592,7 @@ export default function ServicesManager({
           <p className="text-ink-soft text-body-sm mt-1.5">Services are what customers pick from when they book - until you add one, your booking page has nothing to offer. Use "Add service" above to start.</p>
         </div>
       ) : (
-        <div className="rounded-xl border-2 border-line overflow-hidden bg-surface">
+        <div className="rounded-xl border border-line shadow-soft overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3 no-print">
             <PillTabs
               options={[{ key: 'all', label: 'All' }, ...categories.map((c) => ({ key: c, label: c }))]}
@@ -744,7 +739,7 @@ export default function ServicesManager({
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={currentPage === 0}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
                   <Icon name="chevron_left" size={15} />
                 </button>
@@ -752,7 +747,7 @@ export default function ServicesManager({
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage >= totalPages - 1}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
                   <Icon name="chevron_right" size={15} />
                 </button>
@@ -778,7 +773,7 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
+          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
@@ -792,7 +787,7 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
+          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
