@@ -35,12 +35,29 @@ type Block = {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const STATUS_DOT: Record<string, string> = {
-  confirmed: 'var(--accent)',
-  completed: 'var(--ink-faint)',
-  cancelled: 'var(--ink-faint)',
-  no_show: 'var(--error)',
+// Every booking on the grid gets a tinted fill by status - the thing the
+// Stitch calendar leans on hardest and, confirmed live, "what I love most
+// about it." Semantic tokens (success/warning/info/error), never the
+// brand accent, so "confirmed" reads green whatever colour a business
+// picked for itself. `fill` is a soft wash behind the whole block, `edge`
+// a saturated 3px left bar, `text` the time label's colour.
+type StatusStyle = { fill: string; edge: string; text: string; label: string };
+const STATUS_STYLE: Record<string, StatusStyle> = {
+  confirmed: { fill: 'var(--success-bg)', edge: 'var(--success)', text: 'var(--success)', label: 'Confirmed' },
+  completed: { fill: 'var(--success-bg)', edge: 'var(--success-border)', text: 'var(--ink-faint)', label: 'Completed' },
+  pending_payment: { fill: 'var(--warning-bg)', edge: 'var(--warning)', text: 'var(--warning)', label: 'Awaiting payment' },
+  no_show: { fill: 'var(--error-bg)', edge: 'var(--error)', text: 'var(--error)', label: 'No-show' },
+  cancelled: { fill: 'var(--ink-wash)', edge: 'var(--line-strong)', text: 'var(--ink-faint)', label: 'Cancelled' },
 };
+const DEFAULT_STATUS_STYLE: StatusStyle = {
+  fill: 'var(--surface)',
+  edge: 'var(--line-strong)',
+  text: 'var(--ink-soft)',
+  label: 'Booked',
+};
+function statusStyleFor(status: string): StatusStyle {
+  return STATUS_STYLE[status] ?? DEFAULT_STATUS_STYLE;
+}
 
 // Where a block falls on one specific calendar day, in minutes since that
 // day's local midnight, clamped to [0, 1440] - a block can span midnight
@@ -174,18 +191,19 @@ function Chip({ booking, onOpen }: { booking: Booking; onOpen: () => void }) {
   const staffName = Array.isArray(booking.staff) ? booking.staff[0]?.name : booking.staff?.name;
   const serviceName = Array.isArray(booking.services) ? booking.services[0]?.name : booking.services?.name;
   const cancelled = booking.status === 'cancelled';
+  const s = statusStyleFor(booking.status);
 
   return (
     <button
       onClick={onOpen}
-      className={`w-full rounded-xl border-2 border-line-strong px-2.5 py-2 text-left transition-colors hover:border-accent ${cancelled ? 'opacity-50' : ''}`}
-      style={{ borderLeftColor: STATUS_DOT[booking.status] ?? 'var(--line)', borderLeftWidth: '3px' }}
+      className={`w-full rounded-lg border border-line-strong px-2.5 py-2 text-left transition-shadow hover:shadow-lift ${cancelled ? 'opacity-60' : ''}`}
+      style={{ background: s.fill, borderLeftColor: s.edge, borderLeftWidth: '3px' }}
     >
-      <div className={`font-mono text-label font-semibold ${cancelled ? 'line-through' : ''}`} style={{ color: 'var(--accent)' }}>
+      <div className={`font-mono text-label font-semibold ${cancelled ? 'line-through' : ''}`} style={{ color: s.text }}>
         {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
       </div>
-      <div className={`text-caption font-medium truncate ${cancelled ? 'line-through' : ''}`}>{booking.customer_name}</div>
-      <div className="text-label text-ink-faint truncate">
+      <div className={`text-caption font-medium text-ink truncate ${cancelled ? 'line-through' : ''}`}>{booking.customer_name}</div>
+      <div className="text-label text-ink-soft truncate">
         {serviceName}
         {staffName ? ` · ${staffName}` : ''}
       </div>
@@ -202,32 +220,35 @@ function GridBlock({ booking, onOpen }: { booking: PositionedBooking; onOpen: ()
   const serviceName = Array.isArray(booking.services) ? booking.services[0]?.name : booking.services?.name;
   const cancelled = booking.status === 'cancelled';
   const compact = booking._height < 44;
+  const s = statusStyleFor(booking.status);
 
   return (
     <button
       onClick={onOpen}
-      className={`absolute rounded-lg border-2 bg-surface px-2 py-1 text-left overflow-hidden transition-shadow hover:z-20 hover:shadow-md ${cancelled ? 'opacity-50' : ''}`}
+      className={`absolute rounded-lg border border-l-[3px] px-2 py-1 text-left overflow-hidden transition-shadow hover:z-20 hover:shadow-md ${cancelled ? 'opacity-60' : ''}`}
       style={{
         top: booking._top,
         height: booking._height,
         left: `calc(${booking._left}% + 2px)`,
         width: `calc(${booking._width}% - 4px)`,
-        borderColor: STATUS_DOT[booking.status] ?? 'var(--line)',
+        background: s.fill,
+        borderColor: s.edge,
+        borderLeftColor: s.edge,
       }}
     >
       <div className={`flex items-baseline gap-1.5 min-w-0 ${compact ? '' : 'flex-col items-start gap-0'}`}>
         <span
           className={`font-mono text-[12px] font-semibold shrink-0 ${cancelled ? 'line-through' : ''}`}
-          style={{ color: 'var(--accent)' }}
+          style={{ color: s.text }}
         >
           {new Date(booking.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </span>
-        <span className={`text-[13px] font-medium truncate ${cancelled ? 'line-through' : ''}`}>
+        <span className={`text-[13px] font-medium text-ink truncate ${cancelled ? 'line-through' : ''}`}>
           {booking.customer_name}
         </span>
       </div>
       {!compact && (
-        <div className="text-[12px] text-ink-faint truncate">
+        <div className="text-[12px] text-ink-soft truncate">
           {serviceName}
           {staffName ? ` · ${staffName}` : ''}
         </div>
@@ -416,10 +437,19 @@ export default function CalendarView({
   // How many bookings fall in whatever is on screen. Counts cancelled ones
   // too, since they are rendered (dimmed and struck through) rather than
   // hidden, so the number matches what is actually visible.
-  const rangeCount = (mode === 'week' ? weekDays : [anchor]).reduce(
-    (total, day) => total + (byDay.get(day)?.length ?? 0),
-    0
-  );
+  const visibleDays = useMemo(() => (mode === 'week' ? weekDays : [anchor]), [mode, weekDays, anchor]);
+  const rangeCount = visibleDays.reduce((total, day) => total + (byDay.get(day)?.length ?? 0), 0);
+
+  // Legend swatches for exactly the statuses actually on screen right now
+  // (and a "Blocked" entry if any block is showing) - so it explains what
+  // the colours mean without listing states that aren't in view.
+  const legendStatuses = useMemo(() => {
+    const seen = new Set<string>();
+    for (const day of visibleDays) for (const b of byDay.get(day) ?? []) seen.add(b.status);
+    const ordered = ['confirmed', 'pending_payment', 'completed', 'no_show', 'cancelled'].filter((s) => seen.has(s));
+    const hasBlocks = visibleDays.some((day) => (blocksByDay.get(day)?.length ?? 0) > 0);
+    return { ordered, hasBlocks };
+  }, [visibleDays, byDay, blocksByDay]);
 
   async function removeBlock(id: string) {
     setLocalBlocks((prev) => prev.filter((b) => b.id !== id));
@@ -765,6 +795,40 @@ export default function CalendarView({
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {(legendStatuses.ordered.length > 0 || legendStatuses.hasBlocks) && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-label text-ink-faint">
+          <span className="font-mono uppercase tracking-[0.08em]">Legend</span>
+          {legendStatuses.ordered.map((status) => {
+            const s = statusStyleFor(status);
+            return (
+              <span key={status} className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-3 w-3 rounded-[3px] border"
+                  style={{ background: s.fill, borderColor: s.edge }}
+                />
+                {s.label}
+              </span>
+            );
+          })}
+          {legendStatuses.hasBlocks && (
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className="h-3 w-3 rounded-[3px] border border-line-strong"
+                style={{ background: BLOCK_FILL }}
+              />
+              Blocked
+            </span>
+          )}
+          <span className="ml-auto tabular-nums">
+            {rangeCount === 0
+              ? 'nothing booked'
+              : `${rangeCount} ${rangeCount === 1 ? 'booking' : 'bookings'} ${
+                  mode === 'week' ? 'this week' : anchor === today ? 'today' : 'this day'
+                }`}
+          </span>
         </div>
       )}
 
