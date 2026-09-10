@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PillTabs from './PillTabs';
 import Icon from './Icon';
 import ConversationPanel from './ConversationPanel';
-import { todayInTimezone, dayOfWeekForDate } from '@/lib/timezone';
+import { useDialog } from './useDialog';
+import { labelClass } from './formStyles';
+import { todayInTimezone, dayOfWeekForDate, zonedTimeToUtc } from '@/lib/timezone';
 
 type Booking = {
   id: string;
@@ -14,8 +17,20 @@ type Booking = {
   start_time: string;
   end_time: string;
   status: string;
+  service_id?: string | null;
+  staff_id?: string | null;
   services: any;
   staff: any;
+};
+
+type NamedRef = { id: string; name: string };
+
+type Block = {
+  id: string;
+  staff_id: string | null;
+  start_time: string;
+  end_time: string;
+  reason: string | null;
 };
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -26,6 +41,34 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: 'var(--ink-faint)',
   no_show: 'var(--error)',
 };
+
+// Where a block falls on one specific calendar day, in minutes since that
+// day's local midnight, clamped to [0, 1440] - a block can span midnight
+// or run several days, so each day it touches gets its own clamped slice
+// (or null if it doesn't reach this day at all).
+function blockSliceForDay(
+  block: Block,
+  dayKey: string,
+  timezone: string
+): { startMin: number; endMin: number } | null {
+  const dayStartUtc = zonedTimeToUtc(dayKey, '00:00', timezone).getTime();
+  const dayEndUtc = dayStartUtc + 24 * 60 * 60000;
+  const bStart = new Date(block.start_time).getTime();
+  const bEnd = new Date(block.end_time).getTime();
+  if (bEnd <= dayStartUtc || bStart >= dayEndUtc) return null;
+  return {
+    startMin: Math.max(0, Math.round((bStart - dayStartUtc) / 60000)),
+    endMin: Math.min(1440, Math.round((bEnd - dayStartUtc) / 60000)),
+  };
+}
+
+function formatMinLabel(min: number): string {
+  const h = Math.floor(min / 60) % 24;
+  const m = min % 60;
+  const period = h < 12 ? 'AM' : 'PM';
+  const display = h % 12 === 0 ? 12 : h % 12;
+  return m === 0 ? `${display} ${period}` : `${display}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 function addDays(iso: string, n: number): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -193,19 +236,122 @@ function GridBlock({ booking, onOpen }: { booking: PositionedBooking; onOpen: ()
   );
 }
 
+// Blocked time reads as "not available," visually distinct from any
+// booking - a hatched grey fill, no accent anywhere on it. Clicking it
+// asks to remove it (the only thing you can do with a block).
+const BLOCK_FILL =
+  'repeating-linear-gradient(45deg, var(--ink-wash), var(--ink-wash) 6px, transparent 6px, transparent 12px)';
+
+function blockLabel(block: Block, staffName: string | null): string {
+  const who = staffName ? `${staffName} out` : 'Blocked';
+  return block.reason ? `${who} · ${block.reason}` : who;
+}
+
+// Week-view: one row in a day column, same footprint as a booking Chip.
+function BlockChip({
+  block,
+  startMin,
+  endMin,
+  staffName,
+  onRemove,
+}: {
+  block: Block;
+  startMin: number;
+  endMin: number;
+  staffName: string | null;
+  onRemove: () => void;
+}) {
+  // A block clamped to a full day (a multi-day closure) has no meaningful
+  // start/end time to show for this specific day.
+  const allDay = startMin === 0 && endMin === 1440;
+  return (
+    <button
+      onClick={onRemove}
+      title="Remove this block"
+      className="group w-full rounded-xl border border-line-strong px-2.5 py-2 text-left transition-colors hover:border-error"
+      style={{ background: BLOCK_FILL }}
+    >
+      <div className="flex items-center gap-1.5 font-mono text-label font-semibold text-ink-soft">
+        <Icon name="event_busy" size={13} className="shrink-0" />
+        {allDay ? 'All day' : `${formatMinLabel(startMin)}`}
+        <Icon
+          name="close"
+          size={13}
+          className="ml-auto opacity-0 group-hover:opacity-100 text-ink-faint group-hover:text-error transition-opacity"
+        />
+      </div>
+      <div className="text-label text-ink-faint truncate mt-0.5">{blockLabel(block, staffName)}</div>
+    </button>
+  );
+}
+
+// Day-view: absolutely positioned on the time grid like a GridBlock, but
+// sitting under real bookings.
+function BlockGridBlock({
+  block,
+  top,
+  height,
+  staffName,
+  onRemove,
+}: {
+  block: Block;
+  top: number;
+  height: number;
+  staffName: string | null;
+  onRemove: () => void;
+}) {
+  return (
+    <button
+      onClick={onRemove}
+      title="Remove this block"
+      className="group absolute left-0 right-0 z-0 rounded-lg border border-line-strong px-2 py-1 text-left overflow-hidden hover:border-error transition-colors"
+      style={{ top, height, background: BLOCK_FILL }}
+    >
+      <div className="flex items-center gap-1 font-mono text-[11px] font-semibold text-ink-soft">
+        <Icon name="event_busy" size={12} className="shrink-0" />
+        <span className="truncate">{blockLabel(block, staffName)}</span>
+      </div>
+    </button>
+  );
+}
+
 export default function CalendarView({
   slug,
   timezone,
   bookings,
+  staff,
+  services,
+  blocks,
 }: {
   slug: string;
   timezone: string;
   bookings: Booking[];
+  staff: NamedRef[];
+  services: NamedRef[];
+  blocks: Block[];
 }) {
+  const router = useRouter();
   const today = useMemo(() => todayInTimezone(timezone), [timezone]);
   const [mode, setMode] = useState<'week' | 'day'>('week');
   const [anchor, setAnchor] = useState(today); // a date inside the currently viewed week/day
   const [openConversation, setOpenConversation] = useState<Booking | null>(null);
+
+  // 'all' or a staff/service id. Both narrow what's shown on the grid;
+  // the staff filter also narrows blocks (that person's own time off,
+  // plus any whole-business block), the service filter doesn't touch
+  // them (a block has no service).
+  const [staffFilter, setStaffFilter] = useState<string>('all');
+  const [serviceFilter, setServiceFilter] = useState<string>('all');
+
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  // Server data is the source of truth (re-fetched via router.refresh
+  // after any change), but a local copy lets a just-created or just-
+  // removed block show/disappear immediately rather than waiting a
+  // round trip.
+  const [localBlocks, setLocalBlocks] = useState<Block[]>(blocks);
+  useEffect(() => setLocalBlocks(blocks), [blocks]);
+
+  const staffName = useMemo(() => new Map(staff.map((s) => [s.id, s.name])), [staff]);
 
   // Only for the current-time line in Day view - starts null so server and
   // first client render match, same reasoning as the dashboard's clock.
@@ -220,9 +366,25 @@ export default function CalendarView({
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
+  const filteredBookings = useMemo(
+    () =>
+      bookings.filter(
+        (b) =>
+          (staffFilter === 'all' || b.staff_id === staffFilter) &&
+          (serviceFilter === 'all' || b.service_id === serviceFilter)
+      ),
+    [bookings, staffFilter, serviceFilter]
+  );
+
+  const visibleBlocks = useMemo(
+    () =>
+      localBlocks.filter((b) => staffFilter === 'all' || b.staff_id === staffFilter || b.staff_id === null),
+    [localBlocks, staffFilter]
+  );
+
   const byDay = useMemo(() => {
     const map = new Map<string, Booking[]>();
-    for (const b of bookings) {
+    for (const b of filteredBookings) {
       const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(b.start_time));
       const list = map.get(dateKey) ?? [];
       list.push(b);
@@ -230,7 +392,26 @@ export default function CalendarView({
     }
     for (const list of map.values()) list.sort((a, b) => a.start_time.localeCompare(b.start_time));
     return map;
-  }, [bookings, timezone]);
+  }, [filteredBookings, timezone]);
+
+  // Blocks that touch a given calendar day, with their clamped slice for
+  // that day - keyed the same way byDay is.
+  const blocksByDay = useMemo(() => {
+    const map = new Map<string, { block: Block; startMin: number; endMin: number }[]>();
+    const days = new Set<string>([...weekDays, anchor]);
+    for (const day of days) {
+      const hits: { block: Block; startMin: number; endMin: number }[] = [];
+      for (const block of visibleBlocks) {
+        const slice = blockSliceForDay(block, day, timezone);
+        if (slice) hits.push({ block, ...slice });
+      }
+      hits.sort((a, b) => a.startMin - b.startMin);
+      if (hits.length) map.set(day, hits);
+    }
+    return map;
+  }, [visibleBlocks, weekDays, anchor, timezone]);
+
+  const filtered = staffFilter !== 'all' || serviceFilter !== 'all';
 
   // How many bookings fall in whatever is on screen. Counts cancelled ones
   // too, since they are rendered (dimmed and struck through) rather than
@@ -239,6 +420,20 @@ export default function CalendarView({
     (total, day) => total + (byDay.get(day)?.length ?? 0),
     0
   );
+
+  async function removeBlock(id: string) {
+    setLocalBlocks((prev) => prev.filter((b) => b.id !== id));
+    try {
+      await fetch(`/api/calendar/block?slug=${encodeURIComponent(slug)}&id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      router.refresh();
+    } catch {
+      // Put it back if the delete didn't land - the grid shouldn't claim
+      // a slot is free when it might not be.
+      setLocalBlocks(blocks);
+    }
+  }
 
   const rangeLabel =
     mode === 'week'
@@ -254,6 +449,7 @@ export default function CalendarView({
   // content (see the public page fix). No business-hours data reaches
   // this component yet, so this is the closest available signal.
   const dayBookings = useMemo(() => byDay.get(anchor) ?? [], [byDay, anchor]);
+  const dayBlocks = useMemo(() => blocksByDay.get(anchor) ?? [], [blocksByDay, anchor]);
   const { rangeStartHour, rangeEndHour } = useMemo(() => {
     let startHour = 8;
     let endHour = 20;
@@ -261,8 +457,14 @@ export default function CalendarView({
       startHour = Math.min(startHour, Math.floor(minutesOfDay(b.start_time, timezone) / 60));
       endHour = Math.max(endHour, Math.ceil(minutesOfDay(b.end_time, timezone) / 60));
     }
+    // A block on this day should widen the grid to fit too, so a
+    // morning-only block on an otherwise-empty day isn't clipped.
+    for (const { startMin, endMin } of dayBlocks) {
+      startHour = Math.min(startHour, Math.floor(startMin / 60));
+      endHour = Math.max(endHour, Math.ceil(endMin / 60));
+    }
     return { rangeStartHour: Math.max(0, startHour), rangeEndHour: Math.min(24, endHour) };
-  }, [dayBookings, timezone]);
+  }, [dayBookings, dayBlocks, timezone]);
 
   const hours = useMemo(
     () => Array.from({ length: rangeEndHour - rangeStartHour }, (_, i) => rangeStartHour + i),
@@ -322,18 +524,96 @@ export default function CalendarView({
             </span>
           </div>
         </div>
-        <PillTabs
-          active={mode}
-          onChange={(m) => {
-            setMode(m);
-            setAnchor((a) => a); // keep the same anchor date when switching modes
-          }}
-          options={[
-            { key: 'week', label: 'Week' },
-            { key: 'day', label: 'Day' },
-          ]}
-        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <PillTabs
+            active={mode}
+            onChange={(m) => {
+              setMode(m);
+              setAnchor((a) => a); // keep the same anchor date when switching modes
+            }}
+            options={[
+              { key: 'week', label: 'Week' },
+              { key: 'day', label: 'Day' },
+            ]}
+          />
+
+          {/* Native selects, styled to sit alongside the bordered icon
+              buttons - same reason the rest of the app uses native
+              <select> (keyboard, mobile wheel, zero JS). Only shown once
+              there's actually more than one option to pick between. */}
+          {staff.length > 1 && (
+            <select
+              value={staffFilter}
+              onChange={(e) => setStaffFilter(e.target.value)}
+              aria-label="Filter by staff"
+              className={`h-9 rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat ${
+                staffFilter === 'all' ? 'border-line text-ink-soft' : 'border-accent text-accent'
+              }`}
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6a63' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+                backgroundPosition: 'right 0.5rem center',
+              }}
+            >
+              <option value="all">All staff</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {services.length > 1 && (
+            <select
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              aria-label="Filter by service"
+              className={`h-9 rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat max-w-[160px] truncate ${
+                serviceFilter === 'all' ? 'border-line text-ink-soft' : 'border-accent text-accent'
+              }`}
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6a63' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+                backgroundPosition: 'right 0.5rem center',
+              }}
+            >
+              <option value="all">All services</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={() => setBlockModalOpen(true)}
+            className="h-9 inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-ink-soft hover:bg-warm-surface hover:text-ink transition-all"
+          >
+            <Icon name="event_busy" size={16} />
+            <span className="hidden sm:inline">Block time</span>
+          </button>
+        </div>
       </div>
+
+      {filtered && (
+        <div className="mb-3 flex items-center gap-2 text-caption text-ink-faint">
+          <span>
+            Showing {staffFilter !== 'all' ? staffName.get(staffFilter) : 'all staff'}
+            {serviceFilter !== 'all' ? ` · ${services.find((s) => s.id === serviceFilter)?.name ?? ''}` : ''}
+          </span>
+          <button
+            onClick={() => {
+              setStaffFilter('all');
+              setServiceFilter('all');
+            }}
+            className="text-accent hover:underline font-medium"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {mode === 'week' ? (
         <>
@@ -362,6 +642,7 @@ export default function CalendarView({
             // dropping them was an inconsistency between the two modes of
             // the same page, not a deliberate choice.
             const weekDayBookings = byDay.get(day) ?? [];
+            const weekDayBlocks = blocksByDay.get(day) ?? [];
             const isToday = day === today;
             return (
               <div
@@ -383,7 +664,17 @@ export default function CalendarView({
                   )}
                 </div>
                 <div className="space-y-1.5 min-h-[60px]">
-                  {weekDayBookings.length === 0 ? (
+                  {weekDayBlocks.map(({ block, startMin, endMin }) => (
+                    <BlockChip
+                      key={block.id}
+                      block={block}
+                      startMin={startMin}
+                      endMin={endMin}
+                      staffName={block.staff_id ? staffName.get(block.staff_id) ?? null : null}
+                      onRemove={() => removeBlock(block.id)}
+                    />
+                  ))}
+                  {weekDayBookings.length === 0 && weekDayBlocks.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-line-strong h-[52px] flex items-center justify-center">
                       <span className="text-label text-ink-faint">Free</span>
                     </div>
@@ -413,7 +704,7 @@ export default function CalendarView({
         </>
       ) : (
         <div>
-          {dayBookings.length === 0 && (
+          {dayBookings.length === 0 && dayBlocks.length === 0 && (
             <p className="text-body-sm text-ink-faint mb-3">Nothing booked this day - a free day, or one worth filling.</p>
           )}
           {/* True time-grid, not a flat list - hour rows on the left, blocks
@@ -423,7 +714,7 @@ export default function CalendarView({
               as far apart as a 10:40 and an 11:00, and gave no way to see a
               genuine double-booking versus two that just happen to be
               adjacent. */}
-          <div className="flex border border-line rounded-2xl bg-surface overflow-hidden">
+          <div className="flex border border-line rounded-xl bg-surface overflow-hidden">
             <div className="w-12 sm:w-14 shrink-0 border-r border-line" style={{ height: gridHeight }}>
               {hours.map((h, i) => (
                 <div key={h} className="relative" style={{ height: HOUR_HEIGHT }}>
@@ -451,6 +742,24 @@ export default function CalendarView({
                 </div>
               )}
 
+              {/* Blocks sit under bookings (z-wise) - a real appointment
+                  that somehow lands on blocked time still needs to be the
+                  thing you can see and click. */}
+              {dayBlocks.map(({ block, startMin, endMin }) => {
+                const top = (startMin - rangeStartHour * 60) * PX_PER_MIN;
+                const height = Math.max((endMin - startMin) * PX_PER_MIN, MIN_BLOCK_HEIGHT);
+                return (
+                  <BlockGridBlock
+                    key={block.id}
+                    block={block}
+                    top={top}
+                    height={height}
+                    staffName={block.staff_id ? staffName.get(block.staff_id) ?? null : null}
+                    onRemove={() => removeBlock(block.id)}
+                  />
+                );
+              })}
+
               {positionedBookings.map((b) => (
                 <GridBlock key={b.id} booking={b} onOpen={() => setOpenConversation(b)} />
               ))}
@@ -471,6 +780,215 @@ export default function CalendarView({
           onClose={() => setOpenConversation(null)}
         />
       )}
+
+      {blockModalOpen && (
+        <BlockTimeModal
+          slug={slug}
+          staff={staff}
+          timezone={timezone}
+          defaultDate={mode === 'day' ? anchor : today}
+          onClose={() => setBlockModalOpen(false)}
+          onCreated={(block) => {
+            setLocalBlocks((prev) => [...prev, block]);
+            setBlockModalOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// A block is just a start instant, an end instant, and optionally one
+// staff member + a short reason. The date and times are entered as the
+// business's own wall-clock (the same convention the rest of the admin
+// uses) and converted to real UTC instants with zonedTimeToUtc against
+// the business timezone - not the browser's - so an owner on a trip, or
+// a business in a different timezone from whoever's looking, still blocks
+// the hours they actually meant. The API re-validates everything.
+function BlockTimeModal({
+  slug,
+  staff,
+  timezone,
+  defaultDate,
+  onClose,
+  onCreated,
+}: {
+  slug: string;
+  staff: NamedRef[];
+  timezone: string;
+  defaultDate: string;
+  onClose: () => void;
+  onCreated: (block: Block) => void;
+}) {
+  const dialogRef = useDialog(true, onClose);
+  const [date, setDate] = useState(defaultDate);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [staffId, setStaffId] = useState<string>('');
+  const [reason, setReason] = useState('');
+  const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const valid = date && startTime && endTime && startTime < endTime;
+
+  async function submit() {
+    if (!valid) return;
+    setStatus('saving');
+    setErrorMsg('');
+    // Business wall-clock -> real UTC instant, against the business's own
+    // timezone (see this component's header comment).
+    const startISO = zonedTimeToUtc(date, startTime, timezone).toISOString();
+    const endISO = zonedTimeToUtc(date, endTime, timezone).toISOString();
+    try {
+      const res = await fetch('/api/calendar/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, startTime: startISO, endTime: endISO, staffId: staffId || undefined, reason }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus('error');
+        setErrorMsg(data.error || 'Could not save that block.');
+        return;
+      }
+      onCreated(data.block as Block);
+    } catch {
+      setStatus('error');
+      setErrorMsg('Something went wrong. Please try again.');
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Block time"
+      ref={dialogRef}
+    >
+      <div
+        className="absolute inset-0 backdrop-blur-sm animate-fade"
+        style={{ background: 'color-mix(in srgb, var(--ink) 40%, transparent)' }}
+        onClick={onClose}
+      />
+      <div className="relative w-full sm:max-w-md bg-surface sm:rounded-2xl border border-line shadow-card p-5 sm:p-6 h-full sm:h-auto overflow-y-auto">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-display text-[19px] font-semibold text-ink">Block off time</h2>
+            <p className="text-caption text-ink-faint mt-0.5">
+              Customers won&rsquo;t be able to book over this - a lunch break, a day off, anything.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="h-8 w-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
+          >
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className={labelClass} htmlFor="block-date">
+              Date
+            </label>
+            <input
+              id="block-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass} htmlFor="block-start">
+                From
+              </label>
+              <input
+                id="block-start"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="block-end">
+                To
+              </label>
+              <input
+                id="block-end"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              />
+            </div>
+          </div>
+          {!valid && date && (
+            <p className="text-caption text-error">The end time needs to be after the start time.</p>
+          )}
+
+          {staff.length > 1 && (
+            <div>
+              <label className={labelClass} htmlFor="block-staff">
+                Who&rsquo;s out
+              </label>
+              <select
+                id="block-staff"
+                value={staffId}
+                onChange={(e) => setStaffId(e.target.value)}
+                className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+              >
+                <option value="">Whole business</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className={labelClass} htmlFor="block-reason">
+              Reason <span className="text-ink-faint font-normal">(optional)</span>
+            </label>
+            <input
+              id="block-reason"
+              type="text"
+              value={reason}
+              maxLength={120}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Lunch, training, public holiday…"
+              className="w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-[14px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            />
+          </div>
+
+          {status === 'error' && <p className="text-caption text-error">{errorMsg}</p>}
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              onClick={onClose}
+              className="h-9 px-4 rounded-md border border-line bg-surface text-[13px] font-medium text-ink-soft hover:bg-warm-surface hover:text-ink transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={!valid || status === 'saving'}
+              className="h-9 px-4 rounded-md text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-default"
+              style={{ background: 'var(--accent)' }}
+            >
+              {status === 'saving' ? 'Blocking…' : 'Block this time'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -56,9 +56,28 @@ export async function pickAvailableStaffId(
     .gt('end_time', bufferedStart);
 
   if (excludeBookingId) query = query.neq('id', excludeBookingId);
-  const { data: overlapping } = await query;
 
-  const busyStaffIds = new Set((overlapping ?? []).map((b) => b.staff_id as string));
+  // Blocked time counts against availability the same way a booking does
+  // (see supabase/schema.sql blocked_times): a business-wide block
+  // (staff_id null) overlapping this window means nobody is bookable; a
+  // staff-specific block just takes that one person out of the running.
+  // Same overlap test as the bookings query above.
+  const [{ data: overlapping }, { data: blocks }] = await Promise.all([
+    query,
+    supabaseAdmin
+      .from('blocked_times')
+      .select('staff_id')
+      .eq('business_id', businessId)
+      .lt('start_time', bufferedEnd)
+      .gt('end_time', bufferedStart),
+  ]);
+
+  if ((blocks ?? []).some((b) => b.staff_id === null)) return null;
+
+  const busyStaffIds = new Set([
+    ...(overlapping ?? []).map((b) => b.staff_id as string),
+    ...(blocks ?? []).map((b) => b.staff_id as string).filter(Boolean),
+  ]);
   const free = staffRows.find((s) => !busyStaffIds.has(s.id));
   return free?.id ?? null;
 }

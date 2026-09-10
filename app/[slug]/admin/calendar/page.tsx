@@ -46,15 +46,38 @@ export default async function CalendarPage({
   // request to this page (and Customers, Services, manage-booking, and
   // more - see the sibling fix in each). services!bookings_service_
   // business_fk(...) names the relationship explicitly.
-  const { data: bookings, error } = await supabaseAdmin
-    .from('bookings')
-    .select(
-      'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, services!bookings_service_business_fk(name), staff(name)'
-    )
-    .eq('business_id', business.id)
-    .order('start_time', { ascending: true });
+  // staff_id/service_id come back alongside the embedded name so the
+  // Calendar's filters can match on the stable id, not a display name two
+  // people might share. blocked_times is the "block off a slot" feature -
+  // its own small table (see supabase/schema.sql), rendered on the grid
+  // and, more importantly, subtracted from customer-facing availability
+  // in lib/getAvailableSlots.ts.
+  const [{ data: bookings, error }, { data: staff }, { data: services }, { data: blocks, error: blocksError }] =
+    await Promise.all([
+      supabaseAdmin
+        .from('bookings')
+        .select(
+          'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, service_id, staff_id, services!bookings_service_business_fk(name), staff(name)'
+        )
+        .eq('business_id', business.id)
+        .order('start_time', { ascending: true }),
+      supabaseAdmin.from('staff').select('id, name').eq('business_id', business.id).order('created_at', { ascending: true }),
+      supabaseAdmin
+        .from('services')
+        .select('id, name')
+        .eq('business_id', business.id)
+        .eq('active', true)
+        .order('name', { ascending: true }),
+      supabaseAdmin
+        .from('blocked_times')
+        .select('id, staff_id, start_time, end_time, reason')
+        .eq('business_id', business.id)
+        .gte('end_time', new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString())
+        .order('start_time', { ascending: true }),
+    ]);
 
   if (error) logError('admin/calendar:bookings-query', error, { businessId: business.id });
+  if (blocksError) logError('admin/calendar:blocks-query', blocksError, { businessId: business.id });
 
   return (
     <div>
@@ -66,7 +89,14 @@ export default async function CalendarPage({
         <p className="text-ink-soft text-[13.5px] mt-1">Your schedule, week by week.</p>
       </div>
 
-      <CalendarView slug={slug} timezone={business.timezone || 'UTC'} bookings={bookings ?? []} />
+      <CalendarView
+        slug={slug}
+        timezone={business.timezone || 'UTC'}
+        bookings={bookings ?? []}
+        staff={staff ?? []}
+        services={services ?? []}
+        blocks={blocks ?? []}
+      />
     </div>
   );
 }

@@ -172,6 +172,41 @@ do $$ begin
 exception when duplicate_object or duplicate_table then null;
 end $$;
 
+-- ============================================
+-- Blocked time: an owner marking part of the calendar unavailable
+-- ============================================
+-- A lunch break, a day off, a dentist appointment - time that isn't a
+-- customer booking but must still stop customers booking over it.
+-- Deliberately its own table, not a sentinel booking row: bookings.
+-- service_id is NOT NULL with a pair-level FK, and a placeholder service
+-- would leak into every revenue/customer aggregation that reads bookings.
+--
+-- staff_id null -> the whole business is unavailable for that range
+--   (a public holiday, a one-person business away for the afternoon).
+-- staff_id set  -> just that one staff member is out; other staff stay
+--   bookable - mirrors how bookings.staff_id scopes the
+--   no_overlapping_bookings_per_staff constraint above.
+--
+-- Read and written only via the service role (the admin calendar API
+-- route, and lib/getAvailableSlots.ts subtracting these from what's
+-- offered) - never from a customer's anon session - so RLS is on with
+-- zero policies, same pattern as payout_transfers / whatsapp_conversations.
+create table if not exists blocked_times (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  staff_id uuid references staff(id) on delete cascade,
+  start_time timestamptz not null,
+  end_time timestamptz not null,
+  reason text,
+  created_at timestamptz default now(),
+  constraint blocked_times_end_after_start check (end_time > start_time)
+);
+
+alter table blocked_times enable row level security;
+
+create index if not exists blocked_times_business_range_idx
+  on blocked_times (business_id, start_time, end_time);
+
 -- Atomic, deployment-wide fixed-window rate limiting. API routes call this
 -- with the service role so every serverless instance shares one counter.
 create table if not exists rate_limit_buckets (

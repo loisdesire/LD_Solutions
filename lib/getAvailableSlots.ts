@@ -12,6 +12,25 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Blocked-time rows (see supabase/schema.sql) are just busy intervals as
+// far as availability is concerned. A staff-specific block consumes one
+// unit of capacity for that range exactly like a booking would; a
+// business-wide block (staff_id null) has to shut the slot regardless of
+// how many staff are free, so it's expanded to `capacity` copies - enough
+// to saturate generateSlots' overlap count on its own. Same {start_time,
+// end_time} shape generateSlots already expects, so nothing there changes.
+function expandBlocksToBusyIntervals(
+  blocks: { start_time: string; end_time: string; staff_id: string | null }[],
+  capacity: number
+): { start_time: string; end_time: string }[] {
+  const out: { start_time: string; end_time: string }[] = [];
+  for (const b of blocks) {
+    const copies = b.staff_id ? 1 : Math.max(1, capacity);
+    for (let i = 0; i < copies; i++) out.push({ start_time: b.start_time, end_time: b.end_time });
+  }
+  return out;
+}
+
 // A chat booking awaiting payment sits at status 'pending_payment', which
 // the no_overlapping_bookings constraint treats like any other live
 // booking - deliberately, since that's what holds the slot while the
@@ -98,24 +117,35 @@ export async function getAvailableSlots(
     .lte('start_time', dayEnd.toISOString());
 
   if (excludeBookingId) bookingsQuery = bookingsQuery.neq('id', excludeBookingId);
-  const [{ data: existingBookings }, { count: staffCount }] = await Promise.all([
+  const [{ data: existingBookings }, { count: staffCount }, { data: blocks }] = await Promise.all([
     bookingsQuery,
     // How many bookings can genuinely stack on the same slot before it's
     // actually full - see lib/slotGenerator.ts's staffCapacity comment.
     // head:true so this is a count, not a row fetch.
     supabaseAdmin.from('staff').select('id', { count: 'exact', head: true }).eq('business_id', businessId),
+    // Blocked-off time in the same widened window - anything that ends
+    // after the day starts and starts before it ends.
+    supabaseAdmin
+      .from('blocked_times')
+      .select('start_time, end_time, staff_id')
+      .eq('business_id', businessId)
+      .lte('start_time', dayEnd.toISOString())
+      .gte('end_time', dayStart.toISOString()),
   ]);
 
+  const capacity = staffCount ?? 1;
+
   // 5. Generate candidate slots and filter out anything that overlaps an
-  // existing booking (expanded by the buffer on each side).
+  // existing booking or a blocked interval (expanded by the buffer on
+  // each side).
   const slots = generateSlots({
     dateISO,
     timeZone,
     hours,
     durationMinutes: service.duration_minutes,
     bufferMinutes,
-    booked: existingBookings ?? [],
-    staffCapacity: staffCount ?? 1,
+    booked: [...(existingBookings ?? []), ...expandBlocksToBusyIntervals(blocks ?? [], capacity)],
+    staffCapacity: capacity,
   });
 
   // generateSlots only knows about the calendar date, not the clock - it'll
@@ -227,7 +257,7 @@ export async function getAvailabilityForRange(
     zonedTimeToUtc(bookableDates[bookableDates.length - 1], '00:00', timeZone).getTime() + 36 * 3600000
   );
 
-  const [{ data: allBookings }, { count: staffCount }] = await Promise.all([
+  const [{ data: allBookings }, { count: staffCount }, { data: allBlocks }] = await Promise.all([
     supabaseAdmin
       .from('bookings')
       .select('start_time, end_time')
@@ -236,7 +266,19 @@ export async function getAvailabilityForRange(
       .gte('start_time', rangeStart.toISOString())
       .lte('start_time', rangeEnd.toISOString()),
     supabaseAdmin.from('staff').select('id', { count: 'exact', head: true }).eq('business_id', businessId),
+    supabaseAdmin
+      .from('blocked_times')
+      .select('start_time, end_time, staff_id')
+      .eq('business_id', businessId)
+      .lte('start_time', rangeEnd.toISOString())
+      .gte('end_time', rangeStart.toISOString()),
   ]);
+
+  const capacity = staffCount ?? 1;
+  // generateSlots compares absolute UTC instants, so handing it every
+  // busy interval in the whole range (not just one day's) is safe - one
+  // day's block can't overlap another day's candidate slot.
+  const busy = [...(allBookings ?? []), ...expandBlocksToBusyIntervals(allBlocks ?? [], capacity)];
 
   const now = Date.now();
   for (const d of bookableDates) {
@@ -251,8 +293,8 @@ export async function getAvailabilityForRange(
       hours,
       durationMinutes: service.duration_minutes,
       bufferMinutes,
-      booked: allBookings ?? [],
-      staffCapacity: staffCount ?? 1,
+      booked: busy,
+      staffCapacity: capacity,
     });
     result[d] = slots.some((iso) => new Date(iso).getTime() > now);
   }
