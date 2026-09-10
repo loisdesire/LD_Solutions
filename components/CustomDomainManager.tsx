@@ -6,7 +6,40 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import Field from './Field';
+import Icon from './Icon';
 import { inputClass } from './formStyles';
+
+// The host label a CNAME record needs: everything before the registrable
+// domain (the last two labels), or "@" for an apex domain. Good enough for
+// the common book.brand.com / brand.com cases; multi-part TLDs (.co.uk)
+// would need a real PSL, which isn't worth it for a hint that also shows
+// the full domain right next to it.
+function cnameHost(domain: string): string {
+  const labels = domain.split('.').filter(Boolean);
+  return labels.length > 2 ? labels.slice(0, -2).join('.') : '@';
+}
+
+function CopyCell({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard?.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      }}
+      className="group inline-flex items-center gap-1.5 font-mono text-[12.5px] text-ink hover:text-accent transition-colors"
+    >
+      {value}
+      <Icon
+        name={copied ? 'check' : 'content_copy'}
+        size={13}
+        className={copied ? 'text-success' : 'text-ink-faint group-hover:text-accent'}
+      />
+    </button>
+  );
+}
 
 export default function CustomDomainManager({
   businessId,
@@ -57,19 +90,19 @@ export default function CustomDomainManager({
     router.refresh();
   }
 
+  const cleanedDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+
   return (
-    <form onSubmit={handleSave} className="space-y-5">
+    <form onSubmit={handleSave} className="space-y-6">
       <Field
-        label="Your domain"
-        hint="Point a domain or subdomain you own at your booking page. Customers see it as your own address, nothing about the platform shows. This covers your public pages only (booking, about, gallery, contact); you'll still manage the business and log in from here."
+        label="Domain"
+        hint="A domain or subdomain you own. Customers see it as your own address - nothing about the platform shows. Covers your public pages only (booking, about, gallery, contact); you still log in and manage the business from here."
       >
         {(props) => (
           <input
             {...props}
             type="text"
             value={domain}
-            // Every other manager clears its "Saved" badge on edit; this one
-            // didn't, so the green "Saved" sat next to unsaved changes.
             onChange={(e) => {
               setDomain(e.target.value);
               setSaved(false);
@@ -80,35 +113,48 @@ export default function CustomDomainManager({
         )}
       </Field>
 
-      {domain && (
-        <div className="rounded-xl bg-warm-surface p-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-faint mb-2">Setup in two steps</p>
-          <ol className="text-[13px] text-ink-soft space-y-2 list-decimal list-inside">
-            <li>
-              At your domain registrar, add a CNAME record for <span className="font-mono text-ink">{domain}</span> pointing
-              to <span className="font-mono text-ink">cname.vercel-dns.com</span>.
-            </li>
-            <li>
-              Message us the domain once you've saved it here. We add it to the hosting project on our end
-              (a manual step, usually done within a day), and it goes live as soon as DNS propagates.
-            </li>
-          </ol>
+      {cleanedDomain.includes('.') && (
+        <div className="border-t border-line pt-6">
+          <h3 className="font-display text-[16px] font-semibold text-ink mb-1">DNS setup</h3>
+          <p className="text-[12.5px] text-ink-faint mb-3">
+            Add this record with your domain provider, then send us the domain so we can switch it on.
+          </p>
+          {/* The DNS record as a real TYPE / NAME / VALUE table, matching
+              what every registrar's own form asks for - copy straight
+              across. */}
+          <div className="rounded-lg border border-line-strong overflow-hidden">
+            <div className="grid grid-cols-[70px_1fr_1fr] bg-warm-surface px-3 py-2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
+              <span>Type</span>
+              <span>Name</span>
+              <span>Value</span>
+            </div>
+            <div className="grid grid-cols-[70px_1fr_1fr] items-center px-3 py-2.5 border-t border-line">
+              <span className="font-mono text-[12.5px] font-semibold text-ink">CNAME</span>
+              <CopyCell value={cnameHost(cleanedDomain)} />
+              <CopyCell value="cname.vercel-dns.com" />
+            </div>
+          </div>
+          <p className="text-[12.5px] text-ink-faint mt-3 leading-relaxed">
+            Once you&rsquo;ve added the record and saved here, we add the domain on our end (a manual step, usually
+            within a day). It goes live as soon as DNS propagates - SSL is handled automatically after that.
+          </p>
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        {/* Saved state now lives inside the button itself, matching every
-            other manager on this page (Profile, Content, Rules, Payments) -
-            this one used to show it as a separate element next to the
-            button instead, the only section that did. */}
+      <div className="border-t border-line pt-5 flex items-center justify-end gap-3">
+        {saved && (
+          <span className="inline-flex items-center gap-1.5 text-caption text-success">
+            <CheckIcon className="h-3.5 w-3.5" /> Saved
+          </span>
+        )}
+        {error && <span className="text-caption text-error">{error}</span>}
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
         >
-          {saving ? 'Saving…' : saved ? <>Saved <CheckIcon className="h-3.5 w-3.5" /></> : 'Save domain'}
+          {saving ? 'Saving…' : 'Save changes'}
         </button>
-        {error && <span className="text-error text-[13px]">{error}</span>}
       </div>
     </form>
   );
