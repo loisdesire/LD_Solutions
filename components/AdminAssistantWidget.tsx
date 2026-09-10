@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AssistantChat from './AssistantChat';
+import Icon from './Icon';
 import { ASSISTANT_SUGGESTIONS_CORE, ASSISTANT_SUGGESTIONS_FULL } from '@/lib/assistantSuggestions';
 import { useCloseOnBackButton } from '@/lib/useCloseOnBackButton';
 import { useKeyboardSafeInsets } from '@/lib/useKeyboardSafeInsets';
@@ -111,24 +112,20 @@ export default function AdminAssistantWidget({
         style={{ background: 'var(--accent)' }}
       >
         {open ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
+          <Icon name="close" size={22} />
         ) : (
-          // A fixed sparkle glyph, not the business's own uploaded logo -
-          // was rendering an arbitrary logo at 26px on this button, and a
-          // logo that reads fine at real size (a detailed illustration, a
-          // wide wordmark, colors that don't sit well on a flat accent
-          // circle) can look genuinely messy squeezed into an icon this
-          // small. No business's logo is under this app's control, so
-          // nothing here can guarantee it'll still look clean at icon
-          // scale - a fixed mark can. Same sparkle already used for
+          // A fixed glyph, not the business's own uploaded logo - was
+          // rendering an arbitrary logo at 26px on this button, and a logo
+          // that reads fine at real size (a detailed illustration, a wide
+          // wordmark, colors that don't sit well on a flat accent circle)
+          // can look genuinely messy squeezed into an icon this small. No
+          // business's logo is under this app's control, so nothing here
+          // can guarantee it'll still look clean at icon scale - a fixed
+          // mark can. Same "smart_toy" ligature already used for
           // "Assistant" in the sidebar nav (components/AdminSidebar.tsx),
           // so it reads as the same thing in both places rather than two
           // different icons for one feature.
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
-          </svg>
+          <Icon name="smart_toy" size={22} filled />
         )}
       </button>
 
@@ -150,7 +147,7 @@ export default function AdminAssistantWidget({
           className={
             isFullScreen
               ? 'fixed inset-0 z-50 rounded-none bg-surface border-0 shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col'
-              : 'fixed bottom-[86px] right-5 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[560px] z-50 rounded-2xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col'
+              : 'fixed bottom-[86px] right-5 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[560px] z-50 rounded-xl bg-surface border-2 border-line shadow-[0_30px_70px_-25px_rgba(36,28,24,0.45)] overflow-hidden animate-rise flex flex-col'
           }
           style={isMobile && keyboardInsets ? { top: keyboardInsets.top, height: keyboardInsets.height } : undefined}
         >
@@ -169,9 +166,7 @@ export default function AdminAssistantWidget({
               aria-label="Close assistant"
               className="sm:hidden -ml-1.5 h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
             >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 19l-7-7 7-7" />
-              </svg>
+              <Icon name="arrow_back" size={19} />
             </button>
             {logoUrl ? (
               <img src={logoUrl} alt="" className="h-9 w-9 rounded-xl object-cover shrink-0 border border-line" />
@@ -192,15 +187,7 @@ export default function AdminAssistantWidget({
               title={expanded ? 'Shrink' : 'Expand to full screen'}
               className="hidden sm:flex h-8 w-8 rounded-full items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
             >
-              {expanded ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 3v4a2 2 0 01-2 2H3M15 3v4a2 2 0 002 2h4M9 21v-4a2 2 0 00-2-2H3M15 21v-4a2 2 0 012-2h4" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9V5a2 2 0 012-2h4M15 3h4a2 2 0 012 2v4M21 15v4a2 2 0 01-2 2h-4M9 21H5a2 2 0 01-2-2v-4" />
-                </svg>
-              )}
+              <Icon name={expanded ? 'close_fullscreen' : 'open_in_full'} size={16} />
             </button>
           </div>
           <div className="flex-1 min-h-0">

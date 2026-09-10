@@ -8,6 +8,7 @@ import Field from './Field';
 import Skeleton from './Skeleton';
 import SlotTimePicker from './SlotTimePicker';
 import { inputClass, labelClass } from './formStyles';
+import Icon from './Icon';
 
 type Service = {
   id: string;
@@ -135,7 +136,7 @@ export default function NewAppointmentModal({
             aria-label="Close"
             className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <Icon name="close" size={16} />
           </button>
         </div>
 
@@ -145,9 +146,7 @@ export default function NewAppointmentModal({
               className="animate-popIn inline-flex items-center justify-center h-14 w-14 rounded-full mb-4"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
+              <Icon name="check" size={26} filled />
             </div>
             <p className="font-display text-[18px] font-semibold text-ink">
               {name.split(' ')[0]} is booked for {selectedSlot ? formatTime(selectedSlot) : ''}
@@ -209,7 +208,7 @@ export default function NewAppointmentModal({
               </div>
             </div>
 
-            <div className="mb-5 rounded-2xl bg-paper border-2 border-line p-3.5">
+            <div className="mb-5 rounded-xl bg-paper border-2 border-line p-3.5">
               <CalendarPicker selectedDate={date} onChange={(d) => setDate(toDateStr(d))} today={today} maxDate={maxDate} />
             </div>
 
@@ -266,7 +265,11 @@ export default function NewAppointmentModal({
 
             {status === 'error' && (
               <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-error-bg border border-error-border">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M15 9l-6 6M9 9l6 6" /></svg>
+                {/* Icon now takes text-error rather than a hardcoded
+                    #dc2626 - it was never actually reading the app's own
+                    --error token, just a literal that happened to be
+                    close to it. */}
+                <Icon name="error" size={17} className="text-error shrink-0" />
                 <p className="text-[13px] text-error">Something went wrong. Please try again.</p>
               </div>
             )}
