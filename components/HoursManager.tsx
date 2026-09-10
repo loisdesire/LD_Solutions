@@ -5,6 +5,7 @@ import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import { useToast } from './Toast';
+import Icon from './Icon';
 
 type Interval = { start: string; end: string };
 type DayHours = { open: boolean; intervals: Interval[] };
@@ -199,7 +200,11 @@ export default function HoursManager({
     <div className="space-y-6">
       {error && <p className="text-sm text-error">{error}</p>}
 
-      <div className="rounded-3xl border-2 border-line bg-surface p-4 sm:p-5">
+      {/* rounded-xl, not the old rounded-3xl - this is the page's own
+          primary content card, matching the same radius scale as the
+          other manager pages' table/list containers (rounded-3xl is now
+          reserved for actual modal shells app-wide). */}
+      <div className="rounded-xl border-2 border-line bg-surface p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4 mb-5">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.13em] text-ink-faint">Weekly rhythm</p>
@@ -213,7 +218,7 @@ export default function HoursManager({
               key={DAY_NAMES[index]}
               type="button"
               onClick={() => setSelectedDay(index)}
-              className={`relative min-w-0 rounded-2xl px-1.5 py-3 text-center transition-colors ${
+              className={`relative min-w-0 rounded-lg px-1.5 py-3 text-center transition-colors ${
                 selectedDay === index ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink-soft hover:bg-ink-wash'
               }`}
             >
@@ -272,7 +277,7 @@ export default function HoursManager({
                       aria-label={`Remove window ${i + 1}`}
                       className="h-8 w-8 flex items-center justify-center rounded-lg text-ink-faint hover:text-error hover:bg-error-bg transition-colors shrink-0"
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                      <Icon name="close" size={16} />
                     </button>
                   )}
                 </div>
@@ -287,7 +292,7 @@ export default function HoursManager({
                 className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline"
                 style={{ color: 'var(--accent)' }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 5v14M5 12h14" /></svg>
+                <Icon name="add" size={15} />
                 Add another window
               </button>
 

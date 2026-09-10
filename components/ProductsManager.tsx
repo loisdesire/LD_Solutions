@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/formatMoney';
 import { inputClass, labelClass, iconBtnClass } from './formStyles';
 import { useDialog } from './useDialog';
 import ConfirmDialog from './ConfirmDialog';
+import Icon from './Icon';
 
 type Product = {
   id: string;
@@ -85,7 +86,7 @@ function ProductModal({
             aria-label="Close"
             className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <Icon name="close" size={16} />
           </button>
         </div>
 
@@ -331,9 +332,7 @@ export default function ProductsManager({
           }}
           className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Icon name="add" size={16} />
           Add product
         </button>
       </div>
@@ -388,29 +387,18 @@ export default function ProductsManager({
       )}
 
       {products.length === 0 ? (
-        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
-              <path
-                d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            </svg>
+        <div className="border-2 border-dashed border-line-strong rounded-xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-12 w-12 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
+            <Icon name="inventory_2" size={24} />
           </div>
           <h2 className="font-display text-[20px]">No products yet</h2>
           <p className="text-ink-soft text-body-sm mt-1.5">Products are optional - they show on your page and let the assistant answer questions about what you sell. Use "Add product" above if you want them.</p>
         </div>
       ) : (
-        <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
+        <div className="rounded-xl border-2 border-line overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex items-center justify-end">
             <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 w-full sm:w-64 border border-transparent transition-colors focus-within:border-accent">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.3-4.3" />
-              </svg>
+              <Icon name="search" size={15} className="text-ink-faint shrink-0" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -472,33 +460,17 @@ export default function ProductsManager({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => startEdit(p)} aria-label="Edit" className={iconBtnClass}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                      <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
+                    <Icon name="edit" size={15} />
                   </button>
                   <button onClick={() => handleToggleActive(p)} aria-label={p.active ? 'Hide' : 'Show'} className={iconBtnClass}>
-                    {p.active ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                        <path d="M3 3l18 18" />
-                        <path d="M10.6 5.1A9.9 9.9 0 0112 5c6.5 0 10 7 10 7a17.3 17.3 0 01-3.4 4.6M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a10 10 0 004.4-1" />
-                        <path d="M9.9 9.9a3 3 0 004.2 4.2" />
-                      </svg>
-                    )}
+                    <Icon name={p.active ? 'visibility' : 'visibility_off'} size={15} />
                   </button>
                   <button
                     onClick={() => setDeleteTarget(p)}
                     aria-label="Delete"
                     className={`${iconBtnClass} hover:border-error hover:text-error`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
-                    </svg>
+                    <Icon name="delete" size={15} />
                   </button>
                 </div>
               </div>
