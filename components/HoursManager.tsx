@@ -267,21 +267,25 @@ export default function HoursManager({
           {day.open ? (
             <div className="space-y-2.5">
               {day.intervals.map((iv, i) => (
-                <div key={i} className="flex items-center gap-2.5">
+                <div key={i} className="flex items-center gap-2 sm:gap-2.5">
+                  {/* flex-1 min-w-0 - native <input type=time> widths vary
+                      by browser and a wide pair + "to" + the remove button
+                      could push past a phone's edge; letting them shrink
+                      keeps the row on one line at any width. */}
                   <input
                     aria-label={`${DAY_NAMES[selectedDay]} window ${i + 1} opening time`}
                     type="time"
                     value={iv.start}
                     onChange={(e) => updateInterval(selectedDay, i, { start: e.target.value })}
-                    className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    className="flex-1 min-w-0 sm:flex-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
                   />
-                  <span className="font-mono text-[12px] text-ink-faint">to</span>
+                  <span className="font-mono text-[12px] text-ink-faint shrink-0">to</span>
                   <input
                     aria-label={`${DAY_NAMES[selectedDay]} window ${i + 1} closing time`}
                     type="time"
                     value={iv.end}
                     onChange={(e) => updateInterval(selectedDay, i, { end: e.target.value })}
-                    className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    className="flex-1 min-w-0 sm:flex-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
                   />
                   {day.intervals.length > 1 && (
                     <button
