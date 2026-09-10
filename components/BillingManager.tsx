@@ -145,7 +145,7 @@ export default function BillingManager({
 
   return (
     <div className="max-w-lg">
-      <div className="border-2 border-line rounded-xl overflow-hidden bg-surface">
+      <div className="border border-line shadow-soft rounded-xl overflow-hidden bg-surface">
         <div className="p-6 border-b border-dashed border-line">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${copy.pill}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -214,7 +214,7 @@ export default function BillingManager({
                     key={plan}
                     type="button"
                     onClick={() => setSelectedPlan(plan)}
-                    className={`text-left rounded-xl border-2 px-4 py-3.5 transition-colors ${
+                    className={`text-left rounded-xl border px-4 py-3.5 transition-colors ${
                       selectedPlan === plan ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
                     }`}
                   >
@@ -276,29 +276,33 @@ export default function BillingManager({
           <h3 className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">
             Payment history
           </h3>
-          <div className="border-2 border-line rounded-xl overflow-hidden bg-surface">
-            {history.map((h, i) => (
-              <div
-                key={h.id}
-                className={`flex items-center justify-between px-4 py-3 ${
-                  i !== history.length - 1 ? 'border-b border-line' : ''
-                }`}
-              >
-                <div>
-                  <div className="text-[13.5px] font-medium text-ink">{formatDate(h.created_at)}</div>
-                  <div
-                    className={`font-mono text-[10px] uppercase tracking-[0.06em] mt-0.5 ${
-                      h.status === 'successful' ? 'text-success' : 'text-error'
+          <div className="border border-line shadow-soft rounded-xl overflow-hidden bg-surface">
+            {history.map((h, i) => {
+              const paid = h.status === 'successful';
+              return (
+                <div
+                  key={h.id}
+                  className={`flex items-center gap-3 px-4 py-3 ${
+                    i !== history.length - 1 ? 'border-b border-line' : ''
+                  }`}
+                >
+                  <div className="text-[13.5px] font-medium text-ink flex-1">{formatDate(h.created_at)}</div>
+                  <div className="font-mono text-[13.5px] font-semibold text-ink tabular-nums">
+                    {formatMoney(h.amount != null ? Number(h.amount) : null)}
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium shrink-0 ${
+                      paid
+                        ? 'bg-success-bg text-success border-success-border'
+                        : 'bg-error-bg text-error border-error-border'
                     }`}
                   >
-                    {h.status === 'successful' ? 'Paid' : 'Failed'}
-                  </div>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {paid ? 'Paid' : 'Failed'}
+                  </span>
                 </div>
-                <div className="font-mono text-[13.5px] font-semibold text-ink">
-                  {formatMoney(h.amount != null ? Number(h.amount) : null)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
