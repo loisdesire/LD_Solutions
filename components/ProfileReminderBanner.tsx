@@ -33,7 +33,9 @@ export default function ProfileReminderBanner({
     : 'A short description helps customers know what to expect before they book.';
 
   return (
-    <div className="rounded-2xl bg-warm-surface border border-line mb-8 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+    // rounded-xl, matching the stat card and SetupChecklist above it -
+    // same radius scale across every dashboard card now.
+    <div className="rounded-xl bg-warm-surface border border-line mb-8 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
       <div>
         <p className="font-semibold text-[14px] text-ink">
           {missing.length} thing{missing.length > 1 ? 's' : ''} left to finish your profile - {missing.join(', ')}

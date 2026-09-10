@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Icon from './Icon';
 
 type Step = {
   key: string;
@@ -11,14 +12,6 @@ type Step = {
   done: boolean;
   optional?: boolean;
 };
-
-function CheckIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  );
-}
 
 // First five minutes after signup, made visible on the one screen every
 // new business actually lands on. Disappears entirely once the required
@@ -92,8 +85,11 @@ export default function SetupChecklist({
   // warm-surface instead of white - this is a temporary onboarding nudge
   // (it disappears entirely once done), not today's actual content, and
   // shouldn't visually compete with the real work item on the same page.
+  // rounded-xl, not the old rounded-2xl - matches the stat card right
+  // below it, part of the dashboard's own radius scale now, not a
+  // holdover from before that pass.
   return (
-    <div className="rounded-2xl bg-warm-surface border border-line mb-8 overflow-hidden">
+    <div className="rounded-xl bg-warm-surface border border-line mb-8 overflow-hidden">
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -121,7 +117,7 @@ export default function SetupChecklist({
               style={step.done ? { background: 'var(--success)' } : undefined}
               aria-hidden="true"
             >
-              {step.done && <CheckIcon />}
+              {step.done && <Icon name="check" size={13} filled />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -151,7 +147,7 @@ export default function SetupChecklist({
           style={{ color: 'var(--accent)' }}
         >
           Preview your page
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M7 17L17 7M8 7h9v9" /></svg>
+          <Icon name="open_in_new" size={13} />
         </a>
         <button
           type="button"
