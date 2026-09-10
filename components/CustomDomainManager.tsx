@@ -119,20 +119,30 @@ export default function CustomDomainManager({
           <p className="text-[12.5px] text-ink-faint mb-3">
             Add this record with your domain provider, then send us the domain so we can switch it on.
           </p>
-          {/* The DNS record as a real TYPE / NAME / VALUE table, matching
-              what every registrar's own form asks for - copy straight
-              across. */}
+          {/* The DNS record matching what every registrar's own form asks
+              for. Stacked label/value rows below sm: (a 3-column table
+              can't fit "cname.vercel-dns.com" on a phone without
+              overflowing); a proper TYPE / NAME / VALUE table from sm: up. */}
           <div className="rounded-lg border border-line-strong overflow-hidden">
-            <div className="grid grid-cols-[70px_1fr_1fr] bg-warm-surface px-3 py-2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
+            <div className="hidden sm:grid sm:grid-cols-[70px_1fr_1.4fr] bg-warm-surface px-3 py-2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">
               <span>Type</span>
               <span>Name</span>
               <span>Value</span>
             </div>
-            <div className="grid grid-cols-[70px_1fr_1fr] items-center px-3 py-2.5 border-t border-line">
-              <span className="font-mono text-[12.5px] font-semibold text-ink">CNAME</span>
-              <CopyCell value={cnameHost(cleanedDomain)} />
-              <CopyCell value="cname.vercel-dns.com" />
-            </div>
+            <dl className="flex flex-col gap-2 p-3 text-[13px] sm:grid sm:grid-cols-[70px_1fr_1.4fr] sm:items-center sm:gap-0">
+              <div className="flex items-center justify-between sm:block">
+                <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint sm:hidden">Type</dt>
+                <span className="font-mono text-[12.5px] font-semibold text-ink">CNAME</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint sm:hidden">Name</dt>
+                <CopyCell value={cnameHost(cleanedDomain)} />
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:block">
+                <dt className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink-faint sm:hidden">Value</dt>
+                <CopyCell value="cname.vercel-dns.com" />
+              </div>
+            </dl>
           </div>
           <p className="text-[12.5px] text-ink-faint mt-3 leading-relaxed">
             Once you&rsquo;ve added the record and saved here, we add the domain on our end (a manual step, usually
