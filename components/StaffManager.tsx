@@ -16,6 +16,16 @@ import Icon from './Icon';
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
 
+// Up to two letters from a name for the monogram avatar - adopted from
+// the Stitch Team screen (a real person's initials read more personally
+// than a generic person glyph).
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 // The row itself used to expand into this on "Edit" - pushing every row
 // below it down the page for a change to one field. Same overlay pattern
 // as ServicesManager/ProductsManager's add/edit modals, just smaller
@@ -275,12 +285,12 @@ export default function StaffManager({
     <div>
       <PageHeader
         eyebrow="Set up"
-        title="Your team"
-        description={`Invite people to help manage bookings for ${businessName}.`}
+        title="Team"
+        description={`Everyone who can sign in and manage ${businessName}.`}
         action={
           <button
             onClick={() => setShowInvite((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3.5 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
           >
             <Icon name="add" size={16} />
             {showInvite ? 'Cancel' : 'Invite someone'}
@@ -291,7 +301,7 @@ export default function StaffManager({
       {showInvite && (
         <form
           onSubmit={handleInvite}
-          className="flex flex-col sm:flex-row gap-3 items-end border-2 border-line rounded-xl p-5 mb-8 bg-surface"
+          className="flex flex-col sm:flex-row gap-3 items-end border border-line rounded-xl p-5 mb-8 bg-surface shadow-soft"
         >
           <div className="flex-1 w-full">
             <Field label="Invite by email" required>
@@ -311,7 +321,7 @@ export default function StaffManager({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="h-9 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 whitespace-nowrap"
           >
             {saving ? 'Sending…' : 'Send invite'}
           </button>
@@ -333,7 +343,7 @@ export default function StaffManager({
               !showInvite && (
                 <button
                   onClick={() => setShowInvite(true)}
-                  className="rounded-full border-2 border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
+                  className="rounded-md border border-line-strong px-4 py-2 text-body-sm font-medium hover:border-accent hover:text-accent transition-colors"
                 >
                   Invite someone
                 </button>
@@ -342,7 +352,7 @@ export default function StaffManager({
           />
         </div>
       ) : (
-      <div className="border-2 border-line rounded-xl bg-surface overflow-hidden mb-8">
+      <div className="border border-line shadow-soft rounded-xl bg-surface overflow-hidden mb-8">
         {staff.map((s) => (
             <div
               key={s.id}
@@ -350,10 +360,10 @@ export default function StaffManager({
             >
               <div className="flex items-center gap-3.5 min-w-0 flex-1">
                 <div
-                  className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold"
+                  style={{ background: 'var(--warm-surface)', color: 'var(--ink-soft)' }}
                 >
-                  <Icon name="person" size={17} />
+                  {initials(s.name)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-[14px] truncate">{s.name}</p>
@@ -371,14 +381,18 @@ export default function StaffManager({
                 </div>
               </div>
               <div className="flex items-center gap-2.5 shrink-0 pl-[52px] sm:pl-0">
-                <span className="font-mono rounded-full bg-ink-wash px-2.5 py-0.5 text-label uppercase tracking-[0.05em] text-ink-faint">
+                {/* Owner tinted with the accent, staff neutral grey -
+                    matches the Stitch Team screen's role column. */}
+                <span
+                  className={`font-mono rounded-full px-2.5 py-0.5 text-label uppercase tracking-[0.05em] ${
+                    s.role === 'owner' ? '' : 'bg-ink-wash text-ink-faint'
+                  }`}
+                  style={s.role === 'owner' ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined}
+                >
                   {s.role}
                 </span>
                 {s.auth_id === currentUserId && (
-                  <span
-                    className="font-mono rounded-full px-2.5 py-0.5 text-label uppercase tracking-[0.05em]"
-                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                  >
+                  <span className="font-mono rounded-full border border-line-strong px-2.5 py-0.5 text-label uppercase tracking-[0.05em] text-ink-faint">
                     You
                   </span>
                 )}
@@ -408,7 +422,7 @@ export default function StaffManager({
           {/* Same treatment as the team list above: one container with
               dividers, rather than a card per person. Dashed border keeps
               these visually distinct from staff who have actually joined. */}
-          <div className="border-2 border-dashed border-line-strong rounded-xl overflow-hidden">
+          <div className="border border-dashed border-line-strong rounded-xl overflow-hidden">
             {invites.map((inv) => (
               <div
                 key={inv.id}
@@ -420,7 +434,7 @@ export default function StaffManager({
                 </div>
                 <button
                   onClick={() => handleCopy(inv.token, inv.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-line-strong px-3 py-1.5 text-caption font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-caption font-medium text-ink hover:border-accent hover:text-accent transition-all shrink-0"
                 >
                   {copiedId === inv.id ? (
                     <>
@@ -433,7 +447,7 @@ export default function StaffManager({
                 <button
                   onClick={() => setRevokeTarget(inv)}
                   aria-label={`Revoke invite to ${inv.email}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl border-2 border-line-strong px-3 py-1.5 text-caption font-medium text-ink-faint hover:border-error hover:text-error transition-all shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-caption font-medium text-ink-faint hover:border-error hover:text-error transition-all shrink-0"
                 >
                   Revoke
                 </button>
