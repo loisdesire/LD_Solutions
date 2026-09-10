@@ -711,7 +711,12 @@ export default function BookingForm({
                         </svg>
                         <span className="text-[12px]">{formatDuration(s.duration_minutes)}</span>
                       </span>
-                      <span className="text-[12px] font-semibold text-ink-soft">Book now</span>
+                      <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-ink-soft transition-colors group-hover:text-accent">
+                        Book now
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
+                          <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                      </span>
                     </div>
                   </div>
                 </button>

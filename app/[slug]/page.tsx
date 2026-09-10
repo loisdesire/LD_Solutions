@@ -215,7 +215,7 @@ export default async function BusinessBookingPage({
                     className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[0.08em]"
                     style={
                       isOpenNow
-                        ? { background: 'rgba(20,184,166,0.9)', color: '#fff' }
+                        ? { background: 'var(--success)', color: '#fff' }
                         : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)' }
                     }
                   >
