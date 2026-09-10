@@ -185,6 +185,19 @@ export default function AdminDashboardBody({
           : `In ${Math.floor(minutesUntilNext / 60)}h ${minutesUntilNext % 60}m`
         : `${dayPrefix(nextSlot.start_time)} ${new Date(nextSlot.start_time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
+  // Two formats, toggled by breakpoint rather than picked in JS - the
+  // long form ("Thursday, 10 September") plus the full-length status pill
+  // ("Accepting online bookings") run past 400px combined, on a mobile
+  // content width that's only ~335px (px-5 on both sides of a 375px
+  // screen) - confirmed live as "dashboard mobile is in a bad place."
+  // Short forms keep the same real information, just fewer characters.
+  const dateLabelLong = now
+    ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+    : 'Today';
+  const dateLabelShort = now
+    ? new Date(now).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+    : 'Today';
+
   const hour = now ? new Date(now).getHours() : null;
   const greeting =
     hour === null ? '' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -202,32 +215,29 @@ export default function AdminDashboardBody({
 
   return (
     <div>
-      {/* Was: greeting block and a search+actions block, laid out as two
-          side-by-side columns above lg: and two full-width stacked rows
-          below it - which meant Copy link/Export/New appointment claimed
-          an entire row of their own under the greeting on every phone
-          width, mostly empty space around three small buttons. One
-          consistent shape now, at every width: a compact top strip pairing
-          the short date label with the actions (they're comparable widths,
-          so they actually belong on the same line), then the real content
-          - name, summary, search - flows below as its own full-width
-          block instead of fighting the actions for horizontal room. */}
+      {/* Top identity strip: date + status pill, then the actions cluster.
+          Used to be one row at every width (fine back when the status
+          pill only showed up on the rare bad day) - once the pill became
+          permanent (matching Stitch's own always-on treatment), the long
+          date label + full pill text run past 400px combined, against a
+          mobile content column that's only ~335px (px-5 on a 375px
+          screen) - confirmed live as "dashboard mobile is in a bad
+          place." Stacks to two rows below sm: (date+pill, then actions,
+          both full width) and both the date and pill text switch to
+          shorter forms there too; from sm: up there's real room, so it's
+          back to one items-end row like before. */}
       <div className="mb-6">
-        {/* items-end, not items-center - matches the Services page's own
-            heading+actions row (sm:items-end there), where the action
-            group bottom-aligns with the text beside it rather than
-            floating centered against it. Only one line of text here (no
-            subtitle inside this specific row), so the difference is
-            small, but it's the same convention, not two different ones
-            for the same kind of row. */}
-        <div className="flex items-end justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+        {/* items-end (at sm:+), not items-center - matches the Services
+            page's own heading+actions row (sm:items-end there), where the
+            action group bottom-aligns with the text beside it rather than
+            floating centered against it. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
             {/* Uppercase + tracking-wide, matching the Stitch header's own
                 date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
             <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
-              {now
-                ? new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-                : 'Today'}
+              <span className="sm:hidden">{dateLabelShort}</span>
+              <span className="hidden sm:inline">{dateLabelLong}</span>
             </span>
             {/* Real status, not decoration (see the server component's own
                 comment on where this comes from) - matches the Stitch
@@ -248,16 +258,19 @@ export default function AdminDashboardBody({
                   : 'bg-warning-bg text-warning border-warning-border'
               }`}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}
+              <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
+              <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
+              <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
             </Link>
           </div>
-          <DashboardHeaderActions
-            slug={slug}
-            businessId={businessId}
-            services={services}
-            maxAdvanceDays={maxAdvanceDays}
-          />
+          <div className="flex justify-end sm:contents">
+            <DashboardHeaderActions
+              slug={slug}
+              businessId={businessId}
+              services={services}
+              maxAdvanceDays={maxAdvanceDays}
+            />
+          </div>
         </div>
         <h1 className="font-display text-h1 text-ink mt-1">
           {now ? `${greeting}, ${businessName}` : businessName}
