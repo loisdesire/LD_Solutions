@@ -200,11 +200,11 @@ export default function HoursManager({
     <div className="space-y-6">
       {error && <p className="text-sm text-error">{error}</p>}
 
-      {/* rounded-xl, not the old rounded-3xl - this is the page's own
-          primary content card, matching the same radius scale as the
-          other manager pages' table/list containers (rounded-3xl is now
-          reserved for actual modal shells app-wide). */}
-      <div className="rounded-xl border-2 border-line bg-surface p-4 sm:p-5">
+      {/* rounded-xl + a 1px border + shadow-soft - the exact same card
+          treatment as the dashboard's stat strip and the Stitch design's
+          cards. Was border-2; a hairline reads as the more precise tool
+          this pass is going for. */}
+      <div className="rounded-xl border border-line bg-surface shadow-soft p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4 mb-5">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.13em] text-ink-faint">Weekly rhythm</p>
@@ -223,7 +223,15 @@ export default function HoursManager({
               }`}
             >
               <span className="block font-mono text-[9px] uppercase tracking-[0.08em]">{DAY_NAMES[index].slice(0, 3)}</span>
-              <span className={`mx-auto mt-2 block h-2 w-2 rounded-full ${d.open ? selectedDay === index ? 'bg-white' : 'bg-accent' : selectedDay === index ? 'bg-white/40' : 'bg-line-strong'}`} />
+              {/* Green = open, matching the "confirmed is green" semantic
+                  the rest of the admin now uses. Neutral grey when closed;
+                  white on the selected (accent-filled) tile. */}
+              <span
+                className={`mx-auto mt-2 block h-2 w-2 rounded-full ${
+                  selectedDay === index ? (d.open ? 'bg-white' : 'bg-white/40') : d.open ? '' : 'bg-line-strong'
+                }`}
+                style={selectedDay !== index && d.open ? { background: 'var(--success)' } : undefined}
+              />
               <span className="sr-only">{d.open ? 'Open' : 'Closed'}</span>
             </button>
           ))}
@@ -236,8 +244,13 @@ export default function HoursManager({
               <button
                 type="button"
                 onClick={() => updateDay(selectedDay, { open: !day.open })}
-                className={`font-mono text-[10px] uppercase tracking-[0.08em] rounded-full px-2.5 py-1 ${day.open ? 'bg-accent-soft text-accent' : 'bg-ink-wash text-ink-faint'}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border ${
+                  day.open
+                    ? 'bg-success-bg text-success border-success-border'
+                    : 'bg-ink-wash text-ink-faint border-line-strong'
+                }`}
               >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {day.open ? 'Open' : 'Closed'}
               </button>
             </div>
@@ -260,7 +273,7 @@ export default function HoursManager({
                     type="time"
                     value={iv.start}
                     onChange={(e) => updateInterval(selectedDay, i, { start: e.target.value })}
-                    className="rounded-xl border-2 border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
                   />
                   <span className="font-mono text-[12px] text-ink-faint">to</span>
                   <input
@@ -268,7 +281,7 @@ export default function HoursManager({
                     type="time"
                     value={iv.end}
                     onChange={(e) => updateInterval(selectedDay, i, { end: e.target.value })}
-                    className="rounded-xl border-2 border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-body-sm font-mono outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
                   />
                   {day.intervals.length > 1 && (
                     <button
@@ -326,7 +339,7 @@ export default function HoursManager({
               type="button"
               onClick={() => saveDay(selectedDay)}
               disabled={savingDay === selectedDay}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-caption font-medium text-accent-contrast hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
             >
               {savingDay === selectedDay ? 'Saving…' : savedDay === selectedDay ? <>Saved <CheckIcon className="h-3 w-3" /></> : 'Save day'}
             </button>
