@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
+import Icon from './Icon';
 // Was its own local copy of the old style (2px border, mono text) -
 // every other manager (BusinessProfile/Payments/BookingRules/Staff/
 // CustomDomain/Services/Products) already moved to the shared one; this
@@ -40,7 +41,7 @@ const WHATSAPP_MESSENGER_LIVE = false;
 // does nothing or, worse, looks fully available and isn't.
 function ComingSoonRow({ channel }: { channel: string }) {
   return (
-    <details className="group border-2 border-dashed border-line rounded-xl px-4 py-3">
+    <details className="group border border-dashed border-line-strong rounded-lg px-4 py-3">
       <summary className="flex items-center justify-between gap-4 cursor-pointer list-none marker:content-none">
         <p className="text-body-sm text-ink-faint">Not available yet</p>
         <span className="text-caption font-semibold px-3 py-2 min-h-[40px] flex items-center rounded-lg text-ink-faint">
@@ -53,6 +54,52 @@ function ComingSoonRow({ channel }: { channel: string }) {
         moment it&rsquo;s ready to connect.
       </p>
     </details>
+  );
+}
+
+// Small brand-tinted icon tile leading each channel row - the Stitch
+// Channels screen's own treatment (a recognisable coloured square per
+// channel), so the list scans as "these are the channels" at a glance.
+// Material Symbols has no brand logos; these are the nearest generic
+// glyphs, tinted to each service's colour.
+function ChannelIcon({ name, tint }: { name: string; tint: string }) {
+  return (
+    <span
+      className="h-9 w-9 shrink-0 rounded-lg flex items-center justify-center"
+      style={{ background: `color-mix(in srgb, ${tint} 14%, transparent)`, color: tint }}
+    >
+      <Icon name={name} size={18} />
+    </span>
+  );
+}
+
+// One shared header row for a channel: icon tile, name, status badge, and
+// a one-line description underneath - so the four sections stop each
+// hand-rolling their own slightly different heading block.
+function ChannelHead({
+  icon,
+  tint,
+  name,
+  description,
+  badge,
+}: {
+  icon: string;
+  tint: string;
+  name: string;
+  description: string;
+  badge?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 mb-3">
+      <ChannelIcon name={icon} tint={tint} />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-[14px] font-semibold text-ink">{name}</p>
+          {badge}
+        </div>
+        <p className="text-caption text-ink-faint mt-0.5">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -81,32 +128,29 @@ export default function BotIntegrationsSettings({
   messengerLastActiveAt?: string | null;
 }) {
   return (
-    <div className="space-y-8">
-      {/* The page header already says what this is; a second heading
-          underneath repeated it. */}
-
-      {/* Website chat has no connect step - it is live on every public page
-          the moment a business exists. Leaving it off this page made the
-          list read as "you have nothing connected" when the most reliable
-          channel was already running. Shaped exactly like the others, so it
-          reads as one of the channels rather than a notice about them. */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <p className="text-[14px] font-semibold text-ink">Website chat</p>
-          <span className={connectedBadgeClass}>
-            <span className={connectedDotClass} aria-hidden="true" />
-            Always on
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
+    // One bordered card, the four channels stacked inside it with hairline
+    // dividers - the Stitch Channels screen's own layout, instead of four
+    // free-standing blocks separated by dashed rules.
+    <div className="rounded-xl border border-line shadow-soft bg-surface overflow-hidden divide-y divide-line">
+      {/* Website chat has no connect step - it's live on every public page
+          the moment a business exists. Kept on this list (shaped like the
+          others) so the page doesn't read as "nothing connected" when the
+          most reliable channel is already running. */}
+      <div className="p-4 sm:p-5">
+        <ChannelHead
+          icon="forum"
+          tint="var(--accent)"
+          name="Website chat"
+          description="The chat widget on your public booking page."
+          badge={
+            <span className={connectedBadgeClass}>
+              <span className={connectedDotClass} aria-hidden="true" />
+              Always on
+            </span>
+          }
+        />
+        <div className="flex items-center justify-between gap-4 bg-warm-surface rounded-lg px-4 py-3">
           <p className="text-body-sm text-ink-soft min-w-0">Live on your booking page. Nothing to set up.</p>
-          {/* Was a permanently disabled "Set up" button that did nothing -
-              the one channel this page can actually let you test right
-              now, with zero setup required, had no way to do that.
-              whitespace-nowrap + shrink-0: on a narrow phone the row had
-              just enough space to squeeze "Try it" onto two lines instead
-              of letting the sentence beside it wrap first - a two-word
-              link split across two lines reads as broken, not urgent. */}
           <a
             href={`/${slug}#chat`}
             target="_blank"
@@ -117,11 +161,15 @@ export default function BotIntegrationsSettings({
           </a>
         </div>
       </div>
-      <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} lastActiveAt={whatsappLastActiveAt ?? null} />
-      <div className="border-t border-dashed border-line" />
-      <TelegramSection slug={slug} initialUsername={initialTelegramUsername} lastActiveAt={telegramLastActiveAt ?? null} />
-      <div className="border-t border-dashed border-line" />
-      <MessengerSection slug={slug} initialPageName={initialMessengerPageName} lastActiveAt={messengerLastActiveAt ?? null} />
+      <div className="p-4 sm:p-5">
+        <WhatsappSection slug={slug} initialNumber={initialWhatsappNumber} lastActiveAt={whatsappLastActiveAt ?? null} />
+      </div>
+      <div className="p-4 sm:p-5">
+        <TelegramSection slug={slug} initialUsername={initialTelegramUsername} lastActiveAt={telegramLastActiveAt ?? null} />
+      </div>
+      <div className="p-4 sm:p-5">
+        <MessengerSection slug={slug} initialPageName={initialMessengerPageName} lastActiveAt={messengerLastActiveAt ?? null} />
+      </div>
     </div>
   );
 }
@@ -132,7 +180,7 @@ export default function BotIntegrationsSettings({
 // this page exists to show got pushed off screen.
 function NotConnectedRow({ onConnect }: { onConnect: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-2 border-dashed border-line rounded-xl px-4 py-3">
+    <div className="flex items-center justify-between gap-4 border border-dashed border-line-strong rounded-lg px-4 py-3">
       <p className="text-body-sm text-ink-faint">Not connected</p>
       <button
         type="button"
@@ -211,26 +259,28 @@ function MessengerSection({
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <p className="text-[14px] font-semibold text-ink">Facebook Messenger</p>
-        {pageName ? (
-          <span className={connectedBadgeClass}>
-            <span className={connectedDotClass} />
-            Connected
-          </span>
-        ) : !WHATSAPP_MESSENGER_LIVE ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
-            Coming soon
-          </span>
-        ) : null}
-      </div>
-      <p className="text-caption text-ink-faint mb-2">
-        Customers can ask about availability, get recommendations, and book directly in the chat.
-      </p>
+    <div className={!pageName && !WHATSAPP_MESSENGER_LIVE ? 'opacity-70' : ''}>
+      <ChannelHead
+        icon="forum"
+        tint="#0084FF"
+        name="Facebook Messenger"
+        description="Reply to your Facebook page's messages with the AI receptionist."
+        badge={
+          pageName ? (
+            <span className={connectedBadgeClass}>
+              <span className={connectedDotClass} />
+              Connected
+            </span>
+          ) : !WHATSAPP_MESSENGER_LIVE ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
+              Coming soon
+            </span>
+          ) : undefined
+        }
+      />
 
       {pageName ? (
-        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between gap-4 bg-warm-surface rounded-lg px-4 py-3">
           <div>
             <p className="text-[13.5px] text-ink-soft">
               Connected as <span className="font-mono text-ink">{pageName}</span>
@@ -267,7 +317,7 @@ function MessengerSection({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="h-10 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 whitespace-nowrap shrink-0"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -353,21 +403,23 @@ function TelegramSection({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        <p className="text-[14px] font-semibold text-ink">Telegram</p>
-        {username && (
-          <span className={connectedBadgeClass}>
-            <span className={connectedDotClass} />
-            Connected
-          </span>
-        )}
-      </div>
-      <p className="text-caption text-ink-faint mb-2">
-        Customers can ask about availability, get recommendations, and book directly in the chat.
-      </p>
+      <ChannelHead
+        icon="send"
+        tint="#229ED9"
+        name="Telegram"
+        description="A Telegram bot customers can message to book with the AI receptionist."
+        badge={
+          username ? (
+            <span className={connectedBadgeClass}>
+              <span className={connectedDotClass} />
+              Connected
+            </span>
+          ) : undefined
+        }
+      />
 
       {username ? (
-        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between gap-4 bg-warm-surface rounded-lg px-4 py-3">
           <div>
             <p className="text-body-sm text-ink-soft">
               Connected as <span className="font-mono text-ink">@{username}</span>
@@ -414,7 +466,7 @@ function TelegramSection({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              className="h-10 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 whitespace-nowrap shrink-0"
             >
               {saving ? 'Connecting…' : 'Connect'}
             </button>
@@ -565,26 +617,28 @@ function WhatsappSection({
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-2">
-        <p className="text-[14px] font-semibold text-ink">WhatsApp</p>
-        {number ? (
-          <span className={connectedBadgeClass}>
-            <span className={connectedDotClass} />
-            Connected
-          </span>
-        ) : !WHATSAPP_MESSENGER_LIVE ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
-            Coming soon
-          </span>
-        ) : null}
-      </div>
-      <p className="text-caption text-ink-faint mb-2">
-        Customers can ask about availability, get recommendations, and book directly in the chat.
-      </p>
+    <div className={!number && !WHATSAPP_MESSENGER_LIVE ? 'opacity-70' : ''}>
+      <ChannelHead
+        icon="chat"
+        tint="#25D366"
+        name="WhatsApp"
+        description="A business WhatsApp number your AI receptionist answers on."
+        badge={
+          number ? (
+            <span className={connectedBadgeClass}>
+              <span className={connectedDotClass} />
+              Connected
+            </span>
+          ) : !WHATSAPP_MESSENGER_LIVE ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-warm-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.05em] text-ink-faint">
+              Coming soon
+            </span>
+          ) : undefined
+        }
+      />
 
       {number ? (
-        <div className="flex items-center justify-between gap-4 border-2 border-line rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between gap-4 bg-warm-surface rounded-lg px-4 py-3">
           <div>
             <p className="text-body-sm text-ink-soft">
               Connected as <span className="font-mono text-ink">{number}</span>
@@ -626,7 +680,7 @@ function WhatsappSection({
           <button
             onClick={handleConnect}
             disabled={!sdkReady || connecting}
-            className="rounded-xl bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            className="h-10 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 whitespace-nowrap shrink-0"
           >
             {connecting ? 'Connecting…' : 'Connect WhatsApp'}
           </button>
