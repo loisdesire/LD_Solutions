@@ -7,6 +7,7 @@ import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
 import { useDialog } from './useDialog';
 import { formatMoney } from '@/lib/formatMoney';
+import Icon from './Icon';
 
 const LOCKED_NOTICE_COPY: Record<'trial' | 'payment', { title: string; message: string }> = {
   trial: {
@@ -144,7 +145,7 @@ export default function BillingManager({
 
   return (
     <div className="max-w-lg">
-      <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
+      <div className="border-2 border-line rounded-xl overflow-hidden bg-surface">
         <div className="p-6 border-b border-dashed border-line">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.06em] ${copy.pill}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -263,12 +264,7 @@ export default function BillingManager({
         <div className="mt-8">
           <EmptyState
             compact
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M2 10h20" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-            }
+            icon={<Icon name="credit_card" size={19} />}
             title="No payments yet"
             description="Once your first monthly charge goes through, it'll be listed here."
           />
@@ -280,7 +276,7 @@ export default function BillingManager({
           <h3 className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">
             Payment history
           </h3>
-          <div className="border-2 border-line rounded-2xl overflow-hidden bg-surface">
+          <div className="border-2 border-line rounded-xl overflow-hidden bg-surface">
             {history.map((h, i) => (
               <div
                 key={h.id}
@@ -343,10 +339,7 @@ export default function BillingManager({
               className="h-11 w-11 rounded-full flex items-center justify-center mx-auto mb-3.5"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="11" width="18" height="10" rx="2" />
-                <path d="M7 11V7a5 5 0 0110 0v4" />
-              </svg>
+              <Icon name="lock" size={21} />
             </div>
             <h2 id="locked-notice-title" className="font-display text-[18px] font-semibold text-ink mb-1.5">
               {LOCKED_NOTICE_COPY[state.phase === 'past_due' ? 'payment' : 'trial'].title}

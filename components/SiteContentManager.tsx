@@ -8,6 +8,7 @@ import { friendlyError } from '@/lib/friendlyError';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
 import { inputClass, labelClass } from './formStyles';
+import Icon from './Icon';
 
 // A grid of real photo uploads instead of a textarea where you paste
 // URLs blind and only find out something's broken when you check the
@@ -90,7 +91,7 @@ function GalleryUploader({
               className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full text-white flex items-center justify-center transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
               style={{ background: 'color-mix(in srgb, var(--ink) 70%, transparent)' }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              <Icon name="close" size={13} />
             </button>
           </div>
         ))}
@@ -106,7 +107,7 @@ function GalleryUploader({
             </svg>
           ) : (
             <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <Icon name="add_photo_alternate" size={20} />
               <span className="text-[10.5px] font-medium">Add photo</span>
             </>
           )}

@@ -308,7 +308,7 @@ export default function PaymentsManager({
         // No Flutterwave/bank setup is required to use Vanova at all -
         // "pay at appointment" isn't a fallback, it's a genuinely fine,
         // fully supported way to run bookings.
-        <div className="rounded-2xl border border-line bg-warm-surface px-4 py-3.5 mb-5">
+        <div className="rounded-xl border border-line bg-warm-surface px-4 py-3.5 mb-5">
           <p className="text-[13px] text-ink-soft">
             Customers book without paying online - you collect payment however you normally do, in person or
             however works for you. No bank account needed here. You can turn payment collection on any time later.

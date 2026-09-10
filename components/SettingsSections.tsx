@@ -81,7 +81,7 @@ export default function SettingsSections({
           its content - these five forms used to render bare, with nothing
           but internal dashed dividers to say where a section began or
           ended, which read as loose next to the rest of the app. */}
-      <div className="max-w-2xl rounded-2xl border border-line bg-surface p-6 sm:p-7">{current.content}</div>
+      <div className="max-w-2xl rounded-xl border border-line bg-surface p-6 sm:p-7">{current.content}</div>
     </div>
   );
 }
