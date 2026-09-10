@@ -521,7 +521,11 @@ export default function CalendarView({
           separate --admin-canvas token, the two are far enough apart in
           hue/lightness that the swap needs an actual edge to still read
           as one, not float free of the grid below it. */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-transparent border-b border-line flex flex-wrap items-center justify-between gap-3">
+      {/* Stacks into clean rows on a phone (nav+label, then tabs+filters)
+          instead of one wrap-jumbled line - the two <select>s go flex-1
+          below sm: so they split the row evenly rather than overflowing.
+          Single row again from sm: up. */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-3 mb-2 bg-transparent border-b border-line flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
         {/* Bordered rounded-md squares, not full circles - the same icon-
             button chrome adopted from the Stitch dashboard for every other
             toolbar action in the admin (see DashboardHeaderActions). */}
@@ -576,7 +580,7 @@ export default function CalendarView({
               value={staffFilter}
               onChange={(e) => setStaffFilter(e.target.value)}
               aria-label="Filter by staff"
-              className={`h-9 rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat ${
+              className={`h-9 flex-1 min-w-0 sm:flex-none rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat ${
                 staffFilter === 'all' ? 'border-line text-ink-soft' : 'border-accent text-accent'
               }`}
               style={{
@@ -599,7 +603,7 @@ export default function CalendarView({
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
               aria-label="Filter by service"
-              className={`h-9 rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat max-w-[160px] truncate ${
+              className={`h-9 flex-1 min-w-0 sm:flex-none sm:max-w-[160px] rounded-md border bg-surface pl-3 pr-8 text-[13px] font-medium transition-all appearance-none bg-no-repeat truncate ${
                 serviceFilter === 'all' ? 'border-line text-ink-soft' : 'border-accent text-accent'
               }`}
               style={{
