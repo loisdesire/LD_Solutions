@@ -11,6 +11,7 @@ import PageHeader from './PageHeader';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
 import Field from './Field';
+import Icon from './Icon';
 
 type StaffRow = { id: string; name: string; email: string; role: string; auth_id: string | null };
 type Invite = { id: string; email: string; token: string };
@@ -57,7 +58,7 @@ function EditStaffNameModal({
             aria-label="Close"
             className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <Icon name="close" size={16} />
           </button>
         </div>
 
@@ -281,9 +282,7 @@ export default function StaffManager({
             onClick={() => setShowInvite((v) => !v)}
             className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 min-h-[44px] text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Icon name="add" size={16} />
             {showInvite ? 'Cancel' : 'Invite someone'}
           </button>
         }
@@ -292,7 +291,7 @@ export default function StaffManager({
       {showInvite && (
         <form
           onSubmit={handleInvite}
-          className="flex flex-col sm:flex-row gap-3 items-end border-2 border-line rounded-2xl p-5 mb-8 bg-surface"
+          className="flex flex-col sm:flex-row gap-3 items-end border-2 border-line rounded-xl p-5 mb-8 bg-surface"
         >
           <div className="flex-1 w-full">
             <Field label="Invite by email" required>
@@ -327,12 +326,7 @@ export default function StaffManager({
       {staff.length === 0 ? (
         <div className="mb-8">
           <EmptyState
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-            }
+            icon={<Icon name="group" size={20} />}
             title="Flying solo for now"
             description="No one else on the team yet. Invite a staff member and they'll be able to see the calendar and manage their own bookings."
             action={
@@ -348,7 +342,7 @@ export default function StaffManager({
           />
         </div>
       ) : (
-      <div className="border-2 border-line rounded-2xl bg-surface overflow-hidden mb-8">
+      <div className="border-2 border-line rounded-xl bg-surface overflow-hidden mb-8">
         {staff.map((s) => (
             <div
               key={s.id}
@@ -359,10 +353,7 @@ export default function StaffManager({
                   className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
+                  <Icon name="person" size={17} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-[14px] truncate">{s.name}</p>
@@ -392,10 +383,7 @@ export default function StaffManager({
                   </span>
                 )}
                 <button onClick={() => startEdit(s)} aria-label="Edit" className={iconBtnClass}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                    <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <Icon name="edit" size={15} />
                 </button>
                 {s.auth_id !== currentUserId && (
                   <button
@@ -420,7 +408,7 @@ export default function StaffManager({
           {/* Same treatment as the team list above: one container with
               dividers, rather than a card per person. Dashed border keeps
               these visually distinct from staff who have actually joined. */}
-          <div className="border-2 border-dashed border-line-strong rounded-2xl overflow-hidden">
+          <div className="border-2 border-dashed border-line-strong rounded-xl overflow-hidden">
             {invites.map((inv) => (
               <div
                 key={inv.id}

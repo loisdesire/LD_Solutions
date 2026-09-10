@@ -25,7 +25,7 @@ export default function EmptyState({
   // as "wireframe/placeholder" rather than a considered state, and it
   // was the default treatment for nearly every empty state in the app.
   return (
-    <div className={`border border-line rounded-2xl bg-warm-surface text-center ${compact ? 'p-8' : 'p-10 sm:p-14'}`}>
+    <div className={`border border-line rounded-xl bg-warm-surface text-center ${compact ? 'p-8' : 'p-10 sm:p-14'}`}>
       <div className="mx-auto mb-5 h-12 w-12 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
         {icon}
       </div>

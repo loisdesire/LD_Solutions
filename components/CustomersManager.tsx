@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import ConversationPanel from './ConversationPanel';
 import CustomerDetailModal from './CustomerDetailModal';
 import PillTabs from './PillTabs';
+import Icon from './Icon';
 import { parseContact } from '@/lib/contact';
 import { formatMoney } from '@/lib/formatMoney';
 
@@ -117,12 +118,9 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
 
   if (customers.length === 0) {
     return (
-      <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
-        <div className="mx-auto mb-5 h-14 w-14 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
-          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6" />
-            <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          </svg>
+      <div className="border-2 border-dashed border-line-strong rounded-xl p-10 text-center sm:p-14">
+        <div className="mx-auto mb-5 h-14 w-14 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
+          <Icon name="group" size={26} />
         </div>
         <h2 className="font-display text-[20px]">No customers yet</h2>
         <p className="text-ink-soft text-body-sm mt-1.5 max-w-sm mx-auto">
@@ -137,10 +135,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2 bg-surface border-2 border-line rounded-full px-4 py-2.5 w-full sm:w-80 transition-colors focus-within:border-[var(--accent)]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
+          <Icon name="search" size={16} className="text-ink-faint shrink-0" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
