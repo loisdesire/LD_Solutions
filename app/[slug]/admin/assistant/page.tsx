@@ -3,6 +3,7 @@ import { hasBusinessIntelligence } from '@/lib/subscription-server';
 import { getAssistantHistory } from '@/lib/assistantHistory';
 import { ASSISTANT_SUGGESTIONS_CORE, ASSISTANT_SUGGESTIONS_FULL } from '@/lib/assistantSuggestions';
 import AssistantChat from '@/components/AssistantChat';
+import Icon from '@/components/Icon';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -56,10 +57,7 @@ export default async function AssistantPage({
           // and a fixed home above the chat rather than blending into the
           // warm-surface backgrounds used everywhere else on the page.
           <div className="rounded-xl bg-surface border-2 border-line px-4 py-3 mb-4 flex items-start gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" className="shrink-0 mt-0.5" aria-hidden="true">
-              <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="12" r="9" />
-            </svg>
+            <Icon name="check_circle" size={17} className="text-accent shrink-0 mt-0.5" />
             <p className="text-ink text-caption leading-relaxed">
               <span className="font-semibold">Nothing changes until you say yes.</span> Before it moves anything, it
               shows you exactly who is affected and their new times, first.

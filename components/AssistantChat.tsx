@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BUBBLE_SPLIT_MARKER } from '@/lib/bubbleMarker';
+import Icon from './Icon';
 
 // imageUrl is optional and only ever set on freshly-sent messages within
 // this session - restored history (initialMessages, from the database)
@@ -409,7 +410,7 @@ export default function AssistantChat({
           visible height as the keyboard opens/closes, no JS needed. */}
       <div
         ref={cardRef}
-        className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-2xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
+        className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
       >
         {/* overscroll-contain - without it, scrolling this list to its own
             top/bottom hands the leftover wheel/touch delta to whatever's
@@ -573,7 +574,7 @@ export default function AssistantChat({
               title="Attach a photo"
               className="h-9 w-9 rounded-full flex items-center justify-center text-ink-faint hover:bg-warm-surface hover:text-accent transition-colors disabled:opacity-50 shrink-0"
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+              <Icon name="attach_file" size={19} />
             </button>
             <input
               value={input}
@@ -636,9 +637,7 @@ export default function AssistantChat({
               className="h-9 w-9 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
               style={{ background: 'var(--accent)' }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 19V5M5 12l7-7 7 7" />
-              </svg>
+              <Icon name="arrow_upward" size={17} />
             </button>
           </div>
         </form>
