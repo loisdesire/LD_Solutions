@@ -84,43 +84,58 @@ export default function BookingRulesManager({
   // Wasn't even a mismatched <label> before - the text above each number
   // input was a plain styled <div>, no label element at all, so there
   // was nothing here for htmlFor to fix; this makes it a real one.
-  const rule = (id: string, label: string, hint: string, value: number, onChange: (n: number) => void) => (
-    <div className="py-3 border-b border-dashed border-line last:border-0">
-      <label htmlFor={id} className="text-[14px] block">{label}</label>
-      <div className="text-ink-faint text-[12px] mt-0.5 mb-2.5">{hint}</div>
-      <input
-        id={id}
-        type="number"
-        min={0}
-        value={value}
-        onChange={(e) => {
-          onChange(Number(e.target.value));
-          setSaved(false);
-        }}
-        className={`${smallInputClass} w-24`}
-      />
+  // Label + helper on the left, a compact number input with a unit
+  // suffix on the right - the Stitch "Booking rules" screen's own row
+  // shape, instead of the label/helper/input stacked vertically with the
+  // unit buried in the helper text.
+  const rule = (
+    id: string,
+    label: string,
+    hint: string,
+    unit: string,
+    value: number,
+    onChange: (n: number) => void
+  ) => (
+    <div className="flex items-center justify-between gap-4 py-3.5 border-b border-line last:border-0">
+      <div className="min-w-0">
+        <label htmlFor={id} className="text-[14px] font-medium text-ink block">{label}</label>
+        <div className="text-ink-faint text-[12px] mt-0.5">{hint}</div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <input
+          id={id}
+          type="number"
+          min={0}
+          value={value}
+          onChange={(e) => {
+            onChange(Number(e.target.value));
+            setSaved(false);
+          }}
+          className={`${smallInputClass} w-16 text-center`}
+        />
+        <span className="text-[12.5px] text-ink-faint w-10">{unit}</span>
+      </div>
     </div>
   );
 
   return (
-    <form onSubmit={handleSave} className="space-y-8">
+    <form onSubmit={handleSave} className="space-y-6">
       <div>
-        <h3 className="font-display text-[18px] font-semibold text-ink mb-1">Booking limits</h3>
-        <p className="text-[12.5px] text-ink-faint mb-2">Set the boundaries around each appointment.</p>
-        {rule(bufferId, 'Buffer time', 'Gap kept free around every booking (minutes)', bufferMinutes, setBufferMinutes)}
-        {rule(advanceId, 'Advance booking', 'How far ahead customers can book (days)', maxAdvanceDays, setMaxAdvanceDays)}
+        <h3 className="font-display text-[16px] font-semibold text-ink mb-2">Booking limits</h3>
+        {rule(bufferId, 'Buffer time', 'Gap kept free around every booking', 'min', bufferMinutes, setBufferMinutes)}
+        {rule(advanceId, 'Advance booking', 'How far ahead customers can book', 'days', maxAdvanceDays, setMaxAdvanceDays)}
         {rule(
           cancellationId,
-          'Cancellation window',
-          'Minimum notice to cancel or reschedule (hours)',
+          'Cancellation notice',
+          'Warning you need before a customer cancels',
+          'hours',
           cancellationWindowHours,
           setCancellationWindowHours
         )}
       </div>
 
       <div className="border-t border-line pt-6">
-        <h3 className="font-display text-[18px] font-semibold text-ink mb-1">Automation</h3>
-        <p className="text-[12.5px] text-ink-faint mb-3">Send new bookings to another tool when they are created.</p>
+        <h3 className="font-display text-[16px] font-semibold text-ink mb-2">Automation</h3>
         <label htmlFor={webhookId} className={labelClass}>
           Webhook URL
         </label>
@@ -135,18 +150,26 @@ export default function BookingRulesManager({
           className={inputClass}
           placeholder="https://hooks.zapier.com/..."
         />
-        <p className="text-ink-faint text-[12px] mt-2">Send every booking to Zapier, Make, or your own CRM.</p>
+        <p className="text-ink-faint text-[12px] mt-2">
+          We POST every new booking here - connect Zapier, Make, or your own CRM.
+        </p>
       </div>
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-      >
-        {saving ? 'Saving…' : saved ? <>Saved <CheckIcon className="h-3.5 w-3.5" /></> : 'Save'}
-      </button>
-
-      {error && <p className="text-sm text-error">{error}</p>}
+      <div className="border-t border-line pt-5 flex items-center justify-end gap-3">
+        {saved && (
+          <span className="inline-flex items-center gap-1.5 text-caption text-success">
+            <CheckIcon className="h-3.5 w-3.5" /> Saved
+          </span>
+        )}
+        {error && <span className="text-caption text-error">{error}</span>}
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
     </form>
   );
 }

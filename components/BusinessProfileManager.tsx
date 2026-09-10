@@ -161,15 +161,24 @@ export default function BusinessProfileManager({
           between them. */}
       <div>
         <span className={labelClass}>Branding</span>
-        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
-          <div>
-            <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
-            <p className="text-ink-faint text-[12px] mt-2">Square logo.</p>
-          </div>
-          <div>
-            <ImageUploadField slug={slug} value={coverImageUrl} onChange={(url) => { setCoverImageUrl(url); setSaved(false); }} shape="banner" label="cover photo" />
-            <p className="text-ink-faint text-[12px] mt-2">
-              Wide banner across the top of your booking page. Without one, your accent colour is used.
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+          <ImageUploadField
+            slug={slug}
+            value={logoUrl}
+            onChange={(url) => { setLogoUrl(url); setSaved(false); }}
+            shape="avatar"
+            label="Logo"
+          />
+          <div className="w-full sm:flex-1">
+            <ImageUploadField
+              slug={slug}
+              value={coverImageUrl}
+              onChange={(url) => { setCoverImageUrl(url); setSaved(false); }}
+              shape="banner"
+              label="cover photo"
+            />
+            <p className="text-ink-faint text-[12px] mt-1">
+              Shown across the top of your booking page. Without one, your accent colour fills the space.
             </p>
           </div>
         </div>
