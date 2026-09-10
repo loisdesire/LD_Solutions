@@ -11,6 +11,7 @@ import { useDialog } from './useDialog';
 import { inputClass, labelClass, iconBtnClass } from './formStyles';
 import ConfirmDialog from './ConfirmDialog';
 import ImageUploadField from './ImageUploadField';
+import Icon from './Icon';
 
 type Service = {
   id: string;
@@ -119,7 +120,7 @@ function AddServiceModal({
             aria-label="Close"
             className="h-8 w-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <Icon name="close" size={16} />
           </button>
         </div>
 
@@ -516,9 +517,7 @@ export default function ServicesManager({
             }}
             className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-body-sm font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Icon name="add" size={17} />
             Add service
           </button>
         </div>
@@ -590,22 +589,15 @@ export default function ServicesManager({
       )}
 
       {services.length === 0 ? (
-        <div className="border-2 border-dashed border-line-strong rounded-3xl p-10 text-center sm:p-14">
-          <div className="mx-auto mb-5 h-12 w-12 rounded-2xl bg-accent-soft flex items-center justify-center text-accent">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
-              <path
-                d="M12 3L14.4 9.2L21 9.9L16 14.3L17.5 21L12 17.6L6.5 21L8 14.3L3 9.9L9.6 9.2L12 3Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="border-2 border-dashed border-line-strong rounded-xl p-10 text-center sm:p-14">
+          <div className="mx-auto mb-5 h-12 w-12 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
+            <Icon name="spa" size={24} />
           </div>
           <h2 className="font-display text-[20px]">Nothing bookable yet</h2>
           <p className="text-ink-soft text-body-sm mt-1.5">Services are what customers pick from when they book - until you add one, your booking page has nothing to offer. Use "Add service" above to start.</p>
         </div>
       ) : (
-        <div className="rounded-2xl border-2 border-line overflow-hidden bg-surface">
+        <div className="rounded-xl border-2 border-line overflow-hidden bg-surface">
           <div className="p-4 border-b border-line flex flex-wrap items-center justify-between gap-3 no-print">
             <PillTabs
               options={[{ key: 'all', label: 'All' }, ...categories.map((c) => ({ key: c, label: c }))]}
@@ -617,10 +609,7 @@ export default function ServicesManager({
             />
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-paper rounded-full px-3.5 py-2 border border-transparent transition-colors focus-within:border-accent">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-faint shrink-0">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M21 21l-4.3-4.3" />
-                </svg>
+                <Icon name="search" size={15} className="text-ink-faint shrink-0" />
                 <input
                   value={search}
                   onChange={(e) => {
@@ -637,9 +626,7 @@ export default function ServicesManager({
                 title="Export CSV"
                 className={iconBtnClass}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" />
-                </svg>
+                <Icon name="file_download" size={15} />
               </button>
               <button
                 onClick={() => window.print()}
@@ -647,9 +634,7 @@ export default function ServicesManager({
                 title="Print"
                 className={iconBtnClass}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
-                </svg>
+                <Icon name="print" size={15} />
               </button>
             </div>
           </div>
@@ -686,10 +671,7 @@ export default function ServicesManager({
                         className="hidden sm:flex h-8 w-8 rounded-xl items-center justify-center shrink-0"
                         style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                          <circle cx="12" cy="12" r="9" />
-                          <path d="M9 12l2 2 4-4" />
-                        </svg>
+                        <Icon name="spa" size={15} />
                       </span>
                     )}
                     <div className="min-w-0">
@@ -731,37 +713,21 @@ export default function ServicesManager({
                     aria-label="Edit"
                     className={iconBtnClass}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                      <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
+                    <Icon name="edit" size={15} />
                   </button>
                   <button
                     onClick={() => handleToggleActive(s)}
                     aria-label={s.active ? 'Hide' : 'Show'}
                     className={iconBtnClass}
                   >
-                    {s.active ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                        <path d="M3 3l18 18" />
-                        <path d="M10.6 5.1A9.9 9.9 0 0112 5c6.5 0 10 7 10 7a17.3 17.3 0 01-3.4 4.6M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a10 10 0 004.4-1" />
-                        <path d="M9.9 9.9a3 3 0 004.2 4.2" />
-                      </svg>
-                    )}
+                    <Icon name={s.active ? 'visibility' : 'visibility_off'} size={15} />
                   </button>
                   <button
                     onClick={() => setDeleteTarget(s)}
                     aria-label="Delete"
                     className={`${iconBtnClass} hover:border-error hover:text-error`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
-                    </svg>
+                    <Icon name="delete" size={15} />
                   </button>
                 </div>
               </div>
@@ -780,7 +746,7 @@ export default function ServicesManager({
                   disabled={currentPage === 0}
                   className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+                  <Icon name="chevron_left" size={15} />
                 </button>
                 <span className="font-mono text-label px-1">{currentPage + 1} / {totalPages}</span>
                 <button
@@ -788,7 +754,7 @@ export default function ServicesManager({
                   disabled={currentPage >= totalPages - 1}
                   className="h-7 w-7 flex items-center justify-center rounded-lg border-2 border-line-strong disabled:opacity-30 hover:bg-paper transition-colors"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
+                  <Icon name="chevron_right" size={15} />
                 </button>
               </div>
             </div>
@@ -798,12 +764,12 @@ export default function ServicesManager({
 
       {services.length > 0 && (mostPopular || highestRevenue || avgDuration != null) && (
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
-          <div className="rounded-2xl p-5 flex items-center gap-4" style={{ background: 'var(--accent-soft)' }}>
+          <div className="rounded-xl p-5 flex items-center gap-4" style={{ background: 'var(--accent-soft)' }}>
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M23 6l-9.5 9.5-5-5L1 18" /><path d="M17 6h6v6" /></svg>
+              <Icon name="trending_up" size={19} />
             </div>
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">Most booked</p>
@@ -812,12 +778,12 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-2xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
+          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
+              <Icon name="payments" size={19} />
             </div>
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">Highest revenue</p>
@@ -826,12 +792,12 @@ export default function ServicesManager({
               </h4>
             </div>
           </div>
-          <div className="rounded-2xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
+          <div className="rounded-xl p-5 flex items-center gap-4 bg-surface border-2 border-line">
             <div
               className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
               style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              <Icon name="schedule" size={19} />
             </div>
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-faint">Avg. duration</p>

@@ -429,7 +429,7 @@ export default function AdminDashboardBody({
       )}
 
       {all.length === 0 ? (
-        <div className="border border-line rounded-2xl bg-warm-surface p-10 text-center sm:p-14">
+        <div className="border border-line rounded-xl bg-warm-surface p-10 text-center sm:p-14">
           <div className="mx-auto mb-5 h-14 w-14 rounded-xl bg-accent-soft flex items-center justify-center text-accent">
             <Icon name="calendar_today" size={26} />
           </div>
