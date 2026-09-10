@@ -58,7 +58,7 @@ export default function SettingsSections({
               type="button"
               onClick={() => setActiveKey(section.key)}
               aria-current={selected ? 'page' : undefined}
-              className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-medium transition-colors ${
+              className={`shrink-0 h-9 inline-flex items-center rounded-full px-4 text-[13px] font-medium transition-colors ${
                 selected ? 'bg-accent text-accent-contrast' : 'bg-surface border border-line text-ink-soft hover:text-ink hover:border-line-strong'
               }`}
             >

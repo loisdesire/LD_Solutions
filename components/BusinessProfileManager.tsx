@@ -17,6 +17,48 @@ import Field from './Field';
 const PRESETS = ['#C4512D', '#F3E8BC', '#8E6A4A', '#2F5D42', '#171717', '#6B3450', '#1769AA', '#1A1917'];
 
 const MAX_AI_CONTEXT = 2000;
+const DESCRIPTION_MAX = 160;
+
+// Label only (schema: "not logic-branching"), but a short pick-list beats
+// free text for the common cases; an existing unusual value is kept as
+// its own option so saving never silently drops it.
+const BUSINESS_TYPES = [
+  'Salon',
+  'Spa',
+  'Barbershop',
+  'Nail salon',
+  'Beauty & skincare clinic',
+  'Medical clinic',
+  'Dental practice',
+  'Therapist / counsellor',
+  'Tutor / lessons',
+  'Coach / consultant',
+  'Fitness / wellness studio',
+  'Photographer',
+  'Other',
+];
+
+// Timezone genuinely drives availability (lib/getAvailableSlots.ts), so
+// this needs to be a real IANA name, not free text - Africa first since
+// that's the market, then the majors. An existing value outside the list
+// is preserved the same way business type is.
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Africa/Lagos', label: 'Lagos · West Africa (WAT)' },
+  { value: 'Africa/Accra', label: 'Accra · Ghana (GMT)' },
+  { value: 'Africa/Abidjan', label: 'Abidjan · Côte d’Ivoire' },
+  { value: 'Africa/Nairobi', label: 'Nairobi · East Africa (EAT)' },
+  { value: 'Africa/Dar_es_Salaam', label: 'Dar es Salaam · Tanzania' },
+  { value: 'Africa/Kampala', label: 'Kampala · Uganda' },
+  { value: 'Africa/Kigali', label: 'Kigali · Rwanda' },
+  { value: 'Africa/Johannesburg', label: 'Johannesburg · South Africa (SAST)' },
+  { value: 'Africa/Cairo', label: 'Cairo · Egypt' },
+  { value: 'Africa/Casablanca', label: 'Casablanca · Morocco' },
+  { value: 'Europe/London', label: 'London · UK' },
+  { value: 'Europe/Paris', label: 'Paris · Central Europe' },
+  { value: 'America/New_York', label: 'New York · US Eastern' },
+  { value: 'America/Chicago', label: 'Chicago · US Central' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles · US Pacific' },
+];
 
 export default function BusinessProfileManager({
   slug,
@@ -27,6 +69,8 @@ export default function BusinessProfileManager({
   initialCoverImageUrl,
   initialDescription,
   initialAiContext,
+  initialBusinessType,
+  initialTimezone,
 }: {
   slug: string;
   businessId: string;
@@ -36,6 +80,8 @@ export default function BusinessProfileManager({
   initialCoverImageUrl: string | null;
   initialDescription: string | null;
   initialAiContext: string | null;
+  initialBusinessType: string | null;
+  initialTimezone: string | null;
 }) {
   const [name, setName] = useState(initialName);
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
@@ -43,9 +89,19 @@ export default function BusinessProfileManager({
   const [description, setDescription] = useState(initialDescription ?? '');
   const [aiContext, setAiContext] = useState(initialAiContext ?? '');
   const [accentColor, setAccentColor] = useState(initialAccentColor);
+  const [businessType, setBusinessType] = useState(initialBusinessType ?? '');
+  const [timezone, setTimezone] = useState(initialTimezone || 'Africa/Lagos');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  const typeOptions = initialBusinessType && !BUSINESS_TYPES.includes(initialBusinessType)
+    ? [initialBusinessType, ...BUSINESS_TYPES]
+    : BUSINESS_TYPES;
+  const tzOptions =
+    initialTimezone && !TIMEZONES.some((t) => t.value === initialTimezone)
+      ? [{ value: initialTimezone, label: initialTimezone }, ...TIMEZONES]
+      : TIMEZONES;
 
   const supabase = createBrowserSupabase();
   const router = useRouter();
@@ -65,6 +121,8 @@ export default function BusinessProfileManager({
         description: description.trim() || null,
         ai_context: aiContext.trim() || null,
         accent_color: accentColor,
+        business_type: businessType.trim() || null,
+        timezone: timezone || 'Africa/Lagos',
       })
       .eq('id', businessId);
 
@@ -89,180 +147,170 @@ export default function BusinessProfileManager({
     router.refresh();
   }
 
-  // inputClass/labelClass now come from formStyles.ts - this file had its
-  // own local copy of the OLD style (2px border, tiny-mono-uppercase
-  // label), which formStyles.ts moved away from a while back (1px
-  // border, plain medium-weight label) - ServicesManager/ProductsManager/
-  // StaffManager already picked that up, this file just never did, so
-  // Settings visibly looked like an older design pass than the rest of
-  // the admin. Importing the shared one fixes the duplication AND that
-  // drift in the same move.
-  // Section headers were 16px with no explicit weight - font-display's
-  // own base weight, which reads barely heavier than the 14px input text
-  // sitting right under it, and noticeably LESS prominent than
-  // SetupChecklist's card heading a few clicks away (17px, font-semibold)
-  // despite being a more important piece of structure here, not less.
-  const sectionHeadingClass = 'font-display text-[18px] font-semibold text-ink mb-4';
-
+  // inputClass/labelClass come from formStyles.ts - the shared 1px-border,
+  // medium-weight-label style the rest of the admin already uses. This
+  // file kept its own older copy (2px border, tiny-mono-uppercase label)
+  // for a long time, which is why Settings looked a design pass behind
+  // everything else.
   return (
-    <form onSubmit={handleSave} className="space-y-9">
-      {/* Logo used to sit in its own unheaded div between "Identity" and
-          "Booking page appearance" - inside neither section, so nothing
-          on screen said which group it belonged to. It's an identity
-          field, not a page-appearance one (the business's own mark, same
-          category as its name), so it moves under Identity properly.
-          space-y-5 inside a group vs. space-y-9 between groups - the
-          groups themselves need to read as the real structure, not
-          every field sitting at identical distance from every other. */}
+    <form onSubmit={handleSave} className="space-y-6">
+      {/* Branding: logo + cover side by side, under one heading - the
+          Stitch Profile screen's "Branding assets" pairing. This form
+          used to split them into two separate headed sections ("Identity"
+          / "Booking page appearance") with the logo field stranded
+          between them. */}
       <div>
-        <h3 className={sectionHeadingClass}>Identity</h3>
-        <div className="space-y-5">
-          <Field label="Business name" required>
-            {(props) => (
-              <input
-                {...props}
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setSaved(false);
-                }}
-                className={inputClass}
-              />
-            )}
-          </Field>
+        <span className={labelClass}>Branding</span>
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
           <div>
-            {/* Caption, not a field label - the real control below (the
-                "Upload logo"/"Change logo" button) already names itself
-                in its own visible text, so there's no single unlabeled
-                input for htmlFor to point at. */}
-            <span className={labelClass}>Logo</span>
             <ImageUploadField slug={slug} value={logoUrl} onChange={(url) => { setLogoUrl(url); setSaved(false); }} shape="avatar" label="Logo" />
+            <p className="text-ink-faint text-[12px] mt-2">Square logo.</p>
           </div>
-        </div>
-      </div>
-
-      <div className="border-t border-line pt-6">
-        <h3 className={sectionHeadingClass}>Booking page appearance</h3>
-        <div className="space-y-5">
-          <Field
-            label="Description"
-            hint={`One or two lines, shown at the top of your booking page. ${160 - description.length} left.`}
-          >
-            {(props) => (
-              <textarea
-                {...props}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setSaved(false);
-                }}
-                maxLength={160}
-                rows={2}
-                placeholder="Lagos's go-to for natural hair care since 2019."
-                className={inputClass}
-              />
-            )}
-          </Field>
-
           <div>
-            <span className={labelClass}>Cover photo</span>
             <ImageUploadField slug={slug} value={coverImageUrl} onChange={(url) => { setCoverImageUrl(url); setSaved(false); }} shape="banner" label="cover photo" />
             <p className="text-ink-faint text-[12px] mt-2">
-              Wide banner across the top of your booking page. Without one, we use your accent color instead.
-            </p>
-          </div>
-
-          <div>
-            {/* Captions a compound control (preset swatches + native
-                color picker + hex readout), not one input. */}
-            <span className={labelClass}>Accent color</span>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {PRESETS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => {
-                    setAccentColor(c);
-                    setSaved(false);
-                  }}
-                  style={{ background: c }}
-                  className={`h-8 w-8 rounded-xl transition-all ${
-                    accentColor.toLowerCase() === c.toLowerCase()
-                      ? 'ring-2 ring-offset-2 ring-ink'
-                      : ''
-                  }`}
-                  aria-label={c}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                aria-label="Custom accent color"
-                value={accentColor}
-                onChange={(e) => {
-                  setAccentColor(e.target.value);
-                  setSaved(false);
-                }}
-                className="h-9 w-12 rounded-xl border-2 border-line-strong cursor-pointer"
-              />
-              <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
-            </div>
-            <p className="text-ink-faint text-[12px] mt-2">
-              Flows through your whole booking page - buttons, selected dates, times.
+              Wide banner across the top of your booking page. Without one, your accent colour is used.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Its own section, not folded into "Booking page appearance" -
-          Description shows publicly on the booking page; this never does.
-          It only ever reaches the AI receptionist's own system prompt
-          (see lib/whatsappAgent.ts, shared by WhatsApp/Telegram and the
-          website chat widget), so it needed a clearly separate home
-          rather than living next to a field with the opposite visibility. */}
-      <div className="border-t border-line pt-6">
-        <h3 className={sectionHeadingClass}>AI receptionist</h3>
-        <div className="space-y-5">
-          <Field
-            label="Extra context for your AI"
-            hint={`Never shown on your booking page - only your AI receptionist sees this, to answer customer questions better. ${MAX_AI_CONTEXT - aiContext.length} left.`}
-          >
-            {(props) => (
-              <textarea
-                {...props}
-                value={aiContext}
-                onChange={(e) => {
-                  setAiContext(e.target.value);
-                  setSaved(false);
-                }}
-                maxLength={MAX_AI_CONTEXT}
-                rows={5}
-                placeholder="Anything that helps it answer real questions better - your specialties, house rules, what makes you different, how you like things phrased. E.g. &quot;We&rsquo;ve been family-run since 2015 and specialize in natural hair. We don&rsquo;t take walk-ins on weekends, appointments only.&quot;"
-                className={inputClass}
-              />
-            )}
-          </Field>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
-      >
-        {saving ? (
-          'Saving…'
-        ) : saved ? (
-          <>
-            Saved <CheckIcon className="h-3.5 w-3.5" />
-          </>
-        ) : (
-          'Save'
+      <Field label="Business name" required>
+        {(props) => (
+          <input
+            {...props}
+            value={name}
+            onChange={(e) => { setName(e.target.value); setSaved(false); }}
+            className={inputClass}
+          />
         )}
-      </button>
+      </Field>
 
-      {error && <p className="text-sm text-error">{error}</p>}
+      <Field
+        label="Short description"
+        hint={`Shown at the top of your booking page and in appointment reminders. ${DESCRIPTION_MAX - description.length} left.`}
+      >
+        {(props) => (
+          <textarea
+            {...props}
+            value={description}
+            onChange={(e) => { setDescription(e.target.value); setSaved(false); }}
+            maxLength={DESCRIPTION_MAX}
+            rows={3}
+            placeholder="Lagos's go-to for natural hair care since 2019."
+            className={inputClass}
+          />
+        )}
+      </Field>
+
+      {/* Business type + timezone - net new here. Both columns already
+          exist on `businesses` but were only ever set during signup, with
+          no way to fix them later. Timezone genuinely matters (it drives
+          every slot on the calendar and the public page). */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass} htmlFor="bp-type">Business type</label>
+          <select
+            id="bp-type"
+            value={businessType}
+            onChange={(e) => { setBusinessType(e.target.value); setSaved(false); }}
+            className={inputClass}
+          >
+            <option value="">Not set</option>
+            {typeOptions.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="bp-tz">Timezone</label>
+          <select
+            id="bp-tz"
+            value={timezone}
+            onChange={(e) => { setTimezone(e.target.value); setSaved(false); }}
+            className={inputClass}
+          >
+            {tzOptions.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <p className="text-ink-faint text-[12px] mt-2">
+            Every time on your calendar and booking page is shown in this zone.
+          </p>
+        </div>
+      </div>
+
+      {/* Accent colour: booking-page appearance, kept as its own labelled
+          block below the core fields rather than dropped. */}
+      <div className="border-t border-line pt-6">
+        <span className={labelClass}>Accent colour</span>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {PRESETS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => { setAccentColor(c); setSaved(false); }}
+              style={{ background: c }}
+              className={`h-8 w-8 rounded-lg transition-all ${
+                accentColor.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-offset-2 ring-ink' : ''
+              }`}
+              aria-label={c}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            aria-label="Custom accent colour"
+            value={accentColor}
+            onChange={(e) => { setAccentColor(e.target.value); setSaved(false); }}
+            className="h-9 w-12 rounded-lg border border-line-strong cursor-pointer"
+          />
+          <span className="font-mono text-[12px] text-ink-faint">{accentColor.toUpperCase()}</span>
+        </div>
+        <p className="text-ink-faint text-[12px] mt-2">
+          Flows through your whole booking page - buttons, selected dates, times.
+        </p>
+      </div>
+
+      {/* AI receptionist context - never shown publicly (only reaches the
+          AI's own system prompt, see lib/whatsappAgent.ts). Its own block. */}
+      <div className="border-t border-line pt-6">
+        <Field
+          label="Extra context for your AI receptionist"
+          hint={`Never shown on your booking page - only your AI receptionist sees this. ${MAX_AI_CONTEXT - aiContext.length} left.`}
+        >
+          {(props) => (
+            <textarea
+              {...props}
+              value={aiContext}
+              onChange={(e) => { setAiContext(e.target.value); setSaved(false); }}
+              maxLength={MAX_AI_CONTEXT}
+              rows={5}
+              placeholder="Anything that helps it answer real questions better - your specialties, house rules, what makes you different. E.g. &quot;Family-run since 2015, natural hair specialists. No weekend walk-ins, appointments only.&quot;"
+              className={inputClass}
+            />
+          )}
+        </Field>
+      </div>
+
+      {/* Save row: inline confirmation + a right-aligned button, the
+          Stitch Profile screen's own footer treatment. */}
+      <div className="border-t border-line pt-5 flex items-center justify-end gap-3">
+        {saved && (
+          <span className="inline-flex items-center gap-1.5 text-caption text-success">
+            <CheckIcon className="h-3.5 w-3.5" /> Saved
+          </span>
+        )}
+        {error && <span className="text-caption text-error">{error}</span>}
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-4 text-[13px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
     </form>
   );
 }

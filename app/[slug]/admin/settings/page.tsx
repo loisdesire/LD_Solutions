@@ -130,6 +130,8 @@ export default async function SettingsPage({
                 initialCoverImageUrl={business.cover_image_url}
                 initialDescription={business.description}
                 initialAiContext={bizRow?.ai_context ?? null}
+                initialBusinessType={business.business_type}
+                initialTimezone={business.timezone}
               />
             ),
           },
