@@ -409,12 +409,16 @@ export default function AdminDashboardBody({
             // so an opacity suffix here would silently produce no tint at
             // all (documented earlier this session). warm-surface is
             // already the right strength on its own.
-            <div className="-mx-5 -mb-5 mt-4 border-t border-line-strong bg-warm-surface px-5 py-3 flex items-center justify-between gap-3 flex-wrap rounded-b-xl">
-              <span className="inline-flex items-center gap-1.5 text-caption text-ink-faint">
-                <Icon name="payments" size={15} className="text-accent" />
+            <div className="-mx-5 -mb-5 mt-4 border-t border-line-strong bg-warm-surface px-5 py-3 flex items-start justify-between gap-3 flex-wrap rounded-b-xl">
+              {/* Plain span, not inline-flex - an inline-flex won't let the
+                  text line-wrap, so on a phone this sentence either
+                  overflowed or squashed. The icon rides along via
+                  align-middle. */}
+              <span className="text-caption text-ink-faint">
+                <Icon name="payments" size={15} className="text-accent mr-1.5 align-[-2px]" />
                 Collected via Vanova (deposits + full payments) —{' '}
-                <strong className="font-semibold text-ink">{formatMoney(todayCollected)}</strong> today ·{' '}
-                <strong className="font-semibold text-ink">{formatMoney(weekCollected)}</strong> this week
+                <strong className="font-semibold text-ink whitespace-nowrap">{formatMoney(todayCollected)} today</strong> ·{' '}
+                <strong className="font-semibold text-ink whitespace-nowrap">{formatMoney(weekCollected)} this week</strong>
               </span>
               <Link
                 href={`/${slug}/admin/settings`}
