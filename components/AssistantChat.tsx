@@ -410,7 +410,7 @@ export default function AssistantChat({
           visible height as the keyboard opens/closes, no JS needed. */}
       <div
         ref={cardRef}
-        className={bare ? 'flex flex-col h-full' : 'border-2 border-line rounded-xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
+        className={bare ? 'flex flex-col h-full' : 'border border-line shadow-soft rounded-xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
       >
         {/* overscroll-contain - without it, scrolling this list to its own
             top/bottom hands the leftover wheel/touch delta to whatever's
@@ -423,7 +423,13 @@ export default function AssistantChat({
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 flex flex-col gap-3.5">
           {messages.length === 0 && (
             <div className="my-auto text-center">
-              <p className="text-ink-soft text-[14px] mb-4">{emptyStateText}</p>
+              <span
+                className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+              >
+                <Icon name="smart_toy" size={22} />
+              </span>
+              <p className="text-ink-soft text-[14px] mb-4 max-w-sm mx-auto">{emptyStateText}</p>
               <div className="flex flex-col items-center gap-3.5">
                 {suggestionGroups.map((group) => (
                   <div key={group.label}>
@@ -452,8 +458,13 @@ export default function AssistantChat({
               <div
                 // text-left set explicitly, not left to inherit - see the
                 // same fix, and the real bug it caused, in LandingChatDemo.tsx.
+                // User bubble is a soft terracotta tint, not a solid
+                // accent fill - matches the Stitch Assistant screen and
+                // keeps the accent reserved for real actions. The
+                // right-alignment already says "this is you"; the tint
+                // just reinforces it.
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
-                  m.role === 'user' ? 'bg-accent text-accent-contrast' : 'bg-warm-surface text-ink'
+                  m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-warm-surface text-ink'
                 }`}
               >
                 {/* The photo used to just disappear the moment a message
