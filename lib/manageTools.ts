@@ -607,13 +607,17 @@ function cleanDepositPercentage(value: unknown): number | undefined {
 }
 
 export async function proposeUpdateBookingRules(businessId: string, changes: BookingRuleChanges) {
-  const { data: current } = await supabaseAdmin
-    .from('booking_rules')
-    .select('buffer_minutes, deposit_percentage, require_payment')
-    .eq('business_id', businessId)
-    .maybeSingle();
+  const [{ data: current }, { data: business }] = await Promise.all([
+    supabaseAdmin
+      .from('booking_rules')
+      .select('buffer_minutes, deposit_percentage, require_payment')
+      .eq('business_id', businessId)
+      .maybeSingle(),
+    supabaseAdmin.from('businesses').select('flw_subaccount_id').eq('id', businessId).maybeSingle(),
+  ]);
 
   const proposed: Record<string, { from: string; to: string }> = {};
+  let caveat: string | undefined;
 
   if (changes.bufferMinutes !== undefined) {
     const v = cleanBufferMinutes(changes.bufferMinutes);
@@ -632,6 +636,17 @@ export async function proposeUpdateBookingRules(businessId: string, changes: Boo
           "Payment isn't turned on for this business yet, so a deposit percentage wouldn't do anything. Turn payment on first (propose_toggle_setting with setting: \"payment\"), then set the deposit.",
       };
     }
+    // require_payment being true doesn't guarantee a payout account is
+    // actually linked - it can get out of sync with the real prerequisite
+    // (e.g. toggled on before a bank was ever connected). Confirmed live:
+    // this tool set a deposit percentage twice, no warning, on a business
+    // with no linked account, so no payment could actually be collected
+    // either way. Not a hard block (the owner may be about to link a bank
+    // right after this) - surfaced as a caveat on the confirmation instead.
+    if (!business?.flw_subaccount_id) {
+      caveat =
+        "Heads up: no bank account is linked yet, so no payment can actually be collected until one is - this deposit setting won't do anything until then.";
+    }
     proposed.deposit_percentage = {
       from: current?.deposit_percentage ? `${current.deposit_percentage}%` : 'not set (full payment)',
       to: v === 100 ? 'full payment' : `${v}% deposit`,
@@ -639,7 +654,7 @@ export async function proposeUpdateBookingRules(businessId: string, changes: Boo
   }
 
   if (Object.keys(proposed).length === 0) return { error: 'No real changes given.' };
-  return { changes: proposed };
+  return caveat ? { changes: proposed, caveat } : { changes: proposed };
 }
 
 export async function applyUpdateBookingRules(businessId: string, changes: BookingRuleChanges) {
