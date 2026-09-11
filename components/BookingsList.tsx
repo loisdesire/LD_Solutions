@@ -137,14 +137,15 @@ export default function BookingsList({
   // only generates classes it can see literally in the source, so building
   // one with `sm:${...}` at runtime would produce a class that has no CSS
   // behind it and silently collapse the grid.
-  // Trailing 48px column added for the row-action icon - matches the
-  // Stitch table's own dedicated Actions column.
+  // No trailing Actions column - it only ever duplicated the row's own
+  // click handler (see the row's own comment below), removed as
+  // unnecessary rather than kept for visual parity with the Stitch table.
   const GRID_HEAD = showStaff
-    ? 'grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px_48px]'
-    : 'grid-cols-[84px_1.4fr_1.1fr_1fr_100px_48px]';
+    ? 'grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
+    : 'grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
   const GRID_ROW = showStaff
-    ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px_48px]'
-    : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px_48px]';
+    ? 'sm:grid-cols-[84px_1.3fr_1fr_0.85fr_0.9fr_100px]'
+    : 'sm:grid-cols-[84px_1.4fr_1.1fr_1fr_100px]';
 
   const isPast = scope === 'past';
 
@@ -342,7 +343,6 @@ export default function BookingsList({
             {showStaff && <div>Staff</div>}
             <div>Contact</div>
             <div>Status</div>
-            <div className="text-right">Actions</div>
           </div>
 
           {filtered.map((b, i) => {
@@ -437,29 +437,6 @@ export default function BookingsList({
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {b.status.replace('_', ' ')}
                   </span>
-
-                  {/* Matches the Stitch table's own Actions column - a
-                      hover-revealed view icon. The row itself already opens
-                      this same detail modal on click, so this button fires
-                      the identical action; it exists for visual parity with
-                      the generated design, not as a second, different
-                      affordance. No "more options" icon alongside it (Stitch
-                      had one) - this app has no secondary menu of options to
-                      put behind it, and a button that opens nothing would be
-                      a real regression, not a visual one. */}
-                  <div className="hidden sm:flex items-center justify-end opacity-0 group-hover/row:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetailBooking(b);
-                      }}
-                      aria-label="View details"
-                      title="View details"
-                      className="flex h-7 w-7 items-center justify-center rounded text-ink-faint hover:bg-surface hover:text-ink"
-                    >
-                      <Icon name="visibility" size={16} />
-                    </button>
-                  </div>
                 </div>
               </div>
             );
