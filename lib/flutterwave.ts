@@ -9,6 +9,8 @@
 // their behalf and every deposit is a Split Payment into it - the
 // business never logs into Flutterwave or verifies anything themselves.
 
+import { logError } from './logger';
+
 const FLW_BASE = 'https://api.flutterwave.com/v3';
 
 function authHeaders(): Record<string, string> {
@@ -144,14 +146,31 @@ export async function createSubaccount(params: {
       split_value: PLATFORM_COMMISSION_PCT / 100,
       ...(params.branchCode ? { meta: [{ bank_branch: params.branchCode }] } : {}),
     }),
-  }).catch(() => null);
+  }).catch((e) => {
+    logError('flutterwave:createSubaccount:network', e);
+    return null;
+  });
 
-  if (!res || !res.ok) return null;
+  if (!res) return null;
   const data = await res.json().catch(() => null);
   // subaccount_id (a string like "RS_...") is what a transaction's
   // subaccounts[].id needs - data.id is Flutterwave's own internal
   // numeric row id, a different value, not usable for splits.
-  if (data?.status !== 'success' || !data.data?.subaccount_id) return null;
+  if (!res.ok || data?.status !== 'success' || !data.data?.subaccount_id) {
+    // The caller (link-account/route.ts) only ever logged a generic
+    // "subaccount creation failed" with no way to see why - confirmed live,
+    // a real account (resolved fine, name and all) still failed to link
+    // with zero diagnosable detail anywhere. Flutterwave's actual message
+    // (e.g. an unsupported bank/wallet for subaccounts, a bad split_value,
+    // a malformed business_mobile) is exactly what's needed to fix the
+    // next one of these instead of guessing.
+    logError('flutterwave:createSubaccount', new Error(data?.message || `Flutterwave ${res.status}`), {
+      httpStatus: res.status,
+      flwMessage: data?.message,
+      flwStatus: data?.status,
+    });
+    return null;
+  }
 
   return { subaccountId: data.data.subaccount_id };
 }
