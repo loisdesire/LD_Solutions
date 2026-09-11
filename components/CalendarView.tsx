@@ -8,6 +8,7 @@ import ConversationPanel from './ConversationPanel';
 import { useDialog } from './useDialog';
 import { labelClass } from './formStyles';
 import { todayInTimezone, dayOfWeekForDate, zonedTimeToUtc } from '@/lib/timezone';
+import { formatLocalDateTime } from '@/lib/formatDateTime';
 
 type Booking = {
   id: string;
@@ -897,6 +898,16 @@ function BlockTimeModal({
   const [reason, setReason] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  // A block never touches an existing booking that already sits in its
+  // window - correct (auto-cancelling a paid appointment because it got
+  // blocked over would be a worse surprise than this), but silently
+  // correct isn't enough on its own: confirmed live, an owner blocked a
+  // window with real bookings in it and had no way to know there was
+  // anything to go handle. Once the block is saved, any real conflicts
+  // (see app/api/calendar/block/route.ts) replace the form with a plain
+  // list so the owner sees exactly who's affected before closing this.
+  const [savedBlock, setSavedBlock] = useState<Block | null>(null);
+  const [conflicts, setConflicts] = useState<{ id: string; customer_name: string; start_time: string }[]>([]);
 
   const valid = date && startTime && endTime && startTime < endTime;
 
@@ -920,7 +931,18 @@ function BlockTimeModal({
         setErrorMsg(data.error || 'Could not save that block.');
         return;
       }
-      onCreated(data.block as Block);
+      const block = data.block as Block;
+      const bookingConflicts = (data.conflicts ?? []) as { id: string; customer_name: string; start_time: string }[];
+      if (bookingConflicts.length > 0) {
+        // The block is already saved at this point - only the modal's own
+        // view changes, so closing straight after still leaves the block
+        // (and the owner's awareness of the conflicts) intact either way.
+        setSavedBlock(block);
+        setConflicts(bookingConflicts);
+        setStatus('idle');
+        return;
+      }
+      onCreated(block);
     } catch {
       setStatus('error');
       setErrorMsg('Something went wrong. Please try again.');
@@ -957,6 +979,33 @@ function BlockTimeModal({
           </button>
         </div>
 
+        {savedBlock ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-warning-border bg-warning-bg p-3.5 flex items-start gap-2.5">
+              <Icon name="warning" size={18} className="text-warning shrink-0 mt-0.5" />
+              <p className="text-[13.5px] text-ink leading-relaxed">
+                Time&rsquo;s blocked, but {conflicts.length === 1 ? 'this appointment is' : `these ${conflicts.length} appointments are`} still on the calendar in that window. Nothing was cancelled automatically - reach out to {conflicts.length === 1 ? 'the customer' : 'them'} to reschedule or cancel.
+              </p>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {conflicts.map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3.5 py-2.5">
+                  <span className="text-[13.5px] font-medium text-ink truncate">{c.customer_name}</span>
+                  <span className="text-caption text-ink-faint shrink-0">{formatLocalDateTime(c.start_time, timezone)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end pt-1">
+              <button
+                onClick={() => onCreated(savedBlock)}
+                className="h-9 px-4 rounded-md text-[13px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95"
+                style={{ background: 'var(--accent)' }}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           <div>
             <label className={labelClass} htmlFor="block-date">
@@ -1056,6 +1105,7 @@ function BlockTimeModal({
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

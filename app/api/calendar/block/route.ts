@@ -86,7 +86,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Couldn\'t save that block. Please try again.' }, { status: 500 });
   }
 
-  return NextResponse.json({ block });
+  // Blocking time subtracts from FUTURE availability - it never touches a
+  // booking that already exists. Confirmed live: an owner blocked a window
+  // that already had real bookings sitting in it, and nothing about those
+  // bookings changed - correct (auto-cancelling someone's paid appointment
+  // because the owner blocked over it would be a much worse surprise), but
+  // silently correct isn't good enough - the owner has no way to know
+  // there's a real conflict to go handle (call the customer, reschedule,
+  // refund) unless it's surfaced here. Scoped to the same staff the block
+  // covers (or every staff, for a business-wide block) and only the
+  // booking states that still represent a real appointment.
+  const conflictQuery = supabaseAdmin
+    .from('bookings')
+    .select('id, customer_name, start_time')
+    .eq('business_id', auth.business.id)
+    .in('status', ['confirmed', 'pending_payment'])
+    .lt('start_time', end.toISOString())
+    .gt('end_time', start.toISOString());
+  if (validStaffId) conflictQuery.eq('staff_id', validStaffId);
+  const { data: conflicts } = await conflictQuery;
+
+  return NextResponse.json({ block, conflicts: conflicts ?? [] });
 }
 
 export async function DELETE(req: NextRequest) {
