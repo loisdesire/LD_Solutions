@@ -53,8 +53,7 @@ export default function RefundsPage() {
           <ul>
             <li>Every new account starts on a 14-day free trial - nothing is charged during the trial.</li>
             <li>
-              After the trial, staying on {PLAN_LABEL.core} ({formatMoney(PLAN_PRICE_NGN.core)}/month) or{' '}
-              {PLAN_LABEL.business_intelligence} ({formatMoney(PLAN_PRICE_NGN.business_intelligence)}/month) bills
+              After the trial, staying on {PLAN_LABEL.core} ({formatMoney(PLAN_PRICE_NGN.core)}/month) bills
               monthly through Flutterwave.
             </li>
             <li>You can cancel any time from your dashboard. Cancelling stops future billing immediately - it doesn&rsquo;t refund the period you&rsquo;re already in.</li>

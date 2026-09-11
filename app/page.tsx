@@ -42,11 +42,9 @@ const homepageJsonLd = {
   description:
     'An AI booking receptionist that answers customer questions, checks real availability, and books appointments for service businesses.',
   offers: {
-    '@type': 'AggregateOffer',
-    lowPrice: PLAN_PRICE_NGN.core,
-    highPrice: PLAN_PRICE_NGN.business_intelligence,
+    '@type': 'Offer',
+    price: PLAN_PRICE_NGN.core,
     priceCurrency: 'NGN',
-    offerCount: 2,
   },
   audience: {
     '@type': 'BusinessAudience',
@@ -139,14 +137,13 @@ const features = [
   },
 ];
 
-// A real sequence - this is the one place on the page a numbered list
-// actually earns its keep, since these four things genuinely happen in
-// this order, not four unrelated feature bullets.
-// Mirrors what the code actually gates. hasBusinessIntelligence() guards
-// exactly two things - the analytics half of the owner's assistant and the
-// customer bot's get_popular_services tool - so everything else belongs in
-// Core. Payments, custom domains and rescheduling are deliberately NOT
-// upsells.
+// One plan, everything included - was split across Core/Business
+// Intelligence, gated by hasBusinessIntelligence() (the analytics half of
+// the owner's assistant + the customer bot's popular-services tool).
+// Dropped the second tier: analytics wasn't a strong enough upsell to
+// justify the price gap or the extra decision at signup (a solo operator
+// doesn't have a ₦10,000/month problem "ask your data questions" solves).
+// Bundled into this single list instead - see [[project_pricing_tier_change]].
 const CORE_INCLUDES = [
   'AI receptionist on your website (Telegram included)',
   'Unlimited bookings and services',
@@ -155,13 +152,7 @@ const CORE_INCLUDES = [
   'Take deposits and payments - just link a bank account',
   'Your own branded booking page and custom domain',
   'Team accounts for your staff',
-];
-
-const BI_INCLUDES = [
-  'Ask your data anything: revenue, top customers, busiest hours',
-  'Spot cancellations, no-shows and customers drifting away',
-  'Compare this month to last, in plain language',
-  "Your AI tells customers what's actually popular, from real bookings",
+  'AI insights: ask about revenue, no-shows and busiest hours in plain language',
 ];
 
 export default function LandingPage() {
@@ -625,83 +616,52 @@ export default function LandingPage() {
           that don't have a demo script yet (Massage therapists, Music
           teachers) - neither had another home on the page. */}
 
-      {/* Pricing - one plan, stated plainly, no tiers to compare */}
-      <section id="pricing" className="border-t border-line">
+      {/* Pricing - one plan, stated plainly, nothing to compare. Was two
+          tiers split by an AI-insights gate that wasn't a strong enough
+          upsell to justify itself (a solo operator doesn't have a
+          ₦10,000/month problem "ask your data questions" solves) - see
+          the note on CORE_INCLUDES above. Single confident card now
+          instead of two competing for attention; still carries the
+          accent-italic headline + warm-surface section tint the rest of
+          the page uses, which this section was previously missing entirely. */}
+      <section id="pricing" className="border-t border-line bg-warm-surface">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
           <Reveal className="text-center mb-8 sm:mb-12">
-            <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-2">Two plans. Both start free.</h2>
-            <p className="text-[15px] text-ink-soft">
-              Everything you need to take bookings is in the first one. The second adds an AI that answers questions about your business.
-            </p>
+            <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-2">
+              One plan. <span className="italic" style={{ color: 'var(--accent)' }}>Everything included.</span>
+            </h2>
+            <p className="text-[15px] text-ink-soft">No tiers to compare, nothing held back for later. 14 days free, then one price.</p>
           </Reveal>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-4xl mx-auto items-stretch">
-            <Reveal delay={80}>
-              <div className="rounded-3xl bg-surface border border-line shadow-soft p-8 h-full flex flex-col">
-                <div className="text-[14px] font-semibold text-ink-faint">
+          <Reveal delay={80} className="max-w-lg mx-auto">
+            <div className="rounded-3xl bg-surface border-2 border-accent shadow-card p-8 sm:p-10">
+              <div className="text-center">
+                <div className="text-[14px] font-semibold" style={{ color: 'var(--accent)' }}>
                   {PLAN_LABEL.core}
                 </div>
-                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
+                <div className="font-display text-[48px] font-bold text-ink leading-none mt-3">
                   {formatMoney(PLAN_PRICE_NGN.core)}
-                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
+                  <span className="text-[16px] font-normal text-ink-faint"> /month</span>
                 </div>
                 <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
-
-                <div className="text-left mt-7 space-y-3 flex-1">
-                  {CORE_INCLUDES.map((item) => (
-                    <div key={item} className="flex items-start gap-2.5">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
-                      <span className="text-body-sm text-ink-soft">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button href="/signup" variant="outline" className="mt-8 w-full">
-                  Start free for 14 days
-                </Button>
               </div>
-            </Reveal>
-            <Reveal delay={140}>
-              <div className="rounded-3xl bg-surface border-2 border-accent shadow-card p-8 h-full flex flex-col relative">
-                <span
-                  className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[12px] font-semibold text-accent-contrast"
-                  style={{ background: 'var(--accent)' }}
-                >
-                  Most popular
-                </span>
-                <div className="text-[14px] font-semibold" style={{ color: 'var(--accent)' }}>
-                  {PLAN_LABEL.business_intelligence}
-                </div>
-                <div className="font-display text-[40px] font-bold text-ink leading-none mt-3">
-                  {formatMoney(PLAN_PRICE_NGN.business_intelligence)}
-                  <span className="text-[15px] font-normal text-ink-faint"> /month</span>
-                </div>
-                <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
 
-                <div className="text-left mt-7 space-y-3 flex-1">
-                  <p className="text-body-sm font-semibold text-ink">Everything in {PLAN_LABEL.core}, plus:</p>
-                  {BI_INCLUDES.map((item) => (
-                    <div key={item} className="flex items-start gap-2.5">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
-                      <span className="text-body-sm text-ink-soft">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button href="/signup" className="mt-8 w-full">
-                  Start free for 14 days
-                </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 mt-8 text-left">
+                {CORE_INCLUDES.map((item) => (
+                  <div key={item} className="flex items-start gap-2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                      <path d="M5 12l4 4 10-10" />
+                    </svg>
+                    <span className="text-body-sm text-ink-soft">{item}</span>
+                  </div>
+                ))}
               </div>
-            </Reveal>
-          </div>
 
-          <p className="text-center text-[14px] text-ink-faint mt-8">
-            Not sure? Start on {PLAN_LABEL.core}. You can change plan from your dashboard later.
-          </p>
+              <Button href="/signup" className="mt-8 w-full">
+                Start free for 14 days
+              </Button>
+            </div>
+          </Reveal>
         </div>
       </section>
 

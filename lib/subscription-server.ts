@@ -32,16 +32,23 @@ export async function canAcceptBookings(businessId: string): Promise<boolean> {
   return getSubscriptionState(sub).hasAccess;
 }
 
-// Gates the two deeper-AI features (the staff-only insights panel, and
-// richer business-info answers in the public chat) - active access AND
-// the higher plan, not just one or the other.
+// Used to gate the two deeper-AI features (the staff-only insights panel,
+// and richer business-info answers in the public chat) behind the
+// business_intelligence plan specifically. Simplified to a single ₦15,000
+// plan - analytics wasn't a strong enough upsell to justify a second
+// tier's decision friction at signup (a solo operator doesn't have a
+// ₦10,000/month problem "ask your data questions" solves), so it's now
+// bundled into every active subscription instead of gated behind one.
+// The real second tier, once it exists, is channel access (WhatsApp/
+// Instagram) once Meta App Review clears - kept as its own function
+// rather than deleted outright so that's a one-line change to bring back,
+// not a re-derivation.
 export async function hasBusinessIntelligence(businessId: string): Promise<boolean> {
   const { data: sub } = await supabaseAdmin
     .from('subscriptions')
-    .select('status, trial_ends_at, current_period_end, plan')
+    .select('status, trial_ends_at, current_period_end')
     .eq('business_id', businessId)
     .maybeSingle();
 
-  const state = getSubscriptionState(sub);
-  return state.hasAccess && state.plan === 'business_intelligence';
+  return getSubscriptionState(sub).hasAccess;
 }

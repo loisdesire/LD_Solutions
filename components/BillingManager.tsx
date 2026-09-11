@@ -22,9 +22,18 @@ const LOCKED_NOTICE_COPY: Record<'trial' | 'payment', { title: string; message: 
   },
 };
 
+// Single public plan now - the AI insights panel used to be gated to
+// business_intelligence specifically, but that wasn't a strong enough
+// upsell to justify a second tier's decision friction (a solo operator
+// doesn't have a ₦10,000/month problem "ask your data questions" solves),
+// so it's bundled into every active subscription instead. Both entries
+// kept, not just 'core' - state.plan is still typed as the full Plan
+// union, and anyone who genuinely subscribed to business_intelligence
+// before this change keeps a real, honest blurb rather than the type
+// silently going stale.
 const PLAN_BLURB: Record<Plan, string> = {
-  core: 'Bookings, the AI receptionist, everything to run the calendar.',
-  business_intelligence: 'Everything in Core, plus an AI insights panel for you and richer AI answers for customers.',
+  core: 'Bookings, the AI receptionist, AI insights - everything to run the calendar.',
+  business_intelligence: 'Same plan as Core now - this was an earlier, separately-priced tier.',
 };
 
 type PaymentRecord = {
@@ -82,10 +91,6 @@ export default function BillingManager({
   const [error, setError] = useState('');
   const [cancelled, setCancelled] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  // Defaults to whatever plan they're already on (or were on before it
-  // lapsed) rather than always resetting to Core - someone re-subscribing
-  // after a failed payment shouldn't get quietly downgraded.
-  const [selectedPlan, setSelectedPlan] = useState<Plan>(state.plan);
 
   async function handleSubscribe() {
     setLoading(true);
@@ -96,10 +101,14 @@ export default function BillingManager({
     // the button disabled on "Redirecting..." with no way back except a
     // page reload.
     try {
+      // Always 'core' now - the only plan being sold. Someone who was
+      // already on business_intelligence and re-subscribes lands on core
+      // going forward, which is correct: it's the same product at this
+      // point, just the current price.
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, plan: selectedPlan }),
+        body: JSON.stringify({ slug, plan: 'core' }),
       });
       const data = await res.json();
 
@@ -203,55 +212,29 @@ export default function BillingManager({
             </p>
           ) : (
             <>
-              {/* Was a fixed grid-cols-2, so on a narrow phone each card
-                  was ~150px wide with a 3-4 line description wrapping
-                  inside it - two squeezed columns rather than two real
-                  choices. Single column below sm, side by side from
-                  there up where there's actually room for it. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
-                {(Object.keys(PLAN_PRICE_NGN) as Plan[]).map((plan) => (
-                  <button
-                    key={plan}
-                    type="button"
-                    onClick={() => setSelectedPlan(plan)}
-                    className={`text-left rounded-xl border px-4 py-3.5 transition-colors ${
-                      selectedPlan === plan ? 'border-accent bg-accent-soft' : 'border-line hover:border-line-strong'
-                    }`}
-                  >
-                    <div className="flex items-baseline justify-between gap-3 sm:block">
-                      <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
-                        {PLAN_LABEL[plan]}
-                      </div>
-                      <div className="font-display text-[17px] text-ink sm:mt-0.5">
-                        {formatMoney(PLAN_PRICE_NGN[plan])}
-                      </div>
-                    </div>
-                    <p className="text-[12.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB[plan]}</p>
-                  </button>
-                ))}
+              {/* One plan now - no picker needed. See PLAN_BLURB's own
+                  comment for why the second tier was dropped. */}
+              <div className="rounded-xl border border-line bg-warm-surface px-4 py-3.5 mb-4">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
+                    {PLAN_LABEL.core}
+                  </div>
+                  <div className="font-display text-[17px] text-ink">{formatMoney(PLAN_PRICE_NGN.core)}</div>
+                </div>
+                <p className="text-[12.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB.core}</p>
               </div>
               <button
                 onClick={handleSubscribe}
                 disabled={loading}
                 className="w-full rounded-xl bg-accent px-5 py-3 text-[14px] font-semibold text-accent-contrast shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
               >
-                {loading ? 'Redirecting…' : `Subscribe to ${PLAN_LABEL[selectedPlan]} with Flutterwave`}
+                {loading ? 'Redirecting…' : `Subscribe with Flutterwave`}
               </button>
             </>
           )}
           {error && <p className="text-sm text-error mt-3">{error}</p>}
         </div>
       </div>
-
-      {/* No mid-cycle plan-swap/proration yet - switching plans reuses the
-          same tested cancel-then-resubscribe path rather than new billing
-          logic, so it's a manual two-step for now. */}
-      {(state.phase === 'active' || state.phase === 'cancelling') && !cancelled && (
-        <p className="text-ink-faint text-[12.5px] mt-4">
-          Want to switch to {PLAN_LABEL[state.plan === 'core' ? 'business_intelligence' : 'core']}? Cancel your
-          current plan above, then subscribe again and pick the new one once this period ends.
-        </p>
-      )}
 
       {!state.hasAccess && state.phase !== 'past_due' && (
         <p className="text-ink-faint text-[12.5px] mt-4">
