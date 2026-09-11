@@ -194,6 +194,9 @@ export default function LandingPage() {
             <a href="#pricing" className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors">
               Pricing
             </a>
+            <a href="#faq" className="text-[14px] font-medium text-ink-soft hover:text-ink transition-colors">
+              FAQ
+            </a>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-5">
@@ -314,9 +317,12 @@ export default function LandingPage() {
             <p className="text-[14px] font-medium text-ink-soft mb-4 sm:mb-5">
               One receptionist. Every channel your customers already use.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
               {CHANNELS.map((c) => (
-                <span key={c.label} className="inline-flex items-center gap-1.5 text-[14px] font-medium">
+                <span
+                  key={c.label}
+                  className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-[13.5px] font-medium shadow-soft"
+                >
                   <span
                     className="h-1.5 w-1.5 rounded-full shrink-0"
                     style={{ background: c.status === 'live' ? 'var(--accent)' : 'var(--line-strong)' }}
@@ -590,19 +596,15 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {features.map((feature, index) => (
               <Reveal key={feature.title} delay={index * 50}>
-                <div className="h-full border-t-2 border-line pt-5">
-                  <div className="flex items-start gap-3.5">
-                    <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-0.5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                      <div className="h-[16px] w-[16px]">{feature.icon}</div>
-                    </div>
-                    <div>
-                      <h3 className="font-display text-[18px] font-semibold text-ink mb-1.5">{feature.title}</h3>
-                      <p className="text-[15px] text-ink-soft leading-relaxed">{feature.description}</p>
-                    </div>
+                <div className="h-full rounded-2xl border border-line bg-surface p-6 sm:p-7 shadow-soft transition-shadow hover:shadow-card">
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                    <div className="h-[18px] w-[18px]">{feature.icon}</div>
                   </div>
+                  <h3 className="font-display text-[18px] font-semibold text-ink mb-1.5">{feature.title}</h3>
+                  <p className="text-[15px] text-ink-soft leading-relaxed">{feature.description}</p>
                 </div>
               </Reveal>
             ))}
@@ -701,6 +703,52 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ - the page had zero answers to the actual questions a real
+          owner asks before signing up. Each answer is checked against
+          what the product actually does, not aspirational copy - the
+          deposit question in particular used to be a common "adopt
+          everything from the Stitch screen" trap: Stitch's own draft
+          claimed per-service deposit percentages, which isn't real -
+          deposit_percentage is one setting per business
+          (supabase/schema.sql, booking_rules), applied wherever payment
+          is on. Rewritten to say what's actually true instead. */}
+      <section id="faq" className="border-t border-line bg-warm-surface">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20">
+          <Reveal className="text-center mb-8 sm:mb-10">
+            <h2 className="font-display text-[2rem] sm:text-3xl text-ink mb-2">Questions, answered</h2>
+            <p className="text-[15px] text-ink-soft">Everything worth knowing before you set up your first business.</p>
+          </Reveal>
+
+          <div className="space-y-3">
+            {[
+              {
+                q: 'Which channels does the AI actually work on?',
+                a: 'Your own booking page and Telegram, today - every conversation, whichever one it starts on, lands in the same dashboard as a booking made straight through your website.',
+              },
+              {
+                q: 'Do I have to require a deposit?',
+                a: 'No - "pay at the appointment" is a genuinely supported choice, not a fallback. If you do turn payment on, it’s one rule for the whole business (full amount, or a percentage deposit) - not a separate setting per service.',
+              },
+              {
+                q: 'What happens if a customer asks for a time that’s already taken?',
+                a: 'The AI checks your real calendar and offers the next actual openings instead of just saying no - same day if there’s room, or the closest time that works.',
+              },
+              {
+                q: 'Can customers book at my own web address?',
+                a: 'Yes - every business gets a free booking link from day one (yourbusiness.vanovahub.com/your-slug), and you can point your own domain at it whenever you’re ready.',
+              },
+            ].map(({ q, a }, index) => (
+              <Reveal key={q} delay={index * 40}>
+                <div className="rounded-xl border border-line bg-surface p-5">
+                  <h3 className="font-display text-[15.5px] font-semibold text-ink mb-1.5">{q}</h3>
+                  <p className="text-[14px] text-ink-soft leading-relaxed">{a}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA - the page's second and last dark beat, bookending the hero-
           adjacent proof section rather than repeating warm-surface again.
           Deliberately the only two dark moments on the page - a third
@@ -746,6 +794,7 @@ export default function LandingPage() {
                 <a href="#how-it-works" className="text-[14px] text-ink-soft hover:text-ink transition-colors">How it works</a>
                 <a href="#features" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Features</a>
                 <a href="#pricing" className="text-[14px] text-ink-soft hover:text-ink transition-colors">Pricing</a>
+                <a href="#faq" className="text-[14px] text-ink-soft hover:text-ink transition-colors">FAQ</a>
                 <a href={`/${DEMO_SLUG}`} className="text-[14px] text-ink-soft hover:text-ink transition-colors">Live demo</a>
               </nav>
               <nav className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
