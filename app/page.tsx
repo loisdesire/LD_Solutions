@@ -600,10 +600,12 @@ export default function LandingPage() {
             {features.map((feature, index) => (
               <Reveal key={feature.title} delay={index * 50}>
                 <div className="h-full rounded-2xl border border-line bg-surface p-6 sm:p-7 shadow-soft transition-shadow hover:shadow-card">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-5" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
-                    <div className="h-[18px] w-[18px]">{feature.icon}</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-9 w-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                      <div className="h-[16px] w-[16px]">{feature.icon}</div>
+                    </div>
+                    <h3 className="font-display text-[17px] font-semibold text-ink">{feature.title}</h3>
                   </div>
-                  <h3 className="font-display text-[18px] font-semibold text-ink mb-1.5">{feature.title}</h3>
                   <p className="text-[15px] text-ink-soft leading-relaxed">{feature.description}</p>
                 </div>
               </Reveal>
