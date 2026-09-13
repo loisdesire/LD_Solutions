@@ -646,7 +646,7 @@ export default function LandingPage() {
                 <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 mt-8 text-left">
+              <div className="flex flex-col gap-3 mt-8 text-left">
                 {CORE_INCLUDES.map((item) => (
                   <div key={item} className="flex items-start gap-2.5">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
