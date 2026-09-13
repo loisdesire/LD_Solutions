@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The Naira sign (U+20A6) has repeatedly rendered as what reads like a
+   diagonal strike through the price next to it - reported live more than
+   once, including on the new single-plan pricing card (₦15,000 at 48px
+   bold on desktop Chrome). A prior fix assumed it was the glyph's own
+   strokes bleeding into the next digit under .font-display's negative
+   letter-spacing and inserted a space (lib/formatMoney.ts) - shipped,
+   and the bug still recurred, including on plain body text never under
+   that letter-spacing, which rules that theory out. The actual cause:
+   Outfit/Plus Jakarta Sans (next/font/google, see layout.tsx) almost
+   certainly don't ship a Naira glyph at all, so the browser silently
+   substitutes a *different* installed font for just that one character -
+   at whatever size/weight was requested. A substituted glyph's metrics
+   don't match the requested font's, and at 48px bold the mismatch is
+   large enough to visually overlap the following digits like a strike-
+   through, which also explains why a manually inserted space didn't fix
+   it: the substituted glyph's own bounding box, not adjacent spacing,
+   is what's overflowing.
+   Fix: force *only* that one codepoint to come from a real system font
+   with a properly-designed Naira glyph, via unicode-range - every other
+   character keeps using Outfit/Plus Jakarta Sans exactly as before, this
+   only ever engages for U+20A6. No call-site changes needed (~18+ of
+   them per lib/formatMoney.ts's own count) since it works at the CSS
+   font-stack level, not the string level. */
+@font-face {
+  font-family: 'NairaSafe';
+  src: local('Segoe UI'), local('Helvetica Neue'), local('Arial'), local('Roboto'), local('sans-serif');
+  unicode-range: U+20A6;
+}
+
 /* Color tokens: the committed warm palette (terracotta accent, warm
    paper/surface neutrals). An in-progress cooler direction ("Signal" -
    indigo-blue accent, blue-gray-tinted neutrals like #eef0f4/#e3e5ec)
@@ -213,7 +242,7 @@
    incremental, prioritized by how visible/high-traffic a screen is. */
 
 .landing .font-display {
-   font-family: var(--font-display), Georgia, serif;
+   font-family: 'NairaSafe', var(--font-display), Georgia, serif;
    letter-spacing: -0.03em;
 }
 
@@ -236,7 +265,7 @@
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  font-family: 'NairaSafe', var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Chrome/Android's own default tap-highlight - a translucent grey/blue
@@ -272,7 +301,7 @@ textarea {
 }
 
 .font-display {
-  font-family: var(--font-display), system-ui, -apple-system, sans-serif;
+  font-family: 'NairaSafe', var(--font-display), system-ui, -apple-system, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -286,7 +315,7 @@ textarea {
    tabular-nums preserves the one thing monospace was genuinely earning:
    times and amounts still line up in a column. */
 .font-mono {
-  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  font-family: 'NairaSafe', var(--font-body), system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
