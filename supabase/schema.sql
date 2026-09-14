@@ -528,6 +528,19 @@ alter table bookings add column if not exists amount_paid numeric;
 -- the business's own, so amount_paid is read correctly (it's always in
 -- WHATEVER currency was actually charged, never silently converted).
 alter table bookings add column if not exists payment_currency text;
+-- When the payment actually landed - distinct from created_at (a chat
+-- booking's row is created the moment the slot is HELD, often minutes
+-- before payment actually completes) and from start_time (the
+-- appointment's own date, which can be entirely different from today).
+-- Confirmed live: the "Collected via Vanova" dashboard figure was
+-- bucketing "today"/"this week" by start_time, so a deposit paid today
+-- for an appointment tomorrow read as "₦0 today" even though real money
+-- moved today - a real reporting bug, not a display quirk. Set once, the
+-- moment payment_status actually becomes 'paid' (lib/whatsappTools.ts's
+-- confirmPaidBooking, app/api/bookings/route.ts's insert when payment
+-- was verified before the row existed) - never backfilled or recomputed
+-- afterward.
+alter table bookings add column if not exists paid_at timestamptz;
 
 -- ============================================
 -- Multi-currency payments - Ghana as a second local market, plus

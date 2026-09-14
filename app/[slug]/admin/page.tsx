@@ -48,8 +48,38 @@ export default async function AdminDashboard({
   // Calendar's own pre-fix bug - discarding a real query failure entirely
   // rather than letting it be seen, which on THIS page meant a genuine
   // error rendered as a false "nothing booked today" empty state.
-  const BOOKING_COLUMNS =
+  // paid_at is the new column (see supabase/schema.sql) this page needs
+  // to fix "Collected via Vanova" bucketing by when payment actually
+  // happened rather than the appointment's own date - but a combined
+  // .select() fails as one unit on ANY column that doesn't exist yet on
+  // a database the migration hasn't reached, which would take down the
+  // WHOLE dashboard, not just today/this week's collected figures. Same
+  // missing-column fallback pattern already used elsewhere (see
+  // lib/manageTools.ts's isMissingColumnError) - falls back to every
+  // column except paid_at, and the caller below treats every row as
+  // paid_at: null in that case (the same "can't tell yet" degradation
+  // the old start_time-based bug already had, not a new failure mode).
+  const BOOKING_COLUMNS_BASE =
     'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, status, payment_status, amount_paid, payment_currency, services!bookings_service_business_fk(name, price, duration_minutes), staff(name)';
+  const BOOKING_COLUMNS = `${BOOKING_COLUMNS_BASE}, paid_at`;
+
+  function isMissingColumnError(error: { code?: string } | null): boolean {
+    return error?.code === '42703' || error?.code === 'PGRST204';
+  }
+
+  // Matches this file's existing loose booking-row typing throughout
+  // (every reduce/filter below already takes `b: any`) - Supabase's own
+  // inferred select() type isn't worth fighting for a row shape this
+  // file never treats strictly anywhere else.
+  async function selectBookings(build: (columns: string) => PromiseLike<{ data: any; error: { code?: string } | null }>) {
+    const primary = await build(BOOKING_COLUMNS);
+    if (!isMissingColumnError(primary.error)) return primary;
+    const fallback = await build(BOOKING_COLUMNS_BASE);
+    return {
+      ...fallback,
+      data: (fallback.data as Record<string, unknown>[] | null)?.map((row) => ({ ...row, paid_at: null })) ?? null,
+    };
+  }
 
   const nowMs = Date.now();
   const pastFrom = from ? new Date(`${from}T00:00:00`) : new Date(nowMs - 7 * 86400000);
@@ -64,19 +94,23 @@ export default async function AdminDashboard({
     acceptingBookings,
   ] =
     await Promise.all([
-      supabaseAdmin
-        .from('bookings')
-        .select(BOOKING_COLUMNS)
-        .eq('business_id', business.id)
-        .gte('start_time', new Date(nowMs - 14 * 86400000).toISOString())
-        .order('start_time', { ascending: true }),
-      supabaseAdmin
-        .from('bookings')
-        .select(BOOKING_COLUMNS)
-        .eq('business_id', business.id)
-        .gte('start_time', pastFrom.toISOString())
-        .lte('start_time', pastTo.toISOString())
-        .order('start_time', { ascending: true }),
+      selectBookings((columns) =>
+        supabaseAdmin
+          .from('bookings')
+          .select(columns)
+          .eq('business_id', business.id)
+          .gte('start_time', new Date(nowMs - 14 * 86400000).toISOString())
+          .order('start_time', { ascending: true })
+      ),
+      selectBookings((columns) =>
+        supabaseAdmin
+          .from('bookings')
+          .select(columns)
+          .eq('business_id', business.id)
+          .gte('start_time', pastFrom.toISOString())
+          .lte('start_time', pastTo.toISOString())
+          .order('start_time', { ascending: true })
+      ),
       // For the "New appointment" modal - staff picking a service to book a
       // walk-in/phone customer into, same set a customer would see.
       supabaseAdmin
@@ -168,8 +202,27 @@ export default async function AdminDashboard({
   // business with real foreign-currency volume needs its own breakdown,
   // not a blended total, and that's genuinely deferred scope for now.
   const isPaidLocal = (b: any) => b.payment_status === 'paid' && !b.payment_currency;
-  const todayCollected = todayBookings.filter(isPaidLocal).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
-  const weekCollected = thisWeek.filter(isPaidLocal).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
+  // Bucketed by paid_at (when the money actually moved), NOT by
+  // reusing todayBookings/thisWeek - those are start_time-scoped (the
+  // APPOINTMENT's own date), so a deposit paid today for an appointment
+  // tomorrow was reading as "₦0 today" even though real money moved
+  // today. paid_at is null on a row from before this column existed, or
+  // on a database the migration hasn't reached yet (selectBookings'
+  // fallback) - such a row is simply left out of both buckets rather
+  // than guessed at, same as any other "can't tell yet" degradation
+  // elsewhere in this codebase.
+  const isPaidToday = (b: any) => {
+    if (!b.paid_at) return false;
+    const d = new Date(b.paid_at);
+    return d >= startOfToday && d < new Date(startOfToday.getTime() + 86400000);
+  };
+  const isPaidThisWeek = (b: any) => {
+    if (!b.paid_at) return false;
+    const d = new Date(b.paid_at);
+    return d >= startOfWeek && d < endOfWeek;
+  };
+  const todayCollected = active.filter((b) => isPaidLocal(b) && isPaidToday(b)).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
+  const weekCollected = active.filter((b) => isPaidLocal(b) && isPaidThisWeek(b)).reduce((sum, b: any) => sum + (b.amount_paid ?? 0), 0);
   const revenuePctDelta =
     prevWeekRevenue > 0 ? Math.round(((weekRevenue - prevWeekRevenue) / prevWeekRevenue) * 100) : null;
   const nextSlot = active.find((b) => new Date(b.start_time) >= now);

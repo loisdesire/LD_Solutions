@@ -293,6 +293,10 @@ export async function POST(req: NextRequest) {
       payment_reference: paymentStatus ? validPaymentReference : null,
       amount_paid: amountPaid,
       payment_currency: paidCurrency,
+      // Set at insert time, not left null - unlike the chat flow, this
+      // row is only ever created AFTER payment is verified (never a
+      // pending hold first), so "now" genuinely is when it was paid.
+      paid_at: paymentStatus === 'paid' ? new Date().toISOString() : null,
     })
     .select()
     .single();

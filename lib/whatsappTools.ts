@@ -690,7 +690,7 @@ export async function confirmPaidBooking(
   // via a sweep instead of a race with another booking.
   const { data: updated, error } = await supabaseAdmin
     .from('bookings')
-    .update({ status: 'confirmed', payment_status: 'paid', amount_paid: amountPaid, payment_expires_at: null })
+    .update({ status: 'confirmed', payment_status: 'paid', amount_paid: amountPaid, payment_expires_at: null, paid_at: new Date().toISOString() })
     .eq('id', booking.id)
     .eq('status', 'pending_payment')
     .select('id');
@@ -706,7 +706,7 @@ export async function confirmPaidBooking(
     if (isConflict) {
       await supabaseAdmin
         .from('bookings')
-        .update({ payment_status: 'paid_slot_lost', amount_paid: amountPaid })
+        .update({ payment_status: 'paid_slot_lost', amount_paid: amountPaid, paid_at: new Date().toISOString() })
         .eq('id', booking.id);
       const dateISO = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date(booking.start_time));
       const slots = await getAvailableSlots(booking.business_id, booking.service_id, dateISO);
