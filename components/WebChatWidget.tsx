@@ -102,6 +102,13 @@ export default function WebChatWidget({
   // resizing a browser window can cross the breakpoint while the chat is
   // still open.
   const [isMobile, setIsMobile] = useState(false);
+  // Desktop-only escape hatch for a real conversation that outgrows the
+  // small corner card - same treatment as the admin assistant widget
+  // (components/AdminAssistantWidget.tsx). Mobile already gets the
+  // equivalent full-viewport takeover automatically, nothing to toggle
+  // there. Resets on close so reopening always starts as the small card.
+  const [expanded, setExpanded] = useState(false);
+  const isFullScreen = isMobile || expanded;
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
@@ -273,12 +280,15 @@ export default function WebChatWidget({
   // control the wrong way would.
   function toggleOpen() {
     setOpen((v) => {
-      // Closing clears the #chat hash. Without this, a second click on
-      // a "Chat with us" link pointing at the same hash fires no
-      // hashchange, so the chat never reopens: it works once, then
-      // appears broken.
-      if (v && window.location.hash === '#chat') {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (v) {
+        // Closing clears the #chat hash. Without this, a second click on
+        // a "Chat with us" link pointing at the same hash fires no
+        // hashchange, so the chat never reopens: it works once, then
+        // appears broken.
+        if (window.location.hash === '#chat') {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        setExpanded(false);
       }
       return !v;
     });
@@ -332,7 +342,11 @@ export default function WebChatWidget({
         <div
           role="dialog"
           aria-label={`Chat with ${businessName ?? 'us'}`}
-          className="fixed inset-0 sm:inset-x-auto sm:inset-y-auto sm:top-auto sm:bottom-[86px] sm:right-5 sm:w-[calc(100vw-2.5rem)] sm:max-w-sm sm:h-[70vh] sm:max-h-[520px] z-50 rounded-none sm:rounded-2xl bg-surface border-0 sm:border border-line shadow-card flex flex-col overflow-hidden animate-rise"
+          className={
+            isFullScreen
+              ? 'fixed inset-0 z-50 rounded-none bg-surface border-0 shadow-card flex flex-col overflow-hidden animate-rise'
+              : 'fixed bottom-[86px] right-5 w-[calc(100vw-2.5rem)] max-w-sm h-[70vh] max-h-[520px] z-50 rounded-2xl bg-surface border border-line shadow-card flex flex-col overflow-hidden animate-rise'
+          }
           style={isMobile && keyboardInsets ? { top: keyboardInsets.top, height: keyboardInsets.height } : undefined}
         >
           {/* The "new chatbot" look: a solid accent avatar carrying the
@@ -379,6 +393,25 @@ export default function WebChatWidget({
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               Online
             </span>
+            {/* Desktop only - mobile is already full-screen the moment it's
+                open, nothing to toggle there. Same control as the admin
+                assistant widget's own expand button. */}
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              aria-label={expanded ? 'Shrink chat' : 'Expand chat to full screen'}
+              title={expanded ? 'Shrink' : 'Expand to full screen'}
+              className="hidden sm:flex h-8 w-8 rounded-full items-center justify-center text-ink-faint hover:bg-paper hover:text-ink transition-colors shrink-0"
+            >
+              {expanded ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 3v5H4M15 3v5h5M9 21v-5H4M15 21v-5h5" />
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* overscroll-contain - same fix as AssistantChat.tsx's identical
