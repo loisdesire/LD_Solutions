@@ -697,7 +697,7 @@ export default function LandingPage() {
               },
               {
                 q: 'Can customers book at my own web address?',
-                a: 'Yes - every business gets a free booking link from day one (yourbusiness.vanovahub.com/your-slug), and you can point your own domain at it whenever you’re ready.',
+                a: 'Yes - every business gets a free booking link from day one (vanovahub.com/your-slug), and you can point your own domain at it whenever you’re ready.',
               },
             ].map(({ q, a }, index) => (
               <Reveal key={q} delay={index * 40}>
