@@ -91,12 +91,25 @@ export async function runToolAgent(params: {
   // blocked.
   const proposedThisTurn = new Set<string>();
 
+  // GPT-5.6-family models are reasoning models by default, and OpenAI's
+  // /v1/chat/completions flatly refuses to combine that with function
+  // tools at all ("Function tools with reasoning_effort are not
+  // supported... use /v1/responses or set reasoning_effort to 'none'") -
+  // confirmed live via a real API call before this shipped, not assumed
+  // from docs. Every agent in this file relies on tool-calling, so the
+  // fix is the documented one: turn reasoning off. gpt-4o-mini (the
+  // default, and everything else in the app) rejects this param outright
+  // as unrecognized - also confirmed live - so it's only ever sent for a
+  // model that actually needs it, never unconditionally.
+  const reasoningEffort = model.startsWith('gpt-5.6') ? 'none' : undefined;
+
   for (let i = 0; i < maxIterations; i++) {
     const completion = await openai.chat.completions.create({
       model,
       messages: conversation,
       tools,
       tool_choice: 'auto',
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     });
 
     const choice = completion.choices[0].message;

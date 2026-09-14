@@ -190,6 +190,25 @@ dashes - use a period, comma, or "and" instead, the kind of plain sentence a per
     history,
     message,
     tools,
+    // The one agent in the app upgraded off the shared gpt-4o-mini default,
+    // deliberately - this is the owner's own admin assistant, real low
+    // volume (a business owner chatting with it, not a customer booking
+    // flow run constantly), but high-stakes: it writes real changes to a
+    // business's own data, and a dropped field here reads as the tool
+    // lying to the owner about their own photo/schedule, not a customer-
+    // facing hiccup. Confirmed live: gpt-4o-mini silently dropped an
+    // image_url on the apply step of a propose/confirm/apply flow -
+    // GPT-5.6 Luna is OpenAI's cheapest *current-generation* model
+    // ($0.20/$1.20 per 1M tokens vs gpt-4o-mini's $0.15/$0.60 - a real but
+    // tiny difference at this agent's actual volume), picked over every
+    // other option in the lineup: gpt-4o-mini itself already showed this
+    // failure mode live; GPT-5 mini is being retired December 2026; older
+    // gpt-4o is both pricier AND a stale generation; everything above
+    // Luna (Terra/Sol/Astra) is a real cost jump this job doesn't need.
+    // The rest of the app (whatsappAgent, onboardingAgent, insights) stays
+    // on gpt-4o-mini, where call volume actually makes cost the deciding
+    // factor and this failure hasn't shown up live.
+    model: 'gpt-5.6-luna',
     executeTool: async (name, args) => {
       if (RESCHEDULE_TOOLS.some((t) => t.type === 'function' && t.function.name === name)) {
         return executeRescheduleTool(name, args, businessId);
