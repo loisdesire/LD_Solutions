@@ -463,7 +463,7 @@ export default function AssistantChat({
                 // keeps the accent reserved for real actions. The
                 // right-alignment already says "this is you"; the tint
                 // just reinforces it.
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap break-words text-left ${
                   m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-warm-surface text-ink'
                 }`}
               >

@@ -277,7 +277,7 @@ export default function LandingChatDemo() {
                     // set directly on the bubble anyway so it holds
                     // regardless of what ancestor this ever gets mounted
                     // under.
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap break-words text-left ${
                       turn.from === 'visitor' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
                     }`}
                     style={{ background: turn.from === 'visitor' ? 'var(--accent-soft)' : 'var(--accent)' }}
