@@ -131,7 +131,19 @@ export default function ImageUploadField({
         </div>
       )}
 
-      <p className="text-ink-faint text-[11.5px] mt-1.5">JPG, PNG, WEBP or GIF, up to 5MB.</p>
+      <p className="text-ink-faint text-[11.5px] mt-1.5">
+        JPG, PNG, WEBP or GIF, up to 5MB.
+        {/* Confirmed live: a real uploaded logo was a full lockup (icon +
+            wordmark stacked, lots of surrounding white padding) - fine at
+            the size shown here, but this same file also renders as small
+            as 32px in the site nav and sidebar, where the actual mark
+            shrank to a barely-visible dot against all that padding. No
+            server-side cropping exists to fix this automatically, so the
+            only real fix is guiding the upload itself - avatar (logo)
+            only, banners are meant to be wide photos and don't have this
+            problem. */}
+        {shape === 'avatar' && ' A tightly-cropped square icon works best - this shows as small as 32px elsewhere on the site, so a full lockup with your business name spelled out will look mostly blank there.'}
+      </p>
       {error && <p className="text-[12px] text-error mt-1">{error}</p>}
     </div>
   );
