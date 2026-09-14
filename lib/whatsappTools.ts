@@ -260,45 +260,94 @@ export async function createBooking(
   const start = zonedTimeToUtc(args.date, args.time, timeZone);
   const end = new Date(start.getTime() + service.duration_minutes * 60000);
 
-  // Same reasoning as app/api/bookings/route.ts - picks whichever staff
-  // member is actually free for this window (see lib/assignStaff.ts) so
-  // the exclusion constraint below is scoped to a real person, not the
-  // whole business. Checked here even for the payment-hold path: the hold
-  // itself is what reserves this specific staff member's slot while the
-  // customer pays, so it needs a real staff_id from the moment it's
-  // created, not just once payment confirms.
-  const assignedStaffId = await pickAvailableStaffId(ctx.businessId, start.toISOString(), end.toISOString());
-  if (!assignedStaffId) {
-    return { error: 'That time is no longer available. Please choose another slot.' };
-  }
+  // Confirmed live: a customer whose payment link failed (Flutterwave's
+  // own hosted checkout, not this app's doing - see the "link expired"
+  // investigation) said so, and the model's only move was to call this
+  // tool again - which used to insert a WHOLE NEW booking on top of the
+  // still-held first one. Two real pending_payment rows for the exact
+  // same customer/service/time, each holding a DIFFERENT staff member's
+  // slot (the first staff already looked busy to the second attempt) -
+  // confirmed directly in the database, not assumed. And with no way to
+  // ask for a fresh link short of that, a second real request ("another
+  // link please") got refused with an invented policy ("I can only
+  // provide the payment link once") that doesn't exist anywhere in this
+  // code - the model improvising because nothing here actually supported
+  // what the customer was asking for.
+  // Fix: if this exact customer already has a pending_payment hold on
+  // this exact business/service/slot, reuse it - issue a fresh
+  // Flutterwave link and a fresh 15-minute window on the SAME row
+  // instead of creating a second one. Safe to call as many times as
+  // asked now; nothing about calling this tool again should ever double
+  // a customer's own hold on their own slot.
+  // Only looked up when payment is currently required - if the business
+  // turned payment off between the customer's two messages, an old
+  // pending_payment row from before that change is stale, not something
+  // to silently resurrect and refresh.
+  const { data: existingHold } = paymentRequired
+    ? await supabaseAdmin
+        .from('bookings')
+        .select('id, staff_id, payment_status')
+        .eq('business_id', ctx.businessId)
+        .eq('service_id', service.id)
+        .eq('start_time', start.toISOString())
+        .eq('customer_phone', ctx.customerPhone)
+        .eq('status', 'pending_payment')
+        .maybeSingle()
+    : { data: null };
 
-  const { data: booking, error } = await supabaseAdmin
-    .from('bookings')
-    .insert({
-      business_id: ctx.businessId,
-      service_id: service.id,
-      staff_id: assignedStaffId,
-      status: paymentRequired ? 'pending_payment' : 'confirmed',
-      payment_status: paymentRequired ? 'pending' : null,
-      payment_expires_at: paymentRequired ? new Date(Date.now() + 15 * 60_000).toISOString() : null,
-      customer_name: args.customerName,
-      customer_phone: ctx.customerPhone,
-      customer_email: args.customerEmail || null,
-      customer_telegram_username: ctx.customerUsername || null,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-    })
-    .select()
-    .single();
+  let booking: { id: string; staff_id: string | null; start_time: string };
 
-  if (error) {
-    // 23P01 = exclusion_violation - the staff-scoped DB backstop (see
-    // supabase/schema.sql) against the same race pickAvailableStaffId
-    // above is the fast-path check for.
-    if ((error as { code?: string }).code === '23P01') {
+  if (existingHold) {
+    const refreshed = await supabaseAdmin
+      .from('bookings')
+      .update({ payment_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(), payment_status: 'pending' })
+      .eq('id', existingHold.id)
+      .select('id, staff_id, start_time')
+      .single();
+    if (refreshed.error || !refreshed.data) return { error: 'Could not refresh that hold - please try again.' };
+    booking = refreshed.data;
+  } else {
+    // Same reasoning as app/api/bookings/route.ts - picks whichever staff
+    // member is actually free for this window (see lib/assignStaff.ts) so
+    // the exclusion constraint below is scoped to a real person, not the
+    // whole business. Checked here even for the payment-hold path: the hold
+    // itself is what reserves this specific staff member's slot while the
+    // customer pays, so it needs a real staff_id from the moment it's
+    // created, not just once payment confirms.
+    const assignedStaffId = await pickAvailableStaffId(ctx.businessId, start.toISOString(), end.toISOString());
+    if (!assignedStaffId) {
       return { error: 'That time is no longer available. Please choose another slot.' };
     }
-    return { error: error.message };
+
+    const inserted = await supabaseAdmin
+      .from('bookings')
+      .insert({
+        business_id: ctx.businessId,
+        service_id: service.id,
+        staff_id: assignedStaffId,
+        status: paymentRequired ? 'pending_payment' : 'confirmed',
+        payment_status: paymentRequired ? 'pending' : null,
+        payment_expires_at: paymentRequired ? new Date(Date.now() + 15 * 60_000).toISOString() : null,
+        customer_name: args.customerName,
+        customer_phone: ctx.customerPhone,
+        customer_email: args.customerEmail || null,
+        customer_telegram_username: ctx.customerUsername || null,
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (inserted.error) {
+      // 23P01 = exclusion_violation - the staff-scoped DB backstop (see
+      // supabase/schema.sql) against the same race pickAvailableStaffId
+      // above is the fast-path check for.
+      if ((inserted.error as { code?: string }).code === '23P01') {
+        return { error: 'That time is no longer available. Please choose another slot.' };
+      }
+      return { error: inserted.error.message };
+    }
+    booking = inserted.data;
   }
 
   // Payment path: the slot is held but nothing is booked yet. Hand back a
