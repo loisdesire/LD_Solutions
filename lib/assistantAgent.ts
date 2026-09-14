@@ -243,6 +243,44 @@ dashes - use a period, comma, or "and" instead, the kind of plain sentence a per
           imageUrl && (name === 'propose_update_service' || name === 'apply_update_service')
             ? { ...args, changes: { ...((args.changes as Record<string, unknown>) ?? {}), image_url: (args.changes as Record<string, unknown> | undefined)?.image_url ?? imageUrl } }
             : args;
+        // Confirmed live, even with the fix above guaranteeing the image is
+        // always correct once apply runs: the model still sometimes chooses
+        // to re-call propose_update_service on the confirm turn instead of
+        // apply_update_service at all - the owner sees the identical
+        // proposal a second time and has to confirm again. Real,
+        // unnecessary friction, not just an occasional failure - and the
+        // third prompt-wording attempt at "please call apply, not propose,
+        // on confirm" isn't a bet worth making a third time. For a PURE
+        // photo change (nothing else in `changes`), attaching the file
+        // through the upload button already is the deliberate, explicit
+        // action - a second typed "yes" on top of that wasn't protecting
+        // the owner from anything, only adding a round trip the model
+        // doesn't reliably survive. So this applies it in the same turn
+        // propose_update_service is called, whenever the photo is the only
+        // thing changing. Every other field on this tool, and every other
+        // propose_*, stays strictly read-only until its own separate
+        // confirm - unchanged.
+        if (name === 'propose_update_service') {
+          const changesObj = (patchedArgs.changes as Record<string, unknown>) ?? {};
+          const isPureImageChange = Boolean(imageUrl) && Object.keys(changesObj).length === 1 && 'image_url' in changesObj;
+          if (isPureImageChange) {
+            const proposeResult = await executeManageTool(name, patchedArgs, businessId);
+            const proposeFailed =
+              proposeResult && typeof proposeResult === 'object' && ('error' in proposeResult || 'needs_disambiguation' in proposeResult);
+            if (proposeFailed) return proposeResult;
+            const applyResult = await executeManageTool('apply_update_service', patchedArgs, businessId);
+            const applyFailed = applyResult && typeof applyResult === 'object' && 'error' in applyResult;
+            if (!applyFailed) {
+              const summary = describeManageToolChange('apply_update_service', patchedArgs, applyResult);
+              if (summary) await notifyOwnerOfManageChange(businessId, summary, businessName);
+              return {
+                ...(applyResult as Record<string, unknown>),
+                note: 'Already applied - attaching the photo was the confirmation. Tell the owner it is done, do not ask them to confirm again.',
+              };
+            }
+            return applyResult;
+          }
+        }
         const result = await executeManageTool(name, patchedArgs, businessId);
         // "a confirmation, and an email for every time you make changes" -
         // the confirmation is the propose/apply pattern itself; this is the
