@@ -150,7 +150,7 @@ const CORE_INCLUDES = [
   'One dashboard for every appointment',
   'Automatic email confirmations and reminders',
   'Take deposits and payments - just link a bank account',
-  'Your own branded booking page and custom domain',
+  'Your own branded booking page',
   'Team accounts for your staff',
   'AI insights: ask about revenue, no-shows and busiest hours in plain language',
 ];
@@ -696,8 +696,8 @@ export default function LandingPage() {
                 a: 'The AI checks your real calendar and offers the next actual openings instead of just saying no - same day if there’s room, or the closest time that works.',
               },
               {
-                q: 'Can customers book at my own web address?',
-                a: 'Yes - every business gets a free booking link from day one (vanovahub.com/your-slug), and you can point your own domain at it whenever you’re ready.',
+                q: 'Do I get a real booking link, not just a generic page?',
+                a: 'Yes - every business gets its own free booking link from day one: vanovahub.com/your-slug.',
               },
             ].map(({ q, a }, index) => (
               <Reveal key={q} delay={index * 40}>
