@@ -61,10 +61,10 @@ export default function SiteHeader({
       <nav className="flex justify-between items-center w-full px-5 sm:px-8 py-3.5 max-w-6xl mx-auto">
         <a href={`/${slug}`} className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           {business.logo_url ? (
-            <img src={business.logo_url} alt="" className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-cover shrink-0" />
+            <img src={business.logo_url} alt="" className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl object-cover shrink-0" />
           ) : (
             <div
-              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center font-display text-[13px] sm:text-[14px] font-semibold shrink-0"
+              className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl flex items-center justify-center font-display text-[14px] sm:text-[15px] font-semibold shrink-0"
               style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
             >
               {business.name?.[0]?.toUpperCase()}
