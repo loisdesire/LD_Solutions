@@ -223,7 +223,27 @@ dashes - use a period, comma, or "and" instead, the kind of plain sentence a per
         return executeRescheduleTool(name, args, businessId);
       }
       if (MANAGE_TOOLS.some((t) => t.type === 'function' && t.function.name === name)) {
-        const result = await executeManageTool(name, args, businessId);
+        // Confirmed live, twice now, on two different models (gpt-4o-mini
+        // and Luna): on the confirm turn of a service-photo change, the
+        // model sometimes re-calls propose_update_service instead of
+        // apply_update_service - showing the owner the identical "please
+        // confirm" text a second time instead of committing anything.
+        // Prompt instructions alone didn't hold up reliably across either
+        // model, so this closes the gap deterministically instead of
+        // asking better: `imageUrl` above is the real, already-verified
+        // url for this exact turn (the same one folded into the message
+        // text as "[Attached image: ...]") - if the model's own
+        // changes.image_url is missing on a service update call, fill it
+        // in here from that real value rather than trust the model
+        // resupplied it correctly. Scoped to update_service specifically
+        // (the one with a live, reported failure) - propose_update_profile
+        // already threads logo/cover correctly and works live, no reason
+        // to touch it.
+        const patchedArgs =
+          imageUrl && (name === 'propose_update_service' || name === 'apply_update_service')
+            ? { ...args, changes: { ...((args.changes as Record<string, unknown>) ?? {}), image_url: (args.changes as Record<string, unknown> | undefined)?.image_url ?? imageUrl } }
+            : args;
+        const result = await executeManageTool(name, patchedArgs, businessId);
         // "a confirmation, and an email for every time you make changes" -
         // the confirmation is the propose/apply pattern itself; this is the
         // email half, an audit trail to the owner's inbox for every
@@ -232,7 +252,7 @@ dashes - use a period, comma, or "and" instead, the kind of plain sentence a per
         // itself, so lib/onboardingAgent.ts (which shares the same
         // dispatcher) stays quiet - nobody wants five emails in a row
         // while they're actively watching first-time setup happen live.
-        const summary = describeManageToolChange(name, args, result);
+        const summary = describeManageToolChange(name, patchedArgs, result);
         if (summary) {
           await notifyOwnerOfManageChange(businessId, summary, businessName);
         }
