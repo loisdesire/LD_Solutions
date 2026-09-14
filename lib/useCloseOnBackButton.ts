@@ -24,6 +24,30 @@ export function useCloseOnBackButton(open: boolean, onClose: () => void) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+  // Confirmed live, reported twice: attaching a photo opens the native
+  // file/camera picker - an actual OS-level surface, not a web dialog -
+  // and on some mobile browsers, control returning from it fires a
+  // popstate on the page underneath as a side effect. Every popstate was
+  // being treated as "the user pressed back, close this," so uploading a
+  // photo could close the whole assistant instead of just attaching the
+  // file. document.visibilityState reliably flips hidden->visible when
+  // any native surface (file picker, camera, share sheet) opens over the
+  // page and again when it returns - used as a general "we just came
+  // back from somewhere else" signal, not something specific to file
+  // pickers, so it also covers a camera capture or a share-sheet
+  // interaction the same way.
+  const returnedFromNativeSurfaceUntilRef = useRef(0);
+
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === 'visible') {
+        returnedFromNativeSurfaceUntilRef.current = Date.now() + 700;
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
   useEffect(() => {
     if (!open || typeof window === 'undefined') return;
 
@@ -31,6 +55,14 @@ export function useCloseOnBackButton(open: boolean, onClose: () => void) {
     pushedRef.current = true;
 
     function onPopState() {
+      // Inside the grace window right after returning from a native
+      // surface - treat this as that side effect, not a real back-button
+      // press: put the entry straight back so a genuine back press right
+      // after still closes the overlay normally.
+      if (Date.now() < returnedFromNativeSurfaceUntilRef.current) {
+        window.history.pushState({ overlay: true }, '');
+        return;
+      }
       pushedRef.current = false;
       onCloseRef.current();
     }
