@@ -26,17 +26,27 @@ export async function getAssistantHistory(
   staffId: string,
   kind: AssistantChatKind
 ): Promise<AgentMessage[]> {
+  // Confirmed live: this was ordering oldest-first and taking the first
+  // HISTORY_LIMIT rows - correct for a conversation that never grows past
+  // the limit, but exactly backwards once it does. Past 40 total
+  // messages, that query returns the SAME original first 40 forever -
+  // every message after that point becomes permanently invisible on
+  // reload, not just capped, since "oldest 40" never slides forward as
+  // the conversation grows. Reported as "the chat history stopped at
+  // [an old point] - I can't see recent chats anymore," which is exactly
+  // this: descending + limit to actually get the most recent messages,
+  // then reversed back into chronological order for use as context.
   const { data, error } = await supabaseAdmin
     .from('assistant_messages')
     .select('role, content')
     .eq('business_id', businessId)
     .eq('staff_id', staffId)
     .eq('kind', kind)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(HISTORY_LIMIT);
 
   if (error || !data) return [];
-  return data as AgentMessage[];
+  return (data as AgentMessage[]).reverse();
 }
 
 export async function appendAssistantMessages(
