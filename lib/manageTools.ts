@@ -342,17 +342,17 @@ export async function proposeUpdateService(
   if (changes.imageUrl !== undefined) {
     const v = cleanImageUrl(changes.imageUrl, businessId);
     if (v === undefined) return { error: "That image doesn't look like one uploaded through this chat." };
-    // Confirmed live: the old wording ("has a photo" -> "new photo
-    // attached") never actually compared the new url against the current
-    // one, only presence/absence either side - which left real room for
-    // the model to misread "has a photo" as "already has THIS photo" and
-    // confidently tell the owner nothing changed, even though the real
-    // row was null the entire time. Comparing values directly removes
-    // that ambiguity: a genuine no-op is now a clear, honest error
-    // instead of silently entering `proposed` as if something changed.
-    if (v === current.image_url) {
-      return { error: current.image_url ? 'That exact photo is already set for this service - nothing to change.' : 'There is no photo to remove - this service already has none.' };
-    }
+    // Was a hard refuse-if-identical check here - reverted, confirmed live
+    // it made things actively worse. The comparison itself relies on the
+    // model correctly believing what "current" is, and this whole bug
+    // started with the model being confidently WRONG about that (the real
+    // row was null while it insisted a photo was already set) - so a
+    // refuse-on-match gate just gives a wrong belief a second way to block
+    // a real, wanted change, on top of the first. Simplest is most
+    // correct here: the owner attached a specific photo and confirmed -
+    // set it, unconditionally, every time. Nothing about accidentally
+    // "re-setting" the same photo is harmful enough to justify blocking a
+    // legitimate one.
     proposed.image = { from: current.image_url ? 'the existing photo' : 'no photo yet', to: v ? 'the newly attached photo' : 'no photo' };
   }
   if (changes.active !== undefined) {
@@ -537,21 +537,14 @@ export async function proposeUpdateProfile(businessId: string, changes: ProfileC
   if (changes.logoUrl !== undefined) {
     const v = cleanImageUrl(changes.logoUrl, businessId);
     if (v === undefined) return { error: "That doesn't look like a photo uploaded through this chat." };
-    // Same fix as proposeUpdateService's image branch - compare values,
-    // don't just note presence/absence, so a genuine no-op is an honest
-    // error instead of ambiguous wording the model can misread as "this
-    // exact photo is already set" when it never actually compared.
-    if (v === current.logo_url) {
-      return { error: current.logo_url ? 'That exact photo is already the logo - nothing to change.' : 'There is no logo to remove - none is set.' };
-    }
+    // Reverted the refuse-if-identical gate here too - see the matching
+    // comment on proposeUpdateService's image branch. The owner attached a
+    // specific photo and confirmed; set it, unconditionally, every time.
     proposed.logo = { from: current.logo_url ? 'the existing logo' : 'no logo yet', to: 'the newly attached photo' };
   }
   if (changes.coverImageUrl !== undefined) {
     const v = cleanImageUrl(changes.coverImageUrl, businessId);
     if (v === undefined) return { error: "That doesn't look like a photo uploaded through this chat." };
-    if (v === current.cover_image_url) {
-      return { error: current.cover_image_url ? 'That exact photo is already the cover photo - nothing to change.' : 'There is no cover photo to remove - none is set.' };
-    }
     proposed.cover_photo = { from: current.cover_image_url ? 'the existing cover photo' : 'no cover photo yet', to: 'the newly attached photo' };
   }
   if (changes.accentColor !== undefined) {
