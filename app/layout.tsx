@@ -73,6 +73,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        {/* The Naira sign (U+20A6) fix (see app/globals.css's 'Noto Sans'
+            font-stack entries) went out first as a local()-based
+            @font-face pointing at an OS-installed font - looked right on
+            desktop, still broken live on mobile Chrome. Real cause:
+            mobile browsers commonly refuse to resolve local() at all (a
+            documented fingerprinting mitigation - it can reveal exactly
+            which fonts are installed), so that fallback silently loaded
+            nothing there and the browser fell through to the next font
+            in the stack, which doesn't have the glyph either. This is
+            the actual fix: a real hosted font file, not a guess about
+            what's on the device. Google's `text=` parameter subsets the
+            font to only the one requested character, so this is a ~1KB
+            request per weight, not a real font download - safe to keep
+            in the stack unconditionally. */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&text=%E2%82%A6&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>{children}</body>
     </html>
