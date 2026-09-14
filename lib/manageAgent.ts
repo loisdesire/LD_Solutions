@@ -394,6 +394,34 @@ function mapServicesArgs(args: Record<string, unknown>) {
   };
 }
 
+// The real root cause of a live, 100%-reproducible bug (confirmed against
+// the actual database, not guessed): propose_update_service/
+// apply_update_service's tool schema declares its `changes` object in
+// snake_case (image_url, duration_minutes - what the model correctly sends,
+// matching the schema) but lib/manageTools.ts's proposeUpdateService/
+// applyUpdateService check changes.imageUrl/changes.durationMinutes
+// (camelCase) - a dispatcher that never translated between the two. So
+// changes.imageUrl was undefined on literally every service-image call
+// ever made, regardless of what the model did; changes.durationMinutes
+// was silently broken the same way. propose_update_profile's dispatcher
+// (a few lines below) already does this mapping correctly per field -
+// this is why "update the business logo/cover photo" worked live while
+// "update a service's photo" never did, a real code asymmetry, not a
+// model reliability difference. name/price/description/active happen to
+// be spelled identically either way, which is exactly why only image and
+// duration silently broke instead of everything.
+function mapUpdateServiceChanges(raw: unknown): Record<string, unknown> {
+  const c = (raw as Record<string, unknown>) ?? {};
+  const out: Record<string, unknown> = {};
+  if (c.name !== undefined) out.name = c.name;
+  if (c.duration_minutes !== undefined) out.durationMinutes = c.duration_minutes;
+  if (c.price !== undefined) out.price = c.price;
+  if (c.description !== undefined) out.description = c.description;
+  if (c.image_url !== undefined) out.imageUrl = c.image_url;
+  if (c.active !== undefined) out.active = c.active;
+  return out;
+}
+
 export async function executeManageTool(name: string, args: Record<string, unknown>, businessId: string) {
   switch (name) {
     case 'propose_create_service':
@@ -403,12 +431,12 @@ export async function executeManageTool(name: string, args: Record<string, unkno
     case 'propose_update_service':
       return proposeUpdateService(businessId, {
         serviceName: args.service_name,
-        changes: (args.changes as Record<string, unknown>) ?? {},
+        changes: mapUpdateServiceChanges(args.changes),
       });
     case 'apply_update_service':
       return applyUpdateService(businessId, {
         serviceName: args.service_name,
-        changes: (args.changes as Record<string, unknown>) ?? {},
+        changes: mapUpdateServiceChanges(args.changes),
       });
     case 'propose_toggle_setting':
       return proposeToggleSetting(businessId, { setting: args.setting, enabled: args.enabled });
