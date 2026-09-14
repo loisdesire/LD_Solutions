@@ -449,10 +449,14 @@ export default function WebChatWidget({
                   // message bubble should never depend on whatever
                   // text-align an ancestor happens to set (see the same
                   // fix, and the real bug it caused, in LandingChatDemo.tsx).
+                  // Assistant bubble matches the admin AssistantChat's own
+                  // treatment (bg-warm-surface text-ink, not a solid accent
+                  // fill) - reported live as a real inconsistency between
+                  // the two chat surfaces, not a deliberate distinction.
                   className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap break-words text-left ${
-                    m.role === 'user' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
+                    m.role === 'user' ? 'text-ink rounded-br-md' : 'bg-warm-surface text-ink rounded-bl-md'
                   }`}
-                  style={{ background: m.role === 'user' ? 'var(--accent-soft)' : 'var(--accent)' }}
+                  style={m.role === 'user' ? { background: 'var(--accent-soft)' } : undefined}
                 >
                   {m.content}
                 </div>
@@ -460,7 +464,7 @@ export default function WebChatWidget({
             ))}
             {thinking && (
               <div className="flex justify-start animate-rise">
-                <div className="text-accent-contrast rounded-2xl rounded-bl-md px-3.5 py-2 text-[14px] opacity-80" style={{ background: 'var(--accent)' }}>
+                <div className="bg-warm-surface text-ink-faint rounded-2xl rounded-bl-md px-3.5 py-2 text-[14px]">
                   {THINKING_LINES[thinkingLineIndex]}
                 </div>
               </div>

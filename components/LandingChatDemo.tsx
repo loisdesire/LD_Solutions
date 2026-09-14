@@ -28,14 +28,17 @@ function TypingBubble() {
   return (
     <div className="flex justify-start animate-rise">
       <div
-        className="rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1"
-        style={{ background: 'var(--accent)' }}
+        // Matches the bubble color fix above - bg-warm-surface, not a
+        // solid accent fill. Dots switched from white (only legible on
+        // the old dark accent fill) to ink-faint, which reads on the new
+        // light surface instead.
+        className="rounded-2xl rounded-bl-md px-3.5 py-2.5 flex items-center gap-1 bg-warm-surface"
         aria-label="Typing"
       >
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="h-1.5 w-1.5 rounded-full bg-white/80 animate-bounce"
+            className="h-1.5 w-1.5 rounded-full bg-ink-faint animate-bounce"
             style={{ animationDelay: `${i * 120}ms` }}
           />
         ))}
@@ -277,10 +280,16 @@ export default function LandingChatDemo() {
                     // set directly on the bubble anyway so it holds
                     // regardless of what ancestor this ever gets mounted
                     // under.
+                    // Business/assistant bubble matches the admin
+                    // AssistantChat and the real WebChatWidget's own
+                    // treatment (bg-warm-surface text-ink) - this demo is
+                    // meant to preview what the real chat looks like, so
+                    // it shouldn't show a different color scheme than the
+                    // real thing does.
                     className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed whitespace-pre-wrap break-words text-left ${
-                      turn.from === 'visitor' ? 'text-ink rounded-br-md' : 'text-accent-contrast rounded-bl-md'
+                      turn.from === 'visitor' ? 'text-ink rounded-br-md' : 'bg-warm-surface text-ink rounded-bl-md'
                     }`}
-                    style={{ background: turn.from === 'visitor' ? 'var(--accent-soft)' : 'var(--accent)' }}
+                    style={turn.from === 'visitor' ? { background: 'var(--accent-soft)' } : undefined}
                   >
                     {turn.text}
                   </div>
