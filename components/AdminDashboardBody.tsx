@@ -227,43 +227,56 @@ export default function AdminDashboardBody({
           shorter forms there too; from sm: up there's real room, so it's
           back to one items-end row like before. */}
       <div className="mb-6">
-        {/* items-end (at sm:+), not items-center - matches the Services
-            page's own heading+actions row (sm:items-end there), where the
-            action group bottom-aligns with the text beside it rather than
-            floating centered against it. */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-            {/* Uppercase + tracking-wide, matching the Stitch header's own
-                date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
-              <span className="sm:hidden">{dateLabelShort}</span>
-              <span className="hidden sm:inline">{dateLabelLong}</span>
-            </span>
-            {/* Real status, not decoration (see the server component's own
-                comment on where this comes from) - matches the Stitch
-                dashboard's own header exactly: a permanent status pill,
-                green/"Accepting Online Bookings" in the normal case,
-                switching to the warning treatment on the one day it's
-                actually false. Previously shown only for the abnormal
-                case on the theory that a permanent positive pill was
-                chrome nobody needed to see 365 days a year - reversed on
-                request: this is the Stitch source's own real treatment,
-                confirmed against the generated screenshot, not a
-                fabricated addition. */}
-            <Link
-              href={`/${slug}/admin/billing`}
-              className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium border ${
-                acceptingBookings
-                  ? 'bg-success-bg text-success border-success-border'
-                  : 'bg-warning-bg text-warning border-warning-border'
-              }`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
-              <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
-              <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
-            </Link>
+        {/* Date + status pill get their own short line - always plenty of
+            room for these regardless of width, no reason to share a row. */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+          {/* Uppercase + tracking-wide, matching the Stitch header's own
+              date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
+          <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
+            <span className="sm:hidden">{dateLabelShort}</span>
+            <span className="hidden sm:inline">{dateLabelLong}</span>
+          </span>
+          {/* Real status, not decoration (see the server component's own
+              comment on where this comes from) - matches the Stitch
+              dashboard's own header exactly: a permanent status pill,
+              green/"Accepting Online Bookings" in the normal case,
+              switching to the warning treatment on the one day it's
+              actually false. Previously shown only for the abnormal
+              case on the theory that a permanent positive pill was
+              chrome nobody needed to see 365 days a year - reversed on
+              request: this is the Stitch source's own real treatment,
+              confirmed against the generated screenshot, not a
+              fabricated addition. */}
+          <Link
+            href={`/${slug}/admin/billing`}
+            className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium border ${
+              acceptingBookings
+                ? 'bg-success-bg text-success border-success-border'
+                : 'bg-warning-bg text-warning border-warning-border'
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
+            <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
+            <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
+          </Link>
+        </div>
+        {/* Actions paired with the greeting, not the date/status line -
+            confirmed live: on mobile, the old flex-col row put them on a
+            full width line of their own, floating above "Good morning,
+            X" with nothing else on that row to justify the space. The
+            mobile action set is two compact 40px icon buttons (+ and
+            more-menu, see DashboardHeaderActions), which sit comfortably
+            beside a heading instead of needing a whole row - min-w-0 on
+            the text side lets a long business name truncate/wrap instead
+            of pushing the buttons off-screen. */}
+        <div className="flex items-end justify-between gap-3 mt-1">
+          <div className="min-w-0">
+            <h1 className="font-display text-h1 text-ink">
+              {now ? `${greeting}, ${businessName}` : businessName}
+            </h1>
+            <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
           </div>
-          <div className="flex justify-end sm:contents">
+          <div className="shrink-0">
             <DashboardHeaderActions
               slug={slug}
               businessId={businessId}
@@ -272,11 +285,6 @@ export default function AdminDashboardBody({
             />
           </div>
         </div>
-        <h1 className="font-display text-h1 text-ink mt-1">
-          {now ? `${greeting}, ${businessName}` : businessName}
-        </h1>
-        <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
-
       </div>
 
       {/* Was findable only by going looking in the nav (sidebar/rail/
