@@ -228,63 +228,55 @@ export default function AdminDashboardBody({
 
   return (
     <div>
-      {/* Top identity strip: date + status pill, then the actions cluster.
-          Used to be one row at every width (fine back when the status
-          pill only showed up on the rare bad day) - once the pill became
-          permanent (matching Stitch's own always-on treatment), the long
-          date label + full pill text run past 400px combined, against a
-          mobile content column that's only ~335px (px-5 on a 375px
-          screen) - confirmed live as "dashboard mobile is in a bad
-          place." Stacks to two rows below sm: (date+pill, then actions,
-          both full width) and both the date and pill text switch to
-          shorter forms there too; from sm: up there's real room, so it's
-          back to one items-end row like before. */}
+      {/* Top identity strip: date + status pill, greeting and day summary
+          all stack in one column, with the actions cluster centered
+          against that whole three-line block - not paired with just the
+          greeting's own line. Used to be two separate flex rows (date+pill
+          on its own line above a second items-end row pairing the
+          greeting with actions), which meant the actions could only ever
+          align to that second row's own height - reading as floating too
+          high once the date/pill line above it was counted in, not
+          centered on the block as a whole. One row + items-center fixes
+          that; min-w-0 on the text column still lets a long business name
+          truncate/wrap instead of pushing the actions off-screen. */}
       <div className="mb-6">
-        {/* Date + status pill get their own short line - always plenty of
-            room for these regardless of width, no reason to share a row. */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-          {/* Uppercase + tracking-wide, matching the Stitch header's own
-              date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
-          <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
-            <span className="sm:hidden">{dateLabelShort}</span>
-            <span className="hidden sm:inline">{dateLabelLong}</span>
-          </span>
-          {/* Real status, not decoration (see the server component's own
-              comment on where this comes from) - matches the Stitch
-              dashboard's own header exactly: a permanent status pill,
-              green/"Accepting Online Bookings" in the normal case,
-              switching to the warning treatment on the one day it's
-              actually false. Previously shown only for the abnormal
-              case on the theory that a permanent positive pill was
-              chrome nobody needed to see 365 days a year - reversed on
-              request: this is the Stitch source's own real treatment,
-              confirmed against the generated screenshot, not a
-              fabricated addition. */}
-          <Link
-            href={`/${slug}/admin/billing`}
-            className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium border ${
-              acceptingBookings
-                ? 'bg-success-bg text-success border-success-border'
-                : 'bg-warning-bg text-warning border-warning-border'
-            }`}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
-            <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
-            <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
-          </Link>
-        </div>
-        {/* Actions paired with the greeting, not the date/status line -
-            confirmed live: on mobile, the old flex-col row put them on a
-            full width line of their own, floating above "Good morning,
-            X" with nothing else on that row to justify the space. The
-            mobile action set is two compact 40px icon buttons (+ and
-            more-menu, see DashboardHeaderActions), which sit comfortably
-            beside a heading instead of needing a whole row - min-w-0 on
-            the text side lets a long business name truncate/wrap instead
-            of pushing the buttons off-screen. */}
-        <div className="flex items-end justify-between gap-3 mt-1">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="font-display text-h1 text-ink">
+            {/* Date + status pill get their own short line inside the
+                column - always plenty of room for these regardless of
+                width, no reason to share a line with the heading. */}
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+              {/* Uppercase + tracking-wide, matching the Stitch header's own
+                  date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
+                <span className="sm:hidden">{dateLabelShort}</span>
+                <span className="hidden sm:inline">{dateLabelLong}</span>
+              </span>
+              {/* Real status, not decoration (see the server component's own
+                  comment on where this comes from) - matches the Stitch
+                  dashboard's own header exactly: a permanent status pill,
+                  green/"Accepting Online Bookings" in the normal case,
+                  switching to the warning treatment on the one day it's
+                  actually false. Previously shown only for the abnormal
+                  case on the theory that a permanent positive pill was
+                  chrome nobody needed to see 365 days a year - reversed on
+                  request: this is the Stitch source's own real treatment,
+                  confirmed against the generated screenshot, not a
+                  fabricated addition. */}
+              <Link
+                href={`/${slug}/admin/billing`}
+                className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[11px] font-medium border ${
+                  acceptingBookings
+                    ? 'bg-success-bg text-success border-success-border'
+                    : 'bg-warning-bg text-warning border-warning-border'
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
+                <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
+                <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
+              </Link>
+            </div>
+            <h1 className="font-display text-h1 text-ink mt-1">
               {now ? `${greeting}, ${businessName}` : businessName}
             </h1>
             <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
