@@ -1,0 +1,48 @@
+name: Scheduled jobs
+
+# Runs the app's background jobs on a schedule, independent of whichever
+# host actually serves vanovahub.com - originally these ran as Vercel
+# Cron (see vercel.json), but Hostinger's Node.js hosting has no cron
+# feature at all, so GitHub Actions does the scheduling instead and just
+# hits the same routes over HTTPS. Schedules match vercel.json exactly
+# (all times UTC, cron's native timezone).
+on:
+  schedule:
+    - cron: '0 7 * * *'  # send-owner-reminders - daily 07:00 UTC
+    - cron: '0 8 * * *'  # send-reminders - daily 08:00 UTC
+    - cron: '0 8 * * 1'  # weekly-insights - Mondays 08:00 UTC
+    - cron: '0 9 * * *'  # billing-warnings - daily 09:00 UTC
+    - cron: '0 10 * * *' # timeout-owner-reviews - daily 10:00 UTC
+    - cron: '0 3 * * *'  # reset-demo-data - daily 03:00 UTC
+  workflow_dispatch: {} # allows manually triggering all jobs from the Actions tab, for testing
+
+jobs:
+  run-due-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the route matching this trigger's schedule
+        run: |
+          case "${{ github.event.schedule }}" in
+            '0 7 * * *')  ROUTE=send-owner-reminders ;;
+            '0 8 * * *')  ROUTE=send-reminders ;;
+            '0 8 * * 1')  ROUTE=weekly-insights ;;
+            '0 9 * * *')  ROUTE=billing-warnings ;;
+            '0 10 * * *') ROUTE=timeout-owner-reviews ;;
+            '0 3 * * *')  ROUTE=reset-demo-data ;;
+            *) echo "Manual run - hitting all routes"; ROUTE=all ;;
+          esac
+
+          hit() {
+            echo "GET https://vanovahub.com/api/cron/$1"
+            status=$(curl -s -o /dev/null -w '%{http_code}' "https://vanovahub.com/api/cron/$1")
+            echo "-> $status"
+            if [ "$status" -ge 400 ]; then exit 1; fi
+          }
+
+          if [ "$ROUTE" = "all" ]; then
+            for r in send-owner-reminders send-reminders weekly-insights billing-warnings timeout-owner-reviews reset-demo-data; do
+              hit "$r"
+            done
+          else
+            hit "$ROUTE"
+          fi
