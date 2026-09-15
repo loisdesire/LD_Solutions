@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
 import { sendTelegramMessage, sendWhatsappMessage, sendMessengerMessage } from '@/lib/channelSend';
 import { parseContact } from '@/lib/contact';
@@ -6,6 +7,21 @@ import { loadConversation, saveConversation, type ChatMessage } from '@/lib/what
 import { MAX_HISTORY } from '@/lib/whatsappAgent';
 import { getNotifyCreds } from '@/lib/notifyCustomer';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// PostgREST reports a table that doesn't exist yet (the migration hasn't
+// reached this database) as PGRST205, confirmed live elsewhere in this
+// codebase (lib/assistantHistory.ts) - a business replying to a customer
+// must never fail just because owner_reviews doesn't exist yet on a given
+// deployment.
+function isMissingOwnerReviewsTable(error: { code?: string } | null): boolean {
+  return error?.code === 'PGRST205';
+}
 
 // GET /api/admin/message-customer?slug=...&customerPhone=... - the same
 // history the AI agent already reads for context (lib/whatsappTools.ts
@@ -95,6 +111,21 @@ export async function POST(req: NextRequest) {
   const newTurn: ChatMessage = { role: 'assistant', content: message };
   const updated = [...history, newTurn].slice(-MAX_HISTORY);
   await saveConversation(auth.business.id, customerPhone, updated);
+
+  // A staff member replying to this customer at all - through the exact
+  // flow they'd already use - IS the answer to any pending escalation
+  // (lib/whatsappTools.ts's requestOwnerReview), not a separate action
+  // they need to remember. Best-effort: a failure here shouldn't turn an
+  // otherwise-successful reply into an error response.
+  const { error: reviewError } = await supabaseAdmin
+    .from('owner_reviews')
+    .update({ status: 'answered', resolved_at: new Date().toISOString() })
+    .eq('business_id', auth.business.id)
+    .eq('customer_phone', customerPhone)
+    .eq('status', 'pending');
+  if (reviewError && !isMissingOwnerReviewsTable(reviewError)) {
+    logError('api/admin/message-customer:resolve-review', reviewError, { businessId: auth.business.id });
+  }
 
   return NextResponse.json({ sent: true });
 }

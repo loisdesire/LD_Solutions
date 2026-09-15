@@ -1068,3 +1068,32 @@ create policy "staff can manage own business reminders"
 drop trigger if exists reject_demo_writes on owner_reminders;
 create trigger reject_demo_writes before insert or update or delete on owner_reminders
   for each row execute function reject_demo_viewer_writes();
+
+-- ============================================
+-- Human-in-the-loop escalation (customer-facing chat only)
+-- ============================================
+-- When the AI hits something genuinely outside its own judgement - a very
+-- specific custom request it can't verify, a policy call only the owner
+-- should make - it escalates instead of guessing. Zero policies, service-
+-- role only, same pattern as payout_transfers/whatsapp_conversations: this
+-- is an internal mechanism between the agent and a cron, not something a
+-- business's own client-side code ever queries directly.
+create table if not exists owner_reviews (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid references businesses(id) on delete cascade not null,
+  -- Same opaque per-channel identifier as bookings.customer_phone (see
+  -- lib/whatsappTools.ts's ToolContext) - 'telegram:123', 'web:<uuid>', etc.
+  customer_phone text not null,
+  customer_label text not null,
+  question text not null,
+  -- 'pending' | 'answered' | 'timed_out'. Answered the moment a staff
+  -- member sends ANY reply to this customer through the existing
+  -- /api/admin/message-customer route - not a separate "resolve" action,
+  -- so an owner replying the normal way (which they'd do anyway) closes
+  -- the loop with nothing extra to remember.
+  status text not null default 'pending',
+  created_at timestamptz default now(),
+  resolved_at timestamptz
+);
+create index if not exists owner_reviews_pending_idx on owner_reviews (business_id, status) where status = 'pending';
+alter table owner_reviews enable row level security;

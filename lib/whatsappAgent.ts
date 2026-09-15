@@ -14,6 +14,7 @@ import {
   type ToolContext,
   type ChatMessage,
   checkPayment,
+  requestOwnerReview,
 } from './whatsappTools';
 import { dateGroundingBlock } from './timezone';
 import { formatMoney } from './formatMoney';
@@ -140,6 +141,26 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       parameters: { type: 'object', properties: {} },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'request_owner_review',
+      description:
+        'Escalate a specific, genuinely hard-to-judge request to the business owner instead of guessing - a very ' +
+        "specific custom request you have no way to verify, a policy call only the owner should make. This is RARE: " +
+        'never use it for anything you can reasonably answer yourself from what you already know about the business ' +
+        '(hours, services, prices, availability). Using this means the customer waits on a real person instead of ' +
+        'getting an instant answer - only worth that cost when guessing would genuinely risk giving them wrong information.',
+      parameters: {
+        type: 'object',
+        properties: {
+          question: { type: 'string', description: 'Plain-language summary of what the owner needs to weigh in on.' },
+          customer_name: { type: 'string', description: "The customer's name, if they've given it - omit if not." },
+        },
+        required: ['question'],
+      },
+    },
+  },
 ];
 
 // Only offered to the model when the business is on the business_intelligence
@@ -197,6 +218,11 @@ async function executeTool(name: string, args: Record<string, unknown>, ctx: Too
       return checkPayment(ctx);
     case 'get_busy_times':
       return getBusyTimes(ctx.businessId);
+    case 'request_owner_review':
+      return requestOwnerReview(ctx, {
+        question: String(args.question),
+        customerName: args.customer_name ? String(args.customer_name) : undefined,
+      });
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -311,6 +337,14 @@ again with the exact same service/date/time - it's safe, it recognises their exi
 back a fresh link on it rather than creating a second booking. There is no real limit on how many times you can do
 this; never invent a policy like "I can only send the link once" or tell them to go find another way to pay - a
 fresh link on request is exactly what this tool is for.
+RARELY, a customer asks something you genuinely have no way to answer confidently - not "what are your hours"
+(you know that), but a very specific custom request, or something that's really the owner's own call to make. For
+that, and ONLY that, use request_owner_review: tell the customer plainly you're checking with the team and will be
+right back, and do not guess in the meantime. This is expensive to the customer (a real wait, not an instant
+answer), so it should be genuinely rare - reaching for it because you're mildly unsure is worse than just answering
+with what you actually know. If they follow up about something else while waiting, answer that normally; if they
+ask again about the same pending thing, just reassure them it's still being checked - don't call the tool twice for
+one question.
 Always confirm the service, date, and time back to the customer in plain language before calling create_booking -
 and "before" means your ENTIRE reply is that confirmation and nothing else, ending with a real question ("shall I
 book that?" or similar). Do not call create_booking in that same reply, even if you already have every detail you

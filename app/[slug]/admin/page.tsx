@@ -142,6 +142,22 @@ export default async function AdminDashboard({
   if (recentError) logError('admin/dashboard:recent-bookings-query', recentError, { businessId: business.id });
   if (pastError) logError('admin/dashboard:past-bookings-query', pastError, { businessId: business.id });
 
+  // A pending owner_reviews row (lib/whatsappTools.ts's requestOwnerReview) -
+  // the customer-facing AI escalating something it wouldn't guess at.
+  // Missing-table (migration not run yet) degrades to "no pending reviews"
+  // rather than breaking the whole dashboard, same pattern as every other
+  // not-yet-migrated fallback in this file.
+  const { data: pendingReviewRows, error: reviewsError } = await supabaseAdmin
+    .from('owner_reviews')
+    .select('id, customer_phone, customer_label, question, created_at')
+    .eq('business_id', business.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  if (reviewsError && reviewsError.code !== 'PGRST205') {
+    logError('admin/dashboard:owner-reviews-query', reviewsError, { businessId: business.id });
+  }
+  const pendingReviews = pendingReviewRows ?? [];
+
   // One list for the table, deduped: the two windows overlap by design, so
   // a booking from the last few days appears in both.
   const seen = new Set<string>();
@@ -252,6 +268,7 @@ export default async function AdminDashboard({
       paymentDone={Boolean(business.flw_subaccount_id)}
       hasLogo={Boolean(business.logo_url)}
       hasDescription={Boolean(business.description?.trim())}
+      pendingReviews={pendingReviews}
     />
   );
 }

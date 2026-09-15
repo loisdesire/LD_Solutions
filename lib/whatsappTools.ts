@@ -9,7 +9,7 @@ import { canAcceptBookings } from './subscription-server';
 import { SITE_URL } from './site';
 import { initializeSplitTransaction, verifyTransaction } from './flutterwave';
 import { formatMoney } from './formatMoney';
-import { notifyStaffOfNewBooking } from './pushNotify';
+import { notifyStaffOfNewBooking, notifyStaffOfOwnerReviewRequest } from './pushNotify';
 import { pickAvailableStaffId } from './assignStaff';
 import { logError } from './logger';
 import { randomUUID } from 'crypto';
@@ -625,6 +625,53 @@ export async function checkPayment(ctx: ToolContext) {
     };
   }
   return { confirmed: false, instructions: "Couldn't verify that payment. Ask the customer to contact the business directly." };
+}
+
+// The escape hatch for "genuinely shouldn't guess" - a specific custom
+// request the AI has no way to verify, a policy call only the owner
+// should make. Deliberately narrow by design (see the system prompt in
+// whatsappAgent.ts, which is explicit that this is rare, not a general
+// "I'm not sure" button): every time this fires, the customer waits on a
+// real person instead of getting an instant answer, which is a real cost
+// against the whole point of an always-on AI receptionist. Getting the
+// trigger too broad turns this back into the exact phone-babysitting
+// problem Vanova exists to remove; too narrow, and the AI still guesses
+// at things it shouldn't. Resolved one of two ways: a staff member
+// replies to this customer through the normal conversation
+// (/api/admin/message-customer marks it answered automatically, nothing
+// extra for the owner to do) or the timeout cron marks it timed_out and
+// sends the customer an honest fallback if nobody answers in time - never
+// left silently hanging either way.
+export async function requestOwnerReview(ctx: ToolContext, args: { question: string; customerName?: string }) {
+  const label = args.customerName?.trim() || 'A customer';
+  const question = args.question.trim();
+  if (!question) return { error: 'No real question given.' };
+
+  const { error } = await supabaseAdmin.from('owner_reviews').insert({
+    business_id: ctx.businessId,
+    customer_phone: ctx.customerPhone,
+    customer_label: label,
+    question,
+  });
+  if (error) {
+    logError('whatsappTools:requestOwnerReview', error, { businessId: ctx.businessId });
+    return { error: "Couldn't reach the team right now - answer as best you honestly can, or suggest the customer try again shortly." };
+  }
+
+  // Best-effort - a missed notification isn't a reason to fail the whole
+  // escalation and leave the AI stuck with no path forward at all. The
+  // review row itself is the source of truth either way; the timeout cron
+  // is the real backstop if the push/email never lands.
+  await notifyStaffOfOwnerReviewRequest(ctx.businessId, { customerLabel: label, question }).catch(() => {});
+
+  return {
+    escalated: true,
+    instructions:
+      "Tell the customer, warmly and in one short message, that you're checking this with the team and will get right back " +
+      "to them - do not guess an answer yourself, and do not say this is booked/confirmed/decided. If they message again " +
+      "about something UNRELATED, answer that normally. If they ask again about the SAME thing, just reassure them it's " +
+      "still being checked - do not call this tool a second time for the same question.",
+  };
 }
 
 // The one place a held booking becomes a real one. Both the webhook and

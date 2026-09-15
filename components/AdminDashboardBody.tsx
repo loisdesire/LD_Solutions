@@ -8,6 +8,7 @@ import BookingsList from './BookingsList';
 import SetupChecklist from './SetupChecklist';
 import ProfileReminderBanner from './ProfileReminderBanner';
 import EnableNotificationsBanner from './EnableNotificationsBanner';
+import ConversationPanel from './ConversationPanel';
 import { formatMoney } from '@/lib/formatMoney';
 
 type Booking = {
@@ -121,6 +122,7 @@ export default function AdminDashboardBody({
   paymentDone,
   hasLogo,
   hasDescription,
+  pendingReviews,
 }: {
   slug: string;
   businessName: string;
@@ -144,8 +146,19 @@ export default function AdminDashboardBody({
   paymentDone: boolean;
   hasLogo: boolean;
   hasDescription: boolean;
+  // lib/whatsappTools.ts's requestOwnerReview - the customer-facing AI
+  // escalating something it wouldn't guess at. Empty on a database the
+  // owner_reviews migration hasn't reached yet, same as any other
+  // not-yet-migrated feature - never breaks the rest of the dashboard.
+  pendingReviews: { id: string; customer_phone: string; customer_label: string; question: string; created_at: string }[];
 }) {
   const [search, setSearch] = useState('');
+  // Which pending review's conversation is open, if any - opens the same
+  // ConversationPanel a "message this customer" flow already uses
+  // elsewhere; a reply sent through it marks the review answered
+  // automatically (app/api/admin/message-customer's own doing), nothing
+  // extra to track here beyond which one is currently open.
+  const [openReview, setOpenReview] = useState<{ customerPhone: string; customerLabel: string } | null>(null);
 
   // Starts null so the server-rendered markup and the first client render
   // match exactly (a stale server-time "in 45m" badge, or a hydration
@@ -286,6 +299,46 @@ export default function AdminDashboardBody({
           </div>
         </div>
       </div>
+
+      {/* lib/whatsappTools.ts's requestOwnerReview - the customer-facing AI
+          escalating something it wouldn't guess at, waiting on a real
+          reply. Shown above the notifications nudge and setup checklist -
+          a real customer waiting on an answer is more urgent than either.
+          Renders nothing once there's nothing pending. */}
+      {pendingReviews.length > 0 && (
+        <div className="mb-6 rounded-xl border border-accent shadow-soft overflow-hidden" style={{ background: 'var(--accent-soft)' }}>
+          <div className="px-4 sm:px-5 py-3 border-b border-line flex items-center gap-2">
+            <Icon name="priority_high" size={17} className="text-accent" />
+            <p className="text-[13px] font-semibold text-ink">
+              {pendingReviews.length === 1 ? 'A customer is waiting on your input' : `${pendingReviews.length} customers are waiting on your input`}
+            </p>
+          </div>
+          <div className="divide-y divide-line">
+            {pendingReviews.map((r) => (
+              <div key={r.id} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold text-ink truncate">{r.customer_label}</p>
+                  <p className="text-[13px] text-ink-soft truncate">{r.question}</p>
+                </div>
+                <button
+                  onClick={() => setOpenReview({ customerPhone: r.customer_phone, customerLabel: r.customer_label })}
+                  className="shrink-0 inline-flex items-center h-8 rounded-md bg-accent px-3.5 text-[12.5px] font-semibold text-accent-contrast hover:opacity-90 active:scale-95 transition-all"
+                >
+                  Reply
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {openReview && (
+        <ConversationPanel
+          slug={slug}
+          customerPhone={openReview.customerPhone}
+          customerLabel={openReview.customerLabel}
+          onClose={() => setOpenReview(null)}
+        />
+      )}
 
       {/* Was findable only by going looking in the nav (sidebar/rail/
           mobile menu) - this puts the same ask on the one screen

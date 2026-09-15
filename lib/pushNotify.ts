@@ -150,3 +150,35 @@ export async function notifyStaffOfReminder(businessId: string, message: string)
     tag: 'vanova-owner-reminder',
   });
 }
+
+// Fired by lib/whatsappTools.ts's requestOwnerReview - the customer-facing
+// AI escalating something it genuinely shouldn't guess at, instead of
+// answering with false confidence. Deliberately push + email both, same
+// reach as a new-booking alert: a review that nobody sees times out and
+// leaves the customer hanging, which is worse than the AI never having
+// this escalation path at all. url routes straight to the dashboard,
+// where the pending-review banner lives - not a dedicated review page,
+// so this reuses the exact same "answer via the normal customer
+// conversation" flow an owner already knows (ConversationPanel /
+// /api/admin/message-customer).
+export async function notifyStaffOfOwnerReviewRequest(
+  businessId: string,
+  payload: { customerLabel: string; question: string }
+): Promise<boolean> {
+  const { data: business } = await supabaseAdmin.from('businesses').select('slug').eq('id', businessId).maybeSingle();
+  return Promise.all([
+    sendPushToBusiness(businessId, {
+      title: `${payload.customerLabel} needs your input`,
+      body: payload.question,
+      url: business?.slug ? `/${business.slug}/admin` : '/',
+      tag: 'vanova-owner-review',
+    }),
+    notifyOwnerByEmail(businessId, {
+      subject: `${payload.customerLabel} needs your input`,
+      heading: 'Your AI assistant needs a quick answer',
+      intro: `${payload.customerLabel} asked something the assistant didn't want to guess at:`,
+      rows: [{ label: 'Question', value: payload.question }],
+      logContext: 'notifyStaffOfOwnerReviewRequest:email',
+    }),
+  ]).then(([pushed]) => pushed);
+}
