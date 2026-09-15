@@ -5,6 +5,7 @@ import SiteContentManager from '@/components/SiteContentManager';
 import BookingRulesManager from '@/components/BookingRulesManager';
 import PaymentsManager from '@/components/PaymentsManager';
 import SettingsSections from '@/components/SettingsSections';
+import EmailVerificationBanner from '@/components/EmailVerificationBanner';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -24,9 +25,9 @@ export default async function SettingsPage({
   // own RLS policies are the real boundary; this redirect just keeps a
   // non-owner from landing on a page that would only fail once they
   // tried to save something.
-  const { business, supabase } = await requireStaffSession(slug, { requireOwner: true });
+  const { business, supabase, user } = await requireStaffSession(slug, { requireOwner: true });
 
-  let [{ data: rules }, { data: bizRow }] = await Promise.all([
+  let [{ data: rules }, { data: bizRow }, { data: ownStaff }] = await Promise.all([
     supabase
       .from('booking_rules')
       .select('webhook_url, buffer_minutes, max_advance_days, cancellation_window_hours, require_payment, deposit_percentage')
@@ -50,6 +51,15 @@ export default async function SettingsPage({
       )
       .eq('id', business.id)
       .single(),
+    // Own row, not the whole staff list - this page only needs to know
+    // whether the person looking at it has confirmed their own email, to
+    // decide whether EmailVerificationBanner shows below.
+    supabase
+      .from('staff')
+      .select('email, email_verified_at')
+      .eq('business_id', business.id)
+      .eq('auth_id', user.id)
+      .maybeSingle(),
   ]);
 
   // Same reasoning as the booking route: before the payments migration
@@ -104,6 +114,15 @@ export default async function SettingsPage({
           already put you here by name ("Payments", "Business profile"...),
           so the generic one was pure repetition. SettingsSections owns the
           page's one real heading now. */}
+      {/* Only rendered once we positively know the row exists and is
+          unverified - ownStaff is null both while the query is genuinely
+          empty (shouldn't happen, requireStaffSession already confirmed
+          this staff row exists) and if the query itself failed, and
+          neither of those should read as "go verify your email". */}
+      {ownStaff && !ownStaff.email_verified_at && (
+        <EmailVerificationBanner slug={slug} email={ownStaff.email} />
+      )}
+
       {loadFailed && (
         <div role="alert" className="mb-6 rounded-xl bg-error-bg border border-error-border px-4 py-3">
           <p className="text-body-sm text-error">
