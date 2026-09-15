@@ -1097,3 +1097,23 @@ create table if not exists owner_reviews (
 );
 create index if not exists owner_reviews_pending_idx on owner_reviews (business_id, status) where status = 'pending';
 alter table owner_reviews enable row level security;
+
+-- ============================================
+-- Email verification (staff/owner accounts)
+-- ============================================
+-- Owners get into their new booking page immediately at signup
+-- (email_confirm: true on the auth user in app/api/signup/route.ts - the
+-- product promise is a two-minute path to a working booking page), which
+-- means nothing ever actually confirmed the address they typed was real
+-- or theirs. This tracks that independently of Supabase's own auth
+-- confirmation flag, without gating anything: a verification email goes
+-- out at signup time and email_verified_at stays null until the link in
+-- it is clicked (see app/api/staff/verify-email/route.ts). Nothing
+-- currently checks this column to restrict access - it exists so a
+-- future feature (e.g. requiring verification before payouts) has
+-- something real to check instead of adding this from scratch under
+-- time pressure.
+alter table staff add column if not exists email_verified_at timestamptz;
+alter table staff add column if not exists email_verify_token uuid not null default gen_random_uuid();
+
+create unique index if not exists staff_email_verify_token_idx on staff (email_verify_token);

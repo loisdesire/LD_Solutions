@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 import { cleanEmail, cleanRequiredText, cleanSlug, isAcceptablePassword } from '@/lib/apiValidation';
+import { sendEmail } from '@/lib/email';
+import { renderEmail } from '@/lib/emailTemplate';
+import { SITE_URL } from '@/lib/site';
 
 // Uses the service role key because this needs to create both an auth user
 // and rows in businesses/staff - the anon key + RLS policies aren't meant
@@ -74,16 +77,28 @@ export async function POST(req: NextRequest) {
 
     if (bizError || !business) throw new Error(bizError?.message ?? 'Failed to create business');
 
+    let staffRow: { id: string; email_verify_token: string } | null = null;
     try {
-      // 4. Create the owner's staff row, tagged to this business
-      const { error: staffError } = await supabaseAdmin.from('staff').insert({
-        business_id: business.id,
-        auth_id: authUser.user.id,
-        name: businessName,
-        email: ownerEmail,
-        role: 'owner',
-      });
-      if (staffError) throw new Error(`Failed to link account to business: ${staffError.message}`);
+      // 4. Create the owner's staff row, tagged to this business.
+      // .select() back for email_verify_token: email_confirm: true above
+      // means Supabase already treats this address as confirmed (that's
+      // what lets the sign-in right after this route succeed immediately),
+      // but nothing ever actually verified the owner typed a real address
+      // they control. This token is that separate, non-blocking check -
+      // see the verification email sent below.
+      const { data: newStaff, error: staffError } = await supabaseAdmin
+        .from('staff')
+        .insert({
+          business_id: business.id,
+          auth_id: authUser.user.id,
+          name: businessName,
+          email: ownerEmail,
+          role: 'owner',
+        })
+        .select('id, email_verify_token')
+        .single();
+      if (staffError || !newStaff) throw new Error(`Failed to link account to business: ${staffError?.message ?? 'unknown error'}`);
+      staffRow = newStaff;
 
       // 5. Default booking rules so the business works out of the box
       const { error: rulesError } = await supabaseAdmin
@@ -105,6 +120,39 @@ export async function POST(req: NextRequest) {
       // business row cascades to staff/booking_rules/subscriptions on delete
       await supabaseAdmin.from('businesses').delete().eq('id', business.id);
       throw err;
+    }
+
+    // 7. Verification email - deliberately outside the rollback try above
+    // and never awaited-into-a-throw: signup access isn't gated on this
+    // (see the schema comment on staff.email_verified_at), so a Resend
+    // outage or a typo'd address must never undo an otherwise-successful
+    // signup. Best-effort, logged on failure, exactly like the staff
+    // invite email in api/staff/notify-invite.
+    if (staffRow) {
+      try {
+        const verifyUrl = `${SITE_URL}/${encodeURIComponent(slug)}/verify-email?token=${encodeURIComponent(staffRow.email_verify_token)}`;
+        await sendEmail(
+          {
+            to: ownerEmail,
+            subject: `Verify your email for ${businessName}`,
+            html: renderEmail({
+              businessName,
+              accentColor: business.accent_color,
+              logoUrl: business.logo_url,
+              preheader: `Confirm ${ownerEmail} for your Vanova account`,
+              heading: 'Verify your email',
+              intro: `Your booking page is live. Confirm ${ownerEmail} is the right address so we can always reach you about bookings, payments, and your account.`,
+              cta: { label: 'Verify email', url: verifyUrl },
+              footerNote: "If you didn't create this account, you can safely ignore this email.",
+            }),
+            fromName: businessName,
+          },
+          'api/signup:verify-email',
+          { businessId: business.id }
+        );
+      } catch (err) {
+        logError('api/signup:verify-email', err, { businessId: business.id });
+      }
     }
 
     return NextResponse.json({ business });
