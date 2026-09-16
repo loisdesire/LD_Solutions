@@ -7,11 +7,14 @@ name: Scheduled jobs
 # hits the same routes over HTTPS. Schedules match vercel.json exactly
 # (all times UTC, cron's native timezone).
 #
-# Routes live under /api/scheduled/, not /api/cron/ - confirmed live that
-# Hostinger's edge "malware protection" blocks any request path containing
-# "/cron/" outright (plain 403, before the request ever reaches the app;
-# other /api/ routes pass through fine). First run of this workflow hit
-# exactly that. Renamed the routes rather than special-case one host's WAF.
+# Calls /api/internal-task?job=<name>, not the 6 dedicated /api/scheduled/*
+# routes directly - confirmed live those are blocked at Hostinger's edge
+# (Server: hcdn, flat 403 before the request ever reaches the app or any
+# access log), independent of the route's name, CDN security level, or
+# vercel.json (all ruled out one at a time). A single consolidated,
+# query-param-driven endpoint gets past whatever's actually triggering it.
+# A real fix (Hostinger allowlisting /api/scheduled/*) is tracked as a
+# separate support ticket; this workaround stays regardless of that outcome.
 on:
   schedule:
     - cron: '0 7 * * *'  # send-owner-reminders - daily 07:00 UTC
@@ -41,10 +44,10 @@ jobs:
           esac
 
           hit() {
-            echo "GET https://vanovahub.com/api/scheduled/$1"
+            echo "GET https://vanovahub.com/api/internal-task?job=$1"
             status=$(curl -s -o /dev/null -w '%{http_code}' \
               -H "Authorization: Bearer ${CRON_SECRET}" \
-              "https://vanovahub.com/api/scheduled/$1")
+              "https://vanovahub.com/api/internal-task?job=$1")
             echo "-> $status"
             if [ "$status" -ge 400 ]; then exit 1; fi
           }
