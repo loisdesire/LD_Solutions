@@ -14,7 +14,19 @@ export default function LandingMobileNav({ demoHref }: { demoHref: string }) {
     { href: '#how-it-works', label: 'How it works' },
     { href: '#features', label: 'Features' },
     { href: '#pricing', label: 'Pricing' },
+    { href: '#faq', label: 'FAQ' },
     { href: demoHref, label: 'Try the live demo' },
+  ];
+
+  // Business login / My bookings only ever lived in the footer - on
+  // mobile's single-column, much-taller layout, that meant a returning
+  // user scrolling past the entire homepage just to log in. Split out
+  // from `links` above (rather than appended to the same array) since
+  // these aren't page-section jumps - real navigation, visually set apart
+  // with a divider below.
+  const loginLinks = [
+    { href: '/login', label: 'Business login' },
+    { href: '/account/login', label: 'My bookings' },
   ];
 
   return (
@@ -24,7 +36,10 @@ export default function LandingMobileNav({ demoHref }: { demoHref: string }) {
         aria-expanded={open}
         aria-controls="landing-mobile-menu"
         aria-label={open ? 'Close menu' : 'Open menu'}
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-ink-soft hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
+        // 44x44px tap area (WCAG 2.5.5 / Apple HIG minimum) via padding,
+        // not a bigger icon - the icon itself stays 18px, only the hit
+        // area grows.
+        className="h-11 w-11 flex items-center justify-center rounded-lg text-ink-soft hover:bg-warm-surface hover:text-ink transition-colors shrink-0"
       >
         {open ? (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
@@ -47,7 +62,19 @@ export default function LandingMobileNav({ demoHref }: { demoHref: string }) {
               key={link.label}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="px-1 py-3 text-[15px] font-medium text-ink-soft hover:text-ink transition-colors border-b border-line last:border-0"
+              className="px-1 py-3 text-[15px] font-medium text-ink-soft hover:text-ink transition-colors border-b border-line"
+            >
+              {link.label}
+            </a>
+          ))}
+          {loginLinks.map((link, i) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className={`px-1 py-3 text-[15px] font-medium text-ink-soft hover:text-ink transition-colors ${
+                i < loginLinks.length - 1 ? 'border-b border-line' : ''
+              }`}
             >
               {link.label}
             </a>

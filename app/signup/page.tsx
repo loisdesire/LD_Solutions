@@ -171,6 +171,15 @@ export default function SignupPage() {
           <div className="lg:hidden mb-5">
             <AuthMark name="Vanova" label="Create your booking page" logoUrl="/logo.png" />
           </div>
+          {/* The left panel's trust/motivation copy is hidden entirely
+              below lg, not reflowed - a mobile visitor landing directly on
+              /signup (an ad, a shared link, the nav CTA) saw a bare form
+              with no restatement of why they're doing this or what's free.
+              This is that copy's condensed survival on mobile: one line,
+              not the full three-bullet panel. */}
+          <p className="lg:hidden text-[13px] text-ink-soft mb-5">
+            Free to start, no setup fees - your own booking link, share it anywhere.
+          </p>
           <h2 className="font-display text-[26px] mb-6 sm:mb-7">Create your account</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
