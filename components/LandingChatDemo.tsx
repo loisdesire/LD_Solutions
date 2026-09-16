@@ -174,8 +174,19 @@ export default function LandingChatDemo() {
             alone on its own row) once there's a real desktop-width column
             to wrap within. -mx-4/px-4 lets the scroll row bleed to the
             true edge on mobile without clipping a chip's focus ring. */}
-        <div className="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 -mx-4 px-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-3 lg:overflow-visible">
-          {pickerTypes.map((biz) => {
+        {/* relative wrapper + the fade div below it: scrollbar-none hides
+            the one native signal a horizontally-scrollable row normally
+            gives for free, and nothing else here told a visitor there was
+            more to swipe to - a real live-testing report found the
+            off-screen chips (Consultants, Photographers, Personal
+            trainers, part of Tutors & coaches) went undiscovered on a
+            real phone. pointer-events-none so the fade never blocks a tap
+            on the last visible chip; lg:hidden matches exactly when the
+            row is actually scrollable (lg switches to the 3-col grid,
+            where there's nothing to hint at). */}
+        <div className="relative">
+          <div className="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 -mx-4 px-4 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-3 lg:overflow-visible">
+            {pickerTypes.map((biz) => {
             const index = landingDemoScripts.findIndex((s) => s.label === biz.label);
             const active = selected === index;
             return (
@@ -211,6 +222,11 @@ export default function LandingChatDemo() {
               </button>
             );
           })}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 inset-y-0 w-10 bg-gradient-to-l from-[var(--paper)] to-transparent lg:hidden"
+          />
         </div>
 
         {/* The customer/owner toggle moved here, under the picker - both
