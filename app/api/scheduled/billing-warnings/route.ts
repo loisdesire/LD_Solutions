@@ -11,8 +11,9 @@ const supabaseAdmin = createClient(
 
 const TRIAL_WARNING_WINDOW_DAYS = 3;
 
-// GET /api/cron/billing-warnings - triggered by Vercel Cron (see
-// vercel.json), once daily. Two real gaps this closes: nothing ever told
+// GET /api/scheduled/billing-warnings - triggered by Vercel Cron or
+// GitHub Actions (see vercel.json / .github/workflows/cron.yml), once
+// daily. Two real gaps this closes: nothing ever told
 // a business their trial was about to end before access actually cut off
 // (the app only ever checks subscription state live, when a page loads,
 // and redirects to Billing once it's ALREADY expired - reactive, not a

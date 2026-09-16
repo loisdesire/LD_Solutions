@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 
 // Deliberately deterministic, not a live LLM call per business - this
 // runs unattended, once a week, for every Business Intelligence business
-// at once (see app/api/cron/weekly-insights/route.ts). Real numbers,
+// at once (see app/api/scheduled/weekly-insights/route.ts). Real numbers,
 // computed the same way the on-demand insights chat already computes
 // them (compareRevenuePeriods/getCancellationsAndNoShows are the exact
 // functions that chat calls), reused rather than reimplemented - the

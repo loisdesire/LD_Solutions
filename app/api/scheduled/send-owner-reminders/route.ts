@@ -11,8 +11,9 @@ const supabaseAdmin = createClient(
 
 const BATCH_SIZE = 10; // concurrent sends - bounded so a large backlog doesn't all hit the push provider at once
 
-// GET /api/cron/send-owner-reminders - triggered by Vercel Cron (see
-// vercel.json), once daily. Delivers "remind me to call the supplier
+// GET /api/scheduled/send-owner-reminders - triggered by Vercel Cron or
+// GitHub Actions (see vercel.json / .github/workflows/cron.yml), once
+// daily. Delivers "remind me to call the supplier
 // tomorrow at 2pm"-style reminders the assistant created (see
 // lib/manageTools.ts's apply_create_reminder) as a push notification once
 // their remind_at has passed, then marks them sent so a reminder never

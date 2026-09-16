@@ -13,7 +13,8 @@ const supabaseAdmin = createClient(
 const REMINDER_WINDOW_HOURS = 24;
 const BATCH_SIZE = 10; // concurrent sends - bounded so a large backlog doesn't all hit a provider at once
 
-// GET /api/cron/send-reminders - triggered by Vercel Cron (see vercel.json).
+// GET /api/scheduled/send-reminders - triggered by Vercel Cron or GitHub
+// Actions (see vercel.json / .github/workflows/cron.yml).
 // Reminds a customer through whichever channel they actually booked
 // through - email for a direct web booking, the business's own connected
 // Telegram/WhatsApp/Messenger bot for a chat booking - rather than only

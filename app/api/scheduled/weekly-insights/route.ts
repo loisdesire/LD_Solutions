@@ -8,8 +8,9 @@ import { verifyCronSecret } from '@/lib/verifyCronSecret';
 
 const BATCH_SIZE = 5; // concurrent sends - bounded so a large recipient list doesn't all hit Resend at once
 
-// GET /api/cron/weekly-insights - triggered by Vercel Cron (see
-// vercel.json), same auth pattern as /api/cron/send-reminders. Sends
+// GET /api/scheduled/weekly-insights - triggered by Vercel Cron or
+// GitHub Actions (see vercel.json / .github/workflows/cron.yml), same
+// auth pattern as /api/scheduled/send-reminders. Sends
 // every Business Intelligence business's owner a real-numbers recap of
 // their week - see lib/weeklyInsightsDigest.ts for what's in it and why
 // it's computed rather than AI-generated per send.

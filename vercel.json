@@ -1,27 +1,27 @@
 {
   "crons": [
     {
-      "path": "/api/cron/send-reminders",
+      "path": "/api/scheduled/send-reminders",
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/cron/weekly-insights",
+      "path": "/api/scheduled/weekly-insights",
       "schedule": "0 8 * * 1"
     },
     {
-      "path": "/api/cron/send-owner-reminders",
+      "path": "/api/scheduled/send-owner-reminders",
       "schedule": "0 7 * * *"
     },
     {
-      "path": "/api/cron/billing-warnings",
+      "path": "/api/scheduled/billing-warnings",
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/reset-demo-data",
+      "path": "/api/scheduled/reset-demo-data",
       "schedule": "0 3 * * *"
     },
     {
-      "path": "/api/cron/timeout-owner-reviews",
+      "path": "/api/scheduled/timeout-owner-reviews",
       "schedule": "0 10 * * *"
     }
   ]

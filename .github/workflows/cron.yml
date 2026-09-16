@@ -6,6 +6,12 @@ name: Scheduled jobs
 # feature at all, so GitHub Actions does the scheduling instead and just
 # hits the same routes over HTTPS. Schedules match vercel.json exactly
 # (all times UTC, cron's native timezone).
+#
+# Routes live under /api/scheduled/, not /api/cron/ - confirmed live that
+# Hostinger's edge "malware protection" blocks any request path containing
+# "/cron/" outright (plain 403, before the request ever reaches the app;
+# other /api/ routes pass through fine). First run of this workflow hit
+# exactly that. Renamed the routes rather than special-case one host's WAF.
 on:
   schedule:
     - cron: '0 7 * * *'  # send-owner-reminders - daily 07:00 UTC
@@ -21,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call the route matching this trigger's schedule
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           case "${{ github.event.schedule }}" in
             '0 7 * * *')  ROUTE=send-owner-reminders ;;
@@ -33,8 +41,10 @@ jobs:
           esac
 
           hit() {
-            echo "GET https://vanovahub.com/api/cron/$1"
-            status=$(curl -s -o /dev/null -w '%{http_code}' "https://vanovahub.com/api/cron/$1")
+            echo "GET https://vanovahub.com/api/scheduled/$1"
+            status=$(curl -s -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "https://vanovahub.com/api/scheduled/$1")
             echo "-> $status"
             if [ "$status" -ge 400 ]; then exit 1; fi
           }

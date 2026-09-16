@@ -136,7 +136,7 @@ export async function notifyStaffOfCancellation(
   ]);
 }
 
-// Fired by the owner-reminders cron (app/api/cron/send-owner-reminders)
+// Fired by the owner-reminders job (app/api/scheduled/send-owner-reminders)
 // once a reminder's remind_at has passed. Same reach as a new-booking
 // alert - every device any staff member has notifications enabled on, not
 // just whoever originally asked for the reminder (staff_id isn't even
