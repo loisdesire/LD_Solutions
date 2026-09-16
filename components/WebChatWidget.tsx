@@ -492,14 +492,23 @@ export default function WebChatWidget({
                 // its own note on this.
                 readOnly={!inputEditable || thinking || revealing}
                 onChange={(e) => setValue(e.target.value)}
-                onFocus={(e) => {
+                onFocus={() => {
                   if (!inputEditable) {
                     setInputEditable(true);
                     // Removing readOnly can drop the text cursor on some
                     // browsers even though focus itself is kept - putting
                     // it back explicitly is cheap insurance against
-                    // typing starting with no visible caret.
-                    requestAnimationFrame(() => e.currentTarget.focus());
+                    // typing starting with no visible caret. inputRef, not
+                    // e.currentTarget - React nulls out a synthetic
+                    // event's currentTarget once the event finishes
+                    // dispatching, and this callback only runs on the
+                    // NEXT animation frame, by which point e.currentTarget
+                    // is already null (confirmed live: "Cannot read
+                    // properties of null (reading 'focus')", firing on
+                    // every chat open since the input auto-focuses on
+                    // open). inputRef itself is a stable ref to the same
+                    // DOM node and is never nulled this way.
+                    requestAnimationFrame(() => inputRef.current?.focus());
                   }
                 }}
                 onKeyDown={(e) => {
