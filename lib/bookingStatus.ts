@@ -13,7 +13,7 @@ export const STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
   cancelled: 'Cancelled',
   no_show: 'No-show',
-  pending_payment: 'Awaiting payment',
+  pending_payment: 'Pending',
 };
 
 // confirmed is green now, not the brand accent - matches the Stitch

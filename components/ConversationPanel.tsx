@@ -83,7 +83,13 @@ export default function ConversationPanel({
 
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Customer conversation" ref={dialogRef}>
+    // z-[70], not the z-50 this had before - AdminAssistantWidget's own
+    // floating launcher sits at z-[60], which meant that button rendered
+    // ON TOP of this panel's backdrop while it was open, visible and
+    // clickable through what should have been a full-screen modal.
+    // Confirmed live: "why is the assistant thing on the bottom buttons"
+    // while this panel was open - that FAB poking through.
+    <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label="Customer conversation" ref={dialogRef}>
       <div className="absolute inset-0" style={{ background: 'color-mix(in srgb, var(--ink) 20%, transparent)' }} onClick={onClose} />
       <div className="relative w-full max-w-sm bg-surface h-full flex flex-col shadow-soft border-l border-line">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between shrink-0">
@@ -105,15 +111,27 @@ export default function ConversationPanel({
           ) : messages.length === 0 ? (
             <p className="text-[13px] text-ink-faint">No messages yet. When this customer messages your assistant, the conversation appears here.</p>
           ) : (
+            // Same bubble shape/palette as WebChatWidget.tsx and
+            // AssistantChat.tsx now - this panel was a fully separate,
+            // older component reused as-is for this feature, never
+            // restyled to match: rounded-md instead of rounded-2xl with a
+            // tail corner, and the assistant/business side carrying the
+            // bold solid accent fill instead of the soft neutral every
+            // other chat surface in this app uses for an outgoing reply.
+            // Alignment direction stays as it was - customer on the left,
+            // your own business's replies on the right - which is the
+            // sensible way round for a STAFF member reading their own
+            // outbound conversation, unlike the customer-facing widgets
+            // where "user" (the customer) is on the right instead.
             messages.map((m, i) => (
-              <div key={i} className={`animate-rise ${m.role === 'user' ? 'text-left' : 'text-right'}`}>
+              <div key={i} className={`flex animate-rise ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                 <div
                   // whitespace-pre-wrap matters here - bot replies routinely
                   // contain line breaks (lists, multi-line confirmations),
                   // and without it every line just runs together into one
                   // block, which is what "jumbled up" actually was.
-                  className={`inline-block rounded-md px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap max-w-[85%] text-left ${
-                    m.role === 'user' ? 'bg-accent-soft text-ink' : 'bg-accent text-accent-contrast'
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap text-left ${
+                    m.role === 'user' ? 'bg-warm-surface text-ink rounded-bl-md' : 'bg-accent-soft text-ink rounded-br-md'
                   }`}
                 >
                   {m.content}
@@ -123,24 +141,35 @@ export default function ConversationPanel({
           )}
         </div>
 
-        {/* Same inline pill pattern as ProductFinder's compose bar, not a
-            stacked textarea+button - consistent with the rest of the app. */}
-        <form onSubmit={handleSend} className="flex gap-2 p-4 border-t border-line shrink-0">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            aria-label="Reply as your business"
-            placeholder="Reply as your business…"
-            className="flex-1 rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder-ink-faint outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent-soft"
-          />
-          <button
-            type="submit"
-            disabled={sending || !text.trim()}
-            className="rounded-md bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-contrast transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+        {/* Same pill-composer shape as WebChatWidget.tsx now, not the
+            separate bordered-input + text-label-button pair this had
+            before - the one visibly different composer among this app's
+            chat surfaces. */}
+        <div className="shrink-0 border-t border-line p-3">
+          <form
+            onSubmit={handleSend}
+            className="flex items-center gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors"
           >
-            {sending ? 'Sending…' : 'Send'}
-          </button>
-        </form>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              aria-label="Reply as your business"
+              placeholder="Reply as your business…"
+              className="flex-1 bg-transparent border-none outline-none focus:outline-none text-[14px] text-ink placeholder-ink-faint"
+            />
+            <button
+              type="submit"
+              disabled={sending || !text.trim()}
+              aria-label="Send"
+              className="h-9 w-9 rounded-full flex items-center justify-center text-accent-contrast shrink-0 transition-all active:scale-90 disabled:opacity-30"
+              style={{ background: 'var(--accent)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </form>
+        </div>
         {error && <p className="text-[12px] text-error px-4 pb-3">{error}</p>}
       </div>
     </div>
