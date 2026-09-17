@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCloseOnBackButton } from '@/lib/useCloseOnBackButton';
 import { useKeyboardSafeInsets } from '@/lib/useKeyboardSafeInsets';
+import { formatChatText } from '@/lib/formatChatText';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -458,7 +459,7 @@ export default function WebChatWidget({
                   }`}
                   style={m.role === 'user' ? { background: 'var(--accent-soft)' } : undefined}
                 >
-                  {m.content}
+                  {m.role === 'assistant' ? formatChatText(m.content) : m.content}
                 </div>
               </div>
             ))}
