@@ -396,7 +396,7 @@ export default function BookingsList({
                       className={`sm:hidden inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] shrink-0 ${statusStyle(b.status)}`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      {b.status.replace('_', ' ')}
+                      {statusLabel(b.status)}
                     </span>
                   </div>
 
@@ -435,7 +435,7 @@ export default function BookingsList({
                     className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11.5px] uppercase tracking-[0.05em] shrink-0 w-fit ${statusStyle(b.status)}`}
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    {b.status.replace('_', ' ')}
+                    {statusLabel(b.status)}
                   </span>
                 </div>
               </div>

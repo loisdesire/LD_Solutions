@@ -46,7 +46,7 @@ type StatusStyle = { fill: string; edge: string; text: string; label: string };
 const STATUS_STYLE: Record<string, StatusStyle> = {
   confirmed: { fill: 'var(--success-bg)', edge: 'var(--success)', text: 'var(--success)', label: 'Confirmed' },
   completed: { fill: 'var(--success-bg)', edge: 'var(--success-border)', text: 'var(--ink-faint)', label: 'Completed' },
-  pending_payment: { fill: 'var(--warning-bg)', edge: 'var(--warning)', text: 'var(--warning)', label: 'Awaiting payment' },
+  pending_payment: { fill: 'var(--warning-bg)', edge: 'var(--warning)', text: 'var(--warning)', label: 'Pending' },
   no_show: { fill: 'var(--error-bg)', edge: 'var(--error)', text: 'var(--error)', label: 'No-show' },
   cancelled: { fill: 'var(--ink-wash)', edge: 'var(--line-strong)', text: 'var(--ink-faint)', label: 'Cancelled' },
 };
