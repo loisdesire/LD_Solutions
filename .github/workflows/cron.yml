@@ -2,10 +2,13 @@ name: Scheduled jobs
 
 # Runs the app's background jobs on a schedule, independent of whichever
 # host actually serves vanovahub.com - originally these ran as Vercel
-# Cron (see vercel.json), but Hostinger's Node.js hosting has no cron
-# feature at all, so GitHub Actions does the scheduling instead and just
-# hits the same routes over HTTPS. Schedules match vercel.json exactly
-# (all times UTC, cron's native timezone).
+# Cron, but Hostinger's Node.js hosting has no cron feature at all, so
+# GitHub Actions does the scheduling instead and just hits the same
+# routes over HTTPS (all times UTC, cron's native timezone). No longer
+# tied to vercel.json's old schedule (that file's gone - see its own
+# removal commit) - two of these six now run far more often than the
+# original once-daily-only design allowed, see the schedule comments
+# below for why.
 #
 # Calls /api/internal-task?job=<name>, not the 6 dedicated /api/scheduled/*
 # routes directly - confirmed live those are blocked at Hostinger's edge
@@ -17,30 +20,44 @@ name: Scheduled jobs
 # separate support ticket; this workaround stays regardless of that outcome.
 on:
   schedule:
-    - cron: '0 7 * * *'  # send-owner-reminders - daily 07:00 UTC
-    - cron: '0 8 * * *'  # send-reminders - daily 08:00 UTC
-    - cron: '0 8 * * 1'  # weekly-insights - Mondays 08:00 UTC
-    - cron: '0 9 * * *'  # billing-warnings - daily 09:00 UTC
-    - cron: '0 10 * * *' # timeout-owner-reviews - daily 10:00 UTC
-    - cron: '0 3 * * *'  # reset-demo-data - daily 03:00 UTC
+    # send-owner-reminders and timeout-owner-reviews run every 15 minutes,
+    # not daily like the other four - both deal with a specific moment in
+    # time (a reminder set for "2pm today", a 1-hour owner-review SLA -
+    # see lib/... STALE_AFTER_MS), and a once-daily check meant either
+    # could run up to ~23 hours late. The other four (a 24h reminder
+    # window, a weekly digest, a multi-day-out billing warning, a nightly
+    # demo reset) don't have that problem - daily already lines up with
+    # what they're actually checking. GitHub Actions is free regardless of
+    # frequency (unlike Vercel Hobby's daily-only cron limit this was
+    # originally designed around), so there's no cost reason to hold these
+    # two back anymore.
+    - cron: '*/15 * * * *' # send-owner-reminders + timeout-owner-reviews - every 15 min
+    - cron: '0 8 * * *'    # send-reminders - daily 08:00 UTC
+    - cron: '0 8 * * 1'    # weekly-insights - Mondays 08:00 UTC
+    - cron: '0 9 * * *'    # billing-warnings - daily 09:00 UTC
+    - cron: '0 3 * * *'    # reset-demo-data - daily 03:00 UTC
   workflow_dispatch: {} # allows manually triggering all jobs from the Actions tab, for testing
 
 jobs:
   run-due-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Call the route matching this trigger's schedule
+      - name: Call the routes matching this trigger's schedule
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          # A schedule string alone can no longer pick a single route -
+          # send-owner-reminders and timeout-owner-reviews now share the
+          # identical '*/15 * * * *' entry, so this maps to a (possibly
+          # multi-item) list of routes instead of one.
           case "${{ github.event.schedule }}" in
-            '0 7 * * *')  ROUTE=send-owner-reminders ;;
-            '0 8 * * *')  ROUTE=send-reminders ;;
-            '0 8 * * 1')  ROUTE=weekly-insights ;;
-            '0 9 * * *')  ROUTE=billing-warnings ;;
-            '0 10 * * *') ROUTE=timeout-owner-reviews ;;
-            '0 3 * * *')  ROUTE=reset-demo-data ;;
-            *) echo "Manual run - hitting all routes"; ROUTE=all ;;
+            '*/15 * * * *') ROUTES="send-owner-reminders timeout-owner-reviews" ;;
+            '0 8 * * *')    ROUTES="send-reminders" ;;
+            '0 8 * * 1')    ROUTES="weekly-insights" ;;
+            '0 9 * * *')    ROUTES="billing-warnings" ;;
+            '0 3 * * *')    ROUTES="reset-demo-data" ;;
+            *) echo "Manual run - hitting all routes"
+               ROUTES="send-owner-reminders send-reminders weekly-insights billing-warnings timeout-owner-reviews reset-demo-data" ;;
           esac
 
           hit() {
@@ -52,10 +69,6 @@ jobs:
             if [ "$status" -ge 400 ]; then exit 1; fi
           }
 
-          if [ "$ROUTE" = "all" ]; then
-            for r in send-owner-reminders send-reminders weekly-insights billing-warnings timeout-owner-reviews reset-demo-data; do
-              hit "$r"
-            done
-          else
-            hit "$ROUTE"
-          fi
+          for r in $ROUTES; do
+            hit "$r"
+          done
