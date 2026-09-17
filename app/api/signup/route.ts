@@ -122,36 +122,50 @@ export async function POST(req: NextRequest) {
       throw err;
     }
 
-    // 7. Verification email - deliberately outside the rollback try above
-    // and never awaited-into-a-throw: signup access isn't gated on this
-    // (see the schema comment on staff.email_verified_at), so a Resend
-    // outage or a typo'd address must never undo an otherwise-successful
-    // signup. Best-effort, logged on failure, exactly like the staff
-    // invite email in api/staff/notify-invite.
+    // 7. Welcome + verification email, merged into one - deliberately
+    // outside the rollback try above and never awaited-into-a-throw:
+    // signup access isn't gated on this (see the schema comment on
+    // staff.email_verified_at), so a Resend outage or a typo'd address
+    // must never undo an otherwise-successful signup. Best-effort, logged
+    // on failure, exactly like the staff invite email in
+    // api/staff/notify-invite.
+    //
+    // This used to be a bare "Verify your email" notice - the ONLY email
+    // this product sent a brand-new owner, with no actual welcome
+    // anywhere in the signup flow. Merged rather than sent as a second,
+    // separate email: two emails landing back-to-back right after signup
+    // reads as spammier and does nothing the one email below can't do
+    // itself (see the SPF/DKIM/DMARC conversation earlier this session -
+    // deliverability is already a live concern, not a hypothetical one).
     if (staffRow) {
       try {
         const verifyUrl = `${SITE_URL}/${encodeURIComponent(slug)}/verify-email?token=${encodeURIComponent(staffRow.email_verify_token)}`;
+        const bookingPageUrl = `${SITE_URL}/${slug}`;
         await sendEmail(
           {
             to: ownerEmail,
-            subject: `Verify your email for ${businessName}`,
+            subject: `${businessName} is live on Vanova`,
             html: renderEmail({
               businessName,
               accentColor: business.accent_color,
               logoUrl: business.logo_url,
-              preheader: `Confirm ${ownerEmail} for your Vanova account`,
-              heading: 'Verify your email',
-              intro: `Your booking page is live. Confirm ${ownerEmail} is the right address so we can always reach you about bookings, payments, and your account.`,
+              preheader: `Your booking page is ready - confirm ${ownerEmail} to finish setting up`,
+              heading: `You're live, ${businessName}!`,
+              intro:
+                `Your booking page is ready right now - real customers can already find it and book.\n\n` +
+                `One thing left: confirm ${ownerEmail} is the right address, so we can always reach you about bookings and payments. ` +
+                `After that, head back to your setup chat to finish adding your services and hours if you haven't already.`,
+              rows: [{ label: 'Your booking page', value: bookingPageUrl }],
               cta: { label: 'Verify email', url: verifyUrl },
               footerNote: "If you didn't create this account, you can safely ignore this email.",
             }),
             fromName: businessName,
           },
-          'api/signup:verify-email',
+          'api/signup:welcome-email',
           { businessId: business.id }
         );
       } catch (err) {
-        logError('api/signup:verify-email', err, { businessId: business.id });
+        logError('api/signup:welcome-email', err, { businessId: business.id });
       }
     }
 
