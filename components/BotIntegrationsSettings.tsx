@@ -564,7 +564,24 @@ function WhatsappSection({
   }
 
   function handleConnect() {
-    if (!window.FB) return;
+    if (!window.FB) {
+      // Was a silent no-op before - clicking "Connect" while the Facebook
+      // SDK script was still loading (or blocked by an ad blocker) just
+      // did nothing, with no indication anything went wrong. Same fix as
+      // BookingForm.tsx's Flutterwave-script check.
+      setError("The connect window couldn't load. Check your connection (or any ad blocker) and try again.");
+      return;
+    }
+    // Same class of bug as BookingForm.tsx's missing Flutterwave key:
+    // NEXT_PUBLIC_META_APP_ID/NEXT_PUBLIC_META_CONFIG_ID missing means
+    // window.FB.init ran with an undefined appId and this login call
+    // would carry an undefined config_id - Meta's own popup would open
+    // to a confusing or broken state with nothing from this app
+    // explaining why, rather than a clear, actionable message here.
+    if (!process.env.NEXT_PUBLIC_META_APP_ID || !process.env.NEXT_PUBLIC_META_CONFIG_ID) {
+      setError("WhatsApp connect isn't set up correctly on this deployment. Contact support.");
+      return;
+    }
     setError('');
     signupData.current = {};
     setConnecting(true);

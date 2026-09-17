@@ -388,6 +388,18 @@ export default function BookingForm({
         setStatus('error');
         return;
       }
+      // Confirmed live: with this missing, FlutterwaveCheckout's popup
+      // still opens but never actually loads - just spins forever with
+      // no error, on this exact deposit step, for every customer, until
+      // someone happened to notice and check the env var by hand. A
+      // NEXT_PUBLIC_* var missing is silent by nature (undefined, not a
+      // thrown error) - this is the one check that turns that silence
+      // into a message a customer (and the business) can actually act on.
+      if (!process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY) {
+        setErrorMessage("Payment isn't set up correctly on this page. Please contact the business directly - nothing has been charged.");
+        setStatus('error');
+        return;
+      }
       // A foreign-currency quote is still loading, or failed - don't let
       // the checkout open with a stale/local amount under a currency
       // label that doesn't match it.
