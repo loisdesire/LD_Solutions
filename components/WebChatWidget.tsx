@@ -41,6 +41,7 @@ function getSessionId(businessId: string): string {
 export default function WebChatWidget({
   businessId,
   businessName,
+  logoUrl,
   serviceNames = [],
   defaultOpen = false,
   bookingId,
@@ -48,6 +49,8 @@ export default function WebChatWidget({
   businessId: string;
   /** The chat speaks as the business, not as "an assistant". */
   businessName?: string;
+  /** Same fallback as lib/emailTemplate.ts's renderEmail: the real logo when the business has one, a colored initial otherwise - was hardcoded to always show the initial even when a real logo existed. */
+  logoUrl?: string | null;
   /** Openers are drawn from what this business actually sells. */
   serviceNames?: string[];
   // Set when this widget is mounted on demand from somewhere that already
@@ -380,9 +383,14 @@ export default function WebChatWidget({
                 <path d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
-              {businessName?.[0]?.toUpperCase() ?? '?'}
-            </div>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a business-supplied Supabase Storage URL, not a domain next/image is configured for
+              <img src={logoUrl} alt={businessName ?? 'Business logo'} className="h-9 w-9 rounded-xl object-cover shrink-0" />
+            ) : (
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 font-display text-[14px] font-bold text-accent-contrast" style={{ background: 'var(--accent)' }}>
+                {businessName?.[0]?.toUpperCase() ?? '?'}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-semibold text-ink truncate">{businessName ?? 'Ask us anything'}</p>
               <p className="text-[10.5px] text-ink-faint">Chat on the booking page</p>

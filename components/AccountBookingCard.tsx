@@ -164,7 +164,9 @@ export default function AccountBookingCard({
           thread, instead of starting a brand new anonymous one every time
           they message from their account instead of the channel they
           originally used - see app/api/web-chat/route.ts's resolveIdentity. */}
-      {widgetOpen && business?.id && <WebChatWidget businessId={business.id} defaultOpen bookingId={booking.id} />}
+      {widgetOpen && business?.id && (
+        <WebChatWidget businessId={business.id} businessName={business.name} logoUrl={business.logo_url} defaultOpen bookingId={booking.id} />
+      )}
     </div>
   );
 }

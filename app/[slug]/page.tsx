@@ -317,6 +317,7 @@ export default async function BusinessBookingPage({
       <WebChatWidget
         businessId={business.id}
         businessName={business.name}
+        logoUrl={business.logo_url}
         serviceNames={services.map((s: { name: string }) => s.name)}
       />
     </AccentScope>
