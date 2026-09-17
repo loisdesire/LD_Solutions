@@ -85,7 +85,19 @@ export function getSubscriptionState(sub: Subscription | null): SubscriptionStat
     const trialEnd = new Date(sub.trial_ends_at).getTime();
     if (trialEnd > now) {
       const daysLeft = Math.ceil((trialEnd - now) / 86400000);
-      return { hasAccess: true, phase: 'trial', trialDaysLeft: daysLeft, currentPeriodEnd: null, plan };
+      // 'core' unconditionally, not the stored `plan` - a trial preview
+      // should show what actually happens if they subscribe, and every
+      // subscribe action charges Core now (see BillingManager's "One plan
+      // now" comment). A business created before the pricing
+      // simplification can still have 'business_intelligence' sitting in
+      // its row from back when that was a real, separately-priced tier -
+      // showing that stale value during a live trial made it look like
+      // subscribing would charge ₦25,000 when it's actually ₦15,000,
+      // confirmed live on a real trial account. An already-active
+      // subscriber on the legacy rate (the `active`/`cancelling` branches
+      // above) still shows their real stored plan, correctly, since
+      // they're genuinely paying that amount until it changes.
+      return { hasAccess: true, phase: 'trial', trialDaysLeft: daysLeft, currentPeriodEnd: null, plan: 'core' };
     }
   }
 
