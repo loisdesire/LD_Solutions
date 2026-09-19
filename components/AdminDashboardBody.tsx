@@ -55,33 +55,37 @@ function TodayStat({
   /** Kept separate from `sub` so a fall can read differently from a rise. */
   delta?: { value: string; up: boolean };
   color?: string;
-  /** Material Symbols name - mobile-only (own card + icon badge, per a specific reference the user provided), unused at sm: and up where the existing single-strip layout already carries its own treatment. */
+  /** Material Symbols name for this card's icon badge. */
   icon: string;
 }) {
   return (
-    // Two different layouts sharing one component, split at sm: - below
-    // it, each stat is its own bordered card with an icon badge (label +
-    // icon on one row, big number, caption below), matching a mobile
-    // reference the user provided directly rather than this app's own
-    // prior "one shared card, one line" density choice. At sm: and up,
-    // resets straight back to the original flex-row-in-a-shared-card
-    // layout (bg-transparent/border-0/p-0 undo the mobile card chrome),
-    // completely unchanged from before.
-    <div className="rounded-2xl border border-line bg-surface p-3.5 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:flex-1 sm:min-w-[120px] sm:px-4">
-      <div className="flex items-center justify-between gap-2 sm:contents">
-        <div className="text-[10.5px] font-semibold text-ink-faint uppercase tracking-wider sm:mb-1.5 sm:text-[11px]">{label}</div>
+    // One card style at every width now, not a mobile-card/desktop-strip
+    // split - the strip broke for real once a value was actually long
+    // ("Tomorrow 9:30 AM" collided into the next stat's own label,
+    // confirmed live in a screenshot). min-w-0 + truncate on the value
+    // below is what actually prevents that from happening again: the grid
+    // column itself now hard-bounds the width, and overflow text is cut
+    // with an ellipsis instead of spilling into whatever sits next to it.
+    <div className="min-w-0 rounded-2xl border border-line bg-surface p-3.5 sm:p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10.5px] sm:text-[11px] font-semibold text-ink-faint uppercase tracking-wider truncate">
+          {label}
+        </div>
         <span
-          className="flex h-6 w-6 items-center justify-center rounded-full shrink-0 sm:hidden"
+          className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full shrink-0"
           style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
         >
           <Icon name={icon} size={13} />
         </span>
       </div>
-      <div className="mt-2 sm:mt-0 sm:text-right sm:shrink-0 sm:text-left">
-        <div className="font-display text-[18px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
+      <div className="mt-2">
+        <div
+          className="font-display text-[18px] sm:text-[20px] font-bold tracking-tight leading-tight truncate"
+          style={{ color }}
+        >
           {value}
         </div>
-        <div className="mt-0.5 flex items-baseline gap-1.5 sm:mt-1">
+        <div className="mt-0.5 flex items-baseline gap-1.5 flex-wrap">
           {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
           {delta && (
             <span
@@ -408,34 +412,15 @@ export default function AdminDashboardBody({
           give it a real edge/lift regardless of how the tint and the
           canvas happen to compare. */}
       {all.length > 0 && (
-        <div
-          // No outer card on mobile - the 4 stats are already individually
-          // bordered cards there (see TodayStat), so this outer wrapper
-          // was a card around cards: extra padding + a second border/
-          // background eating space for no real benefit. sm: and up keeps
-          // the original shared-card treatment (one strip, four stats
-          // divided inside it, no per-stat card chrome) exactly as before.
-          className="mb-6 sm:rounded-xl sm:border sm:border-line sm:px-5 sm:py-5 sm:mb-8 sm:bg-surface sm:shadow-soft"
-        >
-          {/* Dividers only from lg: up - below that, at 4 stats x
-              min-w-[120px], the row doesn't reliably have the ~576px it
-              needs and wraps onto two lines (no sidebar below 900px, and
-              even with it the content column is still tight until lg:).
-              A divide-x sibling border doesn't know about wrapping - it'd
-              draw a dangling line on whichever stat starts a second row.
-              Gated to the width where four in a row is actually safe.
-              divide-line-strong, not the plain divide-line first tried -
-              --line (#e7e2da) sits almost the same lightness as this
-              card's cream tint, so the divider was technically there and
-              functionally invisible. --line-strong is the token the app
-              already reaches for whenever a border needs to actually
-              read against a tinted surface, not a white one.
-
-              -mx-4 cancels out the px-4 each TodayStat now carries (see
-              its own comment) so the first/last stat's content still
-              lands exactly on the card's own px-5 edge instead of
-              sitting 16px further in than every other card in the app. */}
-          <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
+        <div className="mb-6 sm:mb-8">
+          {/* One unified card style at every width now, not a shared strip
+              on desktop switching to individual cards on mobile - the
+              shared strip broke for real once a value was actually long
+              ("Tomorrow 9:30 AM" collided into the next stat's own label,
+              confirmed live). grid-cols-4 from sm: up puts all four in one
+              row same as the old strip did, just as four separate bordered
+              cards instead of one shared card with internal dividers. */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {/* Color emphasis matches the Stitch source exactly (confirmed
                 against its actual HTML, not just the screenshot): "Next
                 up"'s time is plain ink there, not accent - the accent is
@@ -508,7 +493,12 @@ export default function AdminDashboardBody({
             // so an opacity suffix here would silently produce no tint at
             // all (documented earlier this session). warm-surface is
             // already the right strength on its own.
-            <div className="-mx-5 -mb-5 mt-4 border-t border-line-strong bg-warm-surface px-5 py-3 flex items-start justify-between gap-3 flex-wrap rounded-b-xl">
+            // Self-contained rounded strip now, not negative margins
+            // calibrated to bleed into an outer card's own padding/corners
+            // - that outer card is gone (see above), so -mx-5/-mb-5/
+            // rounded-b-xl would have pulled this out of its own layout
+            // with nothing left to cancel against.
+            <div className="mt-3 rounded-xl border border-line-strong bg-warm-surface px-5 py-3 flex items-start justify-between gap-3 flex-wrap">
               {/* Plain span, not inline-flex - an inline-flex won't let the
                   text line-wrap, so on a phone this sentence either
                   overflowed or squashed. The icon rides along via

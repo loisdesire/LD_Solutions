@@ -223,29 +223,19 @@ export default function BookingsList({
             </span>
           )}
         </div>
-        {bookings.length > 8 && onSearchChange && (
-          <div className="order-3 flex w-full items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 min-h-[40px] transition-colors focus-within:border-[var(--accent)] sm:order-none sm:w-52">
-            <Icon name="search" size={16} className="text-ink-faint shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              aria-label="Search customers or bookings"
-              placeholder="Search"
-              className="bg-transparent border-none outline-none focus:outline-none rounded-lg text-body-sm text-ink placeholder-ink-faint w-full"
-            />
-          </div>
-        )}
-      </div>
 
-      {/* Separate, individually-bordered scrollable pills now, not a
-          shared segmented-control track (a grey bg-warm-surface strip
-          with a white bg-surface pill sliding between positions) - matches
-          a reference the user provided directly, where each pill has its
-          own border and a real gap next to its neighbour, and the active
-          one is a solid filled pill rather than a lighter surface sitting
-          inside a shared track. Own row now too, not squeezed into the
-          same flex-wrap line as the heading/count/search above. */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-nowrap mb-4 -mx-1 px-1">
+        {/* Individually-bordered scrollable pills, not a shared
+            segmented-control track (a grey bg-warm-surface strip with a
+            white bg-surface pill sliding between positions) - matches a
+            reference the user provided directly, where each pill has its
+            own border and a real gap next to its neighbour, and the active
+            one is a solid filled pill rather than a lighter surface
+            sitting inside a shared track.
+            order-2 + w-full on mobile forces this onto its own full-width
+            row (same flex-wrap trick the search box below already used) -
+            requested directly: pills share the heading's line on desktop,
+            but stay on their own row on mobile, not the other way round. */}
+        <div className="order-2 w-full flex items-center gap-2 overflow-x-auto scrollbar-none flex-nowrap -mx-1 px-1 sm:order-none sm:w-auto sm:mx-0 sm:px-0">
         {(
           [
             { key: 'upcoming', label: 'Upcoming' },
@@ -287,6 +277,20 @@ export default function BookingsList({
             </button>
           );
         })}
+        </div>
+
+        {bookings.length > 8 && onSearchChange && (
+          <div className="order-3 flex w-full items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 min-h-[40px] transition-colors focus-within:border-[var(--accent)] sm:order-none sm:w-52">
+            <Icon name="search" size={16} className="text-ink-faint shrink-0" />
+            <input
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              aria-label="Search customers or bookings"
+              placeholder="Search"
+              className="bg-transparent border-none outline-none focus:outline-none rounded-lg text-body-sm text-ink placeholder-ink-faint w-full"
+            />
+          </div>
+        )}
       </div>
 
       {isPast && (
