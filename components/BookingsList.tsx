@@ -398,11 +398,11 @@ export default function BookingsList({
                     setDetailBooking(b);
                   }
                 }}
-                className={`group/row cursor-pointer rounded-xl border border-line bg-surface p-4 mb-3 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-4 sm:py-3 hover:bg-warm-surface transition-colors ${
+                className={`group/row cursor-pointer rounded-xl border border-line bg-surface p-3.5 mb-2.5 shadow-soft sm:rounded-none sm:border-0 sm:bg-transparent sm:shadow-none sm:mb-0 sm:px-4 sm:py-3 hover:bg-warm-surface transition-colors ${
                   i !== filtered.length - 1 ? 'sm:border-b sm:border-line-strong' : ''
                 } ${b.status === 'cancelled' ? 'opacity-55' : ''}`}
               >
-                <div className={`flex flex-col gap-2.5 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>
+                <div className={`flex flex-col gap-2 sm:grid ${GRID_ROW} sm:gap-4 sm:items-center`}>
                   <div className="flex items-center justify-between sm:block">
                     <div>
                       <span className="font-mono text-[12px] uppercase tracking-[0.05em] text-ink-faint">
@@ -426,7 +426,29 @@ export default function BookingsList({
                     </span>
                   </div>
 
-                  <div className={b.status === 'cancelled' ? 'line-through' : ''}>
+                  {/* Combined "customer ... service" row, mobile only -
+                      matches a reference the user provided directly, where
+                      the service/duration sit beside the name/email on one
+                      row rather than stacked as two separate rows (a more
+                      compact card overall, per the same reference). Same
+                      hidden-desktop-grid-cells-still-there pattern as the
+                      Assigned/contact row below. */}
+                  <div className={`flex items-start justify-between gap-3 sm:hidden ${b.status === 'cancelled' ? 'line-through' : ''}`}>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[14px] truncate">{b.customer_name}</div>
+                      {b.customer_email && (
+                        <div className="font-mono text-[12.5px] text-ink-faint truncate mt-0.5">{b.customer_email}</div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-body-sm">{b.services?.name}</span>
+                      {b.services?.duration_minutes != null && (
+                        <div className="font-mono text-label text-ink-faint mt-0.5">{b.services.duration_minutes} min</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={`hidden sm:block ${b.status === 'cancelled' ? 'line-through' : ''}`}>
                     <div className="font-semibold text-[14px] truncate">{b.customer_name}</div>
                     {b.customer_email && (
                       <div className="font-mono text-[12.5px] text-ink-faint truncate mt-0.5">
@@ -435,10 +457,10 @@ export default function BookingsList({
                     )}
                   </div>
 
-                  <div className={b.status === 'cancelled' ? 'line-through' : ''}>
+                  <div className={`hidden sm:block ${b.status === 'cancelled' ? 'line-through' : ''}`}>
                     <span className="text-body-sm">{b.services?.name}</span>
                     {b.services?.duration_minutes != null && (
-                      <span className="font-mono text-label text-ink-faint ml-2 sm:block sm:ml-0 sm:mt-0.5">
+                      <span className="font-mono text-label text-ink-faint sm:block sm:mt-0.5">
                         {b.services.duration_minutes} min
                       </span>
                     )}
