@@ -67,18 +67,18 @@ function TodayStat({
     // resets straight back to the original flex-row-in-a-shared-card
     // layout (bg-transparent/border-0/p-0 undo the mobile card chrome),
     // completely unchanged from before.
-    <div className="rounded-2xl border border-line bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:flex-1 sm:min-w-[120px] sm:px-4">
+    <div className="rounded-2xl border border-line bg-surface p-3.5 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:flex-1 sm:min-w-[120px] sm:px-4">
       <div className="flex items-center justify-between gap-2 sm:contents">
-        <div className="text-[11px] font-semibold text-ink-faint uppercase tracking-wider sm:mb-1.5">{label}</div>
+        <div className="text-[10.5px] font-semibold text-ink-faint uppercase tracking-wider sm:mb-1.5 sm:text-[11px]">{label}</div>
         <span
-          className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 sm:hidden"
+          className="flex h-6 w-6 items-center justify-center rounded-full shrink-0 sm:hidden"
           style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
         >
-          <Icon name={icon} size={17} />
+          <Icon name={icon} size={13} />
         </span>
       </div>
-      <div className="mt-3 sm:mt-0 sm:text-right sm:shrink-0 sm:text-left">
-        <div className="font-display text-[26px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
+      <div className="mt-2 sm:mt-0 sm:text-right sm:shrink-0 sm:text-left">
+        <div className="font-display text-[18px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
           {value}
         </div>
         <div className="mt-0.5 flex items-baseline gap-1.5 sm:mt-1">
@@ -409,7 +409,13 @@ export default function AdminDashboardBody({
           canvas happen to compare. */}
       {all.length > 0 && (
         <div
-          className="rounded-xl border border-line px-5 py-5 mb-8 bg-surface shadow-soft"
+          // No outer card on mobile - the 4 stats are already individually
+          // bordered cards there (see TodayStat), so this outer wrapper
+          // was a card around cards: extra padding + a second border/
+          // background eating space for no real benefit. sm: and up keeps
+          // the original shared-card treatment (one strip, four stats
+          // divided inside it, no per-stat card chrome) exactly as before.
+          className="mb-6 sm:rounded-xl sm:border sm:border-line sm:px-5 sm:py-5 sm:mb-8 sm:bg-surface sm:shadow-soft"
         >
           {/* Dividers only from lg: up - below that, at 4 stats x
               min-w-[120px], the row doesn't reliably have the ~576px it
@@ -429,7 +435,7 @@ export default function AdminDashboardBody({
               its own comment) so the first/last stat's content still
               lands exactly on the card's own px-5 edge instead of
               sitting 16px further in than every other card in the app. */}
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
+          <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
             {/* Color emphasis matches the Stitch source exactly (confirmed
                 against its actual HTML, not just the screenshot): "Next
                 up"'s time is plain ink there, not accent - the accent is
