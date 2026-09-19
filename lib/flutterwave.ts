@@ -270,7 +270,7 @@ export async function verifyTransaction(
 // so this looks it up itself rather than asking every caller to have
 // stored a second identifier for a transaction they'll hopefully never
 // need to refund.
-export async function refundTransaction(txRef: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function refundTransaction(txRef: string): Promise<{ ok: boolean; error?: string }> {
   const verifyRes = await fetch(`${FLW_BASE}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`, {
     headers: authHeaders(),
   }).catch(() => null);

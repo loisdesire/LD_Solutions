@@ -55,8 +55,9 @@ export async function POST(
 
   const result = await refundTransaction(booking.payment_reference);
   if (!result.ok) {
-    logError('api/bookings/refund', new Error(result.error), { bookingId: id, businessId: business.id }, { critical: true });
-    return NextResponse.json({ error: result.error }, { status: 502 });
+    const error = result.error ?? "Flutterwave couldn't process this refund.";
+    logError('api/bookings/refund', new Error(error), { bookingId: id, businessId: business.id }, { critical: true });
+    return NextResponse.json({ error }, { status: 502 });
   }
 
   const { error: updateError } = await supabaseAdmin
