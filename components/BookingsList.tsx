@@ -53,12 +53,18 @@ function ContactCell({
   onOpen: () => void;
 }) {
   const { isBotContact, label } = parseContact(phone, telegramUsername, email);
+  // Rounded, tinted pill on mobile specifically - matches a reference the
+  // user provided directly for the mobile bookings list. sm: resets back
+  // to the original plain underlined-link treatment, unchanged.
+  const pillClass =
+    'inline-flex items-center gap-1.5 rounded-full bg-accent-soft text-accent px-3 py-1.5 text-[13px] font-medium sm:bg-transparent sm:text-accent sm:px-0 sm:py-0 sm:rounded-none sm:font-normal sm:hover:underline';
 
   // Stops the click from also bubbling up to the row's own onClick (which
   // opens the full detail modal) - this has its own, more specific action.
   if (!isBotContact) {
     return (
-      <a href={`tel:${phone}`} className="text-accent hover:underline" onClick={(e) => e.stopPropagation()}>
+      <a href={`tel:${phone}`} className={pillClass} onClick={(e) => e.stopPropagation()}>
+        <Icon name="call" size={14} className="sm:hidden" />
         {label}
       </a>
     );
@@ -70,7 +76,7 @@ function ContactCell({
         e.stopPropagation();
         onOpen();
       }}
-      className="text-accent hover:underline text-left"
+      className={`${pillClass} text-left`}
     >
       {label}
     </button>
@@ -418,9 +424,30 @@ export default function BookingsList({
                     )}
                   </div>
 
-                  {showStaff && <div className="text-body-sm text-ink-soft truncate">{staffName ?? '-'}</div>}
+                  {/* Combined "Assigned: X ... contact pill" row, mobile only -
+                      matches a reference the user provided directly. Desktop
+                      keeps its own separate staff/contact grid columns
+                      untouched below (hidden here via sm:hidden so this
+                      doesn't add an extra, unwanted grid cell at sm:) - same
+                      duplicate-content-toggle-visibility pattern this file
+                      already uses for the status pill just below. */}
+                  {showStaff && (
+                    <div className="flex items-center justify-between gap-3 sm:hidden">
+                      <span className="text-body-sm text-ink-soft truncate">Assigned: {staffName ?? '-'}</span>
+                      <span className="font-mono text-caption truncate shrink-0">
+                        <ContactCell
+                          phone={b.customer_phone}
+                          telegramUsername={b.customer_telegram_username}
+                          email={b.customer_email}
+                          onOpen={() => setOpenConversation(b)}
+                        />
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="flex items-center justify-between sm:block">
+                  {showStaff && <div className="hidden sm:block text-body-sm text-ink-soft truncate">{staffName ?? '-'}</div>}
+
+                  <div className={`${showStaff ? 'hidden sm:block' : 'flex items-center justify-between sm:block'}`}>
                     <span className="font-mono text-caption sm:text-[13px] truncate">
                       <ContactCell
                         phone={b.customer_phone}

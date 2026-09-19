@@ -47,6 +47,7 @@ function TodayStat({
   sub,
   delta,
   color = 'var(--ink)',
+  icon,
 }: {
   label: string;
   value: string;
@@ -54,28 +55,33 @@ function TodayStat({
   /** Kept separate from `sub` so a fall can read differently from a rise. */
   delta?: { value: string; up: boolean };
   color?: string;
+  /** Material Symbols name - mobile-only (own card + icon badge, per a specific reference the user provided), unused at sm: and up where the existing single-strip layout already carries its own treatment. */
+  icon: string;
 }) {
   return (
-    // px-4 rather than a gap on the parent row - a gap sits entirely on
-    // one side of the lg: divider (all 32px before it, 0px after), so the
-    // line reads as glued to whichever stat comes next instead of
-    // sitting centered in the space between two stats. Padding on both
-    // sides of every stat puts 16px on each side of the divider instead,
-    // and does the row's normal spacing job too, so gap-x-8 on the
-    // parent goes away entirely rather than doubling up with this.
-    <div className="flex items-center justify-between gap-4 py-3 sm:block sm:py-0 sm:flex-1 sm:min-w-[120px] sm:px-4">
-      <div className="min-w-0">
-        {/* Uppercase + tracking-wide label - the Stitch stat strip's own
-            treatment (label sits above the number, quieter and smaller
-            than it, not competing with it). */}
+    // Two different layouts sharing one component, split at sm: - below
+    // it, each stat is its own bordered card with an icon badge (label +
+    // icon on one row, big number, caption below), matching a mobile
+    // reference the user provided directly rather than this app's own
+    // prior "one shared card, one line" density choice. At sm: and up,
+    // resets straight back to the original flex-row-in-a-shared-card
+    // layout (bg-transparent/border-0/p-0 undo the mobile card chrome),
+    // completely unchanged from before.
+    <div className="rounded-2xl border border-line bg-surface p-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:flex-1 sm:min-w-[120px] sm:px-4">
+      <div className="flex items-center justify-between gap-2 sm:contents">
         <div className="text-[11px] font-semibold text-ink-faint uppercase tracking-wider sm:mb-1.5">{label}</div>
-        {sub && <div className="text-caption text-ink-faint truncate sm:hidden">{sub}</div>}
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 sm:hidden"
+          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+        >
+          <Icon name={icon} size={17} />
+        </span>
       </div>
-      <div className="text-right shrink-0 sm:text-left">
-        <div className="font-display text-[20px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
+      <div className="mt-3 sm:mt-0 sm:text-right sm:shrink-0 sm:text-left">
+        <div className="font-display text-[26px] sm:text-[23px] font-bold tracking-tight leading-tight" style={{ color }}>
           {value}
         </div>
-        <div className="hidden items-baseline gap-1.5 mt-1 sm:flex">
+        <div className="mt-0.5 flex items-baseline gap-1.5 sm:mt-1">
           {sub && <span className="text-caption text-ink-faint truncate">{sub}</span>}
           {delta && (
             <span
@@ -85,15 +91,6 @@ function TodayStat({
             </span>
           )}
         </div>
-        {delta && (
-          <div className="mt-0.5 sm:hidden">
-            <span
-              className={`inline-flex items-center rounded text-[11px] font-semibold px-1.5 py-0.5 border ${delta.up ? 'text-success bg-success-bg border-success-border' : 'text-error bg-error-bg border-error-border'}`}
-            >
-              {delta.value}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -397,7 +394,7 @@ export default function AdminDashboardBody({
               its own comment) so the first/last stat's content still
               lands exactly on the card's own px-5 edge instead of
               sitting 16px further in than every other card in the app. */}
-          <div className="flex flex-col divide-y divide-line-strong sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:flex-wrap sm:divide-y-0 sm:-mx-4 sm:gap-y-5 lg:divide-x lg:divide-line-strong">
             {/* Color emphasis matches the Stitch source exactly (confirmed
                 against its actual HTML, not just the screenshot): "Next
                 up"'s time is plain ink there, not accent - the accent is
@@ -409,8 +406,14 @@ export default function AdminDashboardBody({
               value={nextSlotLabel}
               sub={nextSlot ? `${nextSlot.customer_name} · ${(nextSlot as any).services?.name ?? ''}` : 'Nothing scheduled'}
               color={nextSlot ? 'var(--ink)' : 'var(--ink-faint)'}
+              icon="schedule"
             />
-            <TodayStat label="Today" value={String(todayCount)} sub={todayCount === 1 ? 'appointment' : 'appointments'} />
+            <TodayStat
+              label="Today"
+              value={String(todayCount)}
+              sub={todayCount === 1 ? 'appointment' : 'appointments'}
+              icon="calendar_today"
+            />
             {/* Was the one stat in this row with nothing under its number -
                 every neighbour has a second line, so this one read as
                 incomplete/broken rather than just "nothing to add here."
@@ -422,6 +425,7 @@ export default function AdminDashboardBody({
               value={formatMoney(todayRevenue)}
               sub={todayCount === 0 ? 'no bookings yet' : `from ${todayCount} ${todayCount === 1 ? 'appointment' : 'appointments'}`}
               color={todayRevenue > 0 ? 'var(--accent)' : 'var(--ink)'}
+              icon="attach_money"
             />
             <TodayStat
               label="This week"
@@ -434,6 +438,7 @@ export default function AdminDashboardBody({
                     ? { value: `${weekCountDelta > 0 ? '+' : ''}${weekCountDelta} vs last week`, up: weekCountDelta > 0 }
                     : undefined
               }
+              icon="trending_up"
             />
           </div>
           {/* Today's revenue/This week above are the VALUE of what's
