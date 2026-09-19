@@ -45,9 +45,6 @@ export default async function ChannelsPage({
   return (
     <div>
       <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Automate
-        </div>
         <h1 className="font-display text-h1 text-ink">Channels</h1>
         <p className="text-ink-soft text-body-sm mt-1">
           Where customers can reach your AI receptionist.

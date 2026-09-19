@@ -44,9 +44,6 @@ export default async function CustomersPage({
   return (
     <div>
       <div className="mb-6">
-        <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint mb-1.5">
-          Today
-        </div>
         <h1 className="font-display text-[26px] text-ink">Customers</h1>
         <p className="text-ink-soft text-[13.5px] mt-1">
           Everyone who's booked with {business.name}, built from their actual bookings.
