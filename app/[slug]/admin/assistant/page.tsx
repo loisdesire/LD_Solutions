@@ -3,8 +3,6 @@ import { hasBusinessIntelligence } from '@/lib/subscription-server';
 import { getAssistantHistory } from '@/lib/assistantHistory';
 import { ASSISTANT_SUGGESTIONS_CORE, ASSISTANT_SUGGESTIONS_FULL } from '@/lib/assistantSuggestions';
 import AssistantChat from '@/components/AssistantChat';
-import Icon from '@/components/Icon';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Assistant' };
@@ -26,55 +24,27 @@ export default async function AssistantPage({
     getAssistantHistory(business.id, staff.id, 'assistant'),
   ]);
 
+  // The eyebrow/title/subtitle header and the "Nothing changes until you
+  // say yes" trust banner both used to sit above the chat - confirmed
+  // live as unwanted: on a page whose entire job is this one chat
+  // interface, restating what it does before showing it just pushed the
+  // actual tool down and made the page read as mostly empty space around
+  // a small boxed card. The reassurance itself moved into the Skills
+  // panel's own copy instead of a permanent banner - still communicated,
+  // just not paid for in vertical space on every visit.
   return (
-    <div>
-      <div className="mb-6">
-        <div className="font-mono text-label uppercase tracking-[0.14em] text-ink-faint mb-1.5">Automate</div>
-        <h1 className="font-display text-h1 text-ink">Assistant</h1>
-        <p className="text-ink-soft text-body-sm mt-1">
-          {analyticsEnabled
-            ? 'Ask about your bookings and numbers, or tell it to move appointments around.'
-            : 'Tell it when you need time blocked off, or an appointment moved.'}
-        </p>
-      </div>
-
-      <AssistantChat
-        slug={slug}
-        endpoint="/api/assistant/chat"
-        emptyStateText={
-          analyticsEnabled
-            ? `Ask ${business.name} anything, or tell it what needs moving.`
-            : `Tell it what needs moving and it will work out where everyone affected should go.`
-        }
-        suggestionGroups={analyticsEnabled ? ASSISTANT_SUGGESTIONS_FULL : ASSISTANT_SUGGESTIONS_CORE}
-        initialMessage={q?.slice(0, 500)}
-        initialMessages={history}
-        inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}
-        banner={
-          // A trust feature, not a small disclaimer - this is the one
-          // sentence standing between "just answering" and "about to
-          // change someone's appointment", so it gets a stronger border
-          // and a fixed home above the chat rather than blending into the
-          // warm-surface backgrounds used everywhere else on the page.
-          <div className="rounded-xl bg-surface border-2 border-line px-4 py-3 mb-4 flex items-start gap-2.5">
-            <Icon name="check_circle" size={17} className="text-accent shrink-0 mt-0.5" />
-            <p className="text-ink text-caption leading-relaxed">
-              <span className="font-semibold">Nothing changes until you say yes.</span> Before it moves anything, it
-              shows you exactly who is affected and their new times, first.
-              {!analyticsEnabled && (
-                <>
-                  {' '}
-                  Want it to answer questions about revenue and customers too?{' '}
-                  <Link href={`/${slug}/admin/billing`} className="font-semibold underline underline-offset-2" style={{ color: 'var(--accent)' }}>
-                    See Business Intelligence
-                  </Link>
-                  .
-                </>
-              )}
-            </p>
-          </div>
-        }
-      />
-    </div>
+    <AssistantChat
+      slug={slug}
+      endpoint="/api/assistant/chat"
+      emptyStateText={
+        analyticsEnabled
+          ? `Ask ${business.name} anything, or tell it what needs moving.`
+          : `Tell it what needs moving and it will work out where everyone affected should go.`
+      }
+      suggestionGroups={analyticsEnabled ? ASSISTANT_SUGGESTIONS_FULL : ASSISTANT_SUGGESTIONS_CORE}
+      initialMessage={q?.slice(0, 500)}
+      initialMessages={history}
+      inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}
+    />
   );
 }

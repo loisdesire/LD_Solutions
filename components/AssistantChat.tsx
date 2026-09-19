@@ -150,6 +150,15 @@ export default function AssistantChat({
   // chat message later.
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  // Replaces the old always-visible block of suggestion chips that only
+  // ever showed once, on a genuinely empty conversation, and permanently
+  // occupied real vertical space until the first message - confirmed live
+  // as the actual reason a whole page felt cramped/non-full-height. A
+  // compact pill, open on demand, available at any point in the
+  // conversation (not just before the first message) - closer to what was
+  // actually asked for originally.
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const skillsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -167,6 +176,14 @@ export default function AssistantChat({
       timers.forEach(clearTimeout);
     };
   }, []);
+  useEffect(() => {
+    if (!skillsOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (skillsRef.current && !skillsRef.current.contains(e.target as Node)) setSkillsOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [skillsOpen]);
   // The real, verified upload URL - kept independent of pendingImage
   // (which only tracks the visual "about to send" indicator and is
   // meant to clear the instant the message goes out). Confirmed live:
@@ -410,7 +427,13 @@ export default function AssistantChat({
           visible height as the keyboard opens/closes, no JS needed. */}
       <div
         ref={cardRef}
-        className={bare ? 'flex flex-col h-full' : 'border border-line shadow-soft rounded-xl bg-surface flex flex-col h-[560px] max-h-[70dvh]'}
+        // h-[85dvh], not the old fixed h-[560px] - confirmed live as the
+        // actual reason the dedicated Assistant page (this component's
+        // only non-bare caller) looked like a small boxed card sitting in
+        // a mostly-empty page rather than a real full-page tool. Scales
+        // with the actual viewport instead of a flat pixel value that
+        // reads as "small" on any real monitor.
+        className={bare ? 'flex flex-col h-full' : 'border border-line shadow-soft rounded-xl bg-surface flex flex-col h-[85dvh] max-h-[900px]'}
       >
         {/* overscroll-contain - without it, scrolling this list to its own
             top/bottom hands the leftover wheel/touch delta to whatever's
@@ -429,27 +452,10 @@ export default function AssistantChat({
               >
                 <Icon name="smart_toy" size={22} />
               </span>
-              <p className="text-ink-soft text-[14px] mb-4 max-w-sm mx-auto">{emptyStateText}</p>
-              <div className="flex flex-col items-center gap-3.5">
-                {suggestionGroups.map((group) => (
-                  <div key={group.label}>
-                    <div className="font-mono text-[12px] uppercase tracking-[0.08em] text-ink-faint mb-2">
-                      {group.label}
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {group.items.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => send(s)}
-                          className="rounded-full border border-line px-3.5 py-2 text-[14px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-ink-soft text-[14px] mb-1 max-w-sm mx-auto">{emptyStateText}</p>
+              <p className="text-ink-faint text-[12.5px]">
+                Nothing changes until you say yes - see what it can do below.
+              </p>
             </div>
           )}
 
@@ -555,8 +561,44 @@ export default function AssistantChat({
           // mobile. Left in, that padding was dead space reserved for a
           // button that wasn't there, worst exactly when the keyboard was
           // open and every bit of vertical room actually mattered.
-          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3`}
+          className={`${pendingImage || uploadingImage ? '' : 'border-t border-line'} p-3 relative`}
         >
+          {/* Skills popover - replaces the old permanent block of
+              suggestion chips that only ever showed once, on a genuinely
+              empty conversation, and disappeared for good the moment a
+              real message existed. This is available at any point in the
+              conversation instead, open on demand, and doesn't cost any
+              vertical space until someone actually asks for it. */}
+          {skillsOpen && (
+            <div
+              ref={skillsRef}
+              className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-line bg-surface shadow-[0_16px_40px_-16px_rgba(36,28,24,0.35)] p-4 max-h-[60vh] overflow-y-auto animate-rise"
+            >
+              <div className="flex flex-col gap-4">
+                {suggestionGroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint mb-2">
+                      {group.label}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {group.items.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            setSkillsOpen(false);
+                            send(s);
+                          }}
+                          className="rounded-full border border-line px-3.5 py-2 text-[13.5px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors text-left"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* One unified composer now, not three separate bordered boxes
               (attach / input / "Send") sitting side by side - that read as
               fragmented, a form rather than a chat composer. Everything
@@ -586,6 +628,18 @@ export default function AssistantChat({
               className="h-9 w-9 rounded-full flex items-center justify-center text-ink-faint hover:bg-warm-surface hover:text-accent transition-colors disabled:opacity-50 shrink-0"
             >
               <Icon name="attach_file" size={19} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSkillsOpen((v) => !v)}
+              aria-label="Skills"
+              aria-expanded={skillsOpen}
+              title="Skills - see what it can do"
+              className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                skillsOpen ? 'text-accent bg-accent-soft' : 'text-ink-faint hover:bg-warm-surface hover:text-accent'
+              }`}
+            >
+              <Icon name="bolt" size={19} />
             </button>
             <input
               value={input}
