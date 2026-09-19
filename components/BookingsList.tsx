@@ -291,14 +291,14 @@ export default function BookingsList({
 
       {isPast && (
         <div className="flex flex-wrap items-end gap-3 mb-4 rounded-xl bg-warm-surface px-4 py-3">
-          {/* w-full on each input (its wrapper is flex-1, not auto-width) -
-              a native date input has no set width of its own, so it was
-              growing to whatever space this flex row happened to have
-              free and stranding the browser's own calendar-icon indicator
-              far to the right of the actual short date value, in a lot of
-              otherwise-empty box. Bounding the input's own width keeps the
-              icon sitting naturally close to the text instead. */}
-          <div className="flex-1 min-w-[130px]">
+          {/* A fixed width, not flex-1 - flex-1 actively GROWS an item to
+              fill leftover row space, the opposite of what a native date
+              input (no width of its own) needed here: it grew even wider
+              than before and started crowding the card's own edge.
+              w-[132px] is sized to what a real "dd/mm/yyyy" value plus the
+              browser's own calendar icon actually needs, not a share of
+              the row. */}
+          <div className="w-[132px] shrink-0">
             <label htmlFor="past-from" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
               From
             </label>
@@ -311,7 +311,7 @@ export default function BookingsList({
               className="w-full rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
             />
           </div>
-          <div className="flex-1 min-w-[130px]">
+          <div className="w-[132px] shrink-0">
             <label htmlFor="past-to" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
               To
             </label>
