@@ -235,45 +235,58 @@ export default function BookingsList({
             />
           </div>
         )}
-        <div className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto scrollbar-none bg-warm-surface rounded-lg p-1 flex-nowrap">
-          {(
-            [
-              { key: 'upcoming', label: 'Upcoming' },
-              { key: 'today', label: 'Today' },
-              { key: 'past', label: 'Past' },
-            ] as const
-          ).map((opt) => (
+      </div>
+
+      {/* Separate, individually-bordered scrollable pills now, not a
+          shared segmented-control track (a grey bg-warm-surface strip
+          with a white bg-surface pill sliding between positions) - matches
+          a reference the user provided directly, where each pill has its
+          own border and a real gap next to its neighbour, and the active
+          one is a solid filled pill rather than a lighter surface sitting
+          inside a shared track. Own row now too, not squeezed into the
+          same flex-wrap line as the heading/count/search above. */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-nowrap mb-4 -mx-1 px-1">
+        {(
+          [
+            { key: 'upcoming', label: 'Upcoming' },
+            { key: 'today', label: 'Today' },
+            { key: 'past', label: 'Past' },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => {
+              setScope(opt.key);
+              // Leaving Past should not keep a range applied invisibly.
+              if (opt.key !== 'past') setRange({ from: '', to: '' });
+            }}
+            aria-current={scope === opt.key ? 'true' : undefined}
+            className={`shrink-0 rounded-full px-4 py-2 text-[13.5px] font-medium border transition-colors ${
+              scope === opt.key
+                ? 'bg-ink text-paper border-ink'
+                : 'bg-surface text-ink-soft border-line hover:border-line-strong hover:text-ink'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+        {visibleStatuses.map((s) => {
+          const isActive = statusFilter === s;
+          return (
             <button
-              key={opt.key}
-              onClick={() => {
-                setScope(opt.key);
-                // Leaving Past should not keep a range applied invisibly.
-                if (opt.key !== 'past') setRange({ from: '', to: '' });
-              }}
-              aria-current={scope === opt.key ? 'true' : undefined}
-              className={`shrink-0 px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
-                scope === opt.key ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
+              key={s}
+              onClick={() => setStatusFilter(isActive ? 'all' : s)}
+              aria-pressed={isActive}
+              className={`shrink-0 rounded-full px-4 py-2 text-[13.5px] font-medium border transition-colors ${
+                isActive
+                  ? 'bg-ink text-paper border-ink'
+                  : 'bg-surface text-ink-soft border-line hover:border-line-strong hover:text-ink'
               }`}
             >
-              {opt.label}
+              {STATUS_LABELS[s]}
             </button>
-          ))}
-          {visibleStatuses.map((s) => {
-            const isActive = statusFilter === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(isActive ? 'all' : s)}
-                aria-pressed={isActive}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all ${
-                  isActive ? 'bg-surface text-ink shadow-lift' : 'text-ink-soft hover:text-ink'
-                }`}
-              >
-                {STATUS_LABELS[s]}
-              </button>
-            );
-          })}
-        </div>
+          );
+        })}
       </div>
 
       {isPast && (

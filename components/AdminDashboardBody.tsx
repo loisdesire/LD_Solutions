@@ -237,18 +237,54 @@ export default function AdminDashboardBody({
           that; min-w-0 on the text column still lets a long business name
           truncate/wrap instead of pushing the actions off-screen. */}
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-3">
+        {/* Mobile-only: date + status pill + actions as their own slim,
+            single row - matches a reference the user provided directly,
+            where that bar is its own thing with nothing else sharing the
+            line, and the greeting/heading sits on its own row below it.
+            sm: and up keeps the original combined layout further down,
+            unchanged - this whole block is mobile-only (sm:hidden). */}
+        <div className="flex sm:hidden items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent shrink-0">
+              {dateLabelShort}
+            </span>
+            <Link
+              href={`/${slug}/admin/billing`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border shrink-0 ${
+                acceptingBookings
+                  ? 'bg-success-bg text-success border-success-border'
+                  : 'bg-warning-bg text-warning border-warning-border'
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
+              {acceptingBookings ? 'Accepting bookings' : 'Not accepting'}
+            </Link>
+          </div>
+          <div className="shrink-0">
+            <DashboardHeaderActions
+              slug={slug}
+              businessId={businessId}
+              services={services}
+              maxAdvanceDays={maxAdvanceDays}
+            />
+          </div>
+        </div>
+        <div className="sm:hidden mb-5">
+          <h1 className="font-display text-h1 text-ink">{now ? `${greeting}, ${businessName}` : businessName}</h1>
+          <p className="text-ink-soft text-body-sm mt-1">{daySummary}</p>
+        </div>
+
+        {/* Original combined layout - sm: and up only now (was every
+            width before the mobile-only split above). */}
+        <div className="hidden sm:flex items-center justify-between gap-3">
           <div className="min-w-0">
             {/* Date + status pill get their own short line inside the
                 column - always plenty of room for these regardless of
                 width, no reason to share a line with the heading. */}
-            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
               {/* Uppercase + tracking-wide, matching the Stitch header's own
                   date treatment ("WEDNESDAY, 24 OCTOBER 2024" in the source). */}
-              <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">
-                <span className="sm:hidden">{dateLabelShort}</span>
-                <span className="hidden sm:inline">{dateLabelLong}</span>
-              </span>
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-accent">{dateLabelLong}</span>
               {/* Real status, not decoration (see the server component's own
                   comment on where this comes from) - matches the Stitch
                   dashboard's own header exactly: a permanent status pill,
@@ -269,8 +305,7 @@ export default function AdminDashboardBody({
                 }`}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current shrink-0" />
-                <span className="sm:hidden">{acceptingBookings ? 'Accepting bookings' : 'Not accepting'}</span>
-                <span className="hidden sm:inline">{acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}</span>
+                {acceptingBookings ? 'Accepting online bookings' : 'Not accepting bookings'}
               </Link>
             </div>
             <h1 className="font-display text-h1 text-ink mt-1">
