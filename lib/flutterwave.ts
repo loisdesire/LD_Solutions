@@ -10,9 +10,6 @@
 // business never logs into Flutterwave or verifies anything themselves.
 
 import { logError } from './logger';
-import { isMobileMoneyBankName } from './flutterwaveShared';
-
-export { isMobileMoneyBankName };
 
 const FLW_BASE = 'https://api.flutterwave.com/v3';
 
@@ -104,11 +101,29 @@ export async function listBanksForCountry(
 // from listBanksForCountry's own underlying data (not the bank "code"
 // field used elsewhere) - Flutterwave's branches endpoint keys on it
 // specifically, confirmed against their docs, not assumed.
+// Returns [] (not null) for a payout method that genuinely has no
+// branches - Ghana's own bank list mixes real banks in with mobile money
+// networks (MTN Mobile, AIRTEL-TIGO, TELECEL(VODAFONE), VODAFONE,
+// confirmed live against the real GH bank list, all four under names
+// that don't contain the word "mobile money" - a first attempt at
+// detecting these by name was wrong for exactly that reason). Flutterwave
+// itself answers this correctly: a 404 with "No branches found for
+// specified bank id" for one of these, a normal 200 with a real branch
+// list for an actual bank (also confirmed live). Matched on the message
+// since the error response gives no other reliable signal - still a
+// `{status:"error"}` body, not e.g. an empty `data: []`. null is
+// reserved for a genuine failure (network error, anything else
+// unexpected) - callers must tell the two apart, not treat every empty
+// result as "no branch needed."
 export async function getBankBranches(bankId: string): Promise<{ code: string; name: string }[] | null> {
   const res = await fetch(`${FLW_BASE}/banks/${bankId}/branches`, { headers: authHeaders() }).catch(() => null);
-  if (!res || !res.ok) return null;
+  if (!res) return null;
   const data = await res.json().catch(() => null);
-  if (data?.status !== 'success' || !Array.isArray(data.data)) return null;
+
+  if (res.status === 404 && typeof data?.message === 'string' && /no branches found/i.test(data.message)) {
+    return [];
+  }
+  if (!res.ok || data?.status !== 'success' || !Array.isArray(data.data)) return null;
 
   return data.data.map((b: { branch_code: string; branch_name: string }) => ({ code: b.branch_code, name: b.branch_name }));
 }

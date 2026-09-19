@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
-import { resolveBankAccount, createSubaccount, COUNTRY_CURRENCY, isMobileMoneyBankName } from '@/lib/flutterwave';
+import { resolveBankAccount, createSubaccount, getBankBranches, COUNTRY_CURRENCY } from '@/lib/flutterwave';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many attempts, please try again shortly' }, { status: 429 });
   }
 
-  const { slug, bankCode, bankName, accountNumber, businessMobile, country: rawCountry, branchCode } = await req.json();
+  const { slug, bankCode, bankId, accountNumber, businessMobile, country: rawCountry, branchCode } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
   const auth = await requireStaffApiSession(req, slug, 'id, name', { requireOwner: true });
@@ -42,14 +42,29 @@ export async function POST(req: NextRequest) {
   const country = rawCountry === 'GH' ? 'GH' : 'NG';
   const currency = COUNTRY_CURRENCY[country];
   const branch = String(branchCode ?? '').trim();
-  // Mobile money entries in Ghana's own bank list don't have branches -
-  // see isMobileMoneyBankName's comment for why this check exists at all.
-  const needsBranch = country === 'GH' && !isMobileMoneyBankName(String(bankName ?? ''));
 
   if (!bank) return NextResponse.json({ ok: false, error: 'Pick a bank first.' });
   if (!/^\d{10}$/.test(account)) return NextResponse.json({ ok: false, error: 'Account numbers are 10 digits - check for a typo.' });
   if (!mobile) return NextResponse.json({ ok: false, error: 'A phone number is needed for the payout account.' });
-  if (needsBranch && !branch) return NextResponse.json({ ok: false, error: 'Pick your bank branch first.' });
+
+  // Independently re-checks whether this bank actually needs a branch,
+  // never trusting the client's own branchCode presence/absence as proof
+  // either way - same reasoning as re-resolving the account below rather
+  // than trusting a client-reported account name. See getBankBranches'
+  // own comment: Ghana's bank list mixes mobile money networks in with
+  // real banks, and only Flutterwave's own answer (an empty list vs a
+  // real one) says which is which.
+  if (country === 'GH') {
+    const id = String(bankId ?? '').trim();
+    if (!id) return NextResponse.json({ ok: false, error: 'Pick a bank first.' });
+    const branches = await getBankBranches(id);
+    if (branches === null) {
+      return NextResponse.json({ ok: false, error: "Couldn't verify this bank's branch requirements. Try again shortly." });
+    }
+    if (branches.length > 0 && !branch) {
+      return NextResponse.json({ ok: false, error: 'Pick your bank branch first.' });
+    }
+  }
 
   const resolved = await resolveBankAccount(account, bank);
   if (!resolved) {

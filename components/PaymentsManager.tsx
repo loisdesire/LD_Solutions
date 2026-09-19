@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
-import { isMobileMoneyBankName } from '@/lib/flutterwaveShared';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
 import { useUnsavedChangesWarning } from './useUnsavedChangesWarning';
@@ -123,33 +122,47 @@ export default function PaymentsManager({
   }, [requirePayment, country, slug]);
 
   const selectedBank = banks.find((b) => b.code === bankCode);
-  // Mobile money entries (MTN Mobile Money, Vodafone/Telecel Cash,
-  // AirtelTigo Money) sit in the same GH bank list as real banks but have
-  // no branches - see isMobileMoneyBankName's own comment for why this
-  // exists at all.
-  const selectedBankIsMobileMoney = !!selectedBank && isMobileMoneyBankName(selectedBank.name);
-  const needsBranch = country === 'GH' && !selectedBankIsMobileMoney;
+  // Whether the branches list has actually finished loading for the
+  // currently-selected bank - distinct from `branches.length === 0`,
+  // which is also true mid-fetch. Ghana's own bank list mixes real banks
+  // in with mobile money networks (MTN Mobile, AIRTEL-TIGO,
+  // TELECEL(VODAFONE), VODAFONE - confirmed live, none of which have
+  // "mobile money" in their actual Flutterwave name, so a first attempt
+  // at detecting these by name was wrong) that genuinely have no
+  // branches. getBankBranches itself tells the two cases apart (returns
+  // [] for "confirmed no branches", not an error) - this just needs to
+  // wait for that answer before deciding whether a branch is required.
+  const [branchesLoaded, setBranchesLoaded] = useState(false);
+  const needsBranch = country === 'GH' && branchesLoaded && branches.length > 0;
 
   // Ghana needs a branch code alongside the bank + account number for a
   // real bank - fetched once a specific bank is picked (the branch list
-  // is per-bank), never for Nigeria, and never for a mobile money entry.
+  // is per-bank), never for Nigeria, and every GH pick until this
+  // resolves so mobile money's genuine "no branches" answer is only ever
+  // learned from Flutterwave itself, not guessed from the bank's name.
   useEffect(() => {
-    if (!needsBranch || !bankCode) {
+    if (country !== 'GH' || !bankCode) {
       setBranches([]);
       setBranchesError('');
+      setBranchesLoaded(false);
       return;
     }
     if (!selectedBank) return;
     setBranches([]);
     setBranchesError('');
+    setBranchesLoaded(false);
     fetch(`/api/settings/flutterwave/branches?slug=${encodeURIComponent(slug)}&bankId=${selectedBank.id}`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data.branches)) setBranches(data.branches);
-        else setBranchesError(data.error ?? 'Could not load the branch list.');
+        if (Array.isArray(data.branches)) {
+          setBranches(data.branches);
+          setBranchesLoaded(true);
+        } else {
+          setBranchesError(data.error ?? 'Could not load the branch list.');
+        }
       })
       .catch(() => setBranchesError('Could not load the branch list.'));
-  }, [needsBranch, bankCode, selectedBank, slug]);
+  }, [country, bankCode, selectedBank, slug]);
 
   // Fills the search field with the already-linked bank's real name once
   // the list loads - otherwise a business editing an existing account
@@ -247,6 +260,11 @@ export default function PaymentsManager({
         setError('Pick a bank and enter an account number.');
         return;
       }
+      if (country === 'GH' && !branchesLoaded) {
+        setSaving(false);
+        setError("Still checking this bank's branch requirements - try again in a moment.");
+        return;
+      }
       if (needsBranch && !branchCode) {
         setSaving(false);
         setError('Pick your bank branch first.');
@@ -259,7 +277,7 @@ export default function PaymentsManager({
           body: JSON.stringify({
             slug,
             bankCode,
-            bankName: selectedBank?.name ?? '',
+            bankId: selectedBank?.id ?? '',
             accountNumber,
             businessMobile,
             country,
@@ -459,13 +477,18 @@ export default function PaymentsManager({
               {bankQuery && !bankCode && (
                 <p className="text-caption text-ink-faint">No bank matches &ldquo;{bankQuery}&rdquo; - pick one from the list.</p>
               )}
-              {/* Ghana-only, real banks only - Flutterwave needs a specific
-                  branch alongside the bank + account number for a GH bank
-                  payout, a requirement Nigeria never has and mobile money
-                  entries don't have branches to pick from at all. */}
-              {needsBranch && bankCode && (
+              {/* Ghana-only - Flutterwave needs a specific branch alongside
+                  the bank + account number for a real GH bank payout, a
+                  requirement Nigeria never has. Waits for Flutterwave's own
+                  answer before deciding whether to show this at all - some
+                  GH entries (mobile money networks) genuinely have no
+                  branches, and their names don't reliably say so. */}
+              {country === 'GH' && bankCode && !branchesLoaded && !branchesError && (
+                <p className="text-caption text-ink-faint">Checking whether a branch is needed…</p>
+              )}
+              {branchesError && <p className="text-caption text-error">{branchesError}</p>}
+              {needsBranch && (
                 <>
-                  {branchesError && <p className="text-caption text-error">{branchesError}</p>}
                   <select
                     aria-label="Bank branch"
                     value={branchCode}
@@ -473,7 +496,7 @@ export default function PaymentsManager({
                     className={inputClass}
                   >
                     <option value="" disabled>
-                      {branches.length > 0 ? 'Select your branch' : 'Loading branches…'}
+                      Select your branch
                     </option>
                     {branches.map((b) => (
                       <option key={b.code} value={b.code}>
