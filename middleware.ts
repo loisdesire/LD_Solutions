@@ -7,7 +7,15 @@ import { SITE_URL } from '@/lib/site';
 // that's the domain the auth cookie is actually set on. A business's
 // custom domain serves its public booking pages only; staff still manage
 // the business and log in via <slug>.<platform domain>, exactly as before.
-const PLATFORM_ONLY_PREFIXES = ['/admin', '/login', '/accept-invite', '/forgot-password', '/reset-password', '/manage'];
+const PLATFORM_ONLY_PREFIXES = [
+  '/admin',
+  '/login',
+  '/accept-invite',
+  '/forgot-password',
+  '/reset-password',
+  '/manage',
+  '/super-admin',
+];
 
 const PLATFORM_HOSTNAME = (() => {
   try {
