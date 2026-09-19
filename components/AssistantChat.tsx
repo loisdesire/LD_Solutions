@@ -99,18 +99,13 @@ function formatInline(text: string): ReactNode {
 // question, or change the schedule - by deliberate choice (it used to be
 // two separate tabs; splitting it back out was tried and rejected, since
 // almost nobody went looking for a feature they had to first decide which
-// of two tools it lived under). Grouped suggestions is the compromise:
-// still one chat, one input, one history, but the opening chips make the
-// two kinds of thing it can do visually distinct from the first screen,
-// instead of one flat row where "Move Ada to Monday" and "Who are my top
-// customers?" read as the same kind of ask.
-type SuggestionGroup = { label: string; items: string[] };
-
+// of two tools it lived under). The starter prompts stay one flat list
+// rather than grouped under headers - see assistantSuggestions.ts for why.
 export default function AssistantChat({
   slug,
   endpoint,
   emptyStateText,
-  suggestionGroups,
+  suggestions,
   inputPlaceholder,
   banner,
   initialMessage,
@@ -121,7 +116,7 @@ export default function AssistantChat({
   slug: string;
   endpoint: string;
   emptyStateText: string;
-  suggestionGroups: SuggestionGroup[];
+  suggestions: string[];
   inputPlaceholder: string;
   /** Asked automatically on mount, so a question typed elsewhere can open straight into its answer. */
   initialMessage?: string;
@@ -568,33 +563,26 @@ export default function AssistantChat({
               empty conversation, and disappeared for good the moment a
               real message existed. This is available at any point in the
               conversation instead, open on demand, and doesn't cost any
-              vertical space until someone actually asks for it. */}
+              vertical space until someone actually asks for it.
+              One flat, left-aligned list - see assistantSuggestions.ts for
+              why this isn't grouped under headers anymore. */}
           {skillsOpen && (
             <div
               ref={skillsRef}
               className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-line bg-surface shadow-[0_16px_40px_-16px_rgba(36,28,24,0.35)] p-4 max-h-[60vh] overflow-y-auto animate-rise"
             >
-              <div className="flex flex-col gap-4">
-                {suggestionGroups.map((group) => (
-                  <div key={group.label}>
-                    <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-faint mb-2">
-                      {group.label}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {group.items.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => {
-                            setSkillsOpen(false);
-                            send(s);
-                          }}
-                          className="rounded-full border border-line px-3.5 py-2 text-[13.5px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors text-left"
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              <div className="flex flex-wrap justify-start gap-2">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      setSkillsOpen(false);
+                      send(s);
+                    }}
+                    className="rounded-full border border-line px-3.5 py-2 text-[13.5px] text-ink-soft hover:border-line-strong hover:text-ink transition-colors text-left"
+                  >
+                    {s}
+                  </button>
                 ))}
               </div>
             </div>

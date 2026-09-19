@@ -41,7 +41,7 @@ export default async function AssistantPage({
           ? `Ask ${business.name} anything, or tell it what needs moving.`
           : `Tell it what needs moving and it will work out where everyone affected should go.`
       }
-      suggestionGroups={analyticsEnabled ? ASSISTANT_SUGGESTIONS_FULL : ASSISTANT_SUGGESTIONS_CORE}
+      suggestions={analyticsEnabled ? ASSISTANT_SUGGESTIONS_FULL : ASSISTANT_SUGGESTIONS_CORE}
       initialMessage={q?.slice(0, 500)}
       initialMessages={history}
       inputPlaceholder={analyticsEnabled ? 'Ask anything, or say what to move' : 'e.g. I need tomorrow afternoon off'}

@@ -74,7 +74,7 @@ export default function OnboardingChat({
         slug={slug}
         endpoint="/api/onboarding/chat"
         emptyStateText={`Let's get ${businessName} ready to take bookings.`}
-        suggestionGroups={[]}
+        suggestions={[]}
         inputPlaceholder="Type your answer…"
         initialMessages={initialMessages}
         // Only greet on a genuinely fresh start - once there's real history
