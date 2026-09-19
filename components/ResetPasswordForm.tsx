@@ -7,7 +7,11 @@ import { friendlyError } from '@/lib/friendlyError';
 import { inputClass } from './formStyles';
 import Field from './Field';
 
-export default function ResetPasswordForm({ slug }: { slug: string }) {
+// slug is omitted on the platform-level /reset-password page - same
+// "which business is this account on" lookup PlatformLoginForm already
+// does after signing in, needed here because the recovery link doesn't
+// carry a slug either.
+export default function ResetPasswordForm({ slug }: { slug?: string }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState('');
@@ -48,7 +52,15 @@ export default function ResetPasswordForm({ slug }: { slug: string }) {
         return;
       }
 
-      router.push(`/${slug}/admin`);
+      if (slug) {
+        router.push(`/${slug}/admin`);
+        router.refresh();
+        return;
+      }
+
+      const res = await fetch('/api/my-business', { cache: 'no-store' });
+      const data = await res.json();
+      router.push(res.ok ? `/${data.slug}/admin` : '/login');
       router.refresh();
     } catch (err) {
       setLoading(false);

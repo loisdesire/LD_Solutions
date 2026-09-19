@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
-import { inputClass } from './formStyles';
+import { inputClass, labelClass } from './formStyles';
 import Field from './Field';
 
 // Unlike LoginForm (which already knows which business's /admin to send
@@ -15,6 +16,7 @@ import Field from './Field';
 export default function PlatformLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const passwordId = useId();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -96,18 +98,26 @@ export default function PlatformLoginForm() {
         )}
       </Field>
 
-      <Field label="Password" required>
-        {(props) => (
-          <input
-            {...props}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
-            placeholder="••••••••"
-          />
-        )}
-      </Field>
+      <div>
+        {/* "Forgot?" link sits in the label row, so this doesn't fit
+            Field's own label+input layout - real htmlFor/id wired by
+            hand instead, same as LoginForm's [slug]/login version. */}
+        <div className="flex items-center justify-between mb-1.5">
+          <label htmlFor={passwordId} className={labelClass}>Password</label>
+          <Link href="/forgot-password" className="text-[12px] font-medium text-accent hover:underline">
+            Forgot?
+          </Link>
+        </div>
+        <input
+          id={passwordId}
+          required
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClass}
+          placeholder="••••••••"
+        />
+      </div>
 
       <button
         type="submit"

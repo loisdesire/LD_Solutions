@@ -6,7 +6,11 @@ import { friendlyError } from '@/lib/friendlyError';
 import { inputClass } from './formStyles';
 import Field from './Field';
 
-export default function ForgotPasswordForm({ slug }: { slug: string }) {
+// slug is omitted on the platform-level /forgot-password page (the
+// generic entry point for an owner who doesn't remember their own
+// business's URL) - the reset link then lands on the platform's own
+// /reset-password instead of /[slug]/reset-password.
+export default function ForgotPasswordForm({ slug }: { slug?: string }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -20,7 +24,7 @@ export default function ForgotPasswordForm({ slug }: { slug: string }) {
     try {
       const supabase = createBrowserSupabase();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/${slug}/reset-password`,
+        redirectTo: `${window.location.origin}${slug ? `/${slug}` : ''}/reset-password`,
       });
 
       setLoading(false);
