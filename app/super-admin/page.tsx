@@ -31,7 +31,7 @@ const supabaseAdmin = createClient(
 export default async function SuperAdminPage() {
   const [{ data: businesses }, { data: subs }, { count: bookingsThisMonth }, { data: pendingReviews }] =
     await Promise.all([
-      supabaseAdmin.from('businesses').select('id, slug, name, business_type, created_at').order('created_at', { ascending: false }),
+      supabaseAdmin.from('businesses').select('id, slug, name, business_type, logo_url, created_at').order('created_at', { ascending: false }),
       supabaseAdmin.from('subscriptions').select('business_id, status, trial_ends_at, current_period_end, plan'),
       supabaseAdmin
         .from('bookings')
@@ -56,6 +56,7 @@ export default async function SuperAdminPage() {
   const activeCount = rows.filter((r) => r.state.phase === 'active').length;
   const trialCount = rows.filter((r) => r.state.phase === 'trial').length;
   const lockedCount = rows.filter((r) => !r.state.hasAccess).length;
+  const missingLogoCount = rows.filter((r) => !r.logo_url).length;
 
   return (
     <div>
@@ -85,9 +86,16 @@ export default async function SuperAdminPage() {
         ))}
       </div>
 
-      <p className="text-ink-faint text-[12.5px] mb-8">
-        {bookingsThisMonth ?? 0} bookings platform-wide this month (excluding cancelled).
-      </p>
+      <div className="mb-8">
+        <p className="text-ink-faint text-[12.5px]">
+          {bookingsThisMonth ?? 0} bookings platform-wide this month (excluding cancelled).
+        </p>
+        {missingLogoCount > 0 && (
+          <p className="text-warning text-[12.5px] mt-1">
+            {missingLogoCount} business{missingLogoCount === 1 ? '' : 'es'} missing a logo - showing a placeholder icon to their own customers.
+          </p>
+        )}
+      </div>
 
       {/* Cross-business escalation queue - the same owner_reviews rows
           each business's own dashboard already surfaces individually
@@ -140,8 +148,13 @@ export default async function SuperAdminPage() {
         {rows.map((r) => (
           <div key={r.id} className="grid grid-cols-[1.4fr_1fr_1fr_100px] gap-4 items-center px-4 py-3 border-b border-line last:border-0">
             <div className="min-w-0">
-              <div className="font-semibold text-[14px] text-ink truncate">{r.name}</div>
-              <div className="font-mono text-[12px] text-ink-faint truncate">/{r.slug}</div>
+              <Link href={`/super-admin/${r.slug}`} className="font-semibold text-[14px] text-ink hover:text-accent truncate block">
+                {r.name}
+              </Link>
+              <div className="font-mono text-[12px] text-ink-faint truncate">
+                /{r.slug}
+                {!r.logo_url && <span className="ml-1.5 text-warning">· no logo</span>}
+              </div>
             </div>
             <div>
               <span

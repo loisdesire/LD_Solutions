@@ -1117,3 +1117,25 @@ alter table staff add column if not exists email_verified_at timestamptz;
 alter table staff add column if not exists email_verify_token uuid not null default gen_random_uuid();
 
 create unique index if not exists staff_email_verify_token_idx on staff (email_verify_token);
+
+-- ============================================
+-- Super admin audit log
+-- ============================================
+-- Every sensitive platform-level action (impersonation today; force-reset/
+-- force-sign-out as those ship) lands here - who did it, on which
+-- business, when. Impersonation alone is enough to require this: it
+-- silently starts a real session as a business owner with zero trace
+-- otherwise, which is the difference between a defensible support tool
+-- and a standing liability. Service-role-only, same pattern as
+-- whatsapp_conversations - no end user, including a business owner, ever
+-- has a reason to read their own row here.
+create table if not exists super_admin_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_email text not null,
+  action text not null, -- 'impersonate' | 'force_password_reset' | 'force_sign_out'
+  business_id uuid references businesses(id) on delete set null,
+  business_slug text, -- snapshot at action time - survives the business being deleted later, unlike business_id alone
+  created_at timestamptz default now()
+);
+
+alter table super_admin_audit_log enable row level security;

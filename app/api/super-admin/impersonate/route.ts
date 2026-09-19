@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireSuperAdminSession } from '@/lib/requireSuperAdminSession';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { logSuperAdminAction } from '@/lib/superAdminAudit';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,14 +22,14 @@ const supabaseAdmin = createClient(
 // session-swap-back mechanism for this first pass; the layout's "Back to
 // site" link is a plain nav link, not a real restore.
 export async function POST(req: NextRequest) {
-  await requireSuperAdminSession();
+  const { user } = await requireSuperAdminSession();
 
   const { slug } = await req.json().catch(() => ({ slug: null }));
   if (!slug || typeof slug !== 'string') {
     return NextResponse.json({ error: 'Missing business slug.' }, { status: 400 });
   }
 
-  const { data: business } = await supabaseAdmin.from('businesses').select('id').eq('slug', slug).maybeSingle();
+  const { data: business } = await supabaseAdmin.from('businesses').select('id, slug').eq('slug', slug).maybeSingle();
   if (!business) {
     return NextResponse.json({ error: 'Business not found.' }, { status: 404 });
   }
@@ -62,6 +63,16 @@ export async function POST(req: NextRequest) {
   if (verifyError) {
     return NextResponse.json({ error: 'Could not start a session as this owner.' }, { status: 500 });
   }
+
+  // Fire-and-forget, after the session swap already succeeded - see
+  // logSuperAdminAction's own comment for why this never blocks the
+  // actual impersonation.
+  void logSuperAdminAction({
+    actorEmail: user.email ?? 'unknown',
+    action: 'impersonate',
+    businessId: business.id,
+    businessSlug: business.slug,
+  });
 
   return NextResponse.json({ ok: true });
 }
