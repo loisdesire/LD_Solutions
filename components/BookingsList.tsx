@@ -22,6 +22,9 @@ type Booking = {
   // works around that rather than fighting its inference.
   services: any;
   staff?: any;
+  payment_status?: string | null;
+  amount_paid?: number | null;
+  payment_currency?: string | null;
 };
 
 function relativeDay(date: Date, today: Date): string {

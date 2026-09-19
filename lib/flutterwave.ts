@@ -10,6 +10,9 @@
 // business never logs into Flutterwave or verifies anything themselves.
 
 import { logError } from './logger';
+import { isMobileMoneyBankName } from './flutterwaveShared';
+
+export { isMobileMoneyBankName };
 
 const FLW_BASE = 'https://api.flutterwave.com/v3';
 
@@ -241,6 +244,54 @@ export async function verifyTransaction(
   if (data?.status !== 'success' || !data.data) return null;
 
   return { status: data.data.status, amount: data.data.amount, currency: data.data.currency };
+}
+
+// Full-amount refund only for v1 - Flutterwave's refund endpoint takes an
+// optional `amount` for a partial refund, deliberately not exposed yet
+// (no UI need for it, and it's easy to add to this one function later
+// without touching any call site). Takes the same tx_ref every other
+// caller in this file already works with, not Flutterwave's own numeric
+// transaction id - that id is only ever exposed by verify_by_reference,
+// so this looks it up itself rather than asking every caller to have
+// stored a second identifier for a transaction they'll hopefully never
+// need to refund.
+export async function refundTransaction(txRef: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const verifyRes = await fetch(`${FLW_BASE}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`, {
+    headers: authHeaders(),
+  }).catch(() => null);
+  if (!verifyRes || !verifyRes.ok) return { ok: false, error: "Couldn't reach Flutterwave to look up this payment." };
+
+  const verifyData = await verifyRes.json().catch(() => null);
+  if (verifyData?.status !== 'success' || !verifyData.data?.id) {
+    return { ok: false, error: "Couldn't find this payment on Flutterwave." };
+  }
+  if (verifyData.data.status !== 'successful') {
+    return { ok: false, error: 'This payment never succeeded, so there is nothing to refund.' };
+  }
+
+  const refundRes = await fetch(`${FLW_BASE}/transactions/${verifyData.data.id}/refund`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({}),
+  }).catch((e) => {
+    logError('flutterwave:refundTransaction:network', e);
+    return null;
+  });
+  if (!refundRes) return { ok: false, error: "Couldn't reach Flutterwave to process the refund." };
+
+  const refundData = await refundRes.json().catch(() => null);
+  if (!refundRes.ok || refundData?.status !== 'success') {
+    // Same reasoning as createSubaccount's own error logging - Flutterwave's
+    // actual message (already refunded, refund window passed, etc.) is
+    // what tells a business what to do next, not a generic failure.
+    logError('flutterwave:refundTransaction', new Error(refundData?.message || `Flutterwave ${refundRes.status}`), {
+      httpStatus: refundRes.status,
+      flwMessage: refundData?.message,
+    });
+    return { ok: false, error: refundData?.message || "Flutterwave couldn't process this refund." };
+  }
+
+  return { ok: true };
 }
 
 // Given a business's local price, returns what a customer should pay in

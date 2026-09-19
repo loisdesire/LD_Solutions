@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
+import { isMobileMoneyBankName } from '@/lib/flutterwaveShared';
 import CheckIcon from './CheckIcon';
 import Toggle from './Toggle';
 import { useUnsavedChangesWarning } from './useUnsavedChangesWarning';
@@ -121,26 +122,34 @@ export default function PaymentsManager({
       .catch(() => setBanksError('Could not load the bank list.'));
   }, [requirePayment, country, slug]);
 
-  // Ghana needs a branch code alongside the bank + account number -
-  // fetched once a specific bank is picked (the branch list is per-bank),
-  // never for Nigeria at all.
+  const selectedBank = banks.find((b) => b.code === bankCode);
+  // Mobile money entries (MTN Mobile Money, Vodafone/Telecel Cash,
+  // AirtelTigo Money) sit in the same GH bank list as real banks but have
+  // no branches - see isMobileMoneyBankName's own comment for why this
+  // exists at all.
+  const selectedBankIsMobileMoney = !!selectedBank && isMobileMoneyBankName(selectedBank.name);
+  const needsBranch = country === 'GH' && !selectedBankIsMobileMoney;
+
+  // Ghana needs a branch code alongside the bank + account number for a
+  // real bank - fetched once a specific bank is picked (the branch list
+  // is per-bank), never for Nigeria, and never for a mobile money entry.
   useEffect(() => {
-    if (country !== 'GH' || !bankCode) {
+    if (!needsBranch || !bankCode) {
       setBranches([]);
+      setBranchesError('');
       return;
     }
-    const bank = banks.find((b) => b.code === bankCode);
-    if (!bank) return;
+    if (!selectedBank) return;
     setBranches([]);
     setBranchesError('');
-    fetch(`/api/settings/flutterwave/branches?slug=${encodeURIComponent(slug)}&bankId=${bank.id}`)
+    fetch(`/api/settings/flutterwave/branches?slug=${encodeURIComponent(slug)}&bankId=${selectedBank.id}`)
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data.branches)) setBranches(data.branches);
         else setBranchesError(data.error ?? 'Could not load the branch list.');
       })
       .catch(() => setBranchesError('Could not load the branch list.'));
-  }, [country, bankCode, banks, slug]);
+  }, [needsBranch, bankCode, selectedBank, slug]);
 
   // Fills the search field with the already-linked bank's real name once
   // the list loads - otherwise a business editing an existing account
@@ -238,7 +247,7 @@ export default function PaymentsManager({
         setError('Pick a bank and enter an account number.');
         return;
       }
-      if (country === 'GH' && !branchCode) {
+      if (needsBranch && !branchCode) {
         setSaving(false);
         setError('Pick your bank branch first.');
         return;
@@ -247,7 +256,15 @@ export default function PaymentsManager({
         const res = await fetch('/api/settings/flutterwave/link-account', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug, bankCode, accountNumber, businessMobile, country, branchCode }),
+          body: JSON.stringify({
+            slug,
+            bankCode,
+            bankName: selectedBank?.name ?? '',
+            accountNumber,
+            businessMobile,
+            country,
+            branchCode,
+          }),
         });
         const check = await res.json();
         if (!res.ok || !check.ok) {
@@ -442,10 +459,11 @@ export default function PaymentsManager({
               {bankQuery && !bankCode && (
                 <p className="text-caption text-ink-faint">No bank matches &ldquo;{bankQuery}&rdquo; - pick one from the list.</p>
               )}
-              {/* Ghana-only - Flutterwave needs a specific branch alongside
-                  the bank + account number for a GH payout, a requirement
-                  Nigeria never has. */}
-              {country === 'GH' && bankCode && (
+              {/* Ghana-only, real banks only - Flutterwave needs a specific
+                  branch alongside the bank + account number for a GH bank
+                  payout, a requirement Nigeria never has and mobile money
+                  entries don't have branches to pick from at all. */}
+              {needsBranch && bankCode && (
                 <>
                   {branchesError && <p className="text-caption text-error">{branchesError}</p>}
                   <select

@@ -1139,3 +1139,21 @@ create table if not exists super_admin_audit_log (
 );
 
 alter table super_admin_audit_log enable row level security;
+
+-- ============================================
+-- Real refunds
+-- ============================================
+-- Cancelling a booking only ever set status='cancelled' - nothing
+-- anywhere touched Flutterwave to actually reverse a charge, so a
+-- business had no way to give a customer their money back through the
+-- platform at all. These track the one refund a paid booking can have
+-- (Flutterwave supports partial refunds too, but v1 here is full-amount
+-- only - see app/api/bookings/[id]/refund/route.ts). Read/written only
+-- by that one route, never selected in the broad bookings-list queries
+-- (calendar/dashboard) - so a database that hasn't run this migration
+-- yet keeps working exactly as before everywhere except the refund
+-- button itself, same isMissingColumnError fallback pattern already
+-- used in lib/manageTools.ts.
+alter table bookings add column if not exists refund_status text; -- 'completed' | 'failed', null = never attempted
+alter table bookings add column if not exists refunded_amount numeric;
+alter table bookings add column if not exists refunded_at timestamptz;

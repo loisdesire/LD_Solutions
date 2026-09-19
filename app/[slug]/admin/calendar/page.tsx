@@ -57,7 +57,7 @@ export default async function CalendarPage({
       supabaseAdmin
         .from('bookings')
         .select(
-          'id, customer_name, customer_phone, customer_telegram_username, start_time, end_time, status, service_id, staff_id, services!bookings_service_business_fk(name), staff(name)'
+          'id, customer_name, customer_phone, customer_email, customer_telegram_username, start_time, end_time, status, service_id, staff_id, payment_status, amount_paid, payment_currency, payment_reference, services!bookings_service_business_fk(name), staff(name)'
         )
         .eq('business_id', business.id)
         .order('start_time', { ascending: true }),

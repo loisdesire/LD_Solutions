@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { parseContact } from '@/lib/contact';
 import { statusLabel, statusStyle } from '@/lib/bookingStatus';
+import { formatMoney } from '@/lib/formatMoney';
 import ConversationPanel from './ConversationPanel';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -17,6 +18,9 @@ export type DetailBooking = {
   status: string;
   services: any;
   staff?: any;
+  payment_status?: string | null;
+  amount_paid?: number | null;
+  payment_currency?: string | null;
 };
 
 // The actual content of "here's one booking and what to do about it" -
@@ -42,6 +46,14 @@ export default function BookingDetail({
   const [error, setError] = useState('');
   const [showConversation, setShowConversation] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingRefund, setConfirmingRefund] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+  // Local, not re-derived from booking.refund_status - that column only
+  // exists once the schema.sql migration has run (see its own comment),
+  // so a fresh refund still needs to disappear from view immediately even
+  // on a database that can't remember it happened between page loads yet.
+  const [refunded, setRefunded] = useState(false);
+  const [refundError, setRefundError] = useState('');
 
   const { isBotContact, label: contactLabel } = parseContact(
     booking.customer_phone,
@@ -96,6 +108,30 @@ export default function BookingDetail({
     setTimeout(() => setPending(null), 1500);
   }
 
+  async function refund() {
+    setRefunding(true);
+    setRefundError('');
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setRefundError(data?.error ?? 'Something went wrong. Please try again.');
+        setRefunding(false);
+        return;
+      }
+      setRefunded(true);
+      setRefunding(false);
+      router.refresh();
+    } catch {
+      setRefundError("Couldn't reach the server. Please try again.");
+      setRefunding(false);
+    }
+  }
+
   return (
     <div>
       {/* The time was 20px - the same size as a customer's name two
@@ -130,6 +166,29 @@ export default function BookingDetail({
         </span>
         {staffName && <span className="text-caption text-ink-faint w-full">with {staffName}</span>}
       </div>
+
+      {booking.payment_status === 'paid' && (
+        <div className="mx-6 mb-4 rounded-xl border border-line bg-warm-surface px-3.5 py-2.5 flex items-center justify-between gap-3">
+          <div className="text-body-sm text-ink-soft">
+            <span className="font-semibold text-ink">{formatMoney(booking.amount_paid, booking.payment_currency ?? 'NGN')}</span> paid
+            {refunded && <span className="text-success"> · Refunded</span>}
+          </div>
+          {!refunded && (
+            <button
+              type="button"
+              onClick={() => setConfirmingRefund(true)}
+              className="shrink-0 text-caption font-semibold text-accent hover:underline"
+            >
+              Refund
+            </button>
+          )}
+        </div>
+      )}
+      {refundError && (
+        <div className="mx-6 mb-3 rounded-lg bg-error-bg border border-error-border px-3 py-2 text-caption text-error">
+          {refundError}
+        </div>
+      )}
 
       {error && (
         <div className="mx-6 mb-3 rounded-lg bg-error-bg border border-error-border px-3 py-2 text-caption text-error">
@@ -248,6 +307,17 @@ export default function BookingDetail({
           setStatus('cancelled');
         }}
         onCancel={() => setConfirmingCancel(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmingRefund}
+        title="Refund this payment?"
+        message={`Refunds the full ${formatMoney(booking.amount_paid, booking.payment_currency ?? 'NGN')} ${booking.customer_name} paid, straight back to their original payment method through Flutterwave. This can't be undone.`}
+        confirmLabel="Refund"
+        pendingLabel="Refunding…"
+        pending={refunding}
+        onConfirm={refund}
+        onCancel={() => setConfirmingRefund(false)}
       />
     </div>
   );
