@@ -291,7 +291,14 @@ export default function BookingsList({
 
       {isPast && (
         <div className="flex flex-wrap items-end gap-3 mb-4 rounded-xl bg-warm-surface px-4 py-3">
-          <div>
+          {/* w-full on each input (its wrapper is flex-1, not auto-width) -
+              a native date input has no set width of its own, so it was
+              growing to whatever space this flex row happened to have
+              free and stranding the browser's own calendar-icon indicator
+              far to the right of the actual short date value, in a lot of
+              otherwise-empty box. Bounding the input's own width keeps the
+              icon sitting naturally close to the text instead. */}
+          <div className="flex-1 min-w-[130px]">
             <label htmlFor="past-from" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
               From
             </label>
@@ -301,10 +308,10 @@ export default function BookingsList({
               value={fromDate}
               max={toDate || undefined}
               onChange={(e) => setRange({ from: e.target.value })}
-              className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
+              className="w-full rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
             />
           </div>
-          <div>
+          <div className="flex-1 min-w-[130px]">
             <label htmlFor="past-to" className="block font-mono text-label uppercase tracking-[0.1em] text-ink-faint mb-1">
               To
             </label>
@@ -314,7 +321,7 @@ export default function BookingsList({
               value={toDate}
               min={fromDate || undefined}
               onChange={(e) => setRange({ to: e.target.value })}
-              className="rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
+              className="w-full rounded-lg border-2 border-line-strong bg-surface px-3 py-2 min-h-[40px] text-body-sm outline-none focus:border-accent"
             />
           </div>
           {usingRange ? (
