@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import PlatformLoginForm from '@/components/PlatformLoginForm';
 import AuthMark from '@/components/AuthMark';
@@ -44,7 +45,13 @@ export default function PlatformLoginPage() {
             <AuthMark name="Vanova" label="Business owner login" logoUrl="/logo.png" />
           </div>
           <h2 className="font-display text-[26px] mb-6 sm:mb-7">Log in</h2>
-          <PlatformLoginForm />
+          {/* PlatformLoginForm now reads ?next= (useSearchParams) - without
+              this boundary, a page with no other dynamic data fetching
+              (this one has none) fails static generation outright:
+              "useSearchParams() should be wrapped in a suspense boundary". */}
+          <Suspense fallback={null}>
+            <PlatformLoginForm />
+          </Suspense>
           {/* Both doors, same column, same weight, at every screen width -
               this used to bury "Create a booking page" in the decorative
               left panel (desktop only, small gray text at the very bottom)

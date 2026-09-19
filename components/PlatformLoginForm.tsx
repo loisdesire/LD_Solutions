@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserSupabase } from '@/lib/supabase';
 import { friendlyError } from '@/lib/friendlyError';
 import { inputClass } from './formStyles';
@@ -14,6 +14,7 @@ import Field from './Field';
 // actually belongs to, and redirects there.
 export default function PlatformLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,6 +32,19 @@ export default function PlatformLoginForm() {
       if (signInError) {
         setError(friendlyError(signInError, 'Could not log you in. Please check your email and password.'));
         setLoading(false);
+        return;
+      }
+
+      // ?next= (currently only /super-admin points here with one) skips
+      // the business-lookup entirely rather than redirecting there
+      // afterward - requireSuperAdminSession.ts's account may have no
+      // staff row on any business at all, which would otherwise hit the
+      // "Not authenticated"/no-business branch below and sign them right
+      // back out before ever reaching the page they actually asked for.
+      const next = searchParams.get('next');
+      if (next && next.startsWith('/')) {
+        router.push(next);
+        router.refresh();
         return;
       }
 
