@@ -120,12 +120,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  await supabaseAdmin.from('payment_history').insert({
+  const { error: paymentHistoryError } = await supabaseAdmin.from('payment_history').insert({
     business_id: sub.business_id,
     amount: data.amount ?? null,
     status: data.status === 'successful' ? 'successful' : 'failed',
     flw_tx_ref: txRef ?? null,
   });
+  // This row is the billing page's whole "Payment history" list - a
+  // failed insert here doesn't just miss a log line, it means a real
+  // subscription payment (successful or failed) never appears to the
+  // owner anywhere, with nothing anywhere else that would ever surface
+  // the gap.
+  if (paymentHistoryError) {
+    logError('api/webhooks/flutterwave:payment-history-record-failed', paymentHistoryError, {
+      businessId: sub.business_id,
+      txRef,
+      amount: data.amount,
+    }, { critical: true });
+  }
 
   if (data.status === 'successful') {
     const periodEnd = new Date();

@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
         reference: `payout_${booking.id}`,
       });
 
-      await supabaseAdmin.from('payout_transfers').insert({
+      const { error: recordError } = await supabaseAdmin.from('payout_transfers').insert({
         booking_id: booking.id,
         business_id: businessId,
         charged_currency: foreignPayout.chargedCurrency,
@@ -355,6 +355,15 @@ export async function POST(req: NextRequest) {
         status: transfer ? 'completed' : 'failed',
         error: transfer ? null : 'createPayoutTransfer returned null',
       });
+      // The comment above promises every outcome is recorded here for
+      // reconciliation - that promise breaks silently if the recording
+      // itself fails and nothing notices. Separate from the `!transfer`
+      // alert below: this fires even when the transfer itself succeeded,
+      // since a successful transfer with no row is just as hard to
+      // reconcile later as a failed one nobody heard about.
+      if (recordError) {
+        logError('api/bookings:payout-transfer-record-failed', recordError, { businessId, bookingId: booking.id, foreignPayout }, { critical: true });
+      }
 
       if (!transfer) {
         logError(
@@ -366,7 +375,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (err) {
       logError('api/bookings:payout-transfer', err, { businessId, bookingId: booking.id, foreignPayout }, { critical: true });
-      await supabaseAdmin.from('payout_transfers').insert({
+      const { error: recordError } = await supabaseAdmin.from('payout_transfers').insert({
         booking_id: booking.id,
         business_id: businessId,
         charged_currency: foreignPayout.chargedCurrency,
@@ -376,6 +385,9 @@ export async function POST(req: NextRequest) {
         status: 'failed',
         error: err instanceof Error ? err.message : String(err),
       });
+      if (recordError) {
+        logError('api/bookings:payout-transfer-record-failed', recordError, { businessId, bookingId: booking.id, foreignPayout }, { critical: true });
+      }
     }
   }
 
