@@ -17,12 +17,18 @@ export async function verifyCronSecret(req: NextRequest, routeName: string): Pro
   }
 
   const authHeader = req.headers.get('authorization') ?? '';
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ''}`;
+  const secret = process.env.CRON_SECRET;
+  // `!= null` alone (checked here previously) only rules out CRON_SECRET
+  // being entirely unset - it still passes for CRON_SECRET='' (set, but
+  // empty, e.g. a deploy template that defines the var with no value
+  // filled in). That leaves `expected` as the literal string 'Bearer ',
+  // which a request sending exactly `Authorization: Bearer ` (no token at
+  // all) then matches via timingSafeEqual - same shape as the
+  // timingSafeEqualStrings('', '') bug already fixed elsewhere this
+  // session, just reached through a different guard.
+  if (secret == null || secret === '') return false;
+  const expected = `Bearer ${secret}`;
   const gotBuf = Buffer.from(authHeader);
   const expectedBuf = Buffer.from(expected);
-  return (
-    process.env.CRON_SECRET != null &&
-    gotBuf.length === expectedBuf.length &&
-    crypto.timingSafeEqual(gotBuf, expectedBuf)
-  );
+  return gotBuf.length === expectedBuf.length && crypto.timingSafeEqual(gotBuf, expectedBuf);
 }
