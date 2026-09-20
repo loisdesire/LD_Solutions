@@ -60,15 +60,45 @@ jobs:
                ROUTES="send-owner-reminders send-reminders weekly-insights billing-warnings timeout-owner-reviews reset-demo-data" ;;
           esac
 
+          # Confirmed live via the Actions run logs: three separate failures
+          # (different days, different jobs - send-owner-reminders twice,
+          # send-reminders once) all showed the exact same shape - curl exit
+          # code 28 (operation timeout) after ~4m31s, with no HTTP status at
+          # all, not a fast 4xx/5xx. That isn't this route's own logic
+          # failing; it's the request getting no response whatsoever, most
+          # likely landing during one of Hostinger's app-process restarts
+          # (this repo pushes to main, and therefore redeploys, many times a
+          # day) with nothing on that path to fail fast. Two real fixes:
+          # --max-time caps a hang at 60s instead of silently burning ~4.5
+          # minutes of runner time with no visibility until the network
+          # layer itself gives up; --retry gives a request that lands in
+          # exactly that restart window a second try a few seconds later,
+          # which should succeed once the app is back.
+          FAILED=""
+
           hit() {
             echo "GET https://vanovahub.com/api/internal-task?job=$1"
             status=$(curl -s -o /dev/null -w '%{http_code}' \
+              --max-time 60 --retry 2 --retry-delay 10 --retry-all-errors \
               -H "Authorization: Bearer ${CRON_SECRET}" \
-              "https://vanovahub.com/api/internal-task?job=$1")
+              "https://vanovahub.com/api/internal-task?job=$1") || status="000"
             echo "-> $status"
-            if [ "$status" -ge 400 ]; then exit 1; fi
+            if [ "$status" -ge 400 ] || [ "$status" = "000" ]; then FAILED="$FAILED $1"; fi
           }
 
           for r in $ROUTES; do
             hit "$r"
           done
+
+          # One job failing (or hanging) must never silently take the rest
+          # of this run's jobs down with it - the previous `exit 1` inside
+          # hit() meant the FIRST route to fail killed the whole script, so
+          # send-owner-reminders hanging also meant timeout-owner-reviews,
+          # scheduled in the exact same 15-minute batch right after it,
+          # never even got attempted. Every route above always gets tried
+          # now; this only fails the Action (so a real failure is still
+          # visible as a red run) once every route has had its turn.
+          if [ -n "$FAILED" ]; then
+            echo "Failed:$FAILED"
+            exit 1
+          fi
