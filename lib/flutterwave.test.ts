@@ -9,6 +9,7 @@ import {
   createSubaccount,
   initializeSplitTransaction,
   verifyTransaction,
+  refundTransaction,
   getConvertedAmount,
   createPayoutTransfer,
 } from './flutterwave';
@@ -299,6 +300,85 @@ describe('verifyTransaction', () => {
     await verifyTransaction('chat_x&y=z');
     const [url] = fetchMock.mock.calls[0];
     expect(url).toBe(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent('chat_x&y=z')}`);
+  });
+});
+
+describe('refundTransaction', () => {
+  // Two sequential fetches (verify, then the refund POST) - the shared
+  // mockFetchOnce helper only stubs one response, so these build the
+  // fetch mock directly with mockResolvedValueOnce chains instead.
+  function mockSequence(...responses: { ok: boolean; status?: number; json?: unknown }[]) {
+    const fetchMock = vi.fn();
+    for (const r of responses) {
+      fetchMock.mockResolvedValueOnce({
+        ok: r.ok,
+        status: r.status ?? (r.ok ? 200 : 400),
+        json: vi.fn().mockResolvedValue(r.json),
+      });
+    }
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('looks the payment up by tx_ref, then refunds by Flutterwave’s own numeric transaction id - not the tx_ref itself', async () => {
+    const fetchMock = mockSequence(
+      { ok: true, json: { status: 'success', data: { id: 998877, status: 'successful' } } },
+      { ok: true, json: { status: 'success' } }
+    );
+
+    const result = await refundTransaction('web_abc-123');
+    expect(result).toEqual({ ok: true });
+
+    const [verifyUrl] = fetchMock.mock.calls[0];
+    expect(verifyUrl).toBe(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent('web_abc-123')}`);
+    const [refundUrl, refundInit] = fetchMock.mock.calls[1];
+    expect(refundUrl).toBe('https://api.flutterwave.com/v3/transactions/998877/refund');
+    expect(refundInit.method).toBe('POST');
+  });
+
+  it('fails closed when the initial lookup can’t reach Flutterwave at all', async () => {
+    mockSequence({ ok: false, status: 500 });
+    const result = await refundTransaction('web_abc-123');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/look up this payment/);
+  });
+
+  it('refuses to refund a reference Flutterwave has no record of', async () => {
+    mockSequence({ ok: true, json: { status: 'error', message: 'No transaction was found' } });
+    const result = await refundTransaction('made-up-ref');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/couldn.t find this payment/i);
+  });
+
+  it('refuses to refund a payment that never actually succeeded - a pending or failed transaction has nothing to reverse', async () => {
+    mockSequence({ ok: true, json: { status: 'success', data: { id: 1, status: 'pending' } } });
+    const result = await refundTransaction('web_abc-123');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/never succeeded/);
+  });
+
+  it('surfaces Flutterwave’s own refund-rejection message (already refunded, window passed, etc.) rather than a generic failure', async () => {
+    mockSequence(
+      { ok: true, json: { status: 'success', data: { id: 1, status: 'successful' } } },
+      { ok: false, status: 400, json: { status: 'error', message: 'Transaction already refunded' } }
+    );
+    const result = await refundTransaction('web_abc-123');
+    expect(result).toEqual({ ok: false, error: 'Transaction already refunded' });
+  });
+
+  it('fails closed rather than throwing when the refund POST itself can’t reach Flutterwave', async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ status: 'success', data: { id: 1, status: 'successful' } }),
+    });
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await refundTransaction('web_abc-123');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/couldn.t reach flutterwave to process the refund/i);
   });
 });
 
