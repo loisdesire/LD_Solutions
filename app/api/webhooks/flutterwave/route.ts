@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-    await supabaseAdmin
+    const { error: activateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'active',
@@ -157,11 +157,24 @@ export async function POST(req: NextRequest) {
         past_due_warning_sent_at: null,
       })
       .eq('id', sub.id);
+    // Neither update here ever checked its own error - the same class of
+    // bug already fixed on payout_transfers/payment_history above, and
+    // more consequential on this specific branch: a failed write here
+    // means a business that just genuinely paid keeps reading as
+    // trialing/expired/past_due everywhere else in the app (the billing
+    // page, requireStaffSession's own access gate), with nothing anywhere
+    // to say why.
+    if (activateError) {
+      logError('api/webhooks/flutterwave:activate-failed', activateError, { businessId: sub.business_id, subscriptionId: sub.id, txRef }, { critical: true });
+    }
   } else if (data.status === 'failed') {
-    await supabaseAdmin
+    const { error: pastDueError } = await supabaseAdmin
       .from('subscriptions')
       .update({ status: 'past_due', updated_at: new Date().toISOString() })
       .eq('id', sub.id);
+    if (pastDueError) {
+      logError('api/webhooks/flutterwave:past-due-failed', pastDueError, { businessId: sub.business_id, subscriptionId: sub.id, txRef });
+    }
   }
 
   return NextResponse.json({ ok: true });
