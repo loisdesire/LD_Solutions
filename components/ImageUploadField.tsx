@@ -110,12 +110,20 @@ export default function ImageUploadField({
       )}
 
       {value && (
-        <div className="mt-2 flex items-center gap-3">
+        // flex-wrap, not a rigid single row - "Change cover photo" is a
+        // longer label than "Change logo", and in a narrower column
+        // (confirmed live: the two-column Branding layout squeezes this
+        // side down at ordinary viewport widths) there wasn't room for
+        // both buttons on one line. Without whitespace-nowrap, the button
+        // text itself wrapped mid-label instead of the whole button
+        // dropping to its own line, which read as broken/overlapping
+        // rather than just a normal wrap.
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <button
             type="button"
             onClick={pick}
             disabled={uploading}
-            className="inline-flex h-8 items-center rounded-md border border-line-strong px-3 text-[12.5px] font-semibold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
+            className="inline-flex h-8 items-center whitespace-nowrap rounded-md border border-line-strong px-3 text-[12.5px] font-semibold text-ink hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
           >
             {uploading ? 'Uploading…' : `Change ${label.toLowerCase()}`}
           </button>
@@ -123,7 +131,7 @@ export default function ImageUploadField({
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors"
+              className="whitespace-nowrap text-[12.5px] font-medium text-ink-faint hover:text-error transition-colors"
             >
               Remove
             </button>
