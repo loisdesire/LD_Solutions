@@ -548,10 +548,7 @@ export default function PaymentsManager({
                   {confirmAccountNumber && confirmAccountNumber !== accountNumber && (
                     <p className="text-caption text-error">The account numbers don&rsquo;t match.</p>
                   )}
-                  <p className="text-caption text-warning">
-                    We can&rsquo;t independently verify Ghana accounts (a Flutterwave limitation) - double-check this
-                    number carefully. A wrong number could send money to someone else.
-                  </p>
+                  <p className="text-caption text-warning">Double-check this number carefully before saving.</p>
                 </>
               )}
             </div>
