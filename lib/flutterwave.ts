@@ -131,9 +131,13 @@ export async function getBankBranches(bankId: string): Promise<{ code: string; n
 // Registers a business's bank account as a Flutterwave Subaccount under
 // Vanova's own account - a one-time setup step; every deposit afterward
 // just references the returned id (see initializeSplitTransaction).
-// business_email/mobile are required by Flutterwave's own API even
-// though nothing here reads them back - Flutterwave uses them for their
-// own subaccount correspondence, not something this app displays.
+// business_email is still sent (staff.email always exists, so nothing was
+// gained by testing its absence). business_mobile used to be a required
+// field here and on the owner-facing form, on the assumption Flutterwave's
+// API needed it - confirmed live that's false (creation succeeds fine
+// without it), and nothing in this app ever stored or displayed it back
+// either, so it's dropped entirely now rather than kept as unused
+// friction on the form.
 // country/currency were hardcoded to 'NG'/(implicit NGN) before Ghana
 // existed; branchCode is only ever passed for Ghana/Tanzania/Rwanda/
 // Uganda accounts, and only appears in the request at all when present -
@@ -144,7 +148,6 @@ export async function createSubaccount(params: {
   bankCode: string;
   businessName: string;
   businessEmail: string;
-  businessMobile: string;
   country: string;
   currency: string;
   branchCode?: string;
@@ -157,7 +160,6 @@ export async function createSubaccount(params: {
       account_number: params.accountNumber,
       business_name: params.businessName,
       business_email: params.businessEmail,
-      business_mobile: params.businessMobile,
       country: params.country,
       currency: params.currency,
       split_type: 'percentage',
@@ -179,9 +181,9 @@ export async function createSubaccount(params: {
     // "subaccount creation failed" with no way to see why - confirmed live,
     // a real account (resolved fine, name and all) still failed to link
     // with zero diagnosable detail anywhere. Flutterwave's actual message
-    // (e.g. an unsupported bank/wallet for subaccounts, a bad split_value,
-    // a malformed business_mobile) is exactly what's needed to fix the
-    // next one of these instead of guessing.
+    // (e.g. an unsupported bank/wallet for subaccounts, a bad split_value)
+    // is exactly what's needed to fix the next one of these instead of
+    // guessing.
     logError('flutterwave:createSubaccount', new Error(data?.message || `Flutterwave ${res.status}`), {
       httpStatus: res.status,
       flwMessage: data?.message,

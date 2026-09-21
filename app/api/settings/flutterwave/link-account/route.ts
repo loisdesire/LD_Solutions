@@ -26,8 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many attempts, please try again shortly' }, { status: 429 });
   }
 
-  const { slug, bankCode, bankId, accountNumber, confirmAccountNumber, businessMobile, country: rawCountry, branchCode } =
-    await req.json();
+  const { slug, bankCode, bankId, accountNumber, confirmAccountNumber, country: rawCountry, branchCode } = await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
   const auth = await requireStaffApiSession(req, slug, 'id, name', { requireOwner: true });
@@ -36,7 +35,6 @@ export async function POST(req: NextRequest) {
 
   const bank = String(bankCode ?? '').trim();
   const account = String(accountNumber ?? '').trim();
-  const mobile = String(businessMobile ?? '').trim();
   // Only 'NG'/'GH' mean anything (see COUNTRY_CURRENCY) - anything else
   // falls back to Nigeria rather than silently creating a subaccount with
   // an unsupported country/currency pair.
@@ -46,7 +44,6 @@ export async function POST(req: NextRequest) {
 
   if (!bank) return NextResponse.json({ ok: false, error: 'Pick a bank first.' });
   if (!/^\d{10}$/.test(account)) return NextResponse.json({ ok: false, error: 'Account numbers are 10 digits - check for a typo.' });
-  if (!mobile) return NextResponse.json({ ok: false, error: 'A phone number is needed for the payout account.' });
   // Ghana-only, re-checked server-side rather than trusting the client's
   // own match - Flutterwave's accounts/resolve endpoint rejects every
   // Ghana bank code on this account (confirmed live, mobile money and
@@ -107,7 +104,6 @@ export async function POST(req: NextRequest) {
     bankCode: bank,
     businessName: business.name,
     businessEmail: ownerRow?.email ?? `${slug}@vanovahub.com`,
-    businessMobile: mobile,
     country,
     currency,
     branchCode: branch || undefined,

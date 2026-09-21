@@ -73,7 +73,6 @@ export default function PaymentsManager({
   // renders for why this exists instead of the Flutterwave name-preview
   // Nigeria gets.
   const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
-  const [businessMobile, setBusinessMobile] = useState('');
   const [branches, setBranches] = useState<{ code: string; name: string }[]>([]);
   const [branchesError, setBranchesError] = useState('');
   const [branchCode, setBranchCode] = useState(initialBranchCode ?? '');
@@ -294,7 +293,6 @@ export default function PaymentsManager({
             bankId: selectedBank?.id ?? '',
             accountNumber,
             confirmAccountNumber,
-            businessMobile,
             country,
             branchCode,
           }),
@@ -555,21 +553,6 @@ export default function PaymentsManager({
                     number carefully. A wrong number could send money to someone else.
                   </p>
                 </>
-              )}
-              {/* Only asked for once - the very first time an account is
-                  linked. Flutterwave requires a phone number to create the
-                  payout account at all; re-asking on every edit (even one
-                  that doesn't change the bank details) would be friction
-                  with nothing new to learn from it. */}
-              {!accountConnected && (
-                <input
-                  aria-label="Business phone number"
-                  type="tel"
-                  value={businessMobile}
-                  onChange={(e) => { setBusinessMobile(e.target.value); setSaved(false); }}
-                  placeholder="Phone number for this account"
-                  className={inputClass}
-                />
               )}
             </div>
 
