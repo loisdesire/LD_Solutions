@@ -565,11 +565,20 @@ export default function AssistantChat({
               conversation instead, open on demand, and doesn't cost any
               vertical space until someone actually asks for it.
               One flat, left-aligned list - see assistantSuggestions.ts for
-              why this isn't grouped under headers anymore. */}
+              why this isn't grouped under headers anymore.
+              max-h-72 (18rem), not the old max-h-[60vh] - vh is relative to
+              the whole browser viewport, but the floating widget (this
+              component's bare=true caller) is a ~560px-tall card, not the
+              full page. 60vh of a normal viewport came out nearly as tall
+              as the entire widget, swallowing its own header and reading
+              as broken rather than a compact popover - confirmed live via
+              screenshot. A fixed cap looks right in both the small widget
+              and the full-page /admin/assistant use, unlike a vh value
+              that only made sense for one of the two. */}
           {skillsOpen && (
             <div
               ref={skillsRef}
-              className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-line bg-surface shadow-[0_16px_40px_-16px_rgba(36,28,24,0.35)] p-4 max-h-[60vh] overflow-y-auto animate-rise"
+              className="absolute bottom-full left-3 right-3 mb-2 rounded-2xl border border-line bg-surface shadow-[0_16px_40px_-16px_rgba(36,28,24,0.35)] p-4 max-h-72 overflow-y-auto animate-rise"
             >
               <div className="flex flex-wrap justify-start gap-2">
                 {suggestions.map((s) => (
