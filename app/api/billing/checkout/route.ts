@@ -6,6 +6,7 @@ import { PLAN_PRICE_NGN, PLAN_LABEL, type Plan } from '@/lib/subscription';
 import { SITE_URL } from '@/lib/site';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { DEMO_VIEWER_AUTH_ID } from '@/lib/demo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,11 +47,18 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
   const { business } = auth;
 
+  // Excludes the demo-viewer account explicitly - glow-salon (see
+  // DEMO_SLUG in lib/site.ts) is both a real business and the public
+  // homepage demo, so it genuinely has two 'owner' staff rows. Without
+  // this, .maybeSingle() errors on "more than one row returned" for
+  // exactly this one business, which is what silently killed checkout
+  // here - confirmed live, not a Flutterwave-side problem.
   const { data: staffRow } = await supabaseAdmin
     .from('staff')
     .select('email')
     .eq('business_id', business.id)
     .eq('role', 'owner')
+    .neq('auth_id', DEMO_VIEWER_AUTH_ID)
     .maybeSingle();
 
   const txRef = `sub_${business.id}_${randomUUID()}`;

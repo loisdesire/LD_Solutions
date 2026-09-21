@@ -4,6 +4,7 @@ import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
 import { resolveBankAccount, createSubaccount, getBankBranches, COUNTRY_CURRENCY } from '@/lib/flutterwave';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
+import { DEMO_VIEWER_AUTH_ID } from '@/lib/demo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -92,11 +93,17 @@ export async function POST(req: NextRequest) {
     accountName = resolved.accountName;
   }
 
+  // Excludes the demo-viewer account - glow-salon (see DEMO_SLUG in
+  // lib/site.ts) is both a real business and the public homepage demo, so
+  // it genuinely has two 'owner' staff rows. Without this, .maybeSingle()
+  // errors on "more than one row returned" for exactly this one business
+  // (confirmed live: PGRST116).
   const { data: ownerRow } = await supabaseAdmin
     .from('staff')
     .select('email')
     .eq('business_id', business.id)
     .eq('role', 'owner')
+    .neq('auth_id', DEMO_VIEWER_AUTH_ID)
     .maybeSingle();
 
   const sub = await createSubaccount({

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { compareRevenuePeriods, getCancellationsAndNoShows } from './insightsTools';
 import { formatMoney } from './formatMoney';
 import { logError } from './logger';
+import { DEMO_VIEWER_AUTH_ID } from './demo';
 import type { EmailRow } from './emailTemplate';
 
 const supabaseAdmin = createClient(
@@ -107,9 +108,20 @@ export async function getWeeklyDigestRecipients(): Promise<{ businessId: string;
 
   const businessIds = activeSubs.map((s) => s.business_id);
 
+  // Excludes the demo-viewer account - glow-salon (see DEMO_SLUG in
+  // lib/site.ts) is both a real business and the public homepage demo, so
+  // it genuinely has two 'owner' staff rows. Left unfiltered, this bulk
+  // query (no .maybeSingle() to error out) would happily include the
+  // fake demo-viewer@vanovahub.internal address as a second "owner" row
+  // and waste a send attempt on it every week.
   const [{ data: businesses }, { data: owners }] = await Promise.all([
     supabaseAdmin.from('businesses').select('id, name, slug, accent_color, logo_url').in('id', businessIds),
-    supabaseAdmin.from('staff').select('business_id, email').eq('role', 'owner').in('business_id', businessIds),
+    supabaseAdmin
+      .from('staff')
+      .select('business_id, email')
+      .eq('role', 'owner')
+      .neq('auth_id', DEMO_VIEWER_AUTH_ID)
+      .in('business_id', businessIds),
   ]);
 
   const ownerEmailByBusiness = new Map((owners ?? []).map((o) => [o.business_id, o.email]));

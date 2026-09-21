@@ -4,6 +4,7 @@ import { renderEmail, type EmailRow } from './emailTemplate';
 import { formatMoney } from './formatMoney';
 import { SITE_URL } from './site';
 import { logError } from './logger';
+import { DEMO_VIEWER_AUTH_ID } from './demo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -165,9 +166,21 @@ export async function notifyOwnerByEmail(
   businessId: string,
   opts: { subject?: string; heading: string; intro: string; rows?: EmailRow[]; footerNote?: string; logContext: string }
 ): Promise<void> {
+  // Excludes the demo-viewer account - glow-salon (see DEMO_SLUG in
+  // lib/site.ts) is both a real business and the public homepage demo, so
+  // it genuinely has two 'owner' staff rows. Without this, .maybeSingle()
+  // errors on "more than one row returned" for exactly this one business
+  // (confirmed live: PGRST116) - meaning every owner-notification email
+  // for glow-salon was silently never sent.
   const [{ data: business }, { data: owner }] = await Promise.all([
     supabaseAdmin.from('businesses').select('name, accent_color, logo_url, slug').eq('id', businessId).maybeSingle(),
-    supabaseAdmin.from('staff').select('email').eq('business_id', businessId).eq('role', 'owner').maybeSingle(),
+    supabaseAdmin
+      .from('staff')
+      .select('email')
+      .eq('business_id', businessId)
+      .eq('role', 'owner')
+      .neq('auth_id', DEMO_VIEWER_AUTH_ID)
+      .maybeSingle(),
   ]);
 
   if (!owner?.email) return;

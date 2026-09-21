@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireSuperAdminSession } from '@/lib/requireSuperAdminSession';
 import { logSuperAdminAction } from '@/lib/superAdminAudit';
+import { DEMO_VIEWER_AUTH_ID } from '@/lib/demo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,11 +29,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Business not found.' }, { status: 404 });
   }
 
+  // Excludes the demo-viewer account - glow-salon (see DEMO_SLUG in
+  // lib/site.ts) is both a real business and the public homepage demo, so
+  // it genuinely has two 'owner' staff rows. Without this, .maybeSingle()
+  // errors on "more than one row returned" for exactly this one business
+  // (confirmed live: PGRST116).
   const { data: owner } = await supabaseAdmin
     .from('staff')
     .select('auth_id')
     .eq('business_id', business.id)
     .eq('role', 'owner')
+    .neq('auth_id', DEMO_VIEWER_AUTH_ID)
     .maybeSingle();
 
   if (!owner?.auth_id) {
