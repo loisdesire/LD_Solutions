@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many attempts, please try again shortly' }, { status: 429 });
   }
 
-  const { slug, bankCode, bankId, accountNumber, businessMobile, country: rawCountry, branchCode } = await req.json();
+  const { slug, bankCode, bankId, accountNumber, confirmAccountNumber, businessMobile, country: rawCountry, branchCode } =
+    await req.json();
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
   const auth = await requireStaffApiSession(req, slug, 'id, name', { requireOwner: true });
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest) {
   if (!bank) return NextResponse.json({ ok: false, error: 'Pick a bank first.' });
   if (!/^\d{10}$/.test(account)) return NextResponse.json({ ok: false, error: 'Account numbers are 10 digits - check for a typo.' });
   if (!mobile) return NextResponse.json({ ok: false, error: 'A phone number is needed for the payout account.' });
+  // Ghana-only, re-checked server-side rather than trusting the client's
+  // own match - Flutterwave's accounts/resolve endpoint rejects every
+  // Ghana bank code on this account (confirmed live, mobile money and
+  // real banks alike), so there's no independent "does this look right"
+  // check available for Ghana the way Nigeria gets below. Retyping the
+  // number is the only typo-catching this path has.
+  if (country === 'GH' && account !== String(confirmAccountNumber ?? '').trim()) {
+    return NextResponse.json({ ok: false, error: "The account numbers don't match." });
+  }
 
   // Independently re-checks whether this bank actually needs a branch,
   // never trusting the client's own branchCode presence/absence as proof
@@ -66,12 +76,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const resolved = await resolveBankAccount(account, bank);
-  if (!resolved) {
-    return NextResponse.json({
-      ok: false,
-      error: "Couldn't verify that account - check the account number and bank, then try again.",
-    });
+  // Nigeria: resolveBankAccount independently confirms the account name
+  // before anything is created, so a typo surfaces as "check the number"
+  // instead of a silently misdirected payout. Ghana skips this entirely -
+  // see the accountNumber/confirmAccountNumber check above for why - and
+  // uses whatever the owner typed, unverified, as-is.
+  let accountNumberToUse = account;
+  let accountName: string | null = null;
+  if (country === 'NG') {
+    const resolved = await resolveBankAccount(account, bank);
+    if (!resolved) {
+      return NextResponse.json({
+        ok: false,
+        error: "Couldn't verify that account - check the account number and bank, then try again.",
+      });
+    }
+    accountNumberToUse = resolved.accountNumber;
+    accountName = resolved.accountName;
   }
 
   const { data: ownerRow } = await supabaseAdmin
@@ -82,7 +103,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   const sub = await createSubaccount({
-    accountNumber: resolved.accountNumber,
+    accountNumber: accountNumberToUse,
     bankCode: bank,
     businessName: business.name,
     businessEmail: ownerRow?.email ?? `${slug}@vanovahub.com`,
@@ -102,13 +123,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Couldn't set up payouts with Flutterwave. Try again shortly." });
   }
 
+  // Ghana has no real resolved name to store - a masked version of the
+  // number itself (never a fabricated person's name) is what the UI shows
+  // as "connected", honestly labeled as unverified there, not here.
+  const displayName = accountName ?? `Account ending in ${accountNumberToUse.slice(-4)}`;
+
   const { error } = await supabaseAdmin
     .from('businesses')
     .update({
       flw_subaccount_id: sub.subaccountId,
       flw_bank_code: bank,
-      flw_account_number: resolved.accountNumber,
-      flw_account_name: resolved.accountName,
+      flw_account_number: accountNumberToUse,
+      flw_account_name: displayName,
       flw_branch_code: branch || null,
       country,
       currency,
@@ -120,5 +146,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Account verified but couldn't save. Try again." });
   }
 
-  return NextResponse.json({ ok: true, accountName: resolved.accountName });
+  return NextResponse.json({ ok: true, accountName: displayName });
 }

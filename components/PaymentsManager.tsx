@@ -69,6 +69,10 @@ export default function PaymentsManager({
   // only ever set once it resolves to a real, exact bank match.
   const [bankQuery, setBankQuery] = useState('');
   const [accountNumber, setAccountNumber] = useState(initialAccountNumber ?? '');
+  // Ghana-only - see the confirm-field's own comment near where it
+  // renders for why this exists instead of the Flutterwave name-preview
+  // Nigeria gets.
+  const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
   const [businessMobile, setBusinessMobile] = useState('');
   const [branches, setBranches] = useState<{ code: string; name: string }[]>([]);
   const [branchesError, setBranchesError] = useState('');
@@ -191,7 +195,12 @@ export default function PaymentsManager({
   // only action that actually links the account.
   useEffect(() => {
     setResolveError('');
-    if (!bankCode || accountNumber.length !== 10) {
+    // Ghana never reaches this - Flutterwave's own accounts/resolve
+    // endpoint rejects every Ghana bank code (confirmed live against the
+    // real API, mobile money and real banks alike - "invalid bank code
+    // provided" / "Unknown Bank Code" for both), not a request-format
+    // issue on this end. Nigeria still gets the real preview.
+    if (country === 'GH' || !bankCode || accountNumber.length !== 10) {
       setResolvedName('');
       return;
     }
@@ -226,7 +235,7 @@ export default function PaymentsManager({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [bankCode, accountNumber, slug, initialBankCode, initialAccountNumber]);
+  }, [country, bankCode, accountNumber, slug, initialBankCode, initialAccountNumber]);
 
   const dirty =
     !saved &&
@@ -270,6 +279,11 @@ export default function PaymentsManager({
         setError('Pick your bank branch first.');
         return;
       }
+      if (country === 'GH' && confirmAccountNumber !== accountNumber) {
+        setSaving(false);
+        setError('Retype the account number to confirm it matches.');
+        return;
+      }
       try {
         const res = await fetch('/api/settings/flutterwave/link-account', {
           method: 'POST',
@@ -279,6 +293,7 @@ export default function PaymentsManager({
             bankCode,
             bankId: selectedBank?.id ?? '',
             accountNumber,
+            confirmAccountNumber,
             businessMobile,
             country,
             branchCode,
@@ -435,6 +450,7 @@ export default function PaymentsManager({
                       setBankCode('');
                       setBankQuery('');
                       setBranchCode('');
+                      setConfirmAccountNumber('');
                       setLinkedAccountName('');
                       setSaved(false);
                     }}
@@ -510,10 +526,36 @@ export default function PaymentsManager({
                 aria-label="Account number"
                 inputMode="numeric"
                 value={accountNumber}
-                onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setLinkedAccountName(''); setSaved(false); }}
+                onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setConfirmAccountNumber(''); setLinkedAccountName(''); setSaved(false); }}
                 placeholder="10-digit account number"
                 className={inputClass}
               />
+              {/* Ghana-only - Flutterwave's own account-verification
+                  endpoint rejects every Ghana bank code on this account
+                  (confirmed live, mobile money and real banks alike), so
+                  there's no "does this look right" name preview available
+                  the way Nigeria gets below. Retyping the number is the
+                  only typo-catching available here, checked again
+                  server-side rather than trusted from this match alone. */}
+              {country === 'GH' && (
+                <>
+                  <input
+                    aria-label="Confirm account number"
+                    inputMode="numeric"
+                    value={confirmAccountNumber}
+                    onChange={(e) => { setConfirmAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setSaved(false); }}
+                    placeholder="Retype the account number to confirm"
+                    className={inputClass}
+                  />
+                  {confirmAccountNumber && confirmAccountNumber !== accountNumber && (
+                    <p className="text-caption text-error">The account numbers don&rsquo;t match.</p>
+                  )}
+                  <p className="text-caption text-warning">
+                    We can&rsquo;t independently verify Ghana accounts (a Flutterwave limitation) - double-check this
+                    number carefully. A wrong number could send money to someone else.
+                  </p>
+                </>
+              )}
               {/* Only asked for once - the very first time an account is
                   linked. Flutterwave requires a phone number to create the
                   payout account at all; re-asking on every edit (even one
@@ -533,7 +575,7 @@ export default function PaymentsManager({
 
             {accountConnected ? (
               <p className="text-caption mt-3" style={{ color: 'var(--success)' }}>
-                Verified: paying out to {linkedAccountName}.
+                {country === 'GH' ? `Connected: paying out to ${linkedAccountName}.` : `Verified: paying out to ${linkedAccountName}.`}
               </p>
             ) : (
               // The live preview - shows up as soon as a real bank +
@@ -554,10 +596,12 @@ export default function PaymentsManager({
               </>
             )}
 
-            <p className="text-ink-faint text-[12px] mt-2.5">
-              We verify this account with Flutterwave before saving and show you the name on file, the same way a
-              bank-transfer app confirms who you&rsquo;re paying before you send anything.
-            </p>
+            {country === 'NG' && (
+              <p className="text-ink-faint text-[12px] mt-2.5">
+                We verify this account with Flutterwave before saving and show you the name on file, the same way a
+                bank-transfer app confirms who you&rsquo;re paying before you send anything.
+              </p>
+            )}
           </div>
 
           <div>
