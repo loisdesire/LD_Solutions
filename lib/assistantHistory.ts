@@ -36,13 +36,22 @@ export async function getAssistantHistory(
   // [an old point] - I can't see recent chats anymore," which is exactly
   // this: descending + limit to actually get the most recent messages,
   // then reversed back into chronological order for use as context.
+  //
+  // Ordered by seq, not created_at - appendAssistantMessages inserts a
+  // turn's user message and assistant reply together in ONE insert
+  // statement, and Postgres's now() is evaluated once PER STATEMENT, so
+  // both rows land with the identical created_at. Sorted ties then fell
+  // back to id, a random UUID unrelated to insertion order - confirmed
+  // live as a reply rendering BEFORE the user message it replied to on
+  // reload. seq (bigserial) is evaluated per row even within one
+  // multi-row insert, so it's an actual reliable tiebreaker.
   const { data, error } = await supabaseAdmin
     .from('assistant_messages')
     .select('role, content')
     .eq('business_id', businessId)
     .eq('staff_id', staffId)
     .eq('kind', kind)
-    .order('created_at', { ascending: false })
+    .order('seq', { ascending: false })
     .limit(HISTORY_LIMIT);
 
   if (error || !data) return [];

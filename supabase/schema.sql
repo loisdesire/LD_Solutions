@@ -1157,3 +1157,19 @@ alter table super_admin_audit_log enable row level security;
 alter table bookings add column if not exists refund_status text; -- 'completed' | 'failed', null = never attempted
 alter table bookings add column if not exists refunded_amount numeric;
 alter table bookings add column if not exists refunded_at timestamptz;
+
+-- ============================================
+-- Assistant history ordering fix
+-- ============================================
+-- Confirmed live: a restored conversation (app/[slug]/admin/assistant,
+-- after navigating away and back) sometimes showed a reply BEFORE the
+-- user message it was replying to. Root cause - appendAssistantMessages
+-- inserts a turn's user message and assistant reply together in ONE
+-- insert statement, and Postgres's now() is evaluated once PER STATEMENT,
+-- not per row - both rows land with the exact same created_at. Sorted
+-- ties then fell back to id, a random UUID with zero relation to
+-- insertion order, so which one sorted "first" was luck. A bigserial
+-- default is evaluated per row even within a single multi-row insert,
+-- so it's the actual reliable tiebreaker created_at never was.
+alter table assistant_messages add column if not exists seq bigserial;
+create index if not exists assistant_messages_seq_idx on assistant_messages (business_id, staff_id, kind, seq);
