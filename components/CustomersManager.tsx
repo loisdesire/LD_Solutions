@@ -190,11 +190,11 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                     setDetailCustomer(c);
                   }
                 }}
-                className={`cursor-pointer px-2 py-4 hover:bg-warm-surface transition-colors ${
+                className={`cursor-pointer px-3 py-5 sm:px-2 sm:py-4 hover:bg-warm-surface transition-colors ${
                   i !== filtered.length - 1 ? 'border-b border-line-strong' : ''
                 }`}
               >
-                <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] sm:gap-4 sm:items-center">
+                <div className="flex flex-col gap-2.5 sm:grid sm:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1fr] sm:gap-4 sm:items-center">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-[14px] truncate">{c.name}</p>
@@ -213,7 +213,7 @@ export default function CustomersManager({ slug, bookings }: { slug: string; boo
                       )}
                     </div>
                     {c.lastService && (
-                      <p className="font-mono text-[12px] uppercase tracking-[0.05em] text-ink-faint truncate mt-0.5">
+                      <p className="font-mono text-[12px] uppercase tracking-[0.05em] text-ink-faint truncate mt-1.5">
                         Last booked {c.lastService}
                       </p>
                     )}
