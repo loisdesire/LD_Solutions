@@ -7,6 +7,8 @@
 // instant anything client-side imports even one unrelated export from a
 // file that also does that at the top level.
 
+import { AFRICAN_COUNTRY_CODES } from './africanCountries';
+
 export type Plan = 'core' | 'business_intelligence';
 
 // Referenced by both the billing page (what it shows) and the checkout
@@ -26,6 +28,36 @@ export const PLAN_LABEL: Record<Plan, string> = {
   core: 'Core',
   business_intelligence: 'Business Intelligence',
 };
+
+// Geographic pricing - only 'core' (the only plan sold at all now, per
+// PLAN_PRICE_NGN's own comment) gets tiered by country. Settled after an
+// actual pricing discussion (not guessed): Nigeria/Ghana keep real local
+// pricing, other African countries get a real discount off the
+// international rate rather than being lumped in with it, and nobody is
+// ever asked to self-report which tier they're in - home_country_code
+// (supabase/schema.sql) is geolocated once at signup, never a choice
+// offered to the business itself.
+export type BillingTier = 'NG' | 'GH' | 'AFRICA' | 'INTL';
+
+export const BILLING_TIER_PRICE: Record<BillingTier, { amount: number; currency: string }> = {
+  NG: { amount: PLAN_PRICE_NGN.core, currency: 'NGN' },
+  GH: { amount: 120, currency: 'GHS' },
+  AFRICA: { amount: 10, currency: 'USD' },
+  INTL: { amount: 15, currency: 'USD' },
+};
+
+// null/undefined (the column doesn't exist yet on this database, the
+// geolocation lookup failed, or a business predates this feature) reads
+// as NG - fails closed to the existing, safe, already-correct-for-most-
+// businesses default, rather than an unrelated hiccup landing someone on
+// a different tier than intended. Shared by the checkout route and the
+// billing page's own price display so both agree on the same tier
+// without recomputing the rule differently in two places.
+export function getBillingTier(homeCountryCode: string | null | undefined): BillingTier {
+  if (!homeCountryCode || homeCountryCode === 'NG') return 'NG';
+  if (homeCountryCode === 'GH') return 'GH';
+  return AFRICAN_COUNTRY_CODES.has(homeCountryCode) ? 'AFRICA' : 'INTL';
+}
 
 export type Subscription = {
   status: string;

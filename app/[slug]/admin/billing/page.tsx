@@ -1,5 +1,5 @@
 import { requireStaffSession } from '@/lib/requireStaffSession';
-import { getSubscriptionState } from '@/lib/subscription';
+import { getSubscriptionState, getBillingTier } from '@/lib/subscription';
 import BillingManager from '@/components/BillingManager';
 import PageHeader from '@/components/PageHeader';
 import type { Metadata } from 'next';
@@ -38,7 +38,7 @@ export default async function BillingPage({
     );
   }
 
-  let [{ data: sub, error: subError }, { data: history }] = await Promise.all([
+  let [{ data: sub, error: subError }, { data: history }, { data: countryRow }] = await Promise.all([
     supabase
       .from('subscriptions')
       .select('status, trial_ends_at, current_period_end, plan')
@@ -49,6 +49,12 @@ export default async function BillingPage({
       .select('id, amount, status, created_at')
       .eq('business_id', business.id)
       .order('created_at', { ascending: false }),
+    // home_country_code isn't part of getBusinessBySlug's public columns
+    // (it's an internal billing detail, not something the public booking
+    // page needs) - fetched here instead, just for what this one page
+    // actually needs it for: showing the right currency before they
+    // even click Subscribe.
+    supabase.from('businesses').select('home_country_code').eq('id', business.id).maybeSingle(),
   ]);
 
   // Before the plan migration runs, selecting a nonexistent column fails
@@ -64,11 +70,12 @@ export default async function BillingPage({
   }
 
   const state = getSubscriptionState(sub ?? null);
+  const tier = getBillingTier(countryRow?.home_country_code);
 
   return (
     <div>
       <PageHeader eyebrow="Business" title="Billing" />
-      <BillingManager slug={slug} state={state} history={history ?? []} initiallyLocked={locked === '1'} />
+      <BillingManager slug={slug} state={state} history={history ?? []} initiallyLocked={locked === '1'} tier={tier} />
     </div>
   );
 }

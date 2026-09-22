@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
-import type { SubscriptionState, Plan } from '@/lib/subscription';
+import { PLAN_PRICE_NGN, PLAN_LABEL, BILLING_TIER_PRICE } from '@/lib/subscription';
+import type { SubscriptionState, Plan, BillingTier } from '@/lib/subscription';
 import EmptyState from './EmptyState';
 import ConfirmDialog from './ConfirmDialog';
 import { useDialog } from './useDialog';
@@ -62,6 +62,7 @@ export default function BillingManager({
   state,
   history,
   initiallyLocked = false,
+  tier = 'NG',
 }: {
   slug: string;
   state: SubscriptionState;
@@ -69,7 +70,11 @@ export default function BillingManager({
   /** True when requireStaffSession redirected here because access ran out, as opposed to the owner just checking
    * their plan on their own - only the former should interrupt with the popup below. */
   initiallyLocked?: boolean;
+  /** Which of the four geographic pricing tiers this business bills at, from its home_country_code (set once at
+   * signup, geolocated, never a choice the business makes itself). See app/api/billing/checkout/route.ts. */
+  tier?: BillingTier;
 }) {
+  const tierPrice = BILLING_TIER_PRICE[tier];
   // Only actually show it if they're still locked out by the time this
   // renders - a stale ?locked=1 sitting in a bookmarked/shared URL
   // shouldn't pop this up for someone who has since subscribed.
@@ -163,7 +168,9 @@ export default function BillingManager({
           </span>
 
           <h2 className="font-display text-[22px] mt-3">
-            {formatMoney(PLAN_PRICE_NGN[state.plan])}
+            {state.plan === 'business_intelligence'
+              ? formatMoney(PLAN_PRICE_NGN.business_intelligence)
+              : formatMoney(tierPrice.amount, tierPrice.currency)}
             <span className="text-[14px] font-normal text-ink-faint"> / month</span>
           </h2>
           <p className="text-ink-soft text-[13.5px] mt-1.5">
@@ -219,7 +226,9 @@ export default function BillingManager({
                   <div className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-faint">
                     {PLAN_LABEL.core}
                   </div>
-                  <div className="font-display text-[17px] text-ink">{formatMoney(PLAN_PRICE_NGN.core)}</div>
+                  <div className="font-display text-[17px] text-ink">
+                    {formatMoney(tierPrice.amount, tierPrice.currency)}
+                  </div>
                 </div>
                 <p className="text-[12.5px] text-ink-soft mt-1 leading-snug">{PLAN_BLURB.core}</p>
               </div>
@@ -271,7 +280,7 @@ export default function BillingManager({
                 >
                   <div className="text-[13.5px] font-medium text-ink flex-1">{formatDate(h.created_at)}</div>
                   <div className="font-mono text-[13.5px] font-semibold text-ink tabular-nums">
-                    {formatMoney(h.amount != null ? Number(h.amount) : null)}
+                    {formatMoney(h.amount != null ? Number(h.amount) : null, tierPrice.currency)}
                   </div>
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium shrink-0 ${

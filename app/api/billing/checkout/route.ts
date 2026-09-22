@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { requireStaffApiSession } from '@/lib/requireStaffApiSession';
-import { PLAN_PRICE_NGN, PLAN_LABEL, type Plan } from '@/lib/subscription';
+import { PLAN_PRICE_NGN, PLAN_LABEL, getBillingTier, BILLING_TIER_PRICE, type Plan, type BillingTier } from '@/lib/subscription';
 import { SITE_URL } from '@/lib/site';
 import { rateLimit, getClientIp } from '@/lib/rateLimit';
 import { logError } from '@/lib/logger';
@@ -13,14 +13,24 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Each plan needs its own Payment Plan created by hand in the Flutterwave
-// dashboard (Recurring Payments → Payment Plans) - same one-time manual
-// step as before, just one more of them. We don't create plans
-// dynamically here, since re-running that on every deploy risks
-// duplicate plans.
+// Each plan/tier needs its own Payment Plan created by hand in the
+// Flutterwave dashboard (Recurring Payments → Payment Plans) - a manual,
+// one-time step, not created dynamically here (re-running that on every
+// deploy risks duplicates). business_intelligence isn't actually sold
+// (see PLAN_PRICE_NGN's own comment) so it isn't tiered - kept on its
+// legacy single NGN plan, unchanged.
 const PLAN_ENV_KEY: Record<Plan, string> = {
   core: 'FLUTTERWAVE_PLAN_ID',
   business_intelligence: 'FLUTTERWAVE_PLAN_ID_BI',
+};
+
+// Geographic pricing tiers for 'core' - see lib/subscription.ts's
+// BILLING_TIER_PRICE for the actual amounts/currencies.
+const TIER_ENV_KEY: Record<BillingTier, string> = {
+  NG: 'FLUTTERWAVE_PLAN_ID',
+  GH: 'FLUTTERWAVE_PLAN_ID_GH',
+  AFRICA: 'FLUTTERWAVE_PLAN_ID_AFRICA',
+  INTL: 'FLUTTERWAVE_PLAN_ID_USD',
 };
 
 // POST /api/billing/checkout - starts a Flutterwave subscription checkout
@@ -34,7 +44,21 @@ export async function POST(req: NextRequest) {
   if (!slug) return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
 
   const plan: Plan = rawPlan === 'business_intelligence' ? 'business_intelligence' : 'core';
-  const flwPlanId = process.env[PLAN_ENV_KEY[plan]];
+
+  const auth = await requireStaffApiSession(req, slug, 'id, name, home_country_code', { requireOwner: true });
+  if (auth.error) return auth.error;
+  const { business } = auth;
+
+  // Only 'core' (the only plan actually sold, see PLAN_PRICE_NGN's own
+  // comment) gets geographic pricing - a business's home_country_code
+  // (geolocated once at signup, never touched by payout-linking - see
+  // supabase/schema.sql) decides which of four tiers it bills at,
+  // automatically, never as a choice offered to them (the owner's own
+  // call: anyone could otherwise just pick the cheapest tier regardless
+  // of where they actually are).
+  const tier: BillingTier | null = plan === 'core' ? getBillingTier(business.home_country_code) : null;
+  const { amount, currency } = tier ? BILLING_TIER_PRICE[tier] : { amount: PLAN_PRICE_NGN[plan], currency: 'NGN' };
+  const flwPlanId = process.env[tier ? TIER_ENV_KEY[tier] : PLAN_ENV_KEY[plan]];
 
   if (!process.env.FLUTTERWAVE_SECRET_KEY || !flwPlanId) {
     return NextResponse.json(
@@ -42,10 +66,6 @@ export async function POST(req: NextRequest) {
       { status: 503 }
     );
   }
-
-  const auth = await requireStaffApiSession(req, slug, 'id, name', { requireOwner: true });
-  if (auth.error) return auth.error;
-  const { business } = auth;
 
   // Excludes the demo-viewer account explicitly - glow-salon (see
   // DEMO_SLUG in lib/site.ts) is both a real business and the public
@@ -71,8 +91,8 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       tx_ref: txRef,
-      amount: String(PLAN_PRICE_NGN[plan]),
-      currency: 'NGN',
+      amount: String(amount),
+      currency,
       redirect_url: `${SITE_URL}/${slug}/admin/billing`,
       payment_plan: flwPlanId,
       customer: {

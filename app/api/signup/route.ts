@@ -6,6 +6,7 @@ import { cleanEmail, cleanRequiredText, cleanSlug, isAcceptablePassword } from '
 import { sendEmail } from '@/lib/email';
 import { renderEmail } from '@/lib/emailTemplate';
 import { SITE_URL } from '@/lib/site';
+import { geolocateCountryCode } from '@/lib/geolocateCountry';
 
 // Uses the service role key because this needs to create both an auth user
 // and rows in businesses/staff - the anon key + RLS policies aren't meant
@@ -33,6 +34,15 @@ export async function POST(req: NextRequest) {
   if (!businessName || !slug || !ownerEmail || !isAcceptablePassword(ownerPassword)) {
     return NextResponse.json({ error: 'Please provide a valid business name, URL, email, and password' }, { status: 400 });
   }
+
+  // Determined from the request itself, never asked - the owner's own
+  // call: a cold "what country are you in" question on a signup form
+  // nobody expects. Captured once, here, and never touched again - see
+  // supabase/schema.sql's home_country_code comment for why this is a
+  // separate column from businesses.country (which changes whenever a
+  // payout bank account gets linked). A failed/unknown lookup defaults
+  // to 'NG' (geolocateCountryCode's own safe fallback), same as before.
+  const homeCountryCode = (await geolocateCountryCode(getClientIp(req))) ?? 'NG';
 
   // 1. Make sure the slug isn't already taken
   const { data: existing } = await supabaseAdmin
@@ -71,7 +81,13 @@ export async function POST(req: NextRequest) {
     // primary terracotta, kept in sync by hand whenever the brand changes.
     const { data: business, error: bizError } = await supabaseAdmin
       .from('businesses')
-      .insert({ slug, name: businessName, owner_auth_id: authUser.user.id, accent_color: '#C4512D' })
+      .insert({
+        slug,
+        name: businessName,
+        owner_auth_id: authUser.user.id,
+        accent_color: '#C4512D',
+        home_country_code: homeCountryCode,
+      })
       .select()
       .single();
 

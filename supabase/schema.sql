@@ -1173,3 +1173,29 @@ alter table bookings add column if not exists refunded_at timestamptz;
 -- so it's the actual reliable tiebreaker created_at never was.
 alter table assistant_messages add column if not exists seq bigserial;
 create index if not exists assistant_messages_seq_idx on assistant_messages (business_id, staff_id, kind, seq);
+
+-- ============================================
+-- Geographic subscription pricing (4 tiers)
+-- ============================================
+-- Deliberately a SEPARATE column from businesses.country - that one gets
+-- overwritten whenever a business links a payout bank account (see the
+-- glow-salon incident: linking a test Ghana account flipped its whole
+-- booking-page currency, confirmed live). Reusing it here would let the
+-- exact same thing silently flip a business's own Vanova subscription
+-- billing. home_country_code is a real ISO 3166-1 alpha-2 code
+-- (e.g. 'NG', 'KE', 'GB'), geolocated once from the request's IP at
+-- signup (lib/geolocateCountry.ts) and never touched again afterward -
+-- not asked as a signup question at all (the owner's own call: nobody
+-- wants a cold "what country are you in" field, and it's available for
+-- free from the request itself). Drives which of four pricing tiers a
+-- business's own Vanova subscription bills at - see
+-- lib/subscription.ts's getBillingTier and
+-- app/api/billing/checkout/route.ts for the actual tier logic:
+--   NG -> NGN 15,000/month (existing)
+--   GH -> GHS 120/month
+--   other African country -> USD 10/month
+--   everywhere else -> USD 15/month
+-- Never offered as a choice to the business itself - anyone could
+-- otherwise just pick the cheaper tier regardless of where they actually
+-- are.
+alter table businesses add column if not exists home_country_code text not null default 'NG';
