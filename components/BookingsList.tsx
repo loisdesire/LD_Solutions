@@ -7,6 +7,7 @@ import EmptyState from './EmptyState';
 import Icon from './Icon';
 import { STATUS_LABELS, statusLabel, statusStyle } from '@/lib/bookingStatus';
 import { parseContact } from '@/lib/contact';
+import { DEMO_VIEWER_NAME } from '@/lib/demo';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type Booking = {
@@ -136,10 +137,19 @@ export default function BookingsList({
   // so the Staff column is a column of one repeated name or a column of
   // dashes. Only worth its width once there is actually more than one
   // person to tell apart.
+  // DEMO_VIEWER_NAME excluded explicitly - confirmed live on glow-salon
+  // (both a real business and the public homepage demo, see DEMO_SLUG in
+  // lib/site.ts): one old, cancelled booking had somehow been assigned to
+  // the demo-viewer's own staff row (a fixed internal identity, never a
+  // real staff member), which alone flipped this to true and put an
+  // "Assigned: X" + contact row on every single card - real clutter from
+  // one stray row nobody would ever see any value in. The demo-viewer
+  // identity should never count as "more than one real person to tell
+  // apart," regardless of what any one booking's data happens to say.
   const staffNames = new Set(
     bookings
       .map((b: any) => (Array.isArray(b.staff) ? b.staff[0]?.name : b.staff?.name))
-      .filter(Boolean)
+      .filter((name: string | undefined) => Boolean(name) && name !== DEMO_VIEWER_NAME)
   );
   const showStaff = staffNames.size > 1;
   // Both variants written out in full, including the sm: prefix. Tailwind

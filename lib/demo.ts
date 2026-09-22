@@ -23,3 +23,7 @@
 // real business owner.
 export const DEMO_VIEWER_AUTH_ID = '8b3df1a8-a927-47b1-bc33-f948ca9afd9c';
 export const DEMO_VIEWER_EMAIL = 'demo-viewer@vanovahub.internal';
+// The staff.name this identity's row was created with - used client-side
+// (BookingsList.tsx) to exclude it from "how many real staff does this
+// business have" counts, where only the auth_id isn't available.
+export const DEMO_VIEWER_NAME = 'Demo Viewer';
