@@ -16,12 +16,14 @@ function makeTable() {
   function next(): TableResult {
     return queue.length > 0 ? queue.shift()! : { data: null, error: null };
   }
+  const neq = vi.fn(() => self);
   const self: any = {
     select: () => self,
     eq: () => self,
+    neq,
     maybeSingle: () => Promise.resolve(next()),
   };
-  return { self, push: (...items: TableResult[]) => queue.push(...items) };
+  return { self, push: (...items: TableResult[]) => queue.push(...items), neq };
 }
 
 const businessesTable = makeTable();
@@ -50,6 +52,7 @@ vi.mock('./logger', () => ({ logError: vi.fn() }));
 
 const { describeManageToolChange, notifyOwnerByEmail, notifyOwnerOfManageChange } = await import('./notifyOwnerOfChange');
 const { logError } = await import('./logger');
+const { DEMO_VIEWER_AUTH_ID } = await import('./demo');
 
 const BIZ = 'biz-1';
 
@@ -182,6 +185,15 @@ describe('notifyOwnerByEmail', () => {
     );
     const renderArgs = renderEmailMock.mock.calls[0][0];
     expect(renderArgs.cta).toEqual({ label: 'Open your dashboard', url: 'https://vanovahub.com/glow-salon/admin' });
+  });
+
+  it('excludes the demo-viewer identity from the owner lookup - glow-salon is both a real business and the public homepage demo, so it genuinely has two ‘owner’ staff rows, and without this exclusion .maybeSingle() errors on "more than one row" (PGRST116), silently never sending this email for that one business', async () => {
+    businessesTable.push({ data: { name: 'Glow Salon', accent_color: null, logo_url: null, slug: 'glow-salon' }, error: null });
+    staffTable.push({ data: { email: 'owner@glow.com' }, error: null });
+
+    await notifyOwnerByEmail(BIZ, { heading: 'A change happened', intro: 'Something changed.', logContext: 'test' });
+
+    expect(staffTable.neq).toHaveBeenCalledWith('auth_id', DEMO_VIEWER_AUTH_ID);
   });
 
   it('omits the dashboard CTA when the business has no slug', async () => {
