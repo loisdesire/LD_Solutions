@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Reveal from '@/components/Reveal';
@@ -7,9 +8,10 @@ import LandingMobileNav from '@/components/LandingMobileNav';
 import Button from '@/components/Button';
 import LandingChatDemo from '@/components/LandingChatDemo';
 import { SITE_URL, DEMO_SLUG } from '@/lib/site';
-import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
+import { PLAN_PRICE_NGN, PLAN_LABEL, BILLING_TIER_PRICE, getBillingTier } from '@/lib/subscription';
 import { formatMoney } from '@/lib/formatMoney';
 import { safeJsonLdString } from '@/lib/jsonLd';
+import { geolocateCountryCodeCached } from '@/lib/geolocateCountry';
 
 export const metadata: Metadata = {
   // The root layout uses `template: '%s'`, so a page title replaces the
@@ -43,6 +45,12 @@ const homepageJsonLd = {
     'An AI booking receptionist that answers customer questions, checks real availability, and books appointments for service businesses.',
   offers: {
     '@type': 'Offer',
+    // Deliberately the flat NGN price, not the geolocated one the page
+    // itself now shows (see LandingPage below) - structured data is read
+    // by crawlers, not the visitor in front of it, and a price that
+    // silently varies by whichever IP happened to render this particular
+    // response is exactly the kind of inconsistency search engines flag
+    // structured data for, not a feature worth carrying into it.
     price: PLAN_PRICE_NGN.core,
     priceCurrency: 'NGN',
   },
@@ -155,7 +163,23 @@ const CORE_INCLUDES = [
   'AI insights: ask about revenue, no-shows and busiest hours in plain language',
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Same geolocated pricing tier the billing page charges at (see
+  // lib/subscription.ts's getBillingTier), shown here too now instead of
+  // a flat Naira price for every visitor regardless of where they are -
+  // a Canadian who signed up used to see ₦15,000 advertised here and only
+  // discover the real $15 USD price once inside their own dashboard.
+  // Geolocated fresh per pageview (not the business's stored
+  // home_country_code - there's no business yet, this is a pre-signup
+  // visitor) and cached by IP for a few hours (geolocateCountryCodeCached)
+  // so real homepage traffic doesn't blow through ip-api.com's free-tier
+  // rate limit. A failed/unknown lookup falls back to NG, the same safe
+  // default every other caller of getBillingTier already uses.
+  const hdrs = await headers();
+  const visitorIp = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const visitorCountry = await geolocateCountryCodeCached(visitorIp);
+  const pricingTier = getBillingTier(visitorCountry);
+  const corePrice = BILLING_TIER_PRICE[pricingTier];
 
   return (
     <div className="landing min-h-screen bg-paper">
@@ -640,7 +664,7 @@ export default function LandingPage() {
                   {PLAN_LABEL.core}
                 </div>
                 <div className="font-display text-[48px] font-bold text-ink leading-none mt-3">
-                  {formatMoney(PLAN_PRICE_NGN.core)}
+                  {formatMoney(corePrice.amount, corePrice.currency)}
                   <span className="text-[16px] font-normal text-ink-faint"> /month</span>
                 </div>
                 <p className="text-[14px] text-ink-faint mt-2">14 days free, then billed monthly. Cancel anytime.</p>

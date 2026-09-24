@@ -33,3 +33,37 @@ export async function geolocateCountryCode(ip: string): Promise<string | null> {
     return null;
   }
 }
+
+type CacheEntry = { code: string | null; expiresAt: number };
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 6 * 3600_000; // 6 hours - an IP's country doesn't change minute to minute
+
+// Same in-memory-Map-with-periodic-sweep shape as lib/rateLimit.ts's own
+// localBuckets, for the same reason: this process is the only instance
+// (Hostinger, not a serverless fleet), so a plain Map is real, effective
+// caching here, not a per-instance approximation of a real one.
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (now > entry.expiresAt) cache.delete(key);
+  }
+}, 3600_000).unref?.();
+
+// The homepage now geolocates every anonymous visitor to show the right
+// price (see app/page.tsx) - unlike signup, that runs on every single
+// pageview, not once per new business. ip-api.com's free tier is 45
+// requests/minute PER CALLING IP, and every request from this app shares
+// one calling IP (a single Node process, not a serverless fleet) - real
+// homepage traffic would blow past that in well under a minute without
+// this cache, silently falling back to NG pricing for a growing share of
+// visitors exactly when traffic is highest. A repeat visitor (or several
+// people behind the same office/ISP NAT) now costs one real lookup, not
+// one per pageview.
+export async function geolocateCountryCodeCached(ip: string): Promise<string | null> {
+  const cached = cache.get(ip);
+  if (cached && Date.now() < cached.expiresAt) return cached.code;
+
+  const code = await geolocateCountryCode(ip);
+  cache.set(ip, { code, expiresAt: Date.now() + CACHE_TTL_MS });
+  return code;
+}

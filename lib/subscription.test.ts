@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getSubscriptionState } from './subscription';
+import { getSubscriptionState, getBillingTier, BILLING_TIER_PRICE, PLAN_PRICE_NGN } from './subscription';
 
 // getSubscriptionState is the one function that decides whether a
 // business is let into its own admin area (via requireStaffSession) AND
@@ -112,5 +112,52 @@ describe('getSubscriptionState', () => {
   it('an unset plan on the row normalizes to core, never an unrecognized value', () => {
     const state = getSubscriptionState({ status: 'active', trial_ends_at: null, current_period_end: null, plan: null });
     expect(state.plan).toBe('core');
+  });
+});
+
+// getBillingTier decides which of four real currencies a business
+// actually gets charged (checkout route) and shown (billing page, and
+// now the public landing page too) - a wrong branch here is a wrong
+// amount of real money moving, not just a display bug. Ordering matters:
+// NG and GH are checked before the African-country-code set is ever
+// consulted, since both are themselves African countries and would
+// otherwise fall into the generic AFRICA tier instead of their own
+// correctly-priced one.
+describe('getBillingTier', () => {
+  it('defaults to NG for a null/undefined country code - a failed or not-yet-run geolocation, the existing safe default', () => {
+    expect(getBillingTier(null)).toBe('NG');
+    expect(getBillingTier(undefined)).toBe('NG');
+  });
+
+  it('resolves Nigeria and Ghana to their own tiers, not the generic AFRICA one', () => {
+    expect(getBillingTier('NG')).toBe('NG');
+    expect(getBillingTier('GH')).toBe('GH');
+  });
+
+  it('resolves any other African Union country to the AFRICA tier', () => {
+    expect(getBillingTier('KE')).toBe('AFRICA');
+    expect(getBillingTier('ZA')).toBe('AFRICA');
+  });
+
+  it('resolves anywhere outside Africa to the INTL tier', () => {
+    expect(getBillingTier('CA')).toBe('INTL');
+    expect(getBillingTier('US')).toBe('INTL');
+    expect(getBillingTier('GB')).toBe('INTL');
+  });
+
+  it('an unrecognized/malformed country code falls through to INTL rather than crashing or defaulting to NG', () => {
+    expect(getBillingTier('XX')).toBe('INTL');
+  });
+});
+
+describe('BILLING_TIER_PRICE', () => {
+  it('prices NG in Naira at the shared PLAN_PRICE_NGN.core figure, not a second hardcoded number to drift out of sync', () => {
+    expect(BILLING_TIER_PRICE.NG).toEqual({ amount: PLAN_PRICE_NGN.core, currency: 'NGN' });
+  });
+
+  it('prices every non-NG tier in its own real currency', () => {
+    expect(BILLING_TIER_PRICE.GH).toEqual({ amount: 120, currency: 'GHS' });
+    expect(BILLING_TIER_PRICE.AFRICA).toEqual({ amount: 10, currency: 'USD' });
+    expect(BILLING_TIER_PRICE.INTL).toEqual({ amount: 15, currency: 'USD' });
   });
 });
