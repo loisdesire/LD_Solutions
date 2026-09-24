@@ -155,7 +155,9 @@ export const INSIGHTS_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_billing_status',
-      description: "This business's own subscription: current plan, trial/billing status, days left on trial, next billing date.",
+      description:
+        "This business's own subscription: current plan, trial/billing status, days left on trial, next billing date. " +
+        'monthly_price is priced by region - always pair it with monthly_price_currency (NGN, GHS, or USD) rather than assuming Naira.',
       parameters: { type: 'object', properties: {} },
     },
   },

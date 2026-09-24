@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
-import { formatMoney } from '@/lib/formatMoney';
+import { PLAN_LABEL } from '@/lib/subscription';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
@@ -64,7 +63,7 @@ export default function TermsPage() {
           <h2>Business accounts</h2>
           <ul>
             <li>You need to give accurate information when you sign up, and keep your login secure - you're responsible for what happens under your account.</li>
-            <li>New accounts start on a 14-day free trial. After the trial, continued access requires an active paid plan ({PLAN_LABEL.core} at {formatMoney(PLAN_PRICE_NGN.core)}/month), billed monthly through Flutterwave. You can cancel any time from your dashboard; cancelling stops future billing but doesn't refund the current period - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for details.</li>
+            <li>New accounts start on a 14-day free trial. After the trial, continued access requires an active paid plan ({PLAN_LABEL.core}, priced by region - the exact rate is shown on your own Billing page), billed monthly through Flutterwave. You can cancel any time from your dashboard; cancelling stops future billing but doesn't refund the current period - see <Link href="/refunds" className="text-ink-soft hover:text-ink underline underline-offset-2">Cancellations & Refunds</Link> for details.</li>
             <li>If you turn on payments for your customers, you link a bank account and Vanova sets up the payout for you through our own Flutterwave account (no separate account of your own to open or verify) - every payment splits straight to your linked bank account, Vanova never holds the money. Because this runs through our account rather than one you control directly, Vanova is responsible for vetting who we set this up for, and for handling any payment dispute or chargeback with Flutterwave - not you.</li>
             <li>You can invite staff to help manage your business. What a staff member can and can't do is described in the product itself; you're responsible for who you invite.</li>
             <li>You're responsible for the content on your booking page (business description, photos, service listings) being accurate and something you have the right to use.</li>

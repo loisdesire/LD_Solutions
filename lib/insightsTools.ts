@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { todayInTimezone } from './timezone';
 import { getBusinessTimezone } from './getBusinessTimezone';
 import { formatLocalDateTime } from './formatDateTime';
-import { getSubscriptionState, PLAN_LABEL, PLAN_PRICE_NGN } from './subscription';
+import { getSubscriptionState, getBillingTier, BILLING_TIER_PRICE, PLAN_LABEL, PLAN_PRICE_NGN } from './subscription';
 import { logError } from './logger';
 
 // Server-side only, staff-facing counterpart to whatsappTools.ts. That file
@@ -384,13 +384,31 @@ export async function getBillingStatus(businessId: string) {
 
   const state = getSubscriptionState(sub ?? null);
 
+  // Same geographic pricing the checkout route and billing page already
+  // charge/show, and for the same reason the public landing page now
+  // shows it too: this used to unconditionally report the flat NGN
+  // figure, so a business outside Nigeria asking its own assistant "how
+  // much do I pay" got told the wrong number for what it's actually
+  // billed. Only 'core' is tiered by country (see BILLING_TIER_PRICE's
+  // own comment) - a legacy business_intelligence subscriber keeps their
+  // historical flat NGN rate, same rule applied everywhere else this
+  // decision is made.
+  const { data: business } = await supabaseAdmin
+    .from('businesses')
+    .select('home_country_code')
+    .eq('id', businessId)
+    .maybeSingle();
+  const tier = state.plan === 'core' ? getBillingTier(business?.home_country_code) : null;
+  const price = tier ? BILLING_TIER_PRICE[tier] : { amount: PLAN_PRICE_NGN[state.plan], currency: 'NGN' };
+
   return {
     phase: state.phase,
     has_access: state.hasAccess,
     trial_days_left: state.trialDaysLeft,
     current_period_end: state.currentPeriodEnd,
     plan: PLAN_LABEL[state.plan],
-    monthly_price_ngn: PLAN_PRICE_NGN[state.plan],
+    monthly_price: price.amount,
+    monthly_price_currency: price.currency,
   };
 }
 

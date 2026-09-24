@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { PLAN_PRICE_NGN, PLAN_LABEL } from '@/lib/subscription';
-import { formatMoney } from '@/lib/formatMoney';
+import { PLAN_LABEL } from '@/lib/subscription';
 
 export const metadata: Metadata = {
   title: 'Cancellations & Refunds',
@@ -53,8 +52,8 @@ export default function RefundsPage() {
           <ul>
             <li>Every new account starts on a 14-day free trial - nothing is charged during the trial.</li>
             <li>
-              After the trial, staying on {PLAN_LABEL.core} ({formatMoney(PLAN_PRICE_NGN.core)}/month) bills
-              monthly through Flutterwave.
+              After the trial, staying on {PLAN_LABEL.core} bills monthly through Flutterwave, at the rate shown
+              on your own Billing page (priced by region, set once when you signed up).
             </li>
             <li>You can cancel any time from your dashboard. Cancelling stops future billing immediately - it doesn&rsquo;t refund the period you&rsquo;re already in.</li>
             <li>We don&rsquo;t offer partial-month refunds for unused time. If a charge failed to process correctly on our end, contact us and we&rsquo;ll sort it out.</li>

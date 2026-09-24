@@ -37,9 +37,11 @@ function makeTable() {
 
 const bookingsTable = makeTable();
 const subscriptionsTable = makeTable();
+const businessesTable = makeTable();
 const TABLES: Record<string, ReturnType<typeof makeTable>> = {
   bookings: bookingsTable,
   subscriptions: subscriptionsTable,
+  businesses: businessesTable,
 };
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -82,7 +84,7 @@ const {
   getBillingStatus,
   getBusinessSnapshot,
 } = await import('./insightsTools');
-const { PLAN_LABEL, PLAN_PRICE_NGN } = await import('./subscription');
+const { PLAN_LABEL, PLAN_PRICE_NGN, BILLING_TIER_PRICE } = await import('./subscription');
 
 function booking(overrides: Partial<{
   customer_name: string | null;
@@ -105,6 +107,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   bookingsTable.reset();
   subscriptionsTable.reset();
+  businessesTable.reset();
   getBusinessTimezoneMock.mockResolvedValue('UTC');
 });
 
@@ -381,8 +384,9 @@ describe('compareRevenuePeriods', () => {
 });
 
 describe('getBillingStatus', () => {
-  it('delegates to getSubscriptionState and reports the plan label/price alongside it', async () => {
+  it('delegates to getSubscriptionState and reports the plan label alongside it', async () => {
     subscriptionsTable.push({ data: { status: 'active', trial_ends_at: null, current_period_end: '2026-06-01T00:00:00.000Z', plan: 'core' }, error: null });
+    businessesTable.push({ data: { home_country_code: 'NG' }, error: null });
     getSubscriptionStateMock.mockReturnValue({
       phase: 'active',
       hasAccess: true,
@@ -396,7 +400,79 @@ describe('getBillingStatus', () => {
     expect(result.phase).toBe('active');
     expect(result.has_access).toBe(true);
     expect(result.plan).toBe(PLAN_LABEL.core);
-    expect(result.monthly_price_ngn).toBe(PLAN_PRICE_NGN.core);
+  });
+
+  // The actual gap this covers: get_billing_status used to unconditionally
+  // report the flat NGN figure (monthly_price_ngn: PLAN_PRICE_NGN[plan]),
+  // so a business outside Nigeria asking its own assistant "how much do I
+  // pay" got told the wrong number for what it's actually billed - the
+  // same class of bug the public landing page had. Fixed to report the
+  // same geographic tier the checkout route and billing page already use.
+  it('reports the geographically-tiered price for a core-plan business outside Nigeria, not the flat NGN figure', async () => {
+    subscriptionsTable.push({ data: { status: 'active', trial_ends_at: null, current_period_end: null, plan: 'core' }, error: null });
+    businessesTable.push({ data: { home_country_code: 'CA' }, error: null });
+    getSubscriptionStateMock.mockReturnValue({
+      phase: 'active',
+      hasAccess: true,
+      trialDaysLeft: null,
+      currentPeriodEnd: null,
+      plan: 'core',
+    });
+
+    const result = await getBillingStatus(BIZ);
+
+    expect(result.monthly_price).toBe(BILLING_TIER_PRICE.INTL.amount);
+    expect(result.monthly_price_currency).toBe('USD');
+  });
+
+  it('reports the flat NGN figure for a Nigerian core-plan business, same as before', async () => {
+    subscriptionsTable.push({ data: { status: 'active', trial_ends_at: null, current_period_end: null, plan: 'core' }, error: null });
+    businessesTable.push({ data: { home_country_code: 'NG' }, error: null });
+    getSubscriptionStateMock.mockReturnValue({
+      phase: 'active',
+      hasAccess: true,
+      trialDaysLeft: null,
+      currentPeriodEnd: null,
+      plan: 'core',
+    });
+
+    const result = await getBillingStatus(BIZ);
+
+    expect(result.monthly_price).toBe(PLAN_PRICE_NGN.core);
+    expect(result.monthly_price_currency).toBe('NGN');
+  });
+
+  it('never geo-tiers a legacy business_intelligence subscriber - they keep their historical flat NGN rate', async () => {
+    subscriptionsTable.push({ data: { status: 'active', trial_ends_at: null, current_period_end: null, plan: 'business_intelligence' }, error: null });
+    businessesTable.push({ data: { home_country_code: 'CA' }, error: null });
+    getSubscriptionStateMock.mockReturnValue({
+      phase: 'active',
+      hasAccess: true,
+      trialDaysLeft: null,
+      currentPeriodEnd: null,
+      plan: 'business_intelligence',
+    });
+
+    const result = await getBillingStatus(BIZ);
+
+    expect(result.monthly_price).toBe(PLAN_PRICE_NGN.business_intelligence);
+    expect(result.monthly_price_currency).toBe('NGN');
+  });
+
+  it('defaults to the NG tier when the business has no home_country_code on file', async () => {
+    subscriptionsTable.push({ data: { status: 'active', trial_ends_at: null, current_period_end: null, plan: 'core' }, error: null });
+    businessesTable.push({ data: null, error: null });
+    getSubscriptionStateMock.mockReturnValue({
+      phase: 'active',
+      hasAccess: true,
+      trialDaysLeft: null,
+      currentPeriodEnd: null,
+      plan: 'core',
+    });
+
+    const result = await getBillingStatus(BIZ);
+
+    expect(result.monthly_price_currency).toBe('NGN');
   });
 
   it('falls back to a plan-less query on a missing-column (42703) error and passes plan: null through', async () => {
@@ -404,6 +480,7 @@ describe('getBillingStatus', () => {
       { data: null, error: { code: '42703' } },
       { data: { status: 'trial', trial_ends_at: '2026-06-01T00:00:00.000Z', current_period_end: null }, error: null }
     );
+    businessesTable.push({ data: { home_country_code: 'NG' }, error: null });
     getSubscriptionStateMock.mockReturnValue({
       phase: 'trial',
       hasAccess: true,
@@ -421,6 +498,7 @@ describe('getBillingStatus', () => {
 
   it('passes null through to getSubscriptionState when the business has no subscription row at all', async () => {
     subscriptionsTable.push({ data: null, error: null });
+    businessesTable.push({ data: { home_country_code: 'NG' }, error: null });
     getSubscriptionStateMock.mockReturnValue({
       phase: 'none',
       hasAccess: false,

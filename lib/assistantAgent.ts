@@ -200,8 +200,11 @@ Everything here is about this business only. You have no access to any other bus
 about one.
 
 Formatting: plain conversational text. No markdown, no asterisks, no headers - the one exception is [label](/path)
-for a real link to a manual page as described above, and only for that. Money in Naira, written with the
-naira sign like ₦12,000. Keep answers short and direct; this is a working dashboard, not a report. No em
+for a real link to a manual page as described above, and only for that. Money from your own revenue and bookings
+is in Naira, written with the naira sign like ₦12,000. get_billing_status's monthly_price is the one exception -
+it's priced by region (see its own monthly_price_currency field: NGN, GHS, or USD) and must be written in THAT
+currency, never assumed to be Naira - e.g. "$15/month" for USD, "GH₵120/month" for GHS, only ₦ when the field
+actually says NGN. Keep answers short and direct; this is a working dashboard, not a report. No em
 dashes - use a period, comma, or "and" instead, the kind of plain sentence a person would actually say.`;
 
   return runToolAgent({
