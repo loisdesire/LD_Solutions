@@ -68,10 +68,13 @@ export default function PrototypeAiHero() {
     <AccentScope color="#2563eb" className="min-h-screen bg-paper">
       <SiteHeader slug="glow-salon" business={BUSINESS} active="home" showAbout={false} showGallery={false} showContact={false} />
 
-      {/* Hero: same real fallback treatment app/[slug]/page.tsx uses when a
-          business has no cover_image_url - no invented gradient here. */}
+      {/* Hero: pure photo + headline again, same real fallback treatment
+          app/[slug]/page.tsx uses when a business has no cover_image_url.
+          Nothing functional sits on it - a hero photo is atmosphere, not
+          a place to put a form. The ask experience gets its own section
+          right below instead of fighting the image for attention. */}
       <section className="relative">
-        <div className="relative min-h-[62vh] sm:min-h-[74vh]">
+        <div className="relative min-h-[50vh] sm:min-h-[58vh]">
           <div className="absolute inset-0 z-0">
             <div
               className="h-full w-full"
@@ -83,7 +86,7 @@ export default function PrototypeAiHero() {
             />
           </div>
 
-          <div className="relative z-10 flex min-h-[62vh] sm:min-h-[74vh] items-center p-4 sm:p-6 lg:p-8">
+          <div className="relative z-10 flex min-h-[50vh] sm:min-h-[58vh] items-center p-4 sm:p-6 lg:p-8">
             <div className="w-full max-w-6xl mx-auto">
               <div className="max-w-2xl mx-auto text-center">
                 <span
@@ -100,71 +103,85 @@ export default function PrototypeAiHero() {
                 <p className="mt-4 max-w-[54ch] mx-auto text-[17px] leading-relaxed text-white/90 sm:text-[19px]">
                   Lagos&rsquo;s go-to for natural hair care and grooming since 2019.
                 </p>
-
-                {/* The actual change: this replaces the "Book an appointment" /
-                    "Ask AI" button pair. One surface, not two competing ones -
-                    real WebChatWidget bubble/input classes, so this looks like
-                    the chat that already exists, not a new invented one. */}
-                <div className="mt-8 mx-auto max-w-md rounded-[22px] bg-white/97 backdrop-blur-sm shadow-[0_24px_48px_-16px_rgba(0,0,0,0.45)] text-left overflow-hidden">
-                  <div className="px-4 pt-4 pb-3 flex items-center gap-2.5 border-b border-line">
-                    <div
-                      className="h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-semibold flex-shrink-0"
-                      style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
-                    >
-                      G
-                    </div>
-                    <span className="text-[13.5px] font-semibold text-ink">Ask Glow Salon</span>
-                    <span
-                      className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold"
-                      style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      Online
-                    </span>
-                  </div>
-
-                  {selected && (
-                    <div className="px-4 pt-3 space-y-2">
-                      <div className="flex justify-end">
-                        <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] leading-relaxed text-ink" style={{ background: 'var(--accent-soft)' }}>
-                          I&rsquo;d like to book {selected.name}
-                        </div>
-                      </div>
-                      <div className="flex justify-start">
-                        <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-warm-surface px-3.5 py-2 text-[13.5px] leading-relaxed text-ink">
-                          {selected.reply}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-3">
-                    <div className="flex items-center gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
-                      <input
-                        readOnly
-                        placeholder="Ask anything, or say what you'd like"
-                        className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint"
-                      />
-                      <button
-                        type="button"
-                        aria-label="Send"
-                        className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M12 19V5M5 12l7-7 7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <a href="#services" className="mt-4 inline-block text-[13px] text-white/75 hover:text-white underline underline-offset-4">
-                  or browse services below
-                </a>
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* The ask section: the actual change. Not on the photo, not a
+          floating widget - its own real section, first thing after the
+          hero, on the page's own warm-surface tone so it reads as a
+          considered part of the page rather than a card someone dropped
+          on top of a picture. */}
+      <section className="bg-warm-surface">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="mx-auto mb-5 flex max-w-xl items-center justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint shadow-soft">
+              <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
+              Talk to us
+            </span>
+          </div>
+          <h2 className="font-display text-[28px] sm:text-[34px] font-semibold text-ink mb-1.5 text-center tracking-[-0.01em]">Tell us what you need</h2>
+          <p className="text-[14.5px] text-ink-faint mb-6 sm:mb-8 text-center">No forms - just ask, and we&rsquo;ll check real availability</p>
+
+          <div className="mx-auto max-w-lg rounded-[22px] bg-surface shadow-card text-left overflow-hidden">
+            <div className="px-4 pt-4 pb-3 flex items-center gap-2.5 border-b border-line">
+              <div
+                className="h-8 w-8 rounded-full flex items-center justify-center text-[13px] font-semibold flex-shrink-0"
+                style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
+              >
+                G
+              </div>
+              <span className="text-[13.5px] font-semibold text-ink">Ask Glow Salon</span>
+              <span
+                className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold"
+                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                Online
+              </span>
+            </div>
+
+            {selected && (
+              <div className="px-4 pt-3 space-y-2">
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 text-[13.5px] leading-relaxed text-ink" style={{ background: 'var(--accent-soft)' }}>
+                    I&rsquo;d like to book {selected.name}
+                  </div>
+                </div>
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-warm-surface px-3.5 py-2 text-[13.5px] leading-relaxed text-ink">
+                    {selected.reply}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="p-3">
+              <div className="flex items-center gap-2.5 rounded-2xl bg-paper border border-line pl-4 pr-2 py-2.5 focus-within:border-[var(--accent)] transition-colors">
+                <input
+                  readOnly
+                  placeholder="Ask anything, or say what you'd like"
+                  className="flex-1 bg-transparent border-none outline-none text-[13.5px] text-ink placeholder-ink-faint"
+                />
+                <button
+                  type="button"
+                  aria-label="Send"
+                  className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--accent)', color: 'var(--accent-contrast)' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-5 text-center text-[13px] text-ink-faint">
+            Or <a href="#services" className="underline underline-offset-4 hover:text-ink">pick a service below</a> - it drops straight into this conversation.
+          </p>
         </div>
       </section>
 
